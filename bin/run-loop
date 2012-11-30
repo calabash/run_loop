@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'fileutils'
+require 'run_loop/cli'
+
+
+RunLoop::CLI.start
+
+
