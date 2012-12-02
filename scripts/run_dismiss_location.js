@@ -1,4 +1,5 @@
-var target = UIATarget.localTarget();
+var target = UIATarget.localTarget(),
+    screenshot_count = 0;
 
 function findAlertViewText(alert) {
     if (!alert) {
@@ -43,13 +44,10 @@ var alertHandlers = [//run in reverse order of this:
 ];
 
 
-UIATarget.onAlert = function (alert)
-{
+UIATarget.onAlert = function (alert) {
     var N = alertHandlers.length;
-    while(N--)
-    {
-        if (alertHandlers[i])
-        {
+    while (N--) {
+        if (alertHandlers[i]) {
             break;
         }
     }
@@ -69,6 +67,10 @@ function performAction(action, data) {
         case "registerAlertHandler":
             alertHandlers.push(eval(data.handler));
             break;
+        case "screenshot":
+            screenshot_count += 1;
+            target.captureScreenWithName(data.name || ("screenshot_" + screenshot_count));
+            break;
     }
     if (actionTaken && !data.preserve) {
         target.frontMostApp().setPreferencesValueForKey(null, "__run_loop_action");
@@ -78,25 +80,17 @@ function performAction(action, data) {
 
 UIALogger.logStart("RunLoop");
 
-var app = target.frontMostApp()
+var app = target.frontMostApp(),
     val,
     count = 0,
-    shouldAccept = true,
-    alertAction = null,
     action = null;
 while (true) {
     target.delay(0.3);
     val = app.preferencesValueForKey("__run_loop_action");
     if (val && typeof val == 'object') {
         action = val.action;
-        if (action == "allowLocation") {
-            shouldAccept = !!val.data;
-        }
-        else {
-            performAction(action, val);
-        }
+        performAction(action, val);
     }
-    UIALogger.logPass("Test" + count);
     count += 1;
 }
 

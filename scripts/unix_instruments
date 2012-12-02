@@ -77,7 +77,7 @@ function cleanup_instruments() {
   # still running because of an error or the user pressed Ctrl-C
   if [[ $pid_instruments -gt 0 ]]; then
     echo "Cleaning up instruments..."
-    kill -9 $pid_instruments
+    kill $pid_instruments
   fi
 }
 

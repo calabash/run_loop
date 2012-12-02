@@ -3,6 +3,8 @@
 .bundle
 .config
 coverage
+out
+.irb-history
 InstalledFiles
 lib/bundler/man
 pkg

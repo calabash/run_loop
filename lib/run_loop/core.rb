@@ -1,7 +1,12 @@
 require 'fileutils'
 require 'tmpdir'
+require 'timeout'
 
 module RunLoop
+
+  class TimeoutError < RuntimeError
+  end
+
   module Core
 
     SCRIPTS_PATH = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'scripts'))
@@ -33,6 +38,32 @@ module RunLoop
         raise "key :app or environment variable APP_BUNDLE_PATH must be specified as path to app bundle (simulator) or bundle id (device)"
       end
 
+      if File.exist?(bundle_dir_or_bundle_id)
+        #Assume simulator
+        udid = nil
+      else
+        udid = options[:udid]
+        unless udid
+          begin
+            Timeout::timeout(3,TimeoutError) do
+               udid = `#{File.join(scripts_path,'udidetect')}`.chomp
+            end
+          rescue TimeoutError => e
+
+          end
+          unless udid
+            raise "Unable to find connected device."
+          end
+        end
+
+      end
+
+
+      if udid
+        instruments_path = "#{instruments_path} -w #{udid}"
+      end
+
+
       cmd = [
         instruments_path,
         "-D", results_dir_trace,
@@ -54,7 +85,11 @@ module RunLoop
 
       Process.detach(pid)
 
-      pid
+      File.open(File.join(results_dir,"run_loop.pid"), "w") do |f|
+        f.write pid
+      end
+
+      return pid, results_dir
     end
 
     def self.automation_template
@@ -83,7 +118,20 @@ module RunLoop
     script = validate_script(options)
     options[:script] = script
 
-    Core.run_with_options(options)
+    return Core.run_with_options(options)
+  end
+
+  def self.stop(options)
+    results_dir = options[:results_dir]
+    pid = options[:pid] || IO.read(File.join(results_dir,"run_loop.pid"))
+    dest = options[:out] || Dir.pwd
+
+    if pid
+      Process.kill("HUP",pid.to_i)
+    end
+
+    FileUtils.mkdir_p(dest)
+    FileUtils.cp(Dir.glob(File.join(results_dir,"Run 1","*.png")), dest)
   end
 
   def self.validate_script(options)
