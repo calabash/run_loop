@@ -9,3 +9,9 @@ Must work as both a command line tool and a ruby library.
 
 Usage
 =====
+
+* Run an app using a predefined or custom UIA script
+
+* Set simulator hardware, os, language, locale
+
+* Reset simulator

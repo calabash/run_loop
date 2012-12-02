@@ -1,0 +1,3 @@
+[submodule "udidetect"]
+	path = udidetect
+	url = https://github.com/vaskas/udidetect.git
