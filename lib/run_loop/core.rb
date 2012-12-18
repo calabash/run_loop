@@ -27,7 +27,7 @@ module RunLoop
 
     def self.run_with_options(options)
       template = automation_template
-      instruments_path = File.join(scripts_path,"unix_instruments")
+      instruments_path = "instruments"#File.join(scripts_path,"unix_instruments")
       results_dir = options[:results_dir] || Dir.mktmpdir("run_loop")
       results_dir_trace = File.join(results_dir,"trace")
       FileUtils.mkdir_p(results_dir_trace)
@@ -64,11 +64,12 @@ module RunLoop
       end
 
 
+
       cmd = [
         instruments_path,
         "-D", results_dir_trace,
         "-t", template,
-        bundle_dir_or_bundle_id,
+        "\"#{bundle_dir_or_bundle_id}\"",
         "-e", "UIARESULTSPATH", results_dir,
         "-e", "UIASCRIPT", options[:script],
         *(options[:instruments_args] || [])
@@ -89,7 +90,7 @@ module RunLoop
         f.write pid
       end
 
-      return pid, results_dir
+      return {:pid => pid, :results_dir => results_dir}
     end
 
     def self.automation_template
@@ -118,7 +119,7 @@ module RunLoop
     script = validate_script(options)
     options[:script] = script
 
-    return Core.run_with_options(options)
+    Core.run_with_options(options)
   end
 
   def self.stop(options)
@@ -131,7 +132,8 @@ module RunLoop
     end
 
     FileUtils.mkdir_p(dest)
-    FileUtils.cp(Dir.glob(File.join(results_dir,"Run 1","*.png")), dest)
+    pngs = Dir.glob(File.join(results_dir,"Run 1","*.png"))
+    FileUtils.cp(pngs, dest) if pngs and pngs.length > 0
   end
 
   def self.validate_script(options)
