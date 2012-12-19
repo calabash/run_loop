@@ -72,6 +72,7 @@ var expectedIndex = 0,//expected index of next command
 
 while (true)
 {
+    target.delay(0.2);
     try
     {
         process = host.performTaskWithPathArgumentsTimeout("/bin/cat",
@@ -81,7 +82,6 @@ while (true)
     } catch (e)
     {
         Log.output("Timeout on cat...");
-        target.delay(0.1);
         continue;
     }
     if (process.exitCode != 0)

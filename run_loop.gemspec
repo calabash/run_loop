@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.homepage    = "http://calaba.sh"
   s.summary     = %q{Tools related to running Calabash iOS tests}
   s.description = %q{calabash-cucumber drives tests for native iOS apps. RunLoop provides a number of tools associated with running Calabash tests.}
-  s.files         = `git ls-files`.split("\n")
+  s.files         = ["scripts/udidetect"].concat(`git ls-files`.split("\n"))
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = "run-loop"
   s.require_paths = ["lib"]
