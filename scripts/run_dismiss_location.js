@@ -97,20 +97,26 @@ var app = target.frontMostApp(),
     count = 0,
     action = null;
 while (true) {
-    target.delay(0.1);
-    val = app.preferencesValueForKey("__run_loop_action");
+    target.delay(1);
+    val = target.frontMostApp().preferencesValueForKey("__run_loop_action");
+    if (val)
+        UIALogger.logMessage(val);
+    else {
+        UIALogger.logMessage("null");
+        val = target.frontMostApp().preferencesValueForKey("x");
+        if (val)
+            UIALogger.logMessage(val.toString());
+    }
+
     if (val && typeof val == 'object') {
         action = val.action;
         performAction(action, val);
     }
     else if (val && typeof val == 'string') {
-        try {
-            res = performAction("eval", val);
-            if (res) {
-                UIALogger.logMessage(res.toString());
-            }
+        res = performAction("eval", val);
+        if (res) {
+            UIALogger.logMessage(res.toString());
         }
-
     }
 
     count += 1;

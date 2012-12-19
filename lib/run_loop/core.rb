@@ -11,7 +11,8 @@ module RunLoop
 
     SCRIPTS_PATH = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'scripts'))
     SCRIPTS = {
-        :dismiss => "run_dismiss_location.js"
+        :dismiss => "run_dismiss_location.js",
+        :run_loop => "run_loop.js"
     }
 
     def self.scripts_path
@@ -31,6 +32,16 @@ module RunLoop
       results_dir = options[:results_dir] || Dir.mktmpdir("run_loop")
       results_dir_trace = File.join(results_dir,"trace")
       FileUtils.mkdir_p(results_dir_trace)
+
+      script = File.join(results_dir,"_run_loop.js")
+
+
+      code = File.read(options[:script])
+      code = code.gsub(/\$PATH/, results_dir)
+
+      File.open(script, "w") {|file| file.puts code}
+
+
 
       bundle_dir_or_bundle_id = options[:app] || ENV['APP_BUNDLE_PATH']
 
@@ -71,7 +82,7 @@ module RunLoop
         "-t", template,
         "\"#{bundle_dir_or_bundle_id}\"",
         "-e", "UIARESULTSPATH", results_dir,
-        "-e", "UIASCRIPT", options[:script],
+        "-e", "UIASCRIPT", script,
         *(options[:instruments_args] || [])
       ]
 
@@ -152,7 +163,7 @@ module RunLoop
         raise "Unknown type for :script key: #{options[:script].class}"
       end
     else
-      script = Core.script_for_key(:dismiss)
+      script = Core.script_for_key(:run_loop)
     end
     script
   end
