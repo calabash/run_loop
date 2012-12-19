@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'tmpdir'
 require 'timeout'
+#require 'open4'
 
 module RunLoop
 
@@ -38,6 +39,9 @@ module RunLoop
 
       code = File.read(options[:script])
       code = code.gsub(/\$PATH/, results_dir)
+
+      repl_path = File.join(results_dir,"repl-cmd.txt")
+      File.open(repl_path, "w") {|file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');"}
 
       File.open(script, "w") {|file| file.puts code}
 
@@ -101,7 +105,7 @@ module RunLoop
         f.write pid
       end
 
-      return {:pid => pid, :results_dir => results_dir}
+      return {:pid => pid, :repl_path => repl_path, :results_dir => results_dir}
     end
 
     def self.automation_template
@@ -131,6 +135,31 @@ module RunLoop
     options[:script] = script
 
     Core.run_with_options(options)
+  end
+
+  def self.send_command(run_loop,cmd)
+    repl_path = run_loop[:repl_path]
+
+    if not cmd.is_a?(String)
+      raise "Illegal command #{cmd} (must be a string)"
+    end
+
+    cur = File.read(repl_path)
+
+    colon = cur.index(":")
+
+    if colon.nil?
+      raise "Illegal contents of #{repl_path}: #{cur}"
+    end
+    index = cur[0,colon].to_i + 1
+
+
+    tmp_cmd = File.join(File.dirname(repl_path), "__repl-cmd.txt")
+    File.open(tmp_cmd,"w") do |f|
+      f.write("#{index}:#{cmd}")
+    end
+
+    FileUtils.mv(tmp_cmd,repl_path)
   end
 
   def self.stop(options)

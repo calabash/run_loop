@@ -35,18 +35,26 @@ var Log = (function () {
     // According to Appium,
     //16384 is the buffer size used by instruments
     var forceFlush = [],
-        N = 16384, i = N;
+        N = 0, i = N;
+    if ("$MODE" == "FLUSH")
+    {
+        N = 16384
+    }
     while(i--) { forceFlush[i] = "*"; }
     forceFlush = forceFlush.join('');
 
     return {
         result: function (status, data) {
             UIALogger.logMessage(JSON.stringify({"status":status, "value":data}));
-            UIALogger.logMessage(forceFlush);
+            if (forceFlush.length > 0) {
+                UIALogger.logMessage(forceFlush);
+            }
         },
         output: function (msg) {
             UIALogger.logMessage(JSON.stringify({"output":msg}));
-            UIALogger.logMessage(forceFlush);
+            if (forceFlush.length > 0) {
+                UIALogger.logMessage(forceFlush);
+            }
         }
     };
 })();
