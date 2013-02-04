@@ -28,6 +28,10 @@ module RunLoop
     end
 
     def self.run_with_options(options)
+
+      device = options[:device] || :iphone
+
+
       template = automation_template
       instruments_path = "instruments"#File.join(scripts_path,"unix_instruments")
       results_dir = options[:results_dir] || Dir.mktmpdir("run_loop")
@@ -56,6 +60,16 @@ module RunLoop
       if File.exist?(bundle_dir_or_bundle_id)
         #Assume simulator
         udid = nil
+        plistbuddy="/usr/libexec/PlistBuddy"
+        plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
+        if device == :iphone
+         uidevicefamily=1
+        else
+         uidevicefamily=2
+        end
+        system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
+        system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
+        system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
       else
         udid = options[:udid]
         unless udid

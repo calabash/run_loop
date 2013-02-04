@@ -38,7 +38,7 @@ var Log = (function () {
         N = 0, i = N;
     if ("$MODE" == "FLUSH")
     {
-        N = 16384
+        N = 16384;
     }
     while(i--) { forceFlush[i] = "*"; }
     forceFlush = forceFlush.join('');
@@ -59,8 +59,65 @@ var Log = (function () {
     };
 })();
 
-var target = UIATarget.localTarget(),
-    host = target.host();
+
+function findAlertViewText(alert)
+{
+    if (!alert) {return false;}
+    var txt = alert.name(),
+        txts;
+    if (txt == null)
+    {
+        txts = alert.staticTexts();
+        if (txts != null && txts.length > 0)
+        {
+
+            txt = txts[0].name();
+        }
+
+    }
+    return txt;
+}
+
+function isLocationPrompt(alert)
+{
+    var exps = [
+            ["OK", /vil bruge din aktuelle placering/],
+            ["OK", /Would Like to Use Your Current Location/],
+            ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/]
+        ],
+        ans, exp,
+        txt,
+        txts;
+
+    txt = findAlertViewText(alert);
+    for (var i = 0; i < exps.length; i++)
+    {
+        ans = exps[i][0];
+        exp = exps[i][1];
+        if (exp.test(txt))
+        {
+            return ans;
+        }
+    }
+    return false;
+}
+
+
+UIATarget.onAlert = function (alert)
+{
+    var answer = isLocationPrompt(alert);
+    if (answer)
+    {
+        alert.buttons()[answer].tap();
+    }
+    return true;
+};
+
+
+
+
+var target = null,
+    host = null;
 
 var expectedIndex = 0,//expected index of next command
     actualIndex,//actual index of next command by reading commandPath
@@ -72,6 +129,8 @@ var expectedIndex = 0,//expected index of next command
 
 while (true)
 {
+    target = UIATarget.localTarget();
+    host = target.host();
     target.delay(0.2);
     try
     {
