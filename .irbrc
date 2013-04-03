@@ -15,3 +15,5 @@ IRB.conf[:HISTORY_FILE] = ".irb-history"
 require 'run_loop'
 
 
+@app = "/Users/krukow/github/x-platform-example/ios-source/3.3.1/build/Applications/WordPress.app"
+

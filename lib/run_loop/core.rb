@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'tmpdir'
 require 'timeout'
-#require 'open4'
+require 'json'
 
 module RunLoop
 
@@ -32,29 +32,27 @@ module RunLoop
       device = options[:device] || :iphone
 
 
-      template = automation_template
-      instruments_path = "instruments"#File.join(scripts_path,"unix_instruments")
       results_dir = options[:results_dir] || Dir.mktmpdir("run_loop")
-      results_dir_trace = File.join(results_dir,"trace")
+      results_dir_trace = File.join(results_dir, "trace")
       FileUtils.mkdir_p(results_dir_trace)
 
-      script = File.join(results_dir,"_run_loop.js")
+      script = File.join(results_dir, "_run_loop.js")
 
 
       code = File.read(options[:script])
       code = code.gsub(/\$PATH/, results_dir)
+      code = code.gsub(/\$MODE/, "FLUSH") unless options[:no_flush]
 
-      repl_path = File.join(results_dir,"repl-cmd.txt")
-      File.open(repl_path, "w") {|file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');"}
+      repl_path = File.join(results_dir, "repl-cmd.txt")
+      File.open(repl_path, "w") { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
 
-      File.open(script, "w") {|file| file.puts code}
+      File.open(script, "w") { |file| file.puts code }
 
 
-
-      bundle_dir_or_bundle_id = options[:app] || ENV['APP_BUNDLE_PATH']
+      bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH']
 
       unless bundle_dir_or_bundle_id
-        raise "key :app or environment variable APP_BUNDLE_PATH must be specified as path to app bundle (simulator) or bundle id (device)"
+        raise 'key :app or environment variable APP_BUNDLE_PATH or BUNDLE_ID must be specified as path to app bundle (simulator) or bundle id (device)'
       end
 
       if File.exist?(bundle_dir_or_bundle_id)
@@ -63,9 +61,9 @@ module RunLoop
         plistbuddy="/usr/libexec/PlistBuddy"
         plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
         if device == :iphone
-         uidevicefamily=1
+          uidevicefamily=1
         else
-         uidevicefamily=2
+          uidevicefamily=2
         end
         system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
         system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
@@ -74,8 +72,8 @@ module RunLoop
         udid = options[:udid]
         unless udid
           begin
-            Timeout::timeout(3,TimeoutError) do
-               udid = `#{File.join(scripts_path,'udidetect')}`.chomp
+            Timeout::timeout(3, TimeoutError) do
+              udid = `#{File.join(scripts_path, 'udidetect')}`.chomp
             end
           rescue TimeoutError => e
 
@@ -88,21 +86,8 @@ module RunLoop
       end
 
 
-      if udid
-        instruments_path = "#{instruments_path} -w #{udid}"
-      end
-
-
-
-      cmd = [
-        instruments_path,
-        "-D", results_dir_trace,
-        "-t", template,
-        "\"#{bundle_dir_or_bundle_id}\"",
-        "-e", "UIARESULTSPATH", results_dir,
-        "-e", "UIASCRIPT", script,
-        *(options[:instruments_args] || [])
-      ]
+      log_file = File.join(results_dir, 'run_loop.out')
+      cmd = instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
 
       pid = fork do
         log_header("Starting App: #{bundle_dir_or_bundle_id}")
@@ -115,16 +100,130 @@ module RunLoop
 
       Process.detach(pid)
 
-      File.open(File.join(results_dir,"run_loop.pid"), "w") do |f|
+      File.open(File.join(results_dir, "run_loop.pid"), "w") do |f|
         f.write pid
       end
 
-      return {:pid => pid, :repl_path => repl_path, :results_dir => results_dir}
+      run_loop = {:pid => pid, :repl_path => repl_path, :log_file => log_file, :results_dir => results_dir}
+
+      read_response(run_loop,0)
+      begin
+        Timeout::timeout(30, TimeoutError) do
+          read_response(run_loop, 0)
+        end
+      rescue TimeoutError => e
+        raise "Time out waiting for UIAutomation run-loop to Start. \n #{File.read(log_file)}"
+      end
+
+      run_loop
+    end
+
+    def self.write_request(run_loop, cmd)
+      repl_path = run_loop[:repl_path]
+
+      cur = File.read(repl_path)
+
+      colon = cur.index(':')
+
+      if colon.nil?
+        raise "Illegal contents of #{repl_path}: #{cur}"
+      end
+      index = cur[0, colon].to_i + 1
+
+
+      tmp_cmd = File.join(File.dirname(repl_path), '__repl-cmd.txt')
+      File.open(tmp_cmd, "w") do |f|
+        f.write("#{index}:#{cmd}")
+      end
+
+      FileUtils.mv(tmp_cmd, repl_path)
+      index
+    end
+
+    def self.read_response(run_loop, expected_index)
+      log_file = run_loop[:log_file]
+      offset = 0
+      json_token = "OUTPUT_JSON:\n"
+      result = nil
+      loop do
+        unless File.exist?(log_file) && File.size?(log_file)
+          sleep(1)
+          next
+        end
+
+        size = File.size(log_file)
+        output = File.read(log_file, size-offset, offset)
+        index_if_found = output.index(json_token)
+        if ENV['DEBUG']=='1'
+          puts output.gsub("*", '')
+          puts "Size #{size}"
+          puts "offset #{offset}"
+          puts "index_of #{json_token}: #{index_if_found}"
+        end
+
+        if index_if_found
+
+          offset = offset + index_if_found
+          rest = output[index_if_found+json_token.size..output.length]
+          index_of_json = rest.index("}\n\n")
+
+          json = rest[0..index_of_json]
+
+          if ENV['DEBUG']=='1'
+            puts "Index #{index_if_found}, Size: #{size} Offset #{offset}"
+
+            puts ("parse #{json}")
+          end
+
+          offset = offset + json.size
+          parsed_result = JSON.parse(json)
+          json_index_if_present = parsed_result['index']
+          if json_index_if_present && json_index_if_present == expected_index
+            result = parsed_result
+            break
+          end
+        else
+
+        end
+
+        sleep(0.5)
+      end
+      result
+
+    end
+
+    def self.pids_for_run_loop(run_loop, &block)
+      pids_str = `ps x -o pid,command | grep -v grep | grep "instruments -D #{run_loop[:results_dir]}" | awk '{printf "%s,", $1}'`
+      pids = pids_str.split(",").map { |pid| pid.to_i }
+      if block_given?
+        pids.each do |pid|
+          block.call(pid)
+        end
+      else
+        pids
+      end
+    end
+
+
+    def self.instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
+      instruments_path = 'instruments'
+      if udid
+        instruments_path = "#{instruments_path} -w #{udid}"
+      end
+      [
+          instruments_path,
+          "-D", results_dir_trace,
+          "-t", automation_template,
+          "\"#{bundle_dir_or_bundle_id}\"",
+          "-e", "UIARESULTSPATH", results_dir,
+          "-e", "UIASCRIPT", script,
+          "&> #{log_file}"
+      ]
     end
 
     def self.automation_template
       xcode_path = `xcode-select -print-path`.chomp
-      automation_bundle = File.expand_path(File.join(xcode_path, "..", "Applications", "Instruments.app", "Contents", "PlugIns", "AutomationInstrument.bundle"))
+      automation_bundle = File.expand_path(File.join(xcode_path, "..", 'Applications', "Instruments.app", "Contents", "PlugIns", 'AutomationInstrument.bundle'))
       if not File.exist? automation_bundle
         automation_bundle= File.expand_path(File.join(xcode_path, "Platforms", "iPhoneOS.platform", "Developer", "Library", "Instruments", "PlugIns", "AutomationInstrument.bundle"))
         raise "Unable to find AutomationInstrument.bundle" if not File.exist? automation_bundle
@@ -151,44 +250,49 @@ module RunLoop
     Core.run_with_options(options)
   end
 
-  def self.send_command(run_loop,cmd)
-    repl_path = run_loop[:repl_path]
+  def self.send_command(run_loop, cmd, timeout=15)
 
     if not cmd.is_a?(String)
       raise "Illegal command #{cmd} (must be a string)"
     end
 
-    cur = File.read(repl_path)
 
-    colon = cur.index(":")
+    expected_index = Core.write_request(run_loop, cmd)
+    result = nil
 
-    if colon.nil?
-      raise "Illegal contents of #{repl_path}: #{cur}"
-    end
-    index = cur[0,colon].to_i + 1
+    begin
+      Timeout::timeout(timeout, TimeoutError) do
+        result = Core.read_response(run_loop, expected_index)
+      end
 
-
-    tmp_cmd = File.join(File.dirname(repl_path), "__repl-cmd.txt")
-    File.open(tmp_cmd,"w") do |f|
-      f.write("#{index}:#{cmd}")
+    rescue TimeoutError => e
+      raise "Time out waiting for UIAutomation run-loop for command #{cmd}. Waiting for index:#{expected_index}"
     end
 
-    FileUtils.mv(tmp_cmd,repl_path)
+    result
   end
 
-  def self.stop(options)
-    results_dir = options[:results_dir]
-    pid = options[:pid] || IO.read(File.join(results_dir,"run_loop.pid"))
-    dest = options[:out] || Dir.pwd
+  def self.stop(run_loop, out=Dir.pwd)
+    results_dir = run_loop[:results_dir]
+    pid = run_loop[:pid] || IO.read(File.join(results_dir, "run_loop.pid"))
+    dest = out
 
     if pid
-      Process.kill("HUP",pid.to_i)
+      Process.kill('TERM', pid.to_i)
     end
 
+    Core.pids_for_run_loop(run_loop) do |pid|
+      Process.kill('TERM', pid.to_i)
+    end
+
+    sleep(1)
+
     FileUtils.mkdir_p(dest)
-    pngs = Dir.glob(File.join(results_dir,"Run 1","*.png"))
+    pngs = Dir.glob(File.join(results_dir, "Run 1", "*.png"))
     FileUtils.cp(pngs, dest) if pngs and pngs.length > 0
   end
+
+
 
   def self.validate_script(options)
     script = options[:script]
