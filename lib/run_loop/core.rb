@@ -36,6 +36,11 @@ module RunLoop
       results_dir_trace = File.join(results_dir, "trace")
       FileUtils.mkdir_p(results_dir_trace)
 
+      dependencies = options[:dependencies] || []
+      dependencies.each do |dep|
+        FileUtils.cp(dep, results_dir)
+      end
+
       script = File.join(results_dir, "_run_loop.js")
 
 
@@ -85,8 +90,8 @@ module RunLoop
 
       end
 
-
       log_file = File.join(results_dir, 'run_loop.out')
+
       cmd = instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
 
       pid = fork do
@@ -134,6 +139,9 @@ module RunLoop
       tmp_cmd = File.join(File.dirname(repl_path), '__repl-cmd.txt')
       File.open(tmp_cmd, "w") do |f|
         f.write("#{index}:#{cmd}")
+        if ENV['DEBUG']
+          puts "Wrote: #{index}:#{cmd}"
+        end
       end
 
       FileUtils.mv(tmp_cmd, repl_path)
@@ -183,10 +191,8 @@ module RunLoop
             break
           end
         else
-
+          sleep(0.2)
         end
-
-        sleep(0.5)
       end
       result
 
@@ -210,15 +216,18 @@ module RunLoop
       if udid
         instruments_path = "#{instruments_path} -w #{udid}"
       end
-      [
+      cmd = [
           instruments_path,
           "-D", results_dir_trace,
           "-t", automation_template,
           "\"#{bundle_dir_or_bundle_id}\"",
           "-e", "UIARESULTSPATH", results_dir,
-          "-e", "UIASCRIPT", script,
-          "&> #{log_file}"
+          "-e", "UIASCRIPT", script
       ]
+      if log_file
+         cmd << "&> #{log_file}"
+      end
+      cmd
     end
 
     def self.automation_template
