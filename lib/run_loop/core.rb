@@ -111,7 +111,7 @@ module RunLoop
 
       run_loop = {:pid => pid, :repl_path => repl_path, :log_file => log_file, :results_dir => results_dir}
 
-      read_response(run_loop,0)
+      #read_response(run_loop,0)
       begin
         Timeout::timeout(30, TimeoutError) do
           read_response(run_loop, 0)
@@ -197,6 +197,7 @@ module RunLoop
       end
 
       run_loop[:initial_offset] = offset
+
       result
 
     end
