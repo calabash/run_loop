@@ -150,7 +150,8 @@ module RunLoop
 
     def self.read_response(run_loop, expected_index)
       log_file = run_loop[:log_file]
-      offset = 0
+      initial_offset = run_loop[:initial_offset] || 0
+      offset = initial_offset
       json_token = "OUTPUT_JSON:\n"
       result = nil
       loop do
@@ -191,9 +192,11 @@ module RunLoop
             break
           end
         else
-          sleep(0.2)
+          sleep(0.1)
         end
       end
+
+      run_loop[:initial_offset] = offset
       result
 
     end
@@ -259,7 +262,7 @@ module RunLoop
     Core.run_with_options(options)
   end
 
-  def self.send_command(run_loop, cmd, timeout=15)
+  def self.send_command(run_loop, cmd, timeout=60)
 
     if not cmd.is_a?(String)
       raise "Illegal command #{cmd} (must be a string)"
