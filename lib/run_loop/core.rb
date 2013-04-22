@@ -30,6 +30,7 @@ module RunLoop
     def self.run_with_options(options)
 
       device = options[:device] || :iphone
+      udid = options[:udid]
 
 
       results_dir = options[:results_dir] || Dir.mktmpdir("run_loop")
@@ -74,7 +75,6 @@ module RunLoop
         system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
         system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
       else
-        udid = options[:udid]
         unless udid
           begin
             Timeout::timeout(3, TimeoutError) do
@@ -109,7 +109,7 @@ module RunLoop
         f.write pid
       end
 
-      run_loop = {:pid => pid, :repl_path => repl_path, :log_file => log_file, :results_dir => results_dir}
+      run_loop = {:pid => pid, :udid => udid, :app => bundle_dir_or_bundle_id, :repl_path => repl_path, :log_file => log_file, :results_dir => results_dir}
 
       #read_response(run_loop,0)
       begin
@@ -203,7 +203,11 @@ module RunLoop
     end
 
     def self.pids_for_run_loop(run_loop, &block)
-      pids_str = `ps x -o pid,command | grep -v grep | grep "instruments -D #{run_loop[:results_dir]}" | awk '{printf "%s,", $1}'`
+      results_dir = run_loop[:results_dir]
+      udid = run_loop[:udid]
+      instruments_prefix = instruments_command_prefix(udid, results_dir)
+
+      pids_str = `ps x -o pid,command | grep -v grep | grep "#{instruments_prefix}" | awk '{printf "%s,", $1}'`
       pids = pids_str.split(",").map { |pid| pid.to_i }
       if block_given?
         pids.each do |pid|
@@ -214,22 +218,27 @@ module RunLoop
       end
     end
 
-
-    def self.instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
+    def self.instruments_command_prefix(udid,results_dir_trace)
       instruments_path = 'instruments'
       if udid
         instruments_path = "#{instruments_path} -w #{udid}"
       end
+      instruments_path << " -D \"#{results_dir_trace}\""
+      instruments_path
+    end
+
+
+    def self.instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
+      instruments_prefix = instruments_command_prefix(udid, results_dir_trace)
       cmd = [
-          instruments_path,
-          "-D", results_dir_trace,
+          instruments_prefix,
           "-t", automation_template,
           "\"#{bundle_dir_or_bundle_id}\"",
           "-e", "UIARESULTSPATH", results_dir,
           "-e", "UIASCRIPT", script
       ]
       if log_file
-         cmd << "&> #{log_file}"
+        cmd << "&> #{log_file}"
       end
       cmd
     end
@@ -287,24 +296,19 @@ module RunLoop
 
   def self.stop(run_loop, out=Dir.pwd)
     results_dir = run_loop[:results_dir]
+    udid = run_loop[:udid]
+    instruments_prefix = Core.instruments_command_prefix(udid, results_dir)
     pid = run_loop[:pid] || IO.read(File.join(results_dir, "run_loop.pid"))
     dest = out
-
-    if pid
-      Process.kill('TERM', pid.to_i)
-    end
 
     Core.pids_for_run_loop(run_loop) do |pid|
       Process.kill('TERM', pid.to_i)
     end
 
-    sleep(1)
-
     FileUtils.mkdir_p(dest)
     pngs = Dir.glob(File.join(results_dir, "Run 1", "*.png"))
     FileUtils.cp(pngs, dest) if pngs and pngs.length > 0
   end
-
 
 
   def self.validate_script(options)
