@@ -173,7 +173,7 @@ var Log = (function () {
 
     function log_json(object)
     {
-        UIALogger.logMessage("OUTPUT_JSON:\n"+JSON.stringify(object)+"\n");
+        UIALogger.logMessage("OUTPUT_JSON:\n"+JSON.stringify(object)+"\nEND_OUTPUT");
     }
 
     return {

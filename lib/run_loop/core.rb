@@ -10,6 +10,9 @@ module RunLoop
 
   module Core
 
+    START_DELIMITER = "OUTPUT_JSON:\n"
+    END_DELIMITER="\nEND_OUTPUT"
+
     SCRIPTS_PATH = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'scripts'))
     SCRIPTS = {
         :dismiss => "run_dismiss_location.js",
@@ -152,33 +155,33 @@ module RunLoop
       log_file = run_loop[:log_file]
       initial_offset = run_loop[:initial_offset] || 0
       offset = initial_offset
-      json_token = "OUTPUT_JSON:\n"
+
       result = nil
       loop do
         unless File.exist?(log_file) && File.size?(log_file)
-          sleep(1)
+          sleep(0.5)
           next
         end
 
         size = File.size(log_file)
         output = File.read(log_file, size-offset, offset)
-        index_if_found = output.index(json_token)
-        if ENV['DEBUG']=='1'
+        index_if_found = output.index(START_DELIMITER)
+        if ENV['DEBUG_READ']=='1'
           puts output.gsub("*", '')
           puts "Size #{size}"
           puts "offset #{offset}"
-          puts "index_of #{json_token}: #{index_if_found}"
+          puts "index_of #{START_DELIMITER}: #{index_if_found}"
         end
 
         if index_if_found
 
           offset = offset + index_if_found
-          rest = output[index_if_found+json_token.size..output.length]
-          index_of_json = rest.index("}\n\n")
+          rest = output[index_if_found+START_DELIMITER.size..output.length]
+          index_of_json = rest.index("}#{END_DELIMITER}")
 
           json = rest[0..index_of_json]
 
-          if ENV['DEBUG']=='1'
+          if ENV['DEBUG_READ']=='1'
             puts "Index #{index_if_found}, Size: #{size} Offset #{offset}"
 
             puts ("parse #{json}")
