@@ -34,6 +34,10 @@ module RunLoop
 
       device = options[:device] || :iphone
       udid = options[:udid]
+      timeout = options[:timeout] || 10
+
+      log_file = options[:log_path]
+
 
 
       results_dir = options[:results_dir] || Dir.mktmpdir("run_loop")
@@ -93,7 +97,7 @@ module RunLoop
 
       end
 
-      log_file = File.join(results_dir, 'run_loop.out')
+      log_file ||= File.join(results_dir, 'run_loop.out')
 
       cmd = instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
 
@@ -116,11 +120,11 @@ module RunLoop
 
       #read_response(run_loop,0)
       begin
-        Timeout::timeout(30, TimeoutError) do
+        Timeout::timeout(timeout, TimeoutError) do
           read_response(run_loop, 0)
         end
       rescue TimeoutError => e
-        raise "Time out waiting for UIAutomation run-loop to Start. \n #{File.read(log_file)}"
+        raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n #{File.read(log_file)}"
       end
 
       run_loop
@@ -291,7 +295,7 @@ module RunLoop
       end
 
     rescue TimeoutError => e
-      raise "Time out waiting for UIAutomation run-loop for command #{cmd}. Waiting for index:#{expected_index}"
+      raise TimeoutError, "Time out waiting for UIAutomation run-loop for command #{cmd}. Waiting for index:#{expected_index}"
     end
 
     result
