@@ -183,7 +183,14 @@ module RunLoop
           rest = output[index_if_found+START_DELIMITER.size..output.length]
           index_of_json = rest.index("}#{END_DELIMITER}")
 
+          if index_of_json.nil?
+            #Wait for rest of json
+            sleep(0.1)
+            next
+          end
+
           json = rest[0..index_of_json]
+
 
           if ENV['DEBUG_READ']=='1'
             puts "Index #{index_if_found}, Size: #{size} Offset #{offset}"
