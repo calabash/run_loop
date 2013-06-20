@@ -22732,23 +22732,23 @@ goog.require("calabash_script.core");
 goog.require("calabash_script.log");
 uia.wrap_query_fn = function wrap_query_fn(qfn) {
   return function() {
-    var G__3779__delegate = function(args) {
+    var G__2915__delegate = function(args) {
       return calabash_script.utils.clj__GT_js.call(null, cljs.core.apply.call(null, qfn, cljs.core.map.call(null, cljs.reader.read_string, args)))
     };
-    var G__3779 = function(var_args) {
+    var G__2915 = function(var_args) {
       var args = null;
       if(goog.isDef(var_args)) {
         args = cljs.core.array_seq(Array.prototype.slice.call(arguments, 0), 0)
       }
-      return G__3779__delegate.call(this, args)
+      return G__2915__delegate.call(this, args)
     };
-    G__3779.cljs$lang$maxFixedArity = 0;
-    G__3779.cljs$lang$applyTo = function(arglist__3780) {
-      var args = cljs.core.seq(arglist__3780);
-      return G__3779__delegate(args)
+    G__2915.cljs$lang$maxFixedArity = 0;
+    G__2915.cljs$lang$applyTo = function(arglist__2916) {
+      var args = cljs.core.seq(arglist__2916);
+      return G__2915__delegate(args)
     };
-    G__3779.cljs$lang$arity$variadic = G__3779__delegate;
-    return G__3779
+    G__2915.cljs$lang$arity$variadic = G__2915__delegate;
+    return G__2915
   }()
 };
 uia.query = uia.wrap_query_fn.call(null, calabash_script.core.query);
@@ -22802,7 +22802,7 @@ uia.tapMark = function tapMark(mark) {
 };
 goog.exportSymbol("uia.tapMark", uia.tapMark);
 uia.setLocation = function setLocation(location) {
-  return calabash_script.core.set_location.call(null, location)
+  return calabash_script.core.set_location.call(null, cljs.reader.read_string.call(null, location))
 };
 goog.exportSymbol("uia.setLocation", uia.setLocation);
 goog.provide("calabash_script.ext");
