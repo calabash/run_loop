@@ -45,6 +45,7 @@ module RunLoop
       FileUtils.mkdir_p(results_dir_trace)
 
       dependencies = options[:dependencies] || []
+      dependencies << File.join(scripts_path,'calabash_script_uia.js')
       dependencies.each do |dep|
         FileUtils.cp(dep, results_dir)
       end
@@ -309,6 +310,7 @@ module RunLoop
   end
 
   def self.stop(run_loop, out=Dir.pwd)
+    return if run_loop.nil?
     results_dir = run_loop[:results_dir]
     udid = run_loop[:udid]
     instruments_prefix = Core.instruments_command_prefix(udid, results_dir)
