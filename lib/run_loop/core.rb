@@ -34,7 +34,7 @@ module RunLoop
 
       device = options[:device] || :iphone
       udid = options[:udid]
-      timeout = options[:timeout] || 10
+      timeout = options[:timeout] || 30
 
       log_file = options[:log_path]
 
@@ -125,7 +125,7 @@ module RunLoop
           read_response(run_loop, 0)
         end
       rescue TimeoutError => e
-        raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n #{File.read(log_file)}"
+        raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n #{File.read(log_file)}"
       end
 
       run_loop
