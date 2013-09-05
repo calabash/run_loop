@@ -21595,12 +21595,6 @@ calabash_script.core.tap_mark = function tap_mark(mark) {
   return calabash_script.core.tap.call(null, cljs.core.PersistentVector.fromArray(["\ufdd0'view", cljs.core.ObjMap.fromObject(["\ufdd0'marked"], {"\ufdd0'marked":mark})], true))
 };
 calabash_script.core.tap_offset = function tap_offset(offset) {
-  var rect = calabash_script.utils.window.call(null).rect();
-  var center_x = rect["size"]["width"] / 2;
-  var center_y = rect["size"]["height"] / 2;
-  var x = cljs.core.int$.call(null, (new cljs.core.Keyword("\ufdd0'x")).call(null, offset)) - center_x;
-  var y = cljs.core.int$.call(null, (new cljs.core.Keyword("\ufdd0'y")).call(null, offset)) - center_y;
-  calabash_script.log.log.call(null, cljs.core.ObjMap.fromObject(["\ufdd0'tapOffset"], {"\ufdd0'tapOffset":cljs.core.ObjMap.fromObject(["\ufdd0'x", "\ufdd0'y"], {"\ufdd0'x":x, "\ufdd0'y":y})}));
   return calabash_script.utils.target.call(null).tapWithOptions(calabash_script.utils.clj__GT_js.call(null, offset))
 };
 calabash_script.core.element_exists_QMARK_ = function() {

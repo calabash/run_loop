@@ -31,10 +31,11 @@ module RunLoop
     end
 
     def self.run_with_options(options)
+      ensure_instruments_not_running!
 
       device = options[:device] || :iphone
       udid = options[:udid]
-      timeout = options[:timeout] || 30
+      timeout = options[:timeout] || 15
 
       log_file = options[:log_path]
 
@@ -258,7 +259,14 @@ module RunLoop
       cmd
     end
 
-    def self.automation_template
+    def self.automation_template(candidate = ENV['TRACE_TEMPLATE'])
+      unless candidate && File.exist?(candidate)
+        candidate = default_tracetemplate
+      end
+      candidate
+    end
+
+    def self.default_tracetemplate
       xcode_path = `xcode-select -print-path`.chomp
       automation_bundle = File.expand_path(File.join(xcode_path, "..", 'Applications', "Instruments.app", "Contents", "PlugIns", 'AutomationInstrument.bundle'))
       if not File.exist? automation_bundle
@@ -276,6 +284,22 @@ module RunLoop
     def self.log_header(message)
       puts "\n\e[#{35}m### #{message} ###\e[0m"
       $stdout.flush
+    end
+
+    def self.ensure_instruments_not_running!
+      if instruments_running?
+        puts "Killing instruments"
+        `killall -9 instruments`
+      end
+    end
+
+    def self.instruments_running?
+      instruments_pids.size > 0
+    end
+
+    def self.instruments_pids
+      pids_str = `ps x -o pid,command | grep -v grep | grep "instruments" | awk '{printf "%s,", $1}'`.strip
+      pids_str.split(",").map { |pid| pid.to_i }
     end
 
   end
