@@ -30,16 +30,28 @@ module RunLoop
       File.join(scripts_path, SCRIPTS[key])
     end
 
+    def self.detect_connected_device
+      begin
+        Timeout::timeout(1, TimeoutError) do
+          return `#{File.join(scripts_path, 'udidetect')}`.chomp
+        end
+      rescue TimeoutError => e
+        `killall udidetect &> /dev/null`
+      end
+      nil
+    end
+
     def self.run_with_options(options)
+      before = Time.now
       ensure_instruments_not_running!
 
-      device = options[:device] || :iphone
-      udid = options[:udid]
-      timeout = options[:timeout] || 15
+      device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
+      if device_target && device_target.to_s.downcase == 'device'
+        device_target = detect_connected_device
+      end
 
       log_file = options[:log_path]
-
-
+      timeout = options[:timeout] || 15
 
       results_dir = options[:results_dir] || Dir.mktmpdir("run_loop")
       results_dir_trace = File.join(results_dir, "trace")
@@ -64,15 +76,25 @@ module RunLoop
       File.open(script, "w") { |file| file.puts code }
 
 
-      bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH']
+      bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
 
       unless bundle_dir_or_bundle_id
-        raise 'key :app or environment variable APP_BUNDLE_PATH or BUNDLE_ID must be specified as path to app bundle (simulator) or bundle id (device)'
+        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
       end
 
-      if File.exist?(bundle_dir_or_bundle_id)
-        #Assume simulator
-        udid = nil
+
+      udid = nil
+
+      if device_target == 'simulator'
+
+        unless File.exist?(bundle_dir_or_bundle_id)
+          raise "Unable to find app in directory #{bundle_dir_or_bundle_id} when trying to launch simulator"
+        end
+
+
+        device = options[:device] || :iphone
+        device = device && device.to_sym
+
         plistbuddy="/usr/libexec/PlistBuddy"
         plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
         if device == :iphone
@@ -84,27 +106,33 @@ module RunLoop
         system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
         system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
       else
-        unless udid
-          begin
-            Timeout::timeout(3, TimeoutError) do
-              udid = `#{File.join(scripts_path, 'udidetect')}`.chomp
-            end
-          rescue TimeoutError => e
-
-          end
-          unless udid
-            raise "Unable to find connected device."
-          end
-        end
-
+        udid = device_target
+        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
       end
 
       log_file ||= File.join(results_dir, 'run_loop.out')
 
+      if ENV['DEBUG']=='1'
+        p options
+        puts "device_target=#{device_target}"
+        puts "udid=#{udid}"
+        puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
+        puts "script=#{script}"
+        puts "log_file=#{log_file}"
+      end
+
+      after = Time.now
+
+      if ENV['DEBUG']=='1'
+        puts "Preparation took #{after-before} seconds"
+
+      end
+
       cmd = instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
 
+
       pid = fork do
-        log_header("Starting App: #{bundle_dir_or_bundle_id}")
+        log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
         cmd_str = cmd.join(" ")
         if ENV['DEBUG']
           log(cmd_str)
@@ -121,12 +149,19 @@ module RunLoop
       run_loop = {:pid => pid, :udid => udid, :app => bundle_dir_or_bundle_id, :repl_path => repl_path, :log_file => log_file, :results_dir => results_dir}
 
       #read_response(run_loop,0)
+      before = Time.now
       begin
         Timeout::timeout(timeout, TimeoutError) do
           read_response(run_loop, 0)
         end
       rescue TimeoutError => e
         raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n #{File.read(log_file)}"
+      end
+
+      after = Time.now()
+
+      if ENV['DEBUG']=='1'
+        puts "Launching took #{after-before} seconds"
       end
 
       run_loop
@@ -158,6 +193,7 @@ module RunLoop
     end
 
     def self.read_response(run_loop, expected_index)
+
       log_file = run_loop[:log_file]
       initial_offset = run_loop[:initial_offset] || 0
       offset = initial_offset
@@ -165,7 +201,7 @@ module RunLoop
       result = nil
       loop do
         unless File.exist?(log_file) && File.size?(log_file)
-          sleep(0.5)
+          sleep(0.2)
           next
         end
 
@@ -289,7 +325,7 @@ module RunLoop
     def self.ensure_instruments_not_running!
       if instruments_running?
         puts "Killing instruments"
-        `killall -9 instruments`
+        `killall -9 instruments &> /dev/null`
       end
     end
 

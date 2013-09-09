@@ -21677,10 +21677,10 @@ calabash_script.core.calculate_swipe_to_offset = function calculate_swipe_to_off
   var base_movement = function() {
     var G__2931 = (new cljs.core.Keyword("\ufdd0'direction")).call(null, options);
     if(cljs.core._EQ_.call(null, "\ufdd0'down", G__2931)) {
-      return cljs.core.ObjMap.fromObject(["\ufdd0'x", "\ufdd0'y"], {"\ufdd0'x":x + cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'vertical", "\ufdd0'dx"], true)), "\ufdd0'y":y - cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'vertical", "\ufdd0'dy"], true))})
+      return cljs.core.ObjMap.fromObject(["\ufdd0'x", "\ufdd0'y"], {"\ufdd0'x":x + cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'vertical", "\ufdd0'dx"], true)), "\ufdd0'y":y + cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'vertical", "\ufdd0'dy"], true))})
     }else {
       if(cljs.core._EQ_.call(null, "\ufdd0'up", G__2931)) {
-        return cljs.core.ObjMap.fromObject(["\ufdd0'x", "\ufdd0'y"], {"\ufdd0'x":x + cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'vertical", "\ufdd0'dx"], true)), "\ufdd0'y":y + cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'vertical", "\ufdd0'dy"], true))})
+        return cljs.core.ObjMap.fromObject(["\ufdd0'x", "\ufdd0'y"], {"\ufdd0'x":x + cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'vertical", "\ufdd0'dx"], true)), "\ufdd0'y":y - cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'vertical", "\ufdd0'dy"], true))})
       }else {
         if(cljs.core._EQ_.call(null, "\ufdd0'right", G__2931)) {
           return cljs.core.ObjMap.fromObject(["\ufdd0'x", "\ufdd0'y"], {"\ufdd0'x":x + cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'horizontal", "\ufdd0'dx"], true)), "\ufdd0'y":y + cljs.core.get_in.call(null, calabash_script.core.swipe_delta, cljs.core.PersistentVector.fromArray(["\ufdd0'horizontal", "\ufdd0'dy"], true))})
