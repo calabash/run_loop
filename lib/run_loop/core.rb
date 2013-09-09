@@ -324,8 +324,10 @@ module RunLoop
 
     def self.ensure_instruments_not_running!
       if instruments_running?
-        puts "Killing instruments"
-        `killall -9 instruments &> /dev/null`
+        if ENV['DEBUG']=='1'
+          puts "Killing instruments"
+        end
+        `killall -9 instruments > /dev/null 2>&1`
       end
     end
 
