@@ -51,7 +51,7 @@ module RunLoop
       end
 
       log_file = options[:log_path]
-      timeout = options[:timeout] || 15
+      timeout = options[:timeout] || 30
 
       results_dir = options[:results_dir] || Dir.mktmpdir("run_loop")
       results_dir_trace = File.join(results_dir, "trace")
@@ -119,6 +119,7 @@ module RunLoop
         puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
         puts "script=#{script}"
         puts "log_file=#{log_file}"
+        puts "timeout=#{timeout}"
       end
 
       after = Time.now
@@ -155,7 +156,7 @@ module RunLoop
           read_response(run_loop, 0)
         end
       rescue TimeoutError => e
-        raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n #{File.read(log_file)}"
+        raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
 
       after = Time.now()
@@ -327,7 +328,7 @@ module RunLoop
         if ENV['DEBUG']=='1'
           puts "Killing instruments"
         end
-        `killall -9 instruments > /dev/null 2>&1`
+        `killall -9 instruments &> /dev/null`
       end
     end
 
