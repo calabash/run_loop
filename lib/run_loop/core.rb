@@ -110,6 +110,8 @@ module RunLoop
         bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
       end
 
+      args = options.fetch(:args, [])
+
       log_file ||= File.join(results_dir, 'run_loop.out')
 
       if ENV['DEBUG']=='1'
@@ -120,6 +122,7 @@ module RunLoop
         puts "script=#{script}"
         puts "log_file=#{log_file}"
         puts "timeout=#{timeout}"
+        puts "args=#{args}"
       end
 
       after = Time.now
@@ -129,7 +132,7 @@ module RunLoop
 
       end
 
-      cmd = instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
+      cmd = instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file, args)
 
 
       pid = fork do
@@ -281,14 +284,15 @@ module RunLoop
     end
 
 
-    def self.instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
+    def self.instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file, args)
       instruments_prefix = instruments_command_prefix(udid, results_dir_trace)
       cmd = [
           instruments_prefix,
           "-t", automation_template,
           "\"#{bundle_dir_or_bundle_id}\"",
           "-e", "UIARESULTSPATH", results_dir,
-          "-e", "UIASCRIPT", script
+          "-e", "UIASCRIPT", script,
+          args.join(" ")
       ]
       if log_file
         cmd << "&> #{log_file}"
