@@ -131,16 +131,12 @@ module RunLoop
 
       cmd = instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file)
 
-
-      pid = fork do
-        log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
-        cmd_str = cmd.join(" ")
-        if ENV['DEBUG']
+      log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
+      cmd_str = cmd.join(" ")
+      if ENV['DEBUG']
           log(cmd_str)
-        end
-        exec(cmd_str)
       end
-
+      pid = spawn(cmd_str)
       Process.detach(pid)
 
       File.open(File.join(results_dir, "run_loop.pid"), "w") do |f|
