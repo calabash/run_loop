@@ -58,7 +58,7 @@ module RunLoop
       FileUtils.mkdir_p(results_dir_trace)
 
       dependencies = options[:dependencies] || []
-      dependencies << File.join(scripts_path,'calabash_script_uia.js')
+      dependencies << File.join(scripts_path, 'calabash_script_uia.js')
       dependencies.each do |dep|
         FileUtils.cp(dep, results_dir)
       end
@@ -137,7 +137,7 @@ module RunLoop
       log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
       cmd_str = cmd.join(" ")
       if ENV['DEBUG']
-          log(cmd_str)
+        log(cmd_str)
       end
       pid = spawn(cmd_str)
       Process.detach(pid)
@@ -155,6 +155,14 @@ module RunLoop
           read_response(run_loop, 0)
         end
       rescue TimeoutError => e
+        puts "Failed to launch\n"
+        puts "device_target=#{device_target}"
+        puts "udid=#{udid}"
+        puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
+        puts "script=#{script}"
+        puts "log_file=#{log_file}"
+        puts "timeout=#{timeout}"
+        puts "args=#{args}"
         raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
 
@@ -270,7 +278,7 @@ module RunLoop
       end
     end
 
-    def self.instruments_command_prefix(udid,results_dir_trace)
+    def self.instruments_command_prefix(udid, results_dir_trace)
       instruments_path = 'instruments'
       if udid
         instruments_path = "#{instruments_path} -w #{udid}"
@@ -314,21 +322,25 @@ module RunLoop
     end
 
     def self.log(message)
-      puts "#{Time.now } #{message}"
-      $stdout.flush
+      if ENV['DEBUG']=='1'
+        puts "#{Time.now } #{message}"
+        $stdout.flush
+      end
     end
 
     def self.log_header(message)
-      puts "\n\e[#{35}m### #{message} ###\e[0m"
-      $stdout.flush
+      if ENV['DEBUG']=='1'
+        puts "\n\e[#{35}m### #{message} ###\e[0m"
+        $stdout.flush
+      end
     end
 
     def self.ensure_instruments_not_running!
-      if instruments_running?
+      instruments_pids.each do |pid|
         if ENV['DEBUG']=='1'
-          puts "Killing instruments"
+          puts "Found instruments #{pid}. Killing..."
         end
-        `killall -9 instruments &> /dev/null`
+        `kill -9 #{pid} && wait #{pid} &> /dev/null`
       end
     end
 
