@@ -148,21 +148,23 @@ module RunLoop
 
       run_loop = {:pid => pid, :udid => udid, :app => bundle_dir_or_bundle_id, :repl_path => repl_path, :log_file => log_file, :results_dir => results_dir}
 
-      #read_response(run_loop,0)
       before = Time.now
       begin
         Timeout::timeout(timeout, TimeoutError) do
           read_response(run_loop, 0)
         end
       rescue TimeoutError => e
-        puts "Failed to launch\n"
-        puts "device_target=#{device_target}"
-        puts "udid=#{udid}"
-        puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
-        puts "script=#{script}"
-        puts "log_file=#{log_file}"
-        puts "timeout=#{timeout}"
-        puts "args=#{args}"
+        if ENV['DEBUG']
+          puts "Failed to launch\n"
+          puts "reason=#{e}: #{e && e.message} "
+          puts "device_target=#{device_target}"
+          puts "udid=#{udid}"
+          puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
+          puts "script=#{script}"
+          puts "log_file=#{log_file}"
+          puts "timeout=#{timeout}"
+          puts "args=#{args}"
+        end
         raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
 
@@ -215,6 +217,10 @@ module RunLoop
 
         size = File.size(log_file)
         output = File.read(log_file, size-offset, offset)
+
+        if /AXError: Could not auto-register for pid status change/.match(output)
+          raise TimeoutError.new('AXError: Could not auto-register for pid status change')
+        end
         index_if_found = output.index(START_DELIMITER)
         if ENV['DEBUG_READ']=='1'
           puts output.gsub("*", '')
@@ -246,6 +252,9 @@ module RunLoop
 
           offset = offset + json.size
           parsed_result = JSON.parse(json)
+          if ENV['DEBUG_READ']=='1'
+            p parsed_result
+          end
           json_index_if_present = parsed_result['index']
           if json_index_if_present && json_index_if_present == expected_index
             result = parsed_result

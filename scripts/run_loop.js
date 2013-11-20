@@ -147,26 +147,15 @@ if (typeof JSON !== 'object') {
     }
 }());
 
-var commandPath = "$PATH";
-if (!/\/$/.test(commandPath)) {
-    commandPath += "/";
-}
-commandPath += "repl-cmd.txt";
-
 
 var _expectedIndex = 0,//expected index of next command
-    _actualIndex,//actual index of next command by reading commandPath
-    _index,//index of ':' char in command
+    _actualIndex=0,//actual index of next command by reading commandPath
     _exp,//expression to be eval'ed
-    _result,//result of eval
-    _input,//command
-    _process;//host command process
+    _result;
 
 var Log = (function () {
-    // According to Appium,
-    //16384 is the buffer size used by instruments
     var forceFlush = [],
-        N = "$MODE" == "FLUSH" ? 16384 : 0,
+        N = 16384,
         i = N;
     while (i--) {
         forceFlush[i] = "*";
@@ -179,17 +168,14 @@ var Log = (function () {
     }
 
     return {
-        result: function (status, data) {
+        result: function (status, data,flush) {
             log_json({"status": status, "value": data, "index":_actualIndex})
-            if (forceFlush.length > 0) {
+            if (flush) {
                 UIALogger.logMessage(forceFlush);
             }
         },
         output: function (msg) {
             log_json({"output": msg,"last_index":_actualIndex});
-            if (forceFlush.length > 0) {
-                UIALogger.logMessage(forceFlush);
-            }
         }
     };
 })();
@@ -217,8 +203,7 @@ function isLocationPrompt(alert) {
             ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/]
         ],
         ans, exp,
-        txt,
-        txts;
+        txt;
 
     txt = findAlertViewText(alert);
     for (var i = 0; i < exps.length; i++) {
@@ -263,53 +248,63 @@ UIATarget.onAlert = function (alert) {
 
 
 var target = null,
-    host = null;
+    preferences = null,
+    __calabashRequest = "__calabashRequest",
+    __calabashResponse = "__calabashResponse",
+    _response = function(response) {
+        target.frontMostApp().setPreferencesValueForKey(response, __calabashResponse);
+    },
+    _success = function(result,index) {
+        _response({"status":'success', "value":result, "index": index});
 
+    },
+    _failure = function(err, index) {
+        _response({"status":'error',
+                   "value":err.toString(),
+                   "backtrace":(err.stack ? err.stack.toString() : ""),
+                   "index":index});
+    };
 
+UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(null, __calabashResponse);
+UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(0, __calabashRequest);
+
+Log.result('success',true,true);
 
 while (true) {
     target = UIATarget.localTarget();
-    host = target.host();
-    target.delay(0.2);
     try {
-        _process = host.performTaskWithPathArgumentsTimeout("/bin/cat",
-            [commandPath],
-            2);
-
+        preferences = target.frontMostApp().preferencesValueForKey(__calabashRequest);
     } catch (e) {
-        Log.output("Timeout on cat...");
+        Log.output("Unable to read preferences..."+ e.toString());
+        target.delay(0.5);
         continue;
     }
-    if (_process.exitCode != 0) {
-        Log.output("unable to execute /bin/cat " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr);
+
+    if (!preferences) {
+        target.delay(0.2);
+        continue;
     }
-    else {
-        _input = _process.stdout;
+
+    _actualIndex = preferences['index'];
+    if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
+        _exp = preferences['command'];
+        UIALogger.logMessage("index " + _actualIndex + " is command: "+ _exp);
+        target.frontMostApp().setPreferencesValueForKey(null, __calabashRequest);
         try {
-            _index = _input.indexOf(":", 0);
-            if (_index > -1) {
-                _actualIndex = parseInt(_input.substring(0, _index), 10);
-                if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
-                    _exp = _input.substring(_index + 1, _input.length);
-                    _result = eval(_exp);
-                }
-                else {//likely old command is lingering...
-                    continue;
-                }
-            }
-            else {
-                continue;
-            }
-
+            _result = eval(_exp);
+            UIALogger.logMessage("Success: "+ _result);
+            _success(_result, _actualIndex);
         }
-        catch (err) {
-            Log.result("error", err.toString() + "  " + (err.stack ? err.stack.toString() : ""));
-            _expectedIndex++;
-            continue;
+        catch(err) {
+            UIALogger.logMessage("Failure: "+ err.toString() + "  " + (err.stack ? err.stack.toString() : ""));
+            _failure(err, _actualIndex);
         }
-
-        _expectedIndex++;
-        Log.result("success", _result);
-
     }
+    else {//likely old command is lingering...
+        continue;
+    }
+    _expectedIndex++;
+
+
+    target.delay(0.2);
 }
