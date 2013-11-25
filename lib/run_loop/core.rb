@@ -139,7 +139,14 @@ module RunLoop
       if ENV['DEBUG']
         log(cmd_str)
       end
-      pid = spawn(cmd_str)
+      if !jruby? && RUBY_VERSION && RUBY_VERSION.start_with?('1.8')
+        pid = fork do
+          exec(cmd_str)
+        end
+      else
+        pid = spawn(cmd_str)
+      end
+
       Process.detach(pid)
 
       File.open(File.join(results_dir, "run_loop.pid"), "w") do |f|
@@ -175,6 +182,10 @@ module RunLoop
       end
 
       run_loop
+    end
+
+    def self.jruby?
+      RUBY_PLATFORM == 'java'
     end
 
     def self.write_request(run_loop, cmd)

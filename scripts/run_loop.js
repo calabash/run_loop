@@ -246,15 +246,62 @@ UIATarget.onAlert = function (alert) {
     return true;
 };
 
+/*
+ (defn sanitize
+ "Removes elements not serializable to preferences"
+ [x]
+
+ (cond
+ (nil? x) ":nil"
+ (string? x) x
+ (keyword? x) (name x)
+ (map? x) (into {}
+ (map (fn [[k v]]
+ [k (sanitize v)])
+ x))
+ (coll? x) (map sanitize x)
+ (instance? js/UIAElement x) (.toString x)
+ :else x))
+
+ */
 
 var target = null,
     preferences = null,
     __calabashRequest = "__calabashRequest",
     __calabashResponse = "__calabashResponse",
+    _sanitize = function(val) {
+        if (typeof val === 'undefined' || val === null || val instanceof UIAElementNil) {
+            return ":nil";
+        }
+        if (typeof val === 'string' || val instanceof String) {
+            return val;
+        }
+        var arrVal = null, i, N;
+        if (val instanceof Array || val instanceof UIAElementArray) {
+            arrVal = [];
+            for (i=0,N=val.length;i<N;i++) {
+                arrVal[i] = _sanitize(val[i]);
+            }
+            return arrVal;
+        }
+        if (val instanceof UIAElement) {
+            return val.toString();
+        }
+        var objVal = null, p;
+        if (typeof val == 'object') {
+            objVal = {};
+            for (p in val) {
+                objVal[p] = _sanitize(val[p]);
+            }
+            return objVal;
+        }
+        return val;
+    },
     _response = function(response) {
-        target.frontMostApp().setPreferencesValueForKey(response, __calabashResponse);
+        target.frontMostApp().setPreferencesValueForKey(_sanitize(response), __calabashResponse);
     },
     _success = function(result,index) {
+
         _response({"status":'success', "value":result, "index": index});
 
     },
