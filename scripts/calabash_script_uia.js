@@ -22978,7 +22978,7 @@ uia.wrap_query_fn = function wrap_query_fn(qfn) {
 };
 uia.query_el = function() {
   var query_el__delegate = function(args) {
-    return cljs.core.first.call(null, cljs.core.apply.call(null, calabash_script.core.query_el, args))
+    return cljs.core.first.call(null, cljs.core.apply.call(null, calabash_script.core.query_el, cljs.core.map.call(null, cljs.reader.read_string, args)))
   };
   var query_el = function(var_args) {
     var args = null;
