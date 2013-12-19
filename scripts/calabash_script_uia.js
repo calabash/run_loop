@@ -20783,15 +20783,15 @@ calabash_script.utils.clj__GT_js = function clj__GT_js(x) {
     }else {
       if(cljs.core.map_QMARK_.call(null, x)) {
         var obj = {};
-        var G__6118_6120 = cljs.core.seq.call(null, x);
+        var G__3009_3011 = cljs.core.seq.call(null, x);
         while(true) {
-          if(G__6118_6120) {
-            var vec__6119_6121 = cljs.core.first.call(null, G__6118_6120);
-            var k_6122 = cljs.core.nth.call(null, vec__6119_6121, 0, null);
-            var v_6123 = cljs.core.nth.call(null, vec__6119_6121, 1, null);
-            obj[clj__GT_js.call(null, k_6122)] = clj__GT_js.call(null, v_6123);
-            var G__6124 = cljs.core.next.call(null, G__6118_6120);
-            G__6118_6120 = G__6124;
+          if(G__3009_3011) {
+            var vec__3010_3012 = cljs.core.first.call(null, G__3009_3011);
+            var k_3013 = cljs.core.nth.call(null, vec__3010_3012, 0, null);
+            var v_3014 = cljs.core.nth.call(null, vec__3010_3012, 1, null);
+            obj[clj__GT_js.call(null, k_3013)] = clj__GT_js.call(null, v_3014);
+            var G__3015 = cljs.core.next.call(null, G__3009_3011);
+            G__3009_3011 = G__3015;
             continue
           }else {
           }
@@ -21295,23 +21295,23 @@ goog.require("calabash_script.tests");
 goog.require("calabash_script.query");
 calabash_script.utils.target.call(null).setTimeout(0);
 cljs.core._STAR_print_fn_STAR_ = function() {
-  var G__10849__delegate = function(args) {
+  var G__2896__delegate = function(args) {
     return calabash_script.log.log.call(null, cljs.core.apply.call(null, cljs.core.str, args))
   };
-  var G__10849 = function(var_args) {
+  var G__2896 = function(var_args) {
     var args = null;
     if(goog.isDef(var_args)) {
       args = cljs.core.array_seq(Array.prototype.slice.call(arguments, 0), 0)
     }
-    return G__10849__delegate.call(this, args)
+    return G__2896__delegate.call(this, args)
   };
-  G__10849.cljs$lang$maxFixedArity = 0;
-  G__10849.cljs$lang$applyTo = function(arglist__10850) {
-    var args = cljs.core.seq(arglist__10850);
-    return G__10849__delegate(args)
+  G__2896.cljs$lang$maxFixedArity = 0;
+  G__2896.cljs$lang$applyTo = function(arglist__2897) {
+    var args = cljs.core.seq(arglist__2897);
+    return G__2896__delegate(args)
   };
-  G__10849.cljs$lang$arity$variadic = G__10849__delegate;
-  return G__10849
+  G__2896.cljs$lang$arity$variadic = G__2896__delegate;
+  return G__2896
 }();
 UIAElement.prototype.cljs$core$ISeqable$ = true;
 UIAElement.prototype.cljs$core$ISeqable$_seq$arity$1 = function(this$) {
@@ -21329,15 +21329,15 @@ calabash_script.core.duration_exceeds_QMARK_ = function duration_exceeds_QMARK_(
   var dur_sec = (end - start) / 1E3;
   return dur_sec >= max
 };
-calabash_script.core.wait_for = function wait_for(p__10851, pred) {
-  var map__10853 = p__10851;
-  var map__10853__$1 = cljs.core.seq_QMARK_.call(null, map__10853) ? cljs.core.apply.call(null, cljs.core.hash_map, map__10853) : map__10853;
-  var options = map__10853__$1;
-  var screenshot = cljs.core._lookup.call(null, map__10853__$1, "\ufdd0'screenshot", true);
-  var message = cljs.core._lookup.call(null, map__10853__$1, "\ufdd0'message", "Timed out waiting...");
-  var post_timeout = cljs.core._lookup.call(null, map__10853__$1, "\ufdd0'post-timeout", 0);
-  var retry_frequency = cljs.core._lookup.call(null, map__10853__$1, "\ufdd0'retry-frequency", 0.2);
-  var timeout = cljs.core._lookup.call(null, map__10853__$1, "\ufdd0'timeout", 30);
+calabash_script.core.wait_for = function wait_for(p__2898, pred) {
+  var map__2900 = p__2898;
+  var map__2900__$1 = cljs.core.seq_QMARK_.call(null, map__2900) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2900) : map__2900;
+  var options = map__2900__$1;
+  var screenshot = cljs.core._lookup.call(null, map__2900__$1, "\ufdd0'screenshot", true);
+  var message = cljs.core._lookup.call(null, map__2900__$1, "\ufdd0'message", "Timed out waiting...");
+  var post_timeout = cljs.core._lookup.call(null, map__2900__$1, "\ufdd0'post-timeout", 0);
+  var retry_frequency = cljs.core._lookup.call(null, map__2900__$1, "\ufdd0'retry-frequency", 0.2);
+  var timeout = cljs.core._lookup.call(null, map__2900__$1, "\ufdd0'timeout", 30);
   var start = new Date;
   var actions = cljs.core.repeatedly.call(null, function() {
     var res = pred.call(null);
@@ -21407,8 +21407,8 @@ calabash_script.core.query_el = function() {
     return query_el__delegate.call(this, args)
   };
   query_el.cljs$lang$maxFixedArity = 0;
-  query_el.cljs$lang$applyTo = function(arglist__10854) {
-    var args = cljs.core.seq(arglist__10854);
+  query_el.cljs$lang$applyTo = function(arglist__2901) {
+    var args = cljs.core.seq(arglist__2901);
     return query_el__delegate(args)
   };
   query_el.cljs$lang$arity$variadic = query_el__delegate;
@@ -21426,8 +21426,8 @@ calabash_script.core.log_query = function() {
     return log_query__delegate.call(this, args)
   };
   log_query.cljs$lang$maxFixedArity = 0;
-  log_query.cljs$lang$applyTo = function(arglist__10855) {
-    var args = cljs.core.seq(arglist__10855);
+  log_query.cljs$lang$applyTo = function(arglist__2902) {
+    var args = cljs.core.seq(arglist__2902);
     return log_query__delegate(args)
   };
   log_query.cljs$lang$arity$variadic = log_query__delegate;
@@ -21451,8 +21451,8 @@ calabash_script.core.log_tree_query = function() {
     return log_tree_query__delegate.call(this, args)
   };
   log_tree_query.cljs$lang$maxFixedArity = 0;
-  log_tree_query.cljs$lang$applyTo = function(arglist__10856) {
-    var args = cljs.core.seq(arglist__10856);
+  log_tree_query.cljs$lang$applyTo = function(arglist__2903) {
+    var args = cljs.core.seq(arglist__2903);
     return log_tree_query__delegate(args)
   };
   log_tree_query.cljs$lang$arity$variadic = log_tree_query__delegate;
@@ -21468,11 +21468,11 @@ calabash_script.core.log_tree_mark = function log_tree_mark(mark) {
   }
 };
 calabash_script.core.wait_for_elements_ready = function() {
-  var wait_for_elements_ready__delegate = function(p__10857, args) {
-    var map__10859 = p__10857;
-    var map__10859__$1 = cljs.core.seq_QMARK_.call(null, map__10859) ? cljs.core.apply.call(null, cljs.core.hash_map, map__10859) : map__10859;
-    var wait_opts = map__10859__$1;
-    var message = cljs.core._lookup.call(null, map__10859__$1, "\ufdd0'message", [cljs.core.str("Timed out waiting for "), cljs.core.str(args)].join(""));
+  var wait_for_elements_ready__delegate = function(p__2904, args) {
+    var map__2906 = p__2904;
+    var map__2906__$1 = cljs.core.seq_QMARK_.call(null, map__2906) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2906) : map__2906;
+    var wait_opts = map__2906__$1;
+    var message = cljs.core._lookup.call(null, map__2906__$1, "\ufdd0'message", [cljs.core.str("Timed out waiting for "), cljs.core.str(args)].join(""));
     return calabash_script.core.wait_for.call(null, cljs.core.merge.call(null, wait_opts, cljs.core.ObjMap.fromObject(["\ufdd0'message"], {"\ufdd0'message":message})), function() {
       var temp__3974__auto__ = cljs.core.seq.call(null, cljs.core.apply.call(null, calabash_script.core.query_el, args));
       if(temp__3974__auto__) {
@@ -21490,27 +21490,27 @@ calabash_script.core.wait_for_elements_ready = function() {
       }
     })
   };
-  var wait_for_elements_ready = function(p__10857, var_args) {
+  var wait_for_elements_ready = function(p__2904, var_args) {
     var args = null;
     if(goog.isDef(var_args)) {
       args = cljs.core.array_seq(Array.prototype.slice.call(arguments, 1), 0)
     }
-    return wait_for_elements_ready__delegate.call(this, p__10857, args)
+    return wait_for_elements_ready__delegate.call(this, p__2904, args)
   };
   wait_for_elements_ready.cljs$lang$maxFixedArity = 1;
-  wait_for_elements_ready.cljs$lang$applyTo = function(arglist__10860) {
-    var p__10857 = cljs.core.first(arglist__10860);
-    var args = cljs.core.rest(arglist__10860);
-    return wait_for_elements_ready__delegate(p__10857, args)
+  wait_for_elements_ready.cljs$lang$applyTo = function(arglist__2907) {
+    var p__2904 = cljs.core.first(arglist__2907);
+    var args = cljs.core.rest(arglist__2907);
+    return wait_for_elements_ready__delegate(p__2904, args)
   };
   wait_for_elements_ready.cljs$lang$arity$variadic = wait_for_elements_ready__delegate;
   return wait_for_elements_ready
 }();
-calabash_script.core.wait_for_mark_ready = function wait_for_mark_ready(p__10861, mark) {
-  var map__10863 = p__10861;
-  var map__10863__$1 = cljs.core.seq_QMARK_.call(null, map__10863) ? cljs.core.apply.call(null, cljs.core.hash_map, map__10863) : map__10863;
-  var wait_opts = map__10863__$1;
-  var message = cljs.core._lookup.call(null, map__10863__$1, "\ufdd0'message", [cljs.core.str("Timed out waiting for "), cljs.core.str(mark)].join(""));
+calabash_script.core.wait_for_mark_ready = function wait_for_mark_ready(p__2908, mark) {
+  var map__2910 = p__2908;
+  var map__2910__$1 = cljs.core.seq_QMARK_.call(null, map__2910) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2910) : map__2910;
+  var wait_opts = map__2910__$1;
+  var message = cljs.core._lookup.call(null, map__2910__$1, "\ufdd0'message", [cljs.core.str("Timed out waiting for "), cljs.core.str(mark)].join(""));
   return calabash_script.core.wait_for_elements_ready.call(null, cljs.core.merge.call(null, wait_opts, cljs.core.ObjMap.fromObject(["\ufdd0'message"], {"\ufdd0'message":message})), cljs.core.PersistentVector.fromArray(["\ufdd0'view", cljs.core.ObjMap.fromObject(["\ufdd0'marked"], {"\ufdd0'marked":mark})], true))
 };
 calabash_script.core.perform_on = function() {
@@ -21531,9 +21531,9 @@ calabash_script.core.perform_on = function() {
     return perform_on__delegate.call(this, action, args)
   };
   perform_on.cljs$lang$maxFixedArity = 1;
-  perform_on.cljs$lang$applyTo = function(arglist__10864) {
-    var action = cljs.core.first(arglist__10864);
-    var args = cljs.core.rest(arglist__10864);
+  perform_on.cljs$lang$applyTo = function(arglist__2911) {
+    var action = cljs.core.first(arglist__2911);
+    var args = cljs.core.rest(arglist__2911);
     return perform_on__delegate(action, args)
   };
   perform_on.cljs$lang$arity$variadic = perform_on__delegate;
@@ -21553,9 +21553,9 @@ calabash_script.core.perform_on_first = function() {
     return perform_on_first__delegate.call(this, action, args)
   };
   perform_on_first.cljs$lang$maxFixedArity = 1;
-  perform_on_first.cljs$lang$applyTo = function(arglist__10866) {
-    var action = cljs.core.first(arglist__10866);
-    var args = cljs.core.rest(arglist__10866);
+  perform_on_first.cljs$lang$applyTo = function(arglist__2913) {
+    var action = cljs.core.first(arglist__2913);
+    var args = cljs.core.rest(arglist__2913);
     return perform_on_first__delegate(action, args)
   };
   perform_on_first.cljs$lang$arity$variadic = perform_on_first__delegate;
@@ -21563,8 +21563,8 @@ calabash_script.core.perform_on_first = function() {
 }();
 calabash_script.core.tap = function() {
   var tap__delegate = function(args) {
-    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__10865_SHARP_) {
-      return p1__10865_SHARP_.tap()
+    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__2912_SHARP_) {
+      return p1__2912_SHARP_.tap()
     }, args)
   };
   var tap = function(var_args) {
@@ -21575,8 +21575,8 @@ calabash_script.core.tap = function() {
     return tap__delegate.call(this, args)
   };
   tap.cljs$lang$maxFixedArity = 0;
-  tap.cljs$lang$applyTo = function(arglist__10868) {
-    var args = cljs.core.seq(arglist__10868);
+  tap.cljs$lang$applyTo = function(arglist__2915) {
+    var args = cljs.core.seq(arglist__2915);
     return tap__delegate(args)
   };
   tap.cljs$lang$arity$variadic = tap__delegate;
@@ -21584,8 +21584,8 @@ calabash_script.core.tap = function() {
 }();
 calabash_script.core.double_tap = function() {
   var double_tap__delegate = function(args) {
-    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__10867_SHARP_) {
-      return p1__10867_SHARP_.doubleTap()
+    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__2914_SHARP_) {
+      return p1__2914_SHARP_.doubleTap()
     }, args)
   };
   var double_tap = function(var_args) {
@@ -21596,8 +21596,8 @@ calabash_script.core.double_tap = function() {
     return double_tap__delegate.call(this, args)
   };
   double_tap.cljs$lang$maxFixedArity = 0;
-  double_tap.cljs$lang$applyTo = function(arglist__10869) {
-    var args = cljs.core.seq(arglist__10869);
+  double_tap.cljs$lang$applyTo = function(arglist__2916) {
+    var args = cljs.core.seq(arglist__2916);
     return double_tap__delegate(args)
   };
   double_tap.cljs$lang$arity$variadic = double_tap__delegate;
@@ -21608,8 +21608,8 @@ calabash_script.core.double_tap_offset = function double_tap_offset(offset) {
 };
 calabash_script.core.two_finger_tap = function() {
   var two_finger_tap__delegate = function(args) {
-    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__10870_SHARP_) {
-      return p1__10870_SHARP_.twoFingerTap()
+    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__2917_SHARP_) {
+      return p1__2917_SHARP_.twoFingerTap()
     }, args)
   };
   var two_finger_tap = function(var_args) {
@@ -21620,24 +21620,24 @@ calabash_script.core.two_finger_tap = function() {
     return two_finger_tap__delegate.call(this, args)
   };
   two_finger_tap.cljs$lang$maxFixedArity = 0;
-  two_finger_tap.cljs$lang$applyTo = function(arglist__10871) {
-    var args = cljs.core.seq(arglist__10871);
+  two_finger_tap.cljs$lang$applyTo = function(arglist__2918) {
+    var args = cljs.core.seq(arglist__2918);
     return two_finger_tap__delegate(args)
   };
   two_finger_tap.cljs$lang$arity$variadic = two_finger_tap__delegate;
   return two_finger_tap
 }();
 calabash_script.core.two_finger_tap_offset = function two_finger_tap_offset(offset) {
-  return calabash_script.utils.target.call(null).doubleTap(calabash_script.utils.clj__GT_js.call(null, offset))
+  return calabash_script.utils.target.call(null).twoFingerTap(calabash_script.utils.clj__GT_js.call(null, offset))
 };
 calabash_script.core.flick_offset = function flick_offset(from, to) {
   return calabash_script.utils.target.call(null).flickFromTo(calabash_script.utils.clj__GT_js.call(null, from), calabash_script.utils.clj__GT_js.call(null, to))
 };
 calabash_script.core.pan = function() {
   var pan__delegate = function(src_query, tgt_query, kwargs) {
-    var map__10873 = kwargs;
-    var map__10873__$1 = cljs.core.seq_QMARK_.call(null, map__10873) ? cljs.core.apply.call(null, cljs.core.hash_map, map__10873) : map__10873;
-    var duration = cljs.core._lookup.call(null, map__10873__$1, "\ufdd0'duration", 1);
+    var map__2920 = kwargs;
+    var map__2920__$1 = cljs.core.seq_QMARK_.call(null, map__2920) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2920) : map__2920;
+    var duration = cljs.core._lookup.call(null, map__2920__$1, "\ufdd0'duration", 1);
     var src = cljs.core.first.call(null, cljs.core.seq.call(null, calabash_script.core.query.call(null, src_query)));
     var tgt = cljs.core.first.call(null, cljs.core.seq.call(null, calabash_script.core.query.call(null, tgt_query)));
     calabash_script.tests.fail_if_not.call(null, function() {
@@ -21658,37 +21658,37 @@ calabash_script.core.pan = function() {
     return pan__delegate.call(this, src_query, tgt_query, kwargs)
   };
   pan.cljs$lang$maxFixedArity = 2;
-  pan.cljs$lang$applyTo = function(arglist__10874) {
-    var src_query = cljs.core.first(arglist__10874);
-    var tgt_query = cljs.core.first(cljs.core.next(arglist__10874));
-    var kwargs = cljs.core.rest(cljs.core.next(arglist__10874));
+  pan.cljs$lang$applyTo = function(arglist__2921) {
+    var src_query = cljs.core.first(arglist__2921);
+    var tgt_query = cljs.core.first(cljs.core.next(arglist__2921));
+    var kwargs = cljs.core.rest(cljs.core.next(arglist__2921));
     return pan__delegate(src_query, tgt_query, kwargs)
   };
   pan.cljs$lang$arity$variadic = pan__delegate;
   return pan
 }();
 calabash_script.core.pan_offset = function() {
-  var pan_offset__delegate = function(src_offset, tgt_offset, p__10875) {
-    var vec__10878 = p__10875;
-    var options = cljs.core.nth.call(null, vec__10878, 0, null);
-    var map__10879 = options;
-    var map__10879__$1 = cljs.core.seq_QMARK_.call(null, map__10879) ? cljs.core.apply.call(null, cljs.core.hash_map, map__10879) : map__10879;
-    var duration = cljs.core._lookup.call(null, map__10879__$1, "\ufdd0'duration", 0.75);
+  var pan_offset__delegate = function(src_offset, tgt_offset, p__2922) {
+    var vec__2925 = p__2922;
+    var options = cljs.core.nth.call(null, vec__2925, 0, null);
+    var map__2926 = options;
+    var map__2926__$1 = cljs.core.seq_QMARK_.call(null, map__2926) ? cljs.core.apply.call(null, cljs.core.hash_map, map__2926) : map__2926;
+    var duration = cljs.core._lookup.call(null, map__2926__$1, "\ufdd0'duration", 0.75);
     return calabash_script.utils.target.call(null).dragFromToForDuration(calabash_script.utils.clj__GT_js.call(null, src_offset), calabash_script.utils.clj__GT_js.call(null, tgt_offset), duration)
   };
   var pan_offset = function(src_offset, tgt_offset, var_args) {
-    var p__10875 = null;
+    var p__2922 = null;
     if(goog.isDef(var_args)) {
-      p__10875 = cljs.core.array_seq(Array.prototype.slice.call(arguments, 2), 0)
+      p__2922 = cljs.core.array_seq(Array.prototype.slice.call(arguments, 2), 0)
     }
-    return pan_offset__delegate.call(this, src_offset, tgt_offset, p__10875)
+    return pan_offset__delegate.call(this, src_offset, tgt_offset, p__2922)
   };
   pan_offset.cljs$lang$maxFixedArity = 2;
-  pan_offset.cljs$lang$applyTo = function(arglist__10880) {
-    var src_offset = cljs.core.first(arglist__10880);
-    var tgt_offset = cljs.core.first(cljs.core.next(arglist__10880));
-    var p__10875 = cljs.core.rest(cljs.core.next(arglist__10880));
-    return pan_offset__delegate(src_offset, tgt_offset, p__10875)
+  pan_offset.cljs$lang$applyTo = function(arglist__2927) {
+    var src_offset = cljs.core.first(arglist__2927);
+    var tgt_offset = cljs.core.first(cljs.core.next(arglist__2927));
+    var p__2922 = cljs.core.rest(cljs.core.next(arglist__2927));
+    return pan_offset__delegate(src_offset, tgt_offset, p__2922)
   };
   pan_offset.cljs$lang$arity$variadic = pan_offset__delegate;
   return pan_offset
@@ -21701,9 +21701,9 @@ calabash_script.core.swipe = function swipe(x) {
   throw new Error;
 };
 calabash_script.core.swipe_offset = function() {
-  var swipe_offset__delegate = function(offset, p__10881) {
-    var vec__10883 = p__10881;
-    var options = cljs.core.nth.call(null, vec__10883, 0, null);
+  var swipe_offset__delegate = function(offset, p__2928) {
+    var vec__2930 = p__2928;
+    var options = cljs.core.nth.call(null, vec__2930, 0, null);
     var offset__$1 = function() {
       var or__3824__auto__ = offset;
       if(cljs.core.truth_(or__3824__auto__)) {
@@ -21725,48 +21725,48 @@ calabash_script.core.swipe_offset = function() {
     return calabash_script.utils.target.call(null).dragFromToForDuration(calabash_script.utils.clj__GT_js.call(null, from_offset), calabash_script.utils.clj__GT_js.call(null, to_offset), duration)
   };
   var swipe_offset = function(offset, var_args) {
-    var p__10881 = null;
+    var p__2928 = null;
     if(goog.isDef(var_args)) {
-      p__10881 = cljs.core.array_seq(Array.prototype.slice.call(arguments, 1), 0)
+      p__2928 = cljs.core.array_seq(Array.prototype.slice.call(arguments, 1), 0)
     }
-    return swipe_offset__delegate.call(this, offset, p__10881)
+    return swipe_offset__delegate.call(this, offset, p__2928)
   };
   swipe_offset.cljs$lang$maxFixedArity = 1;
-  swipe_offset.cljs$lang$applyTo = function(arglist__10884) {
-    var offset = cljs.core.first(arglist__10884);
-    var p__10881 = cljs.core.rest(arglist__10884);
-    return swipe_offset__delegate(offset, p__10881)
+  swipe_offset.cljs$lang$applyTo = function(arglist__2931) {
+    var offset = cljs.core.first(arglist__2931);
+    var p__2928 = cljs.core.rest(arglist__2931);
+    return swipe_offset__delegate(offset, p__2928)
   };
   swipe_offset.cljs$lang$arity$variadic = swipe_offset__delegate;
   return swipe_offset
 }();
 calabash_script.core.pinch = function() {
-  var pinch__delegate = function(in_or_out, q, p__10885) {
-    var vec__10887 = p__10885;
-    var options = cljs.core.nth.call(null, vec__10887, 0, null);
+  var pinch__delegate = function(in_or_out, q, p__2932) {
+    var vec__2934 = p__2932;
+    var options = cljs.core.nth.call(null, vec__2934, 0, null);
     throw new Error;
   };
   var pinch = function(in_or_out, q, var_args) {
-    var p__10885 = null;
+    var p__2932 = null;
     if(goog.isDef(var_args)) {
-      p__10885 = cljs.core.array_seq(Array.prototype.slice.call(arguments, 2), 0)
+      p__2932 = cljs.core.array_seq(Array.prototype.slice.call(arguments, 2), 0)
     }
-    return pinch__delegate.call(this, in_or_out, q, p__10885)
+    return pinch__delegate.call(this, in_or_out, q, p__2932)
   };
   pinch.cljs$lang$maxFixedArity = 2;
-  pinch.cljs$lang$applyTo = function(arglist__10888) {
-    var in_or_out = cljs.core.first(arglist__10888);
-    var q = cljs.core.first(cljs.core.next(arglist__10888));
-    var p__10885 = cljs.core.rest(cljs.core.next(arglist__10888));
-    return pinch__delegate(in_or_out, q, p__10885)
+  pinch.cljs$lang$applyTo = function(arglist__2935) {
+    var in_or_out = cljs.core.first(arglist__2935);
+    var q = cljs.core.first(cljs.core.next(arglist__2935));
+    var p__2932 = cljs.core.rest(cljs.core.next(arglist__2935));
+    return pinch__delegate(in_or_out, q, p__2932)
   };
   pinch.cljs$lang$arity$variadic = pinch__delegate;
   return pinch
 }();
 calabash_script.core.pinch_offset = function() {
-  var pinch_offset__delegate = function(in_or_out, offset, p__10890) {
-    var vec__10893 = p__10890;
-    var options = cljs.core.nth.call(null, vec__10893, 0, null);
+  var pinch_offset__delegate = function(in_or_out, offset, p__2937) {
+    var vec__2940 = p__2937;
+    var options = cljs.core.nth.call(null, vec__2940, 0, null);
     var offset__$1 = function() {
       var or__3824__auto__ = offset;
       if(cljs.core.truth_(or__3824__auto__)) {
@@ -21787,11 +21787,11 @@ calabash_script.core.pinch_offset = function() {
     }();
     var js_from_offset = calabash_script.utils.clj__GT_js.call(null, from_offset);
     var js_to_offset = calabash_script.utils.clj__GT_js.call(null, to_offset);
-    var G__10894 = in_or_out;
-    if(cljs.core._EQ_.call(null, "\ufdd0'out", G__10894)) {
+    var G__2941 = in_or_out;
+    if(cljs.core._EQ_.call(null, "\ufdd0'out", G__2941)) {
       return calabash_script.utils.target.call(null).pinchCloseFromToForDuration(js_from_offset, js_to_offset, duration)
     }else {
-      if(cljs.core._EQ_.call(null, "\ufdd0'in", G__10894)) {
+      if(cljs.core._EQ_.call(null, "\ufdd0'in", G__2941)) {
         return calabash_script.utils.target.call(null).pinchOpenFromToForDuration(js_from_offset, js_to_offset, duration)
       }else {
         if("\ufdd0'else") {
@@ -21803,26 +21803,26 @@ calabash_script.core.pinch_offset = function() {
     }
   };
   var pinch_offset = function(in_or_out, offset, var_args) {
-    var p__10890 = null;
+    var p__2937 = null;
     if(goog.isDef(var_args)) {
-      p__10890 = cljs.core.array_seq(Array.prototype.slice.call(arguments, 2), 0)
+      p__2937 = cljs.core.array_seq(Array.prototype.slice.call(arguments, 2), 0)
     }
-    return pinch_offset__delegate.call(this, in_or_out, offset, p__10890)
+    return pinch_offset__delegate.call(this, in_or_out, offset, p__2937)
   };
   pinch_offset.cljs$lang$maxFixedArity = 2;
-  pinch_offset.cljs$lang$applyTo = function(arglist__10895) {
-    var in_or_out = cljs.core.first(arglist__10895);
-    var offset = cljs.core.first(cljs.core.next(arglist__10895));
-    var p__10890 = cljs.core.rest(cljs.core.next(arglist__10895));
-    return pinch_offset__delegate(in_or_out, offset, p__10890)
+  pinch_offset.cljs$lang$applyTo = function(arglist__2942) {
+    var in_or_out = cljs.core.first(arglist__2942);
+    var offset = cljs.core.first(cljs.core.next(arglist__2942));
+    var p__2937 = cljs.core.rest(cljs.core.next(arglist__2942));
+    return pinch_offset__delegate(in_or_out, offset, p__2937)
   };
   pinch_offset.cljs$lang$arity$variadic = pinch_offset__delegate;
   return pinch_offset
 }();
 calabash_script.core.scroll_to = function() {
   var scroll_to__delegate = function(args) {
-    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__10889_SHARP_) {
-      return p1__10889_SHARP_.scrollToVisible()
+    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__2936_SHARP_) {
+      return p1__2936_SHARP_.scrollToVisible()
     }, args)
   };
   var scroll_to = function(var_args) {
@@ -21833,8 +21833,8 @@ calabash_script.core.scroll_to = function() {
     return scroll_to__delegate.call(this, args)
   };
   scroll_to.cljs$lang$maxFixedArity = 0;
-  scroll_to.cljs$lang$applyTo = function(arglist__10897) {
-    var args = cljs.core.seq(arglist__10897);
+  scroll_to.cljs$lang$applyTo = function(arglist__2944) {
+    var args = cljs.core.seq(arglist__2944);
     return scroll_to__delegate(args)
   };
   scroll_to.cljs$lang$arity$variadic = scroll_to__delegate;
@@ -21842,8 +21842,8 @@ calabash_script.core.scroll_to = function() {
 }();
 calabash_script.core.touch_hold = function() {
   var touch_hold__delegate = function(duration, args) {
-    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__10896_SHARP_) {
-      return p1__10896_SHARP_.touchAndHold(duration)
+    return cljs.core.apply.call(null, calabash_script.core.perform_on_first, function(p1__2943_SHARP_) {
+      return p1__2943_SHARP_.touchAndHold(duration)
     }, args)
   };
   var touch_hold = function(duration, var_args) {
@@ -21854,9 +21854,9 @@ calabash_script.core.touch_hold = function() {
     return touch_hold__delegate.call(this, duration, args)
   };
   touch_hold.cljs$lang$maxFixedArity = 1;
-  touch_hold.cljs$lang$applyTo = function(arglist__10898) {
-    var duration = cljs.core.first(arglist__10898);
-    var args = cljs.core.rest(arglist__10898);
+  touch_hold.cljs$lang$applyTo = function(arglist__2945) {
+    var duration = cljs.core.first(arglist__2945);
+    var args = cljs.core.rest(arglist__2945);
     return touch_hold__delegate(duration, args)
   };
   touch_hold.cljs$lang$arity$variadic = touch_hold__delegate;
@@ -21870,8 +21870,8 @@ calabash_script.core.set_alert_handler_BANG_ = function set_alert_handler_BANG_(
   return calabash_script.utils.target.call(null)["onAlert"] = handler
 };
 calabash_script.core.add_alert_handler_BANG_ = function add_alert_handler_BANG_(handler) {
-  return cljs.core.swap_BANG_.call(null, calabash_script.core._STAR_alert_handlers_STAR_, function(p1__10899_SHARP_) {
-    return cljs.core.cons.call(null, handler, p1__10899_SHARP_)
+  return cljs.core.swap_BANG_.call(null, calabash_script.core._STAR_alert_handlers_STAR_, function(p1__2946_SHARP_) {
+    return cljs.core.cons.call(null, handler, p1__2946_SHARP_)
   })
 };
 calabash_script.core.set_alert_handler_BANG_.call(null, function(alert) {
@@ -21918,8 +21918,8 @@ calabash_script.core.element_exists_QMARK_ = function() {
     return element_exists_QMARK___delegate.call(this, args)
   };
   element_exists_QMARK_.cljs$lang$maxFixedArity = 0;
-  element_exists_QMARK_.cljs$lang$applyTo = function(arglist__10900) {
-    var args = cljs.core.seq(arglist__10900);
+  element_exists_QMARK_.cljs$lang$applyTo = function(arglist__2947) {
+    var args = cljs.core.seq(arglist__2947);
     return element_exists_QMARK___delegate(args)
   };
   element_exists_QMARK_.cljs$lang$arity$variadic = element_exists_QMARK___delegate;
@@ -21937,8 +21937,8 @@ calabash_script.core.element_does_not_exist_QMARK_ = function() {
     return element_does_not_exist_QMARK___delegate.call(this, args)
   };
   element_does_not_exist_QMARK_.cljs$lang$maxFixedArity = 0;
-  element_does_not_exist_QMARK_.cljs$lang$applyTo = function(arglist__10901) {
-    var args = cljs.core.seq(arglist__10901);
+  element_does_not_exist_QMARK_.cljs$lang$applyTo = function(arglist__2948) {
+    var args = cljs.core.seq(arglist__2948);
     return element_does_not_exist_QMARK___delegate(args)
   };
   element_does_not_exist_QMARK_.cljs$lang$arity$variadic = element_does_not_exist_QMARK___delegate;
@@ -21960,8 +21960,8 @@ calabash_script.core.check_element_exists = function() {
     return check_element_exists__delegate.call(this, args)
   };
   check_element_exists.cljs$lang$maxFixedArity = 0;
-  check_element_exists.cljs$lang$applyTo = function(arglist__10902) {
-    var args = cljs.core.seq(arglist__10902);
+  check_element_exists.cljs$lang$applyTo = function(arglist__2949) {
+    var args = cljs.core.seq(arglist__2949);
     return check_element_exists__delegate(args)
   };
   check_element_exists.cljs$lang$arity$variadic = check_element_exists__delegate;
@@ -21983,8 +21983,8 @@ calabash_script.core.check_element_does_not_exist = function() {
     return check_element_does_not_exist__delegate.call(this, args)
   };
   check_element_does_not_exist.cljs$lang$maxFixedArity = 0;
-  check_element_does_not_exist.cljs$lang$applyTo = function(arglist__10903) {
-    var args = cljs.core.seq(arglist__10903);
+  check_element_does_not_exist.cljs$lang$applyTo = function(arglist__2950) {
+    var args = cljs.core.seq(arglist__2950);
     return check_element_does_not_exist__delegate(args)
   };
   check_element_does_not_exist.cljs$lang$arity$variadic = check_element_does_not_exist__delegate;
@@ -22002,8 +22002,8 @@ calabash_script.core.names = function() {
     return names__delegate.call(this, args)
   };
   names.cljs$lang$maxFixedArity = 0;
-  names.cljs$lang$applyTo = function(arglist__10904) {
-    var args = cljs.core.seq(arglist__10904);
+  names.cljs$lang$applyTo = function(arglist__2951) {
+    var args = cljs.core.seq(arglist__2951);
     return names__delegate(args)
   };
   names.cljs$lang$arity$variadic = names__delegate;
@@ -23046,23 +23046,23 @@ goog.require("calabash_script.core");
 goog.require("calabash_script.log");
 uia.wrap_query_fn = function wrap_query_fn(qfn) {
   return function() {
-    var G__10581__delegate = function(args) {
+    var G__2967__delegate = function(args) {
       return calabash_script.utils.clj__GT_js.call(null, cljs.core.apply.call(null, qfn, cljs.core.map.call(null, cljs.reader.read_string, args)))
     };
-    var G__10581 = function(var_args) {
+    var G__2967 = function(var_args) {
       var args = null;
       if(goog.isDef(var_args)) {
         args = cljs.core.array_seq(Array.prototype.slice.call(arguments, 0), 0)
       }
-      return G__10581__delegate.call(this, args)
+      return G__2967__delegate.call(this, args)
     };
-    G__10581.cljs$lang$maxFixedArity = 0;
-    G__10581.cljs$lang$applyTo = function(arglist__10582) {
-      var args = cljs.core.seq(arglist__10582);
-      return G__10581__delegate(args)
+    G__2967.cljs$lang$maxFixedArity = 0;
+    G__2967.cljs$lang$applyTo = function(arglist__2968) {
+      var args = cljs.core.seq(arglist__2968);
+      return G__2967__delegate(args)
     };
-    G__10581.cljs$lang$arity$variadic = G__10581__delegate;
-    return G__10581
+    G__2967.cljs$lang$arity$variadic = G__2967__delegate;
+    return G__2967
   }()
 };
 uia.query_el = function() {
@@ -23077,8 +23077,8 @@ uia.query_el = function() {
     return query_el__delegate.call(this, args)
   };
   query_el.cljs$lang$maxFixedArity = 0;
-  query_el.cljs$lang$applyTo = function(arglist__10583) {
-    var args = cljs.core.seq(arglist__10583);
+  query_el.cljs$lang$applyTo = function(arglist__2969) {
+    var args = cljs.core.seq(arglist__2969);
     return query_el__delegate(args)
   };
   query_el.cljs$lang$arity$variadic = query_el__delegate;
