@@ -23046,45 +23046,45 @@ goog.require("calabash_script.core");
 goog.require("calabash_script.log");
 uia.wrap_query_fn = function wrap_query_fn(qfn) {
   return function() {
-    var G__2967__delegate = function(args) {
+    var G__4985__delegate = function(args) {
       return calabash_script.utils.clj__GT_js.call(null, cljs.core.apply.call(null, qfn, cljs.core.map.call(null, cljs.reader.read_string, args)))
     };
-    var G__2967 = function(var_args) {
+    var G__4985 = function(var_args) {
       var args = null;
       if(goog.isDef(var_args)) {
         args = cljs.core.array_seq(Array.prototype.slice.call(arguments, 0), 0)
       }
-      return G__2967__delegate.call(this, args)
+      return G__4985__delegate.call(this, args)
     };
-    G__2967.cljs$lang$maxFixedArity = 0;
-    G__2967.cljs$lang$applyTo = function(arglist__2968) {
-      var args = cljs.core.seq(arglist__2968);
-      return G__2967__delegate(args)
+    G__4985.cljs$lang$maxFixedArity = 0;
+    G__4985.cljs$lang$applyTo = function(arglist__4986) {
+      var args = cljs.core.seq(arglist__4986);
+      return G__4985__delegate(args)
     };
-    G__2967.cljs$lang$arity$variadic = G__2967__delegate;
-    return G__2967
+    G__4985.cljs$lang$arity$variadic = G__4985__delegate;
+    return G__4985
   }()
 };
-uia.query_el = function() {
-  var query_el__delegate = function(args) {
+uia.queryEl = function() {
+  var queryEl__delegate = function(args) {
     return cljs.core.first.call(null, cljs.core.apply.call(null, calabash_script.core.query_el, cljs.core.map.call(null, cljs.reader.read_string, args)))
   };
-  var query_el = function(var_args) {
+  var queryEl = function(var_args) {
     var args = null;
     if(goog.isDef(var_args)) {
       args = cljs.core.array_seq(Array.prototype.slice.call(arguments, 0), 0)
     }
-    return query_el__delegate.call(this, args)
+    return queryEl__delegate.call(this, args)
   };
-  query_el.cljs$lang$maxFixedArity = 0;
-  query_el.cljs$lang$applyTo = function(arglist__2969) {
-    var args = cljs.core.seq(arglist__2969);
-    return query_el__delegate(args)
+  queryEl.cljs$lang$maxFixedArity = 0;
+  queryEl.cljs$lang$applyTo = function(arglist__4987) {
+    var args = cljs.core.seq(arglist__4987);
+    return queryEl__delegate(args)
   };
-  query_el.cljs$lang$arity$variadic = query_el__delegate;
-  return query_el
+  queryEl.cljs$lang$arity$variadic = queryEl__delegate;
+  return queryEl
 }();
-goog.exportSymbol("uia.query_el", uia.query_el);
+goog.exportSymbol("uia.queryEl", uia.queryEl);
 uia.query = uia.wrap_query_fn.call(null, calabash_script.core.query);
 goog.exportSymbol("uia.query", uia.query);
 uia.queryWindows = function queryWindows(q) {
