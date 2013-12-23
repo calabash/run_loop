@@ -288,7 +288,7 @@ module RunLoop
       instruments_prefix = instruments_command_prefix(udid, results_dir)
 
       pids_str = `ps x -o pid,command | grep -v grep | grep "#{instruments_prefix}" | awk '{printf "%s,", $1}'`
-      pids = pids_str.split(",").map { |pid| pid.to_i }
+      pids = pids_str.split(',').map { |pid| pid.to_i }
       if block_given?
         pids.each do |pid|
           block.call(pid)
@@ -303,7 +303,7 @@ module RunLoop
       if udid
         instruments_path = "#{instruments_path} -w #{udid}"
       end
-      instruments_path << " -D \"#{results_dir_trace}\""
+      instruments_path << " -D \"#{results_dir_trace}\"" if results_dir_trace
       instruments_path
     end
 
@@ -407,17 +407,22 @@ module RunLoop
   def self.stop(run_loop, out=Dir.pwd)
     return if run_loop.nil?
     results_dir = run_loop[:results_dir]
-    udid = run_loop[:udid]
-    instruments_prefix = Core.instruments_command_prefix(udid, results_dir)
-    pid = run_loop[:pid] || IO.read(File.join(results_dir, "run_loop.pid"))
+
     dest = out
+
 
     Core.pids_for_run_loop(run_loop) do |pid|
       Process.kill('TERM', pid.to_i)
     end
 
+
     FileUtils.mkdir_p(dest)
-    pngs = Dir.glob(File.join(results_dir, "Run 1", "*.png"))
+
+    if results_dir
+      pngs = Dir.glob(File.join(results_dir, "Run 1", "*.png"))
+    else
+      pngs = []
+    end
     FileUtils.cp(pngs, dest) if pngs and pngs.length > 0
   end
 
