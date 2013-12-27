@@ -309,7 +309,7 @@ module RunLoop
     end
 
 
-    def self.instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file, args)
+    def self.instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file, args=[])
       instruments_prefix = instruments_command_prefix(udid, results_dir_trace)
       cmd = [
           instruments_prefix,
