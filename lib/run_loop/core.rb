@@ -15,8 +15,9 @@ module RunLoop
 
     SCRIPTS_PATH = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'scripts'))
     SCRIPTS = {
-        :dismiss => "run_dismiss_location.js",
-        :run_loop => "run_loop.js"
+        :dismiss => 'run_dismiss_location.js',
+        :run_loop_fast_uia => 'run_loop_fast_uia.js',
+        :run_loop_host => 'run_loop_host.js'
     }
 
     def self.scripts_path
@@ -443,7 +444,7 @@ module RunLoop
         raise "Unknown type for :script key: #{options[:script].class}"
       end
     else
-      script = Core.script_for_key(:run_loop)
+      script = Core.script_for_key(:run_loop_fast_uia)
     end
     script
   end
