@@ -298,7 +298,20 @@ var target = null,
         return val;
     },
     _response = function(response) {
-        target.frontMostApp().setPreferencesValueForKey(_sanitize(response), __calabashResponse);
+        var sanitized = _sanitize(response),
+            i = 0,
+            MAX_TRIES=30,
+            res;
+        target.frontMostApp().setPreferencesValueForKey(sanitized, __calabashResponse);
+
+        for (i=0; i<MAX_TRIES; i+=1) {
+            res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
+            if (res && res['index'] == sanitized['index']) {
+                return;
+            }
+        }
+        throw new Error("Unable to write to preferences");
+
     },
     _success = function(result,index) {
 
@@ -336,7 +349,7 @@ while (true) {
     if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
         _exp = preferences['command'];
         UIALogger.logMessage("index " + _actualIndex + " is command: "+ _exp);
-        target.frontMostApp().setPreferencesValueForKey(null, __calabashRequest);
+        target.frontMostApp().setPreferencesValueForKey(0, __calabashRequest);
         try {
             _result = eval(_exp);
             UIALogger.logMessage("Success: "+ _result);
