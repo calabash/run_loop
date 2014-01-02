@@ -54,8 +54,8 @@ module RunLoop
       log_file = options[:log_path]
       timeout = options[:timeout] || 30
 
-      results_dir = options[:results_dir] || Dir.mktmpdir("run_loop")
-      results_dir_trace = File.join(results_dir, "trace")
+      results_dir = options[:results_dir] || Dir.mktmpdir('run_loop')
+      results_dir_trace = File.join(results_dir, 'trace')
       FileUtils.mkdir_p(results_dir_trace)
 
       dependencies = options[:dependencies] || []
@@ -64,17 +64,17 @@ module RunLoop
         FileUtils.cp(dep, results_dir)
       end
 
-      script = File.join(results_dir, "_run_loop.js")
+      script = File.join(results_dir, '_run_loop.js')
 
 
       code = File.read(options[:script])
       code = code.gsub(/\$PATH/, results_dir)
-      code = code.gsub(/\$MODE/, "FLUSH") unless options[:no_flush]
+      code = code.gsub(/\$MODE/, 'FLUSH') unless options[:no_flush]
 
-      repl_path = File.join(results_dir, "repl-cmd.txt")
-      File.open(repl_path, "w") { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
+      repl_path = File.join(results_dir, 'repl-cmd.txt')
+      File.open(repl_path, 'w') { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
 
-      File.open(script, "w") { |file| file.puts code }
+      File.open(script, 'w') { |file| file.puts code }
 
 
       bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
@@ -96,7 +96,7 @@ module RunLoop
         device = options[:device] || :iphone
         device = device && device.to_sym
 
-        plistbuddy="/usr/libexec/PlistBuddy"
+        plistbuddy='/usr/libexec/PlistBuddy'
         plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
         if device == :iphone
           uidevicefamily=1
@@ -133,10 +133,16 @@ module RunLoop
 
       end
 
-      cmd = instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file, args)
+      cmd = instruments_command(options.merge(:udid => udid,
+                                              :results_dir_trace => results_dir_trace,
+                                              :bundle_dir_or_bundle_id => bundle_dir_or_bundle_id,
+                                              :results_dir => results_dir,
+                                              :script => script,
+                                              :log_file => log_file,
+                                              :args => args))
 
       log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
-      cmd_str = cmd.join(" ")
+      cmd_str = cmd.join(' ')
       if ENV['DEBUG']
         log(cmd_str)
       end
@@ -150,7 +156,7 @@ module RunLoop
 
       Process.detach(pid)
 
-      File.open(File.join(results_dir, "run_loop.pid"), "w") do |f|
+      File.open(File.join(results_dir, 'run_loop.pid'), 'w') do |f|
         f.write pid
       end
 
@@ -203,7 +209,7 @@ module RunLoop
 
 
       tmp_cmd = File.join(File.dirname(repl_path), '__repl-cmd.txt')
-      File.open(tmp_cmd, "w") do |f|
+      File.open(tmp_cmd, 'w') do |f|
         f.write("#{index}:#{cmd}")
         if ENV['DEBUG']
           puts "Wrote: #{index}:#{cmd}"
@@ -235,7 +241,7 @@ module RunLoop
         end
         index_if_found = output.index(START_DELIMITER)
         if ENV['DEBUG_READ']=='1'
-          puts output.gsub("*", '')
+          puts output.gsub('*', '')
           puts "Size #{size}"
           puts "offset #{offset}"
           puts "index_of #{START_DELIMITER}: #{index_if_found}"
@@ -309,15 +315,23 @@ module RunLoop
     end
 
 
-    def self.instruments_command(udid, results_dir_trace, bundle_dir_or_bundle_id, results_dir, script, log_file, args=[])
+    def self.instruments_command(options)
+      udid = options[:udid]
+      results_dir_trace = options[:results_dir_trace]
+      bundle_dir_or_bundle_id = options[:bundle_dir_or_bundle_id]
+      results_dir = options[:results_dir]
+      script = options[:script]
+      log_file = options[:log_file]
+      args= options[:args] || []
+
       instruments_prefix = instruments_command_prefix(udid, results_dir_trace)
       cmd = [
           instruments_prefix,
-          "-t", automation_template,
+          '-t', automation_template,
           "\"#{bundle_dir_or_bundle_id}\"",
-          "-e", "UIARESULTSPATH", results_dir,
-          "-e", "UIASCRIPT", script,
-          args.join(" ")
+          '-e', 'UIARESULTSPATH', results_dir,
+          '-e', 'UIASCRIPT', script,
+          args.join(' ')
       ]
       if log_file
         cmd << "&> #{log_file}"
@@ -334,12 +348,12 @@ module RunLoop
 
     def self.default_tracetemplate
       xcode_path = `xcode-select -print-path`.chomp
-      automation_bundle = File.expand_path(File.join(xcode_path, "..", 'Applications', "Instruments.app", "Contents", "PlugIns", 'AutomationInstrument.bundle'))
+      automation_bundle = File.expand_path(File.join(xcode_path, '..', 'Applications', 'Instruments.app', 'Contents', 'PlugIns', 'AutomationInstrument.bundle'))
       if not File.exist? automation_bundle
-        automation_bundle= File.expand_path(File.join(xcode_path, "Platforms", "iPhoneOS.platform", "Developer", "Library", "Instruments", "PlugIns", "AutomationInstrument.bundle"))
-        raise "Unable to find AutomationInstrument.bundle" if not File.exist? automation_bundle
+        automation_bundle= File.expand_path(File.join(xcode_path, 'Platforms', 'iPhoneOS.platform', 'Developer', 'Library', 'Instruments', 'PlugIns', 'AutomationInstrument.bundle'))
+        raise 'Unable to find AutomationInstrument.bundle' if not File.exist? automation_bundle
       end
-      File.join(automation_bundle, "Contents", "Resources", "Automation.tracetemplate")
+      File.join(automation_bundle, 'Contents', 'Resources', 'Automation.tracetemplate')
     end
 
     def self.log(message)
@@ -371,7 +385,7 @@ module RunLoop
 
     def self.instruments_pids
       pids_str = `ps x -o pid,command | grep -v grep | grep "instruments" | awk '{printf "%s,", $1}'`.strip
-      pids_str.split(",").map { |pid| pid.to_i }
+      pids_str.split(',').map { |pid| pid.to_i }
     end
 
   end
@@ -420,7 +434,7 @@ module RunLoop
     FileUtils.mkdir_p(dest)
 
     if results_dir
-      pngs = Dir.glob(File.join(results_dir, "Run 1", "*.png"))
+      pngs = Dir.glob(File.join(results_dir, 'Run 1', '*.png'))
     else
       pngs = []
     end

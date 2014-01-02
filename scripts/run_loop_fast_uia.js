@@ -329,9 +329,8 @@ UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(null, __calabas
 UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(0, __calabashRequest);
 
 Log.result('success',true,true);
-
+target = UIATarget.localTarget();
 while (true) {
-    target = UIATarget.localTarget();
     try {
         preferences = target.frontMostApp().preferencesValueForKey(__calabashRequest);
     } catch (e) {
@@ -349,7 +348,7 @@ while (true) {
     if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
         _exp = preferences['command'];
         UIALogger.logMessage("index " + _actualIndex + " is command: "+ _exp);
-        target.frontMostApp().setPreferencesValueForKey(0, __calabashRequest);
+        target.frontMostApp().setPreferencesValueForKey(null, __calabashRequest);
         try {
             _result = eval(_exp);
             UIALogger.logMessage("Success: "+ _result);
