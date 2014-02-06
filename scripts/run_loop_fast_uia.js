@@ -162,20 +162,20 @@ var Log = (function () {
     }
     forceFlush = forceFlush.join('');
 
-    function log_json(object)
+    function log_json(object, flush)
     {
         UIALogger.logMessage("OUTPUT_JSON:\n"+JSON.stringify(object)+"\nEND_OUTPUT");
+        if (flush) {
+            UIALogger.logMessage(forceFlush);
+        }
     }
 
     return {
-        result: function (status, data,flush) {
-            log_json({"status": status, "value": data, "index":_actualIndex})
-            if (flush) {
-                UIALogger.logMessage(forceFlush);
-            }
+        result: function (status, data, flush) {
+            log_json({"status": status, "value": data, "index":_actualIndex}, flush)
         },
-        output: function (msg) {
-            log_json({"output": msg,"last_index":_actualIndex});
+        output: function (msg, flush) {
+            log_json({"output": msg,"last_index":_actualIndex}, flush);
         }
     };
 })();
@@ -200,12 +200,14 @@ function isLocationPrompt(alert) {
     var exps = [
             ["OK", /vil bruge din aktuelle placering/],
             ["OK", /Would Like to Use Your Current Location/],
-            ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/]
+            ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
+            ["OK", /Would Like to Access Your Photos/]
         ],
         ans, exp,
         txt;
 
     txt = findAlertViewText(alert);
+    Log.output({"output":"alert: "+txt}, true);
     for (var i = 0; i < exps.length; i++) {
         ans = exps[i][0];
         exp = exps[i][1];
@@ -217,6 +219,7 @@ function isLocationPrompt(alert) {
 }
 
 UIATarget.onAlert = function (alert) {
+    Log.output({"output":"on alert"}, true);
     var target = UIATarget.localTarget();
     target.pushTimeout(10);
     function attemptTouchOKOnLocation(retry_count) {
@@ -266,6 +269,7 @@ UIATarget.onAlert = function (alert) {
  */
 
 var target = null,
+    failureMessage = null,
     preferences = null,
     __calabashRequest = "__calabashRequest",
     __calabashResponse = "__calabashResponse",
@@ -355,7 +359,8 @@ while (true) {
             _success(_result, _actualIndex);
         }
         catch(err) {
-            UIALogger.logMessage("Failure: "+ err.toString() + "  " + (err.stack ? err.stack.toString() : ""));
+            failureMessage = "Failure: "+ err.toString() + "  " + (err.stack ? err.stack.toString() : "");
+            Log.output({"output":failureMessage}, true);
             _failure(err, _actualIndex);
         }
     }
