@@ -83,33 +83,9 @@ module RunLoop
         raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
       end
 
+      # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
 
-      udid = nil
-
-      if device_target == 'simulator'
-
-        unless File.exist?(bundle_dir_or_bundle_id)
-          raise "Unable to find app in directory #{bundle_dir_or_bundle_id} when trying to launch simulator"
-        end
-
-
-        device = options[:device] || :iphone
-        device = device && device.to_sym
-
-        plistbuddy='/usr/libexec/PlistBuddy'
-        plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
-        if device == :iphone
-          uidevicefamily=1
-        else
-          uidevicefamily=2
-        end
-        system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
-        system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
-        system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
-      else
-        udid = device_target
-        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-      end
+      udid, bundle_dir_or_bundle_id = udid_and_bundle_for_instruments(device_target, options)
 
       args = options.fetch(:args, [])
 
@@ -162,10 +138,12 @@ module RunLoop
 
       run_loop = {:pid => pid, :udid => udid, :app => bundle_dir_or_bundle_id, :repl_path => repl_path, :log_file => log_file, :results_dir => results_dir}
 
+      uia_timeout = options[:uia_timeout] || (ENV['UIA_TIMEOUT'] && ENV['UIA_TIMEOUT'].to_f) || 10
+
       before = Time.now
       begin
         Timeout::timeout(timeout, TimeoutError) do
-          read_response(run_loop, 0)
+          read_response(run_loop, 0, uia_timeout)
         end
       rescue TimeoutError => e
         if ENV['DEBUG']
@@ -189,6 +167,79 @@ module RunLoop
       end
 
       run_loop
+    end
+
+    def self.udid_and_bundle_for_instruments(device_target, options)
+      bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
+
+      unless bundle_dir_or_bundle_id
+        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
+      end
+
+      udid = nil
+      if above_or_eql_version?('5.1', xcode_version)
+        if device_target.nil? || device_target.empty? || device_target == 'simulator'
+          device_target = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+        end
+        udid = device_target
+
+        unless /simulator/i.match(device_target)
+          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
+        end
+
+      else
+        if device_target == 'simulator'
+
+          unless File.exist?(bundle_dir_or_bundle_id)
+            raise "Unable to find app in directory #{bundle_dir_or_bundle_id} when trying to launch simulator"
+          end
+
+
+          device = options[:device] || :iphone
+          device = device && device.to_sym
+
+          plistbuddy='/usr/libexec/PlistBuddy'
+          plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
+          if device == :iphone
+            uidevicefamily=1
+          else
+            uidevicefamily=2
+          end
+          system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
+          system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
+          system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
+        else
+          udid = device_target
+          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
+        end
+      end
+      return udid, bundle_dir_or_bundle_id
+    end
+
+    def self.above_or_eql_version?(target_version, xcode_version)
+      t_major,t_minor,t_patch = target_version.split('.')
+      x_major,x_minor,x_patch = xcode_version.split('.')
+      return true if x_major.to_i > t_major.to_i
+      return false if x_major.to_i < t_major.to_i
+      #major versions are equal
+      t_minor_i = (t_minor && t_minor.to_i || 0)
+      x_minor_i = (x_minor && x_minor.to_i || 0)
+      return true if x_minor_i > t_minor_i
+      return false if x_minor_i < t_minor_i
+      #minor versions are equal
+
+      t_patch_i = (t_patch && t_patch.to_i || 0)
+      x_patch_i = (x_patch && x_patch.to_i || 0)
+
+      x_patch_i >= t_patch_i
+    end
+
+    def self.xcode_version
+      xcode_build_output = `xcodebuild -version`.split("\n")
+      xcode_build_output.each do |line|
+        match=/^Xcode\s(.*)$/.match(line.strip)
+        return match[1] if match && match.length > 1
+      end
     end
 
     def self.jruby?
@@ -220,7 +271,7 @@ module RunLoop
       index
     end
 
-    def self.read_response(run_loop, expected_index)
+    def self.read_response(run_loop, expected_index, empty_file_timeout=10)
 
       log_file = run_loop[:log_file]
       initial_offset = run_loop[:initial_offset] || 0
@@ -233,11 +284,20 @@ module RunLoop
           next
         end
 
+
         size = File.size(log_file)
+
         output = File.read(log_file, size-offset, offset)
 
         if /AXError: Could not auto-register for pid status change/.match(output)
+          if /kAXErrorServerNotFound/.match(output)
+            $stderr.puts "\n\n****** Accessibility is not enabled on device/simulator, please enable it *** \n\n"
+            $stderr.flush
+          end
           raise TimeoutError.new('AXError: Could not auto-register for pid status change')
+        end
+        if /Automation Instrument ran into an exception/.match(output)
+          raise TimeoutError.new('Exception while running script')
         end
         index_if_found = output.index(START_DELIMITER)
         if ENV['DEBUG_READ']=='1'
@@ -294,7 +354,7 @@ module RunLoop
       udid = run_loop[:udid]
       instruments_prefix = instruments_command_prefix(udid, results_dir)
 
-      pids_str = `ps x -o pid,command | grep -v grep | grep "#{instruments_prefix}" | awk '{printf "%s,", $1}'`
+      pids_str = `ps x -o pid,command | grep -v grep | grep "#{instruments_prefix.gsub(%Q["], %Q[\\"])}" | awk '{printf "%s,", $1}'`
       pids = pids_str.split(',').map { |pid| pid.to_i }
       if block_given?
         pids.each do |pid|
@@ -308,7 +368,7 @@ module RunLoop
     def self.instruments_command_prefix(udid, results_dir_trace)
       instruments_path = 'instruments'
       if udid
-        instruments_path = "#{instruments_path} -w #{udid}"
+        instruments_path = "#{instruments_path} -w \"#{udid}\""
       end
       instruments_path << " -D \"#{results_dir_trace}\"" if results_dir_trace
       instruments_path
@@ -327,7 +387,7 @@ module RunLoop
       instruments_prefix = instruments_command_prefix(udid, results_dir_trace)
       cmd = [
           instruments_prefix,
-          '-t', automation_template,
+          '-t', "\"#{automation_template}\"",
           "\"#{bundle_dir_or_bundle_id}\"",
           '-e', 'UIARESULTSPATH', results_dir,
           '-e', 'UIASCRIPT', script,
@@ -389,6 +449,7 @@ module RunLoop
     end
 
   end
+
 
   def self.run(options={})
     script = validate_script(options)
