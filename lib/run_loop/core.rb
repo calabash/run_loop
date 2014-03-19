@@ -77,15 +77,9 @@ module RunLoop
       File.open(script, 'w') { |file| file.puts code }
 
 
-      bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
-
-      unless bundle_dir_or_bundle_id
-        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
-      end
-
       # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
 
-      udid, bundle_dir_or_bundle_id = udid_and_bundle_for_instruments(device_target, options)
+      udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options)
 
       args = options.fetch(:args, [])
 
@@ -169,7 +163,7 @@ module RunLoop
       run_loop
     end
 
-    def self.udid_and_bundle_for_instruments(device_target, options)
+    def self.udid_and_bundle_for_launcher(device_target, options)
       bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
 
       unless bundle_dir_or_bundle_id
