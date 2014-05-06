@@ -304,14 +304,20 @@ var target = null,
     _response = function(response) {
         var sanitized = _sanitize(response),
             i = 0,
-            MAX_TRIES=30,
+            MAX_TRIES=120,
             res;
-        target.frontMostApp().setPreferencesValueForKey(sanitized, __calabashResponse);
 
         for (i=0; i<MAX_TRIES; i+=1) {
+            UIALogger.logMessage("Write result...");
+            target.frontMostApp().setPreferencesValueForKey(sanitized, __calabashResponse);
+            UIALogger.logMessage("Check successful storage...")
             res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
             if (res && res['index'] == sanitized['index']) {
+                UIALogger.logMessage("Storage succeeded: "+ res['index']);
                 return;
+            } else {
+                UIALogger.logMessage("Storage failed: "+ res);
+                target.delay(0.5);
             }
         }
         throw new Error("Unable to write to preferences");
@@ -354,6 +360,10 @@ while (true) {
         UIALogger.logMessage("index " + _actualIndex + " is command: "+ _exp);
         target.frontMostApp().setPreferencesValueForKey(null, __calabashRequest);
         try {
+            if (_exp == 'break;') {
+                _success("OK", _actualIndex);
+                break;
+            }
             _result = eval(_exp);
             UIALogger.logMessage("Success: "+ _result);
             _success(_result, _actualIndex);
@@ -367,7 +377,7 @@ while (true) {
     else {//likely old command is lingering...
         continue;
     }
-    _expectedIndex++;
+    _expectedIndex = Math.max(_actualIndex+1, _expectedIndex+1);
 
 
     target.delay(0.2);
