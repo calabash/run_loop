@@ -1,3 +1,3 @@
 module RunLoop
-  VERSION = '0.2.1.pre1'
+  VERSION = '0.2.1'
 end
