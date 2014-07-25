@@ -1,0 +1,15 @@
+language: objective-c
+
+before_install:
+  - gem uninstall -Vax --force --no-abort-on-dependent run_loop
+
+script:
+  - scripts/ci/travis/install-gem-ci.rb
+
+rvm:
+  - 1.9.3
+  - 2.1.0
+  - 2.1.1
+
+notifications:
+  email: false
