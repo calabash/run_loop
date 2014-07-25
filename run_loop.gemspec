@@ -17,9 +17,8 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.licenses    = ['MIT']
 
-  s.add_dependency( "thor" )
-  s.add_dependency( "json" )
-  #s.add_dependency( "open4", "~> 1.3.0")
+  s.add_dependency('thor', '~> 0.19')
+  s.add_dependency('json', '~> 1.8')
 
   s.add_development_dependency('bundler', '~> 1.6')
   s.add_development_dependency('travis', '~> 1.6')
