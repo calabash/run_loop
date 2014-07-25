@@ -36,7 +36,7 @@ module RunLoop
         Timeout::timeout(1, TimeoutError) do
           return `#{File.join(scripts_path, 'udidetect')}`.chomp
         end
-      rescue TimeoutError => e
+      rescue TimeoutError => _
         `killall udidetect &> /dev/null`
       end
       nil
@@ -467,7 +467,7 @@ module RunLoop
         result = Core.read_response(run_loop, expected_index)
       end
 
-    rescue TimeoutError => e
+    rescue TimeoutError => _
       raise TimeoutError, "Time out waiting for UIAutomation run-loop for command #{cmd}. Waiting for index:#{expected_index}"
     end
 
