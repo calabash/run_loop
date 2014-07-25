@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = "run-loop"
   s.require_paths = ["lib"]
+  s.licenses    = ['MIT']
 
   s.add_dependency( "thor" )
   s.add_dependency( "json" )
