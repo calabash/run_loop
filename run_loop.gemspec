@@ -19,4 +19,7 @@ Gem::Specification.new do |s|
   s.add_dependency( "thor" )
   s.add_dependency( "json" )
   #s.add_dependency( "open4", "~> 1.3.0")
+
+  s.add_development_dependency('bundler', '~> 1.6')
+  s.add_development_dependency('travis', '~> 1.6')
 end
