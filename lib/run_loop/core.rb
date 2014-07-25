@@ -401,11 +401,16 @@ module RunLoop
     end
 
     def self.default_tracetemplate
-      xcode_path = `xcode-select -print-path`.chomp
-      automation_bundle = File.expand_path(File.join(xcode_path, '..', 'Applications', 'Instruments.app', 'Contents', 'PlugIns', 'AutomationInstrument.bundle'))
-      if not File.exist? automation_bundle
-        automation_bundle= File.expand_path(File.join(xcode_path, 'Platforms', 'iPhoneOS.platform', 'Developer', 'Library', 'Instruments', 'PlugIns', 'AutomationInstrument.bundle'))
-        raise 'Unable to find AutomationInstrument.bundle' if not File.exist? automation_bundle
+      xcode_path = `xcode-select --print-path`.chomp
+      plugin_paths = [File.expand_path(File.join(xcode_path, '..', 'Applications', 'Instruments.app', 'Contents', 'AutomationInstrument.xrplugin')),
+                      File.expand_path(File.join(xcode_path, 'Platforms', 'iPhoneOS.platform', 'Developer', 'Library', 'Instruments', 'PlugIns', 'AutomationInstrument.bundle')),
+                      File.expand_path(File.join(xcode_path, '..', 'Applications', 'Instruments.app', 'Contents', 'PlugIns', 'AutomationInstrument.bundle'))]
+      automation_bundle = ''
+      plugin_paths.each do |path|
+        if File.exist? path
+          automation_bundle = path
+          break
+        end
       end
       File.join(automation_bundle, 'Contents', 'Resources', 'Automation.tracetemplate')
     end
