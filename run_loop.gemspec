@@ -17,6 +17,8 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.licenses    = ['MIT']
 
+  s.required_ruby_version = '>= 1.9'
+
   s.add_dependency('thor', '~> 0.19')
   s.add_dependency('json', '~> 1.8')
 
