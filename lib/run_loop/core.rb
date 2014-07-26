@@ -229,7 +229,7 @@ module RunLoop
     end
 
     def self.xcode_version
-      xcode_build_output = `xcodebuild -version`.split("\n")
+      xcode_build_output = `xcrun xcodebuild -version`.split("\n")
       xcode_build_output.each do |line|
         match=/^Xcode\s(.*)$/.match(line.strip)
         return match[1] if match && match.length > 1
