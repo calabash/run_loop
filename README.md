@@ -2,6 +2,10 @@
 
 ## run_loop
 
+### Supported Xcode Versions
+
+* Xcode >= 5.0
+
 ### License
 
 run_loop is available under the MIT license. See the LICENSE file for more info.
