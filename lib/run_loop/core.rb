@@ -401,18 +401,15 @@ module RunLoop
     end
 
     def self.default_tracetemplate
-      xcode_path = `xcode-select --print-path`.chomp
-      plugin_paths = [File.expand_path(File.join(xcode_path, '..', 'Applications', 'Instruments.app', 'Contents', 'AutomationInstrument.xrplugin')),
-                      File.expand_path(File.join(xcode_path, 'Platforms', 'iPhoneOS.platform', 'Developer', 'Library', 'Instruments', 'PlugIns', 'AutomationInstrument.bundle')),
-                      File.expand_path(File.join(xcode_path, '..', 'Applications', 'Instruments.app', 'Contents', 'PlugIns', 'AutomationInstrument.bundle'))]
-      automation_bundle = ''
-      plugin_paths.each do |path|
-        if File.exist? path
-          automation_bundle = path
-          break
-        end
-      end
-      File.join(automation_bundle, 'Contents', 'Resources', 'Automation.tracetemplate')
+      # as of Xcode 4.6.3 we can do this:
+      # instruments -s templates and search for Automation.tracetemplate
+      # instruments is _slow_ - it would be nice to ask for this 1x per run
+      # +1 for making RunLoop a class that could query instruments 1x and cache
+      # the value.
+
+      # Just to clarify the behavior of the the '-s' option:
+      # Xcode 5.1 introduced 'instruments -s devices' argument
+      `xcrun instruments -s templates`.split("\n").delete_if { |path| not path =~ /Automation.tracetemplate/ }.first
     end
 
     def self.log(message)
