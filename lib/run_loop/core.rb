@@ -2,6 +2,7 @@ require 'fileutils'
 require 'tmpdir'
 require 'timeout'
 require 'json'
+require 'open3'
 
 module RunLoop
 
@@ -401,15 +402,20 @@ module RunLoop
     end
 
     def self.default_tracetemplate
-      # as of Xcode 4.6.3 we can do this:
-      # instruments -s templates and search for Automation.tracetemplate
-      # instruments is _slow_ - it would be nice to ask for this 1x per run
-      # +1 for making RunLoop a class that could query instruments 1x and cache
-      # the value.
-
-      # Just to clarify the behavior of the the '-s' option:
-      # Xcode 5.1 introduced 'instruments -s devices' argument
-      `xcrun instruments -s templates`.split("\n").delete_if { |path| not path =~ /Automation.tracetemplate/ }.first
+      cmd = 'xcrun instruments -s templates'
+      xc_version = self.xcode_version
+      if above_or_eql_version?('5.1', xc_version)
+        `#{cmd}`.split("\n").delete_if { |path| not path =~ /Automation.tracetemplate/ }.first
+      else
+        # prints to $stderr (>_>) - seriously?
+        Open3.popen3(cmd) do |_, _, stderr, _|
+          stderr.read.chomp.split(/(,|\(|")/).map do |elm|
+            elm.strip
+          end.delete_if do |path|
+            not path =~ /Automation.tracetemplate/
+          end.first
+        end
+      end
     end
 
     def self.log(message)
