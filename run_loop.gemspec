@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = RunLoop::VERSION
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Karl Krukow"]
-  s.email       = ["karl@lesspainful.com"]
+  s.email       = ['karl.krukow@xamarin.com']
   s.homepage    = "http://calaba.sh"
   s.summary     = %q{Tools related to running Calabash iOS tests}
   s.description = %q{calabash-cucumber drives tests for native iOS apps. RunLoop provides a number of tools associated with running Calabash tests.}
