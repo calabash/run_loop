@@ -2,6 +2,7 @@ require 'fileutils'
 require 'tmpdir'
 require 'timeout'
 require 'json'
+require 'open3'
 
 module RunLoop
 
@@ -36,7 +37,7 @@ module RunLoop
         Timeout::timeout(1, TimeoutError) do
           return `#{File.join(scripts_path, 'udidetect')}`.chomp
         end
-      rescue TimeoutError => e
+      rescue TimeoutError => _
         `killall udidetect &> /dev/null`
       end
       nil
@@ -229,7 +230,7 @@ module RunLoop
     end
 
     def self.xcode_version
-      xcode_build_output = `xcodebuild -version`.split("\n")
+      xcode_build_output = `xcrun xcodebuild -version`.split("\n")
       xcode_build_output.each do |line|
         match=/^Xcode\s(.*)$/.match(line.strip)
         return match[1] if match && match.length > 1
@@ -401,13 +402,20 @@ module RunLoop
     end
 
     def self.default_tracetemplate
-      xcode_path = `xcode-select -print-path`.chomp
-      automation_bundle = File.expand_path(File.join(xcode_path, '..', 'Applications', 'Instruments.app', 'Contents', 'PlugIns', 'AutomationInstrument.bundle'))
-      if not File.exist? automation_bundle
-        automation_bundle= File.expand_path(File.join(xcode_path, 'Platforms', 'iPhoneOS.platform', 'Developer', 'Library', 'Instruments', 'PlugIns', 'AutomationInstrument.bundle'))
-        raise 'Unable to find AutomationInstrument.bundle' if not File.exist? automation_bundle
+      cmd = 'xcrun instruments -s templates'
+      xc_version = self.xcode_version
+      if above_or_eql_version?('5.1', xc_version)
+        `#{cmd}`.split("\n").delete_if { |path| not path =~ /Automation.tracetemplate/ }.first
+      else
+        # prints to $stderr (>_>) - seriously?
+        Open3.popen3(cmd) do |_, _, stderr, _|
+          stderr.read.chomp.split(/(,|\(|")/).map do |elm|
+            elm.strip
+          end.delete_if do |path|
+            not path =~ /Automation.tracetemplate/
+          end.first
+        end
       end
-      File.join(automation_bundle, 'Contents', 'Resources', 'Automation.tracetemplate')
     end
 
     def self.log(message)
@@ -467,7 +475,7 @@ module RunLoop
         result = Core.read_response(run_loop, expected_index)
       end
 
-    rescue TimeoutError => e
+    rescue TimeoutError => _
       raise TimeoutError, "Time out waiting for UIAutomation run-loop for command #{cmd}. Waiting for index:#{expected_index}"
     end
 

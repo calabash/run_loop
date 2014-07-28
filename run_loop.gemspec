@@ -23,4 +23,6 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency('bundler', '~> 1.6')
   s.add_development_dependency('travis', '~> 1.6')
+  s.add_development_dependency('rspec', '~> 3.0')
+  s.add_development_dependency('rake', '~> 10.3')
 end

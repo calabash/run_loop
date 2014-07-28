@@ -10,4 +10,7 @@ env_vars = {'TRAVIS' => '1'}
 Dir.chdir working_dir do
   do_system('scripts/ci/travis/install-gem-ci.rb',
             {:env_vars => env_vars})
+
+  do_system('scripts/ci/travis/rspec-ci.rb',
+            {:env_vars => env_vars})
 end
