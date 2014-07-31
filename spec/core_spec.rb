@@ -34,4 +34,25 @@ describe RunLoop::Core do
       end
     end
   end
+
+
+  describe '.udid_and_bundle_for_launcher' do
+    before(:each) { @resources ||= Resources.new }
+
+    describe '5.1 <= xcode < 6.0 behavior' do
+      it 'returns the correct default simulator if none is defined' do
+        options = {:app => @resources.app_bundle_path}
+        valid_targets = [nil, '', 'simulator']
+        valid_versions = ['5.1', '5.1.1']
+        valid_targets.each do |target|
+          valid_versions.each do |version|
+            expect(RunLoop::Core).to receive(:xcode_version).and_return(version)
+            udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options)
+            expect(udid).to be == 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+            expect(apb).to be == options[:app]
+          end
+        end
+      end
+    end
+  end
 end

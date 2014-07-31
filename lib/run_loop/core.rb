@@ -172,7 +172,8 @@ module RunLoop
       end
 
       udid = nil
-      if above_or_eql_version?('5.1', xcode_version)
+      xcode_version = Version.new(self.xcode_version)
+      if xcode_version >= Version.new('5.1')
         if device_target.nil? || device_target.empty? || device_target == 'simulator'
           device_target = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
         end
@@ -209,24 +210,6 @@ module RunLoop
         end
       end
       return udid, bundle_dir_or_bundle_id
-    end
-
-    def self.above_or_eql_version?(target_version, xcode_version)
-      t_major,t_minor,t_patch = target_version.split('.')
-      x_major,x_minor,x_patch = xcode_version.split('.')
-      return true if x_major.to_i > t_major.to_i
-      return false if x_major.to_i < t_major.to_i
-      #major versions are equal
-      t_minor_i = (t_minor && t_minor.to_i || 0)
-      x_minor_i = (x_minor && x_minor.to_i || 0)
-      return true if x_minor_i > t_minor_i
-      return false if x_minor_i < t_minor_i
-      #minor versions are equal
-
-      t_patch_i = (t_patch && t_patch.to_i || 0)
-      x_patch_i = (x_patch && x_patch.to_i || 0)
-
-      x_patch_i >= t_patch_i
     end
 
     def self.xcode_version
@@ -403,8 +386,7 @@ module RunLoop
 
     def self.default_tracetemplate
       cmd = 'xcrun instruments -s templates'
-      xc_version = self.xcode_version
-      if above_or_eql_version?('5.1', xc_version)
+      if Version.new(self.xcode_version) >= Version.new('5.1')
         `#{cmd}`.split("\n").delete_if { |path| not path =~ /Automation.tracetemplate/ }.first
       else
         # prints to $stderr (>_>) - seriously?
