@@ -361,7 +361,7 @@ module RunLoop
     end
 
     def self.instruments_command_prefix(udid, results_dir_trace)
-      instruments_path = 'instruments'
+      instruments_path = 'xcrun instruments'
       if udid
         instruments_path = "#{instruments_path} -w \"#{udid}\""
       end
