@@ -9,10 +9,10 @@ describe RunLoop do
         # noinspection RailsParamDefResolve
         before(:context) {
           @xcode_versions_tested = []
+          @resources = Resources.new
         }
 
         before(:each) {
-          @resources = Resources.new
           @sim_control = SimControl.new
           @options = {:launch_retries => 2,
                       :app => @resources.app_bundle_path,
@@ -21,10 +21,11 @@ describe RunLoop do
         }
 
         it 'using current version of Xcode' do
-          xcode_version = RunLoop::Version.new(RunLoop::Core.xcode_version)
+          xctools = RunLoop::XCTools.new
+          xcode_version = xctools.xcode_version
           puts "INFO: trying to launch Xcode '#{xcode_version}' simulator"
 
-          if xcode_version >= RunLoop::Version.new('6.0')
+          if xcode_version >= xctools.xc60
             dev_dir =  `xcrun xcode-select --print-path`.chomp
             system "open -a \"#{dev_dir}/Applications/iOS Simulator.app\""
             sleep(2)
@@ -39,13 +40,14 @@ describe RunLoop do
         end
 
         it 'using 5.1 <= Xcode < 6.0' do
-          xcode_installs = Dir.glob('/Xcode/*/*.app/Contents/Developer').select { |elm| elm =~ /\/Xcode\/(5.1)/ }
+          xcode_installs = @resources.alt_xcode_install_paths '5.1'
           if xcode_installs.empty?
             puts 'INFO: no alternative Xcode versions found in /Xcode directory'
           else
             xcode_installs.each do |xcode_path|
               ENV['DEVELOPER_DIR'] = xcode_path
-              xcode_version = RunLoop::Version.new(RunLoop::Core.xcode_version)
+              xctools = RunLoop::XCTools.new
+              xcode_version = xctools.xcode_version
               if @xcode_versions_tested.index { |elm| elm == xcode_version }
                 puts "INFO:  skipping xcode version '#{xcode_version}' because we already tested it"
               else
