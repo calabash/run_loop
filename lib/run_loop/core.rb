@@ -388,19 +388,13 @@ module RunLoop
     end
 
     def self.default_tracetemplate
-      cmd = 'xcrun instruments -s templates'
-      if Version.new(self.xcode_version) >= Version.new('5.1')
-        `#{cmd}`.split("\n").delete_if { |path| not path =~ /Automation.tracetemplate/ }.first
-      else
-        # prints to $stderr (>_>) - seriously?
-        Open3.popen3(cmd) do |_, _, stderr, _|
-          stderr.read.chomp.split(/(,|\(|")/).map do |elm|
-            elm.strip
-          end.delete_if do |path|
-            not path =~ /Automation.tracetemplate/
-          end.first
-        end
-      end
+      xctools = XCTools.new
+      templates = xctools.instruments :templates
+      templates.delete_if do |path|
+        not path =~ /\/Automation.tracetemplate/
+      end.delete_if do |path|
+        not path =~ /Xcode/
+      end.first
     end
 
     def self.log(message)

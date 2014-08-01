@@ -3,26 +3,15 @@ describe RunLoop::Core do
   before(:each) { ENV.delete('DEVELOPER_DIR') }
 
   describe '.default_tracetemplate' do
+
     it 'returns a template for current version of Xcode' do
       default_template = RunLoop::Core.default_tracetemplate
       expect(File.exist?(default_template)).to be true
     end
 
-    # optional test
-    #
-    # requires alternative Xcode versions to be installed like this
-    #
-    # /Xcode/4.3.1/Xcode.app
-    # < snip >
-    # /Xcode/5.0.1/Xcode.app
-    # < snip >
-    # /Xcode/5.1.1/Xcode.app
-    # < snip >
-    # /Xcode/6b4/Xcode6-Beta4.app
-    #
     # if no /Xcode/*/*.app are found, there is no test - lucky you. :)
     it 'returns a template for Xcode >= 5.0' do
-      xcode_installs = Dir.glob('/Xcode/*/*.app/Contents/Developer').select { |elm| elm =~ /\/Xcode\/[^4]/ }
+      xcode_installs = Resources.new.alt_xcode_install_paths
       if xcode_installs.empty?
         puts 'INFO: no alternative versions of Xcode >= 5.0 found in /Xcode directory'
       else
