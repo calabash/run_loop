@@ -28,3 +28,9 @@ If you are compelled to update, you _must rebuild and replace the scripts/udidet
 At this time, there is no reason to update.
 
 - [1] https://github.com/vaskas/udidetect/pull/3
+
+### possibily helpful tools
+
+* simctl
+* sim
+* projectInfo
