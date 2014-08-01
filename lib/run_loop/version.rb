@@ -79,8 +79,8 @@ module RunLoop
     # Returns an string representation of this version.
     # @return [String] a string in the form `<major>.<minor>.<patch>[.pre<N>]`
     def to_s
-      str = [@major, @minor, @patch].compact.join('.')
-      str = "#{str}.#{@pre}" if @pre
+      str = [major, minor, patch].compact.join('.')
+      str = "#{str}.#{pre}" if pre
       str
     end
 
