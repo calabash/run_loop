@@ -1,4 +1,4 @@
-describe 'Version' do
+describe RunLoop::Version do
 
   describe '.new' do
     describe 'non-pre-release versions' do
