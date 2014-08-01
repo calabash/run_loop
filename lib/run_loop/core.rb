@@ -79,8 +79,8 @@ module RunLoop
 
 
       # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
-
-      udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options)
+      xctools = RunLoop::XCTools.new
+      udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options, xctools)
 
       args = options.fetch(:args, [])
 
@@ -164,7 +164,7 @@ module RunLoop
       run_loop
     end
 
-    def self.udid_and_bundle_for_launcher(device_target, options)
+    def self.udid_and_bundle_for_launcher(device_target, options, xctools=RunLoop::XCTools.new)
       bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
 
       unless bundle_dir_or_bundle_id
@@ -172,12 +172,11 @@ module RunLoop
       end
 
       udid = nil
-      xcode_version = Version.new(self.xcode_version)
-      xc60 = Version.new('6.0')
-      xc51 = Version.new('5.1')
-      if xcode_version >= xc51
+      xcode_version = xctools.xcode_version
+
+      if xcode_version >= xctools.xc51
         if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          if xcode_version >= xc60
+          if xcode_version >= xctools.xc60
             # the simulator can be either the textual name or the UDID (directory name)
             device_target = 'iPhone 5 (8.0 Simulator)'
           else
