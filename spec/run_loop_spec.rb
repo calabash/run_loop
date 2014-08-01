@@ -16,21 +16,25 @@ describe RunLoop do
           @sim_control = SimControl.new
           @options = {:launch_retries => 2,
                       :app => @resources.app_bundle_path,
-                      :device_target => 'iPhone Retina (4-inch) - Simulator - iOS 7.1'}
+                      :device_target => 'simulator'}
           @sim_control.quit_simulator
         }
 
         it 'can launch current version of xcode' do
           xcode_version = RunLoop::Version.new(RunLoop::Core.xcode_version)
-          if xcode_version >= RunLoop::Version.new('5.1') and xcode_version <= RunLoop::Version.new('5.1.1')
+          puts "INFO: trying to launch Xcode '#{xcode_version}' simulator"
+
+          if xcode_version >= RunLoop::Version.new('6.0')
+            dev_dir =  `xcrun xcode-select --print-path`.chomp
+            system "open -a \"#{dev_dir}/Applications/iOS Simulator.app\""
+            sleep(2)
+          end
+
+          begin
             expect(RunLoop.run(@options)).not_to be nil
-            begin
-              @xcode_versions_tested << xcode_version
-            ensure
-              @sim_control.quit_simulator
-            end
-          else
-            pending "found Xcode version '#{xcode_version}' which we cannot test yet"
+            @xcode_versions_tested << xcode_version
+          ensure
+            @sim_control.quit_simulator
           end
         end
 
