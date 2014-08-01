@@ -218,12 +218,9 @@ module RunLoop
       return udid, bundle_dir_or_bundle_id
     end
 
+    # @deprecated 1.0.0 replaced with Xctools#version
     def self.xcode_version
-      xcode_build_output = `xcrun xcodebuild -version`.split("\n")
-      xcode_build_output.each do |line|
-        match=/^Xcode\s(.*)$/.match(line.strip)
-        return match[1] if match && match.length > 1
-      end
+      XCTools.new.xcode_version.to_s
     end
 
     def self.jruby?
