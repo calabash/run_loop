@@ -173,16 +173,22 @@ module RunLoop
 
       udid = nil
       xcode_version = Version.new(self.xcode_version)
-      if xcode_version >= Version.new('5.1')
+      xc60 = Version.new('6.0')
+      xc51 = Version.new('5.1')
+      if xcode_version >= xc51
         if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          device_target = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+          if xcode_version >= xc60
+            # the simulator can be either the textual name or the UDID (directory name)
+            device_target = 'iPhone 5 (8.0 Simulator)'
+          else
+            device_target = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+          end
         end
         udid = device_target
 
         unless /simulator/i.match(device_target)
           bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
         end
-
       else
         if device_target == 'simulator'
 
