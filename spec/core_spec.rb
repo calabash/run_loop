@@ -3,7 +3,7 @@ describe RunLoop::Core do
   before(:each) { ENV.delete('DEVELOPER_DIR') }
 
   describe '.default_tracetemplate' do
-    it 'always returns a template' do
+    it 'returns a template for current version of Xcode' do
       default_template = RunLoop::Core.default_tracetemplate
       expect(File.exist?(default_template)).to be true
     end
