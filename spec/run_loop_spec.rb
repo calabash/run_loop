@@ -1,5 +1,7 @@
 describe RunLoop do
 
+  before(:each) { ENV.delete('DEVELOPER_DIR') }
+
   unless travis_ci?
     describe '.run' do
       describe 'launching on simulator' do

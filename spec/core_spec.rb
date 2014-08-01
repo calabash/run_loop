@@ -1,4 +1,7 @@
 describe RunLoop::Core do
+
+  before(:each) { ENV.delete('DEVELOPER_DIR') }
+
   describe '.default_tracetemplate' do
     it 'always returns a template' do
       default_template = RunLoop::Core.default_tracetemplate
