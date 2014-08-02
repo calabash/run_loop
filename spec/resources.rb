@@ -43,5 +43,10 @@ class Resources
                 :inspector_frame => 'AXInspector.frame'
           }
   end
+
+  def mocked_sim_support_dir
+    @mocked_sim_support_dir ||= File.expand_path(File.join(resources_dir, 'enable-accessibility'))
+  end
+
 end
 

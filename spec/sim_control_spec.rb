@@ -1,5 +1,7 @@
 describe RunLoop::SimControl do
 
+  before(:each) { ENV.delete('DEVELOPER_DIR') }
+
   subject(:sim_control) { RunLoop::SimControl.new }
 
   describe '.new' do
@@ -76,4 +78,60 @@ describe RunLoop::SimControl do
   end
 
 
+  describe '#sim_app_support_dir' do
+    before(:each) {  RunLoop::SimControl.terminate_all_sims }
+    it 'for current version of Xcode returns a path that exists' do
+      sim_control.relaunch_sim({:hide_after => true})
+      path = sim_control.instance_eval { sim_app_support_dir }
+      expect(File.exists?(path)).to be == true
+    end
+
+    it 'for Xcode >= 5.0 it returns a path that exists' do
+      xcode_installs = Resources.shared.alt_xcode_install_paths
+      if xcode_installs.empty?
+        rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
+      else
+        xcode_installs.each do |developer_dir|
+          RunLoop::SimControl.terminate_all_sims
+          ENV['DEVELOPER_DIR'] = developer_dir
+          local_sim_control = RunLoop::SimControl.new
+          xcode_version = local_sim_control.xctools.xcode_version
+          rspec_test_log "testing `sim_app_support_dir` for Xcode '#{xcode_version}'"
+          local_sim_control.relaunch_sim({:hide_after => true})
+          path = local_sim_control.instance_eval { sim_app_support_dir }
+          expect(File.exists?(path)).to be == true
+        end
+      end
+    end
+  end
+
+  describe '#existing_sim_support_sdk_dirs' do
+    before(:each) {  RunLoop::SimControl.terminate_all_sims }
+
+    it 'for current version of Xcode it should return an Array' do
+      if sim_control.xcode_version_gte_6?
+        expect { sim_control.instance_eval { existing_sim_support_sdk_dirs }}.to raise_error RuntimeError
+      else
+        mocked_dir = Resources.shared.mocked_sim_support_dir
+        expect(sim_control).to receive(:simulator_app_support_dir).and_return(mocked_dir)
+        actual = sim_control.instance_eval { existing_sim_support_sdk_dirs }
+        expect(actual).to be_a Array
+        expect(actual.count).to be == 6
+      end
+    end
+  end
+
+  describe '#reset_sim_content_and_settings' do
+    before(:each) {  RunLoop::SimControl.terminate_all_sims }
+    it 'with the current version of Xcode' do
+      opts = {:hide_after => true}
+      if sim_control.xcode_version_gte_6?
+        expect { sim_control.reset_sim_content_and_settings(opts) }.to raise_error RuntimeError
+      else
+        mocked_dir = Resources.shared.mocked_sim_support_dir
+        expect(sim_control).to receive(:simulator_app_support_dir).and_return(mocked_dir)
+        sim_control.reset_sim_content_and_settings(opts)
+      end
+    end
+  end
 end

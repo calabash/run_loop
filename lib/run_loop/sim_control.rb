@@ -116,6 +116,70 @@ module RunLoop
       }
     end
 
+    # Resets the simulator content and settings.  It is analogous to touching
+    # the menu item.
+    #
+    # It works by deleting the following directories:
+    #
+    # * ~/Library/Application Support/iPhone Simulator/Library
+    # * ~/Library/Application Support/iPhone Simulator/Library/<sdk>[-64]
+    #
+    # and relaunching the iOS Simulator which will recreate the Library
+    # directory and the latest SDK directory.
+    #
+    # @param [Hash] opts Optional controls for quitting and launching the simulator.
+    # @option opts [Float] :post_quit_wait (1.0) How long to sleep after the
+    #  simulator has quit.
+    # @option opts [Float] :post_launch_wait (3.0) How long to sleep after the
+    #  simulator has launched.  Waits longer than normal because we need the
+    #  simulator directories to be repopulated.
+    # @option opts [Boolean] :hide_after (false) If true, will attempt to Hide
+    #  the simulator after it is launched.  This is useful `only when testing
+    #  gem features` that require the simulator be launched repeated and you are
+    #  tired of your editor losing focus. :)
+    def reset_sim_content_and_settings(opts={})
+      default_opts = {:post_quit_wait => 1.0,
+                      :post_launch_wait => 3.0,
+                      :hide_after => false}
+      merged_opts = default_opts.merge(opts)
+
+      if xcode_version_gte_6?
+        raise 'resetting the simulator content and settings is NYI for Xcode >= 6'
+      end
+
+      quit_sim(merged_opts)
+
+      sim_lib_path = File.join(sim_app_support_dir, 'Library')
+      FileUtils.rm_rf(sim_lib_path)
+      existing_sim_support_sdk_dirs.each do |dir|
+        FileUtils.rm_rf(dir)
+      end
+
+      launch_sim(merged_opts)
+
+      # This is tricky because we need to wait for the simulator to recreate
+      # the directories.  Specifically, we need the Accessibility plist to be
+      # exist so subsequent calabash launches will be able to enable
+      # accessibility.
+      #
+      # The directories take ~3.0 - ~5.0 to create.
+      counter = 0
+      loop do
+        break if counter == 80
+        dirs = existing_sim_support_sdk_dirs
+        if dirs.count == 0
+          sleep(0.2)
+        else
+          break if dirs.all? { |dir|
+            plist = File.expand_path("#{dir}/Library/Preferences/com.apple.Accessibility.plist")
+            File.exists?(plist)
+          }
+          sleep(0.2)
+        end
+        counter = counter + 1
+      end
+    end
+
     private
 
     # @!visibility private
@@ -165,5 +229,43 @@ module RunLoop
         end
       }.call
     end
+
+    # @!visibility private
+    # The absolute path to the iPhone Simulator Application Support directory.
+    # @return [String] absolute path
+    def sim_app_support_dir
+      if xcode_version_gte_6?
+        File.expand_path('~/Library/Developer/CoreSimulator/Devices')
+      else
+        File.expand_path('~/Library/Application Support/iPhone Simulator')
+      end
+    end
+
+    # @!visibility private
+    # Returns a list of absolute paths the existing simulator directories.
+    #
+    # @note This can _never_ be memoized to a variable; its value reflects the
+    #  state of the file system at the time it is called.
+    #
+    # A simulator 'exists' if has an Application Support directory. for
+    # example, the 6.1, 7.0.3-64, and 7.1 simulators exist if the following
+    # directories are present:
+    #
+    #     ~/Library/Application Support/iPhone Simulator/Library/6.1
+    #     ~/Library/Application Support/iPhone Simulator/Library/7.0.3-64
+    #     ~/Library/Application Support/iPhone Simulator/Library/7.1
+    #
+    # @return[Array<String>] a list of absolute paths to simulator directories
+    def existing_sim_support_sdk_dirs
+      if xcode_version_gte_6?
+        raise 'simulator support sdk dirs are NYI in Xcode 6.0'
+      else
+        sim_app_support_path = sim_app_support_dir
+        Dir.glob("#{sim_app_support_path}/*").select { |path|
+          path =~ /(\d)\.(\d)\.?(\d)?(-64)?/
+        }
+      end
+    end
+
   end
 end
