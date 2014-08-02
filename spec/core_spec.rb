@@ -47,11 +47,11 @@ describe RunLoop::Core do
     it "returns 'iPhone 5 (8.0 Simulator)' if simulator is not defined in the options args" do
       options = {:app => Resources.shared.app_bundle_path}
       valid_targets = [nil, '', 'simulator']
-      valid_versions = ['6.0']
+      valid_versions = ['6.0'].map { |elm| RunLoop::Version.new(elm) }
       valid_targets.each do |target|
         valid_versions.each do |version|
           xctools = RunLoop::XCTools.new
-          expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new(version))
+          expect(xctools).to receive(:xcode_version).and_return(version)
           udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, xctools)
           expect(udid).to be == 'iPhone 5 (8.0 Simulator)'
           expect(apb).to be == options[:app]
