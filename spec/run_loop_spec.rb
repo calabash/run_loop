@@ -23,7 +23,7 @@ describe RunLoop do
           xcode_version = xctools.xcode_version
           puts "INFO: trying to launch Xcode '#{xcode_version}' simulator"
 
-          if xcode_version >= xctools.xc60
+          if xcode_version >= xctools.v60
             RunLoop::SimControl.new.launch_sim({:hide_after => true})
           end
 

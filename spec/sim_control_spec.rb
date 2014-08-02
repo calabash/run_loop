@@ -15,13 +15,13 @@ describe RunLoop::SimControl do
   describe '#sim_name' do
     it 'Xcode >= 6.0' do
       xctools = sim_control.xctools
-      expect(xctools).to receive(:xcode_version).and_return(xctools.xc60)
+      expect(xctools).to receive(:xcode_version).and_return(xctools.v60)
       expect(sim_control.instance_eval { sim_name }).to be == 'iOS Simulator.app'
     end
 
     it 'Xcode < 6.0' do
       xctools = sim_control.xctools
-      expect(xctools).to receive(:xcode_version).and_return(xctools.xc51)
+      expect(xctools).to receive(:xcode_version).and_return(xctools.v51)
       expect(sim_control.instance_eval { sim_name }).to be == 'iPhone Simulator.app'
     end
   end
@@ -30,7 +30,7 @@ describe RunLoop::SimControl do
     it 'Xcode >= 6.0' do
       xctools = sim_control.xctools
       expect(xctools).to receive(:xcode_developer_dir).and_return('/Xcode')
-      expect(xctools).to receive(:xcode_version).and_return(xctools.xc60)
+      expect(xctools).to receive(:xcode_version).and_return(xctools.v60)
       expected = '/Xcode/Applications/iOS Simulator.app'
       expect(sim_control.instance_eval { sim_app_path }).to be == expected
     end
@@ -38,7 +38,7 @@ describe RunLoop::SimControl do
     it 'Xcode < 6.0' do
       xctools = sim_control.xctools
       expect(xctools).to receive(:xcode_developer_dir).and_return('/Xcode')
-      expect(xctools).to receive(:xcode_version).and_return(xctools.xc51)
+      expect(xctools).to receive(:xcode_version).and_return(xctools.v51)
       expected = '/Xcode/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app'
       expect(sim_control.instance_eval { sim_app_path }).to be == expected
     end

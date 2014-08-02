@@ -66,15 +66,15 @@ describe RunLoop::XCTools do
   end
 
   describe '#xc60' do
-    it { expect(xctools.xc60).to be == RunLoop::Version.new('6.0') }
+    it { expect(xctools.v60).to be == RunLoop::Version.new('6.0') }
   end
 
   describe '#xc50' do
-    it { expect(xctools.xc50).to be == RunLoop::Version.new('5.0') }
+    it { expect(xctools.v50).to be == RunLoop::Version.new('5.0') }
   end
 
   describe '#xc51' do
-    it { expect(xctools.xc51).to be == RunLoop::Version.new('5.1') }
+    it { expect(xctools.v51).to be == RunLoop::Version.new('5.1') }
   end
 
   describe '#xcode_version' do

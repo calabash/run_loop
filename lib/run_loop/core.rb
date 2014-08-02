@@ -174,9 +174,9 @@ module RunLoop
       udid = nil
       xcode_version = xctools.xcode_version
 
-      if xcode_version >= xctools.xc51
+      if xcode_version >= xctools.v51
         if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          if xcode_version >= xctools.xc60
+          if xcode_version >= xctools.v60
             # the simulator can be either the textual name or the UDID (directory name)
             device_target = 'iPhone 5 (8.0 Simulator)'
           else

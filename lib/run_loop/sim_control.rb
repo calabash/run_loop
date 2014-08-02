@@ -1,11 +1,13 @@
 module RunLoop
 
-  # A class to help you control the iOS Simulators.
+  # One class interact with the iOS Simulators.
+  #
+  # @note All command line tools are run in the context of `xcrun`.
   #
   # Throughout this class's documentation, there are references to the
   # _current version of Xcode_.  The current Xcode version is the one returned
-  # by `xcrun xcodebuild`.  It can be set using `xcode-select` or overridden
-  # using the `DEVELOPER_DIR`.
+  # by `xcrun xcodebuild`.  The current Xcode version can be set using
+  # `xcode-select` or overridden using the `DEVELOPER_DIR`.
   class SimControl
 
     # Returns an instance of XCTools.
@@ -31,6 +33,8 @@ module RunLoop
     # @param [Hash] opts Optional controls.
     # @option opts [Float] :post_quit_wait (1.0) How long to sleep after the
     #  simulator has quit.
+    #
+    # @todo Consider migrating apple script call to xctools.
     def quit_sim(opts={})
       if sim_is_running?
         default_opts = {:post_quit_wait => 1.0 }
@@ -50,6 +54,8 @@ module RunLoop
     #  the simulator after it is launched.  This is useful `only when testing
     #  gem features` that require the simulator be launched repeated and you are
     #  tired of your editor losing focus. :)
+    #
+    # @todo Consider migrating apple script call to xctools.
     def launch_sim(opts={})
       unless sim_is_running?
         default_opts = {:post_launch_wait => 2.0,
@@ -124,7 +130,7 @@ module RunLoop
     #  launching the current simulator.
     def sim_name
       @sim_name ||= lambda {
-        if xctools.xcode_version >= xctools.xc60
+        if xctools.xcode_version >= xctools.v60
           'iOS Simulator.app'
         else
           'iPhone Simulator.app'
@@ -142,7 +148,7 @@ module RunLoop
     def sim_app_path
       @sim_app_path ||= lambda {
         dev_dir = xctools.xcode_developer_dir
-        if xctools.xcode_version >= xctools.xc60
+        if xctools.xcode_version >= xctools.v60
           "#{dev_dir}/Applications/iOS Simulator.app"
         else
           "#{dev_dir}/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app"

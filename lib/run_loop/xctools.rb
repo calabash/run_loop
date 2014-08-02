@@ -3,27 +3,44 @@ require 'retriable'
 
 module RunLoop
 
-  # @!visibility private
-  # Methods for interacting with the xcode tools.
+  # A class for interacting with the Xcode tools.
+  #
+  # @note All command line tools are run in the context of `xcrun`.
+  #
+  # Throughout this class's documentation, there are references to the
+  # _current version of Xcode_.  The current Xcode version is the one returned
+  # by `xcrun xcodebuild`.  The current Xcode version can be set using
+  # `xcode-select` or overridden using the `DEVELOPER_DIR`.
   class XCTools
 
-
-    def initialize
-
-    end
-
-    def xc60
+    # Returns a version instance for `Xcode 6.0`; used to check for the
+    # availability of features and paths to various items on the filesystem.
+    #
+    # @return [RunLoop::Version] 6.0
+    def v60
       @xc60 ||= Version.new('6.0')
     end
 
-    def xc51
+    # Returns a version instance for `Xcode 5.1`; used to check for the
+    # availability of features and paths to various items on the filesystem.
+    #
+    # @return [RunLoop::Version] 5.1
+    def v51
       @xc51 ||= Version.new('5.1')
     end
 
-    def xc50
+    # Returns a version instance for `Xcode 5.0`; ; used to check for the
+    # availability of features and paths to various items on the filesystem.
+    #
+    # @return [RunLoop::Version] 5.0
+    def v50
       @xc50 ||= Version.new('5.0')
     end
 
+    # Returns the current version of Xcode.
+    #
+    # @return [RunLoop::Version] The current version of Xcode as reported by
+    #  `xcrun xcodebuild -version`.
     def xcode_version
       @xcode_version ||= lambda {
         xcode_build_output = `xcrun xcodebuild -version`.split(/\s/)[1]
@@ -65,8 +82,8 @@ module RunLoop
     # @example Getting list of known simulators.
     #  instruments(:sims) #=> < list of known simulators >
     #
-    # @param [Version] cmd controls the return value.  currently accepts nil,
-    #   :sims, and :version as valid parameters
+    # @param [Version] cmd controls the return value.  currently accepts `nil`,
+    #   `:sims`, `:templates`, and `:version` as valid parameters
     # @return [String,Array,Version] based on the value of `cmd` version, a list known
     #   simulators, the version of current instruments tool, or the path to the
     #   instruments binary.
@@ -95,7 +112,7 @@ module RunLoop
         when :templates
           @instruments_templates ||= lambda {
             cmd = "#{instruments} -s templates"
-            if self.xcode_version >= self.xc51
+            if self.xcode_version >= self.v51
               `#{cmd}`.split("\n").delete_if do |path|
                 not path =~ /tracetemplate/
               end.map { |elm| elm.strip }
