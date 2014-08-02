@@ -1,7 +1,6 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'run_loop'
 require 'resources'
-require 'sim_control'
 
 def travis_ci?
   ENV['TRAVIS']
