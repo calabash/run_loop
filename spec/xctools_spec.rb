@@ -94,4 +94,29 @@ describe RunLoop::XCTools do
       end
     end
   end
+
+  describe '#xcode_version_gte_6?' do
+    it 'returns true for Xcode >= 6.0' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('6.0'))
+      expect(xctools.xcode_version_gte_6?).to be == true
+    end
+
+    it 'returns false for Xcode < 6.0' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('5.1.1'))
+      expect(xctools.xcode_version_gte_6?).to be == false
+    end
+  end
+
+  describe '#xcode_version_gte_51?' do
+    it 'returns true for Xcode >= 5.1' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('5.1'))
+      expect(xctools.xcode_version_gte_51?).to be == true
+    end
+
+    it 'returns false for Xcode < 5.1' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('5.0'))
+      expect(xctools.xcode_version_gte_51?).to be == false
+    end
+  end
+
 end

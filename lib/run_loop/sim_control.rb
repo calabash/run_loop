@@ -16,6 +16,16 @@ module RunLoop
       @xctools ||= RunLoop::XCTools.new
     end
 
+    # @!visibility private
+    # Are we running Xcode 6 or above?
+    #
+    # This is a convenience method.
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 6.0
+    def xcode_version_gte_6?
+      xctools.xcode_version_gte_6?
+    end
+
     # Return an instance of PlistBuddy.
     # @return [RunLoop::PlistBuddy] The plist buddy instance that is used internally.
     def pbuddy
@@ -130,7 +140,7 @@ module RunLoop
     #  launching the current simulator.
     def sim_name
       @sim_name ||= lambda {
-        if xctools.xcode_version >= xctools.v60
+        if xcode_version_gte_6?
           'iOS Simulator.app'
         else
           'iPhone Simulator.app'
@@ -148,7 +158,7 @@ module RunLoop
     def sim_app_path
       @sim_app_path ||= lambda {
         dev_dir = xctools.xcode_developer_dir
-        if xctools.xcode_version >= xctools.v60
+        if xcode_version_gte_6?
           "#{dev_dir}/Applications/iOS Simulator.app"
         else
           "#{dev_dir}/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app"

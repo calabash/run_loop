@@ -37,6 +37,20 @@ module RunLoop
       @xc50 ||= Version.new('5.0')
     end
 
+    # Are we running Xcode 6 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 6.0
+    def xcode_version_gte_6?
+      @xcode_gte_6 ||= xcode_version >= v60
+    end
+
+    # Are we running Xcode 5.1 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 5.1
+    def xcode_version_gte_51?
+      @xcode_gte_51 ||= xcode_version >= v51
+    end
+
     # Returns the current version of Xcode.
     #
     # @return [RunLoop::Version] The current version of Xcode as reported by
