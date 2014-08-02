@@ -42,7 +42,7 @@ describe RunLoop::XCTools do
       end
 
       it 'returns a list of templates for Xcode >= 5.0' do
-        xcode_installs = Resources.new.alt_xcode_install_paths
+        xcode_installs = Resources.shared.alt_xcode_install_paths
         if xcode_installs.empty?
           puts 'INFO: no alternative versions of Xcode >= 5.0 found in /Xcode directory'
         else
@@ -83,7 +83,7 @@ describe RunLoop::XCTools do
     end
 
     it 'works for any Xcode version >= 5.0' do
-      xcode_installs = Resources.new.alt_xcode_install_paths
+      xcode_installs = Resources.shared.alt_xcode_install_paths
       if xcode_installs.empty?
         puts 'INFO: no alternative versions of Xcode >= 5.0 found in /Xcode directory'
       else

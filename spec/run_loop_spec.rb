@@ -9,13 +9,12 @@ describe RunLoop do
         # noinspection RailsParamDefResolve
         before(:context) {
           @xcode_versions_tested = []
-          @resources = Resources.new
         }
 
         before(:each) {
           @sim_control = SimControl.new
           @options = {:launch_retries => 2,
-                      :app => @resources.app_bundle_path,
+                      :app => Resources.shared.app_bundle_path,
                       :device_target => 'simulator'}
           @sim_control.quit_simulator
         }
@@ -40,7 +39,7 @@ describe RunLoop do
         end
 
         it 'using 5.1 <= Xcode < 6.0' do
-          xcode_installs = @resources.alt_xcode_install_paths '5.1'
+          xcode_installs = Resources.shared.alt_xcode_install_paths '5.1'
           if xcode_installs.empty?
             puts 'INFO: no alternative Xcode versions found in /Xcode directory'
           else

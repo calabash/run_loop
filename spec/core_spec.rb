@@ -11,7 +11,7 @@ describe RunLoop::Core do
 
     # if no /Xcode/*/*.app are found, there is no test - lucky you. :)
     it 'returns a template for Xcode >= 5.0' do
-      xcode_installs = Resources.new.alt_xcode_install_paths
+      xcode_installs = Resources.shared.alt_xcode_install_paths
       if xcode_installs.empty?
         puts 'INFO: no alternative versions of Xcode >= 5.0 found in /Xcode directory'
       else
@@ -27,7 +27,7 @@ describe RunLoop::Core do
   describe '.udid_and_bundle_for_launcher' do
     describe 'when 5.1 <= xcode < 6.0' do
       it "returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1' if simulator is not defined in the options args" do
-        options = {:app => Resources.new.app_bundle_path}
+        options = {:app => Resources.shared.app_bundle_path}
         valid_targets = [nil, '', 'simulator']
         valid_versions = ['5.1', '5.1.1'].map { |elm| RunLoop::Version.new(elm) }
         valid_targets.each do |target|
@@ -45,7 +45,7 @@ describe RunLoop::Core do
 
   describe 'when xcode >= 6.0' do
     it "returns 'iPhone 5 (8.0 Simulator)' if simulator is not defined in the options args" do
-      options = {:app => Resources.new.app_bundle_path}
+      options = {:app => Resources.shared.app_bundle_path}
       valid_targets = [nil, '', 'simulator']
       valid_versions = ['6.0']
       valid_targets.each do |target|
