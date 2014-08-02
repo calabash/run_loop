@@ -109,28 +109,36 @@ describe RunLoop::SimControl do
     before(:each) {  RunLoop::SimControl.terminate_all_sims }
 
     it 'for current version of Xcode it should return an Array' do
-      if sim_control.xcode_version_gte_6?
-        expect { sim_control.instance_eval { existing_sim_support_sdk_dirs }}.to raise_error RuntimeError
+      local_sim_control = RunLoop::SimControl.new
+      if local_sim_control.xcode_version_gte_6?
+        expect { local_sim_control.instance_eval { existing_sim_support_sdk_dirs }}.to raise_error RuntimeError
       else
         mocked_dir = Resources.shared.mocked_sim_support_dir
-        expect(sim_control).to receive(:simulator_app_support_dir).and_return(mocked_dir)
-        actual = sim_control.instance_eval { existing_sim_support_sdk_dirs }
+        expect(local_sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
+        actual = local_sim_control.instance_eval { existing_sim_support_sdk_dirs }
         expect(actual).to be_a Array
         expect(actual.count).to be == 6
       end
     end
   end
 
-  describe '#reset_sim_content_and_settings' do
-    before(:each) {  RunLoop::SimControl.terminate_all_sims }
-    it 'with the current version of Xcode' do
-      opts = {:hide_after => true}
-      if sim_control.xcode_version_gte_6?
-        expect { sim_control.reset_sim_content_and_settings(opts) }.to raise_error RuntimeError
-      else
-        mocked_dir = Resources.shared.mocked_sim_support_dir
-        expect(sim_control).to receive(:simulator_app_support_dir).and_return(mocked_dir)
-        sim_control.reset_sim_content_and_settings(opts)
+  unless travis_ci?
+    describe '#reset_sim_content_and_settings' do
+
+      before(:each) do
+        RunLoop::SimControl.terminate_all_sims
+        @opts = {:hide_after => true}
+      end
+
+      it 'with the current version of Xcode' do
+        if sim_control.xcode_version_gte_6?
+          expect { sim_control.reset_sim_content_and_settings(@opts) }.to raise_error RuntimeError
+        else
+          sim_control.reset_sim_content_and_settings(@opts)
+          actual = sim_control.instance_eval { existing_sim_support_sdk_dirs }
+          expect(actual).to be_a Array
+          expect(actual.count).to be >= 1
+        end
       end
     end
   end

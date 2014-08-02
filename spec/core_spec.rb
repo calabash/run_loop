@@ -33,7 +33,7 @@ describe RunLoop::Core do
         valid_targets.each do |target|
           valid_versions.each do |version|
             xctools = RunLoop::XCTools.new
-            expect(xctools).to receive(:xcode_version).and_return(version)
+            expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
             udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, xctools)
             expect(udid).to be == 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
             expect(apb).to be == options[:app]
@@ -51,7 +51,7 @@ describe RunLoop::Core do
       valid_targets.each do |target|
         valid_versions.each do |version|
           xctools = RunLoop::XCTools.new
-          expect(xctools).to receive(:xcode_version).and_return(version)
+          expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
           udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, xctools)
           expect(udid).to be == 'iPhone 5 (8.0 Simulator)'
           expect(apb).to be == options[:app]
