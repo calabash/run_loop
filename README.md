@@ -5,6 +5,7 @@
 ### Supported Xcode Versions
 
 * Xcode >= 5.0
+* RECOMMEND - Xcode >= 5.1
 
 ### License
 
@@ -34,3 +35,13 @@ At this time, there is no reason to update.
 * simctl
 * sim
 * projectInfo
+
+### Guard
+
+Requires MacOS Growl - available in the AppStore.
+
+Will run the rspec tests automatically when files change.
+
+```
+$ bundle exec guard  start --no-interactions
+```
