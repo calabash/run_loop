@@ -105,15 +105,25 @@ module RunLoop
     # @note Sends `kill -9` to all Simulator processes.  Use sparingly or not
     #  at all.
     #
+    # SimulatorBridge
+    # launchd_sim
+    # ScriptAgent
+    #
     # There can be only one simulator running at a time.  However, during
     # gem testing, situations can arise where multiple simulators are active.
     def self.terminate_all_sims
-      old = `xcrun ps x -o pid,command | grep "iPhone Simulator.app" | grep -v grep`.strip.split("\n")
-      new = `xcrun ps x -o pid,command | grep "iOS Simulator.app" | grep -v grep`.strip.split("\n")
-      (old + new).each { |process_desc|
-        pid = process_desc.split(' ').first
-        `xcrun kill -9 #{pid} && wait #{pid} &> /dev/null`
-      }
+      processes = ['iPhone Simulator.app', 'iOS Simulator.app', 'launchd_sim',
+                   # children of launchd_sim - try to clean them up.
+                   # and send one last kill to launchd_sim (it can re-spawn)
+                   'SimulatorBridge', 'ScriptAgent', 'configd_sim', 'launchd_sim']
+
+      processes.each do |process_name|
+        descripts = `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split("\n")
+        descripts.each do |process_desc|
+          pid = process_desc.split(' ').first
+          `xcrun kill -9 #{pid} && wait #{pid} &> /dev/null`
+        end
+      end
     end
 
     # Resets the simulator content and settings.  It is analogous to touching
