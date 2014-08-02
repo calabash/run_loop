@@ -51,24 +51,22 @@ describe RunLoop::SimControl do
 
   describe '#relaunch_sim' do
 
-    before(:each) do
-      RunLoop::SimControl.terminate_all_sims
-    end
+    before(:each) { RunLoop::SimControl.terminate_all_sims }
 
-    it 'the current version of Xcode' do
+    it 'with current version of Xcode' do
       sim_control.relaunch_sim({:hide_after => true})
       expect(sim_control.sim_is_running?).to be == true
     end
 
-    it 'Xcode >= 5.0' do
+    it 'with Xcode >= 5.0' do
       xcode_installs = Resources.shared.alt_xcode_install_paths
       if xcode_installs.empty?
-        puts 'INFO: no alternative versions of Xcode >= 5.0 found in /Xcode directory'
+        rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
       else
         xcode_installs.each do |developer_dir|
           RunLoop::SimControl.terminate_all_sims
           ENV['DEVELOPER_DIR'] = developer_dir
-          puts "INFO: launching simulator from '#{developer_dir}'"
+          rspec_test_log "launching simulator from '#{developer_dir}'"
           local_sim_control = RunLoop::SimControl.new
           local_sim_control.relaunch_sim({:hide_after => true})
           expect(local_sim_control.sim_is_running?).to be == true

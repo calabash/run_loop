@@ -13,7 +13,7 @@ describe RunLoop::Core do
     it 'returns a template for Xcode >= 5.0' do
       xcode_installs = Resources.shared.alt_xcode_install_paths
       if xcode_installs.empty?
-        puts 'INFO: no alternative versions of Xcode >= 5.0 found in /Xcode directory'
+        rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
       else
         xcode_installs.each do |developer_dir|
           ENV['DEVELOPER_DIR'] = developer_dir
