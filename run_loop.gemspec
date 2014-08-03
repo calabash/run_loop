@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency('thor', '~> 0.19')
   s.add_dependency('json', '~> 1.8')
   s.add_dependency('retriable', '~> 1.4')
+  s.add_dependency('CFPropertyList','~> 2.2')
 
   s.add_development_dependency('bundler', '~> 1.6')
   s.add_development_dependency('travis', '~> 1.6')

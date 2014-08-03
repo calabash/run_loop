@@ -1,5 +1,9 @@
 module RunLoop
   # A class for reading and writing property list values.
+  #
+  # Why not use CFPropertyList?  Because it is super wonky.  Among its other
+  # faults, it matches Boolean to a string type with 'true/false' values which
+  # is problematic for our purposes.
   class PlistBuddy
 
     # Reads key from file and returns the result.

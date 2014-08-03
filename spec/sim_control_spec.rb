@@ -1,3 +1,5 @@
+require 'tmpdir'
+
 describe RunLoop::SimControl do
 
   before(:each) { ENV.delete('DEVELOPER_DIR') }
@@ -141,5 +143,37 @@ describe RunLoop::SimControl do
         end
       end
     end
+  end
+
+  describe '#enable_accessibility_in_sdk_dir' do
+    before(:each) { RunLoop::SimControl.terminate_all_sims }
+    it 'with the current version of Xcode' do
+      if sim_control.xcode_version_gte_6?
+        expect { sim_control.instance_eval { enable_accessibility_in_sdk_dir('a', {}) }}.to raise_error RuntimeError
+      else
+        sdk_dir = File.expand_path(File.join(Dir.mktmpdir, 'iPhone Simulator/7.0.3-64'))
+        sim_control.instance_eval { enable_accessibility_in_sdk_dir(sdk_dir) }
+        plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+        expect(File.exists?(plist_path)).to be == true
+        # skipping most of the keys - the real test is whether we can launch.
+        expect(sim_control.pbuddy.plist_read('AutomationEnabled', plist_path)).to be == 'true'
+      end
+    end
+  end
+
+  describe '#enable_accessibility_on_sims' do
+    before(:each) {
+      RunLoop::SimControl.terminate_all_sims
+      sim_control.reset_sim_content_and_settings
+    }
+
+    it 'with the current version of Xcode' do
+      if sim_control.xcode_version_gte_6?
+        expect { sim_control.instance_eval { enable_accessibility_on_sims }}.to raise_error RuntimeError
+      else
+        expect(sim_control.enable_accessibility_on_sims).to be == true
+      end
+    end
+
   end
 end

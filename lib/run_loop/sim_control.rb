@@ -1,3 +1,5 @@
+require 'cfpropertylist'
+
 module RunLoop
 
   # One class interact with the iOS Simulators.
@@ -190,7 +192,116 @@ module RunLoop
       end
     end
 
+    # @!visibility private
+    # Enables accessibility on all iOS Simulators by adjusting the
+    # simulator's Library/Preferences/com.apple.Accessibility.plist contents.
+    #
+    # A simulator 'exists' if has an Application Support directory. for
+    # example, the 6.1, 7.0.3-64, and 7.1 simulators exist if the following
+    # directories are present:
+    #
+    #     ~/Library/Application Support/iPhone Simulator/Library/6.1
+    #     ~/Library/Application Support/iPhone Simulator/Library/7.0.3-64
+    #     ~/Library/Application Support/iPhone Simulator/Library/7.1
+    #
+    # A simulator is 'possible' if the SDK is available in the Xcode version.
+    #
+    # This method merges (uniquely) the possible and existing SDKs.
+    #
+    # This method also hides the AXInspector.
+    #
+    # **Q:** _Why do we need to enable for both existing and possible SDKs?_
+    # **A:**  Consider what would happen if we were launching against the 7.0.3
+    # SDK for the first time.  The 7.0.3 SDK directory does not exist _until the
+    # simulator has been launched_.  The upshot is that we need to create the
+    # the plist _before_ we try to launch the simulator.
+    #
+    # @note This method will quit the current simulator.
+    #
+    # @param [Hash] opts controls the behavior of the method
+    # @option opts [Boolean] :verbose controls logging output
+    # @return [Boolean] true if enabling accessibility worked on all sdk
+    #  directories
+    #
+    # @todo Should benchmark to see if memo-izing can help speed this up. Or if
+    #   we can intuit the SDK and before launching and enable access on only
+    #   that SDK.
+    #
+    # @todo Testing this is _hard_.  ATM, I am using a reset sim content
+    #  and settings + RunLoop.run to test.
+    def enable_accessibility_on_sims(opts={})
+
+      if xcode_version_gte_6?
+        raise 'enabling accessibility on sims is NYI on Xcode >= 6'
+      end
+
+      default_opts = {:verbose => false}
+      merged_opts = default_opts.merge(opts)
+
+      possible = XCODE_5_SDKS.map do |sdk|
+        File.expand_path("~/Library/Application Support/iPhone Simulator/#{sdk}")
+      end
+
+      # Accounting for the possibility of iOS 5 and iOS 6.0 SDK directories.
+      # but is this really necessary if we are supporting Xcode 5+ ?
+      existing = existing_sim_support_sdk_dirs
+
+      dirs = (possible + existing).uniq
+      results = dirs.map do |dir|
+        enable_accessibility_in_sdk_dir(dir, merged_opts)
+      end
+      results.all? { |elm| elm }
+    end
+
     private
+
+
+    # @!visibility private
+    # The list of possible SDKs for 5.0 <= Xcode < 6.0
+    #
+    # @note Used to enable automatically enable accessibility on the simulators.
+    #
+    # @see #enable_accessibility_on_sims
+    XCODE_5_SDKS = ['6.1', '7.0', '7.0.3', '7.0.3-64', '7.1', '7.1-64'].freeze
+
+
+    # @!visibility private
+    # A hash table of the accessibility properties that control whether or not
+    # accessibility is enabled and whether the AXInspector is visible.
+    #
+    # @see #enable_accessibility_on_sims
+    ACCESSIBILITY_PROPERTIES_HASH =
+          {
+                # this is required
+                :access_enabled => {:key => 'AccessibilityEnabled',
+                                    :value => 'true',
+                                    :type => 'bool'},
+                # i _think_ this is legacy
+                :app_access_enabled => {:key => 'ApplicationAccessibilityEnabled',
+                                        :value => 'true',
+                                        :type => 'bool'},
+
+                # i don't know what this does
+                :automation_enabled => {:key => 'AutomationEnabled',
+                                        :value => 'true',
+                                        :type => 'bool'},
+
+                # determines if the Accessibility Inspector is showing
+                :inspector_showing => {:key => 'AXInspectorEnabled',
+                                       :value => 'false',
+                                       :type => 'bool'},
+
+                # controls if the Accessibility Inspector is expanded or not expanded
+                :inspector_full_size => {:key => 'AXInspector.enabled',
+                                         :value => 'false',
+                                         :type => 'bool'},
+
+                # controls the frame of the Accessibility Inspector
+                # this is a 'string' => {{0, 0}, {276, 166}}
+                :inspector_frame => {:key => 'AXInspector.frame',
+                                     :value => '{{270, -13}, {276, 166}}',
+                                     :type => 'string'}
+          }.freeze
 
     # @!visibility private
     # Returns the current Simulator pid.
@@ -277,5 +388,71 @@ module RunLoop
       end
     end
 
+    # @!visibility private
+    # Enables accessibility on the simulator indicated by `app_support_sdk_dir`.
+    #
+    # @note  This will quit the simulator.
+    #
+    # @example
+    #   path = '~/Library/Application Support/iPhone Simulator/6.1'
+    #   enable_accessibility_in_sdk_dir(path)
+    #
+    # This method also hides the AXInspector.
+    #
+    # If the Library/Preferences/com.apple.Accessibility.plist does not exist
+    # this method will create a Library/Preferences/com.apple.Accessibility.plist
+    # that (oddly) the Simulator will _not_ overwrite.
+    #
+    # @see enable_accessibility_on_simulators for the public API.
+    #
+    # @param [String] app_support_sdk_dir the directory where the
+    #   Library/Preferences/com.apple.Accessibility.plist can be found.
+    #
+    # @param [Hash] opts controls the behavior of the method
+    # @option opts [Boolean] :verbose controls logging output
+    # @return [Boolean] if the plist exists and the plist was successfully
+    #   updated.
+    def enable_accessibility_in_sdk_dir(app_support_sdk_dir, opts={})
+      default_opts = {:verbose => false}
+      merged_opts = default_opts.merge(opts)
+
+      if xcode_version_gte_6?
+        raise 'enabling accessibility NYI for Xcode >= 6.0'
+      end
+
+      quit_sim
+
+      verbose = merged_opts[:verbose]
+      sdk = File.basename(app_support_sdk_dir)
+      msgs = ["cannot enable accessibility for #{sdk} SDK"]
+
+      plist_path = File.expand_path("#{app_support_sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+
+      if File.exist?(plist_path)
+        res = ACCESSIBILITY_PROPERTIES_HASH.map do |hash_key, settings|
+          success = pbuddy.plist_set(settings[:key], settings[:type], settings[:value], plist_path)
+          unless success
+            if verbose
+              if settings[:type] == 'bool'
+                value = settings[:value] ? 'YES' : 'NO'
+              else
+                value = settings[:value]
+              end
+              msgs << "could not set #{hash_key} => '#{settings[:key]}' to #{value}"
+              puts "WARN: #{msgs.join("\n")}"
+            end
+          end
+          success
+        end
+        res.all? { |elm| elm }
+      else
+        FileUtils.mkdir_p("#{app_support_sdk_dir}/Library/Preferences")
+        plist = CFPropertyList::List.new
+        data = {}
+        plist.value = CFPropertyList.guess(data)
+        plist.save(plist_path, CFPropertyList::List::FORMAT_BINARY)
+        enable_accessibility_in_sdk_dir(app_support_sdk_dir, merged_opts)
+      end
+    end
   end
 end

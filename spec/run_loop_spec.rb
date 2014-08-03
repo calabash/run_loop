@@ -6,11 +6,6 @@ describe RunLoop do
     describe '.run' do
       describe 'on simulators' do
 
-        # noinspection RailsParamDefResolve
-        before(:context) {
-          @xcode_versions_tested = []
-        }
-
         before(:each) {
           RunLoop::SimControl.terminate_all_sims
           @options = {:launch_retries => 2,
@@ -28,7 +23,6 @@ describe RunLoop do
           end
 
           expect(RunLoop.run(@options)).not_to be nil
-          @xcode_versions_tested << xcode_version
         end
 
         it 'using 5.1 <= Xcode < 6.0' do
@@ -42,13 +36,8 @@ describe RunLoop do
               ENV['DEVELOPER_DIR'] = xcode_path
               xctools = RunLoop::XCTools.new
               xcode_version = xctools.xcode_version
-              if @xcode_versions_tested.index { |elm| elm == xcode_version }
-                rspec_test_log "skipping xcode version '#{xcode_version}' because we already tested it"
-              else
-                rspec_test_log "RunLoop.run for xcode version '#{xcode_version}'"
-                expect(RunLoop.run(@options)).not_to be nil
-                @xcode_versions_tested << xcode_version
-              end
+              rspec_test_log "RunLoop.run for xcode version '#{xcode_version}'"
+              expect(RunLoop.run(@options)).not_to be nil
             end
           end
         end
