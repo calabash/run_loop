@@ -47,8 +47,11 @@ module RunLoop
       before = Time.now
       ensure_instruments_not_running!
 
+
       sim_control = RunLoop::SimControl.new
-      sim_control.enable_accessibility_on_sims
+      unless sim_control.xcode_version_gte_6?
+        sim_control.enable_accessibility_on_sims
+      end
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
