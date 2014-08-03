@@ -49,7 +49,7 @@ describe RunLoop::SimControl do
 
     it 'returns a path that exists' do
       path = sim_control.instance_eval { sim_app_path }
-      expect(File.exists?(path)).to be == true
+      expect(File.exist?(path)).to be == true
     end
   end
 
@@ -85,7 +85,7 @@ describe RunLoop::SimControl do
     it 'for current version of Xcode returns a path that exists' do
       sim_control.relaunch_sim({:hide_after => true})
       path = sim_control.instance_eval { sim_app_support_dir }
-      expect(File.exists?(path)).to be == true
+      expect(File.exist?(path)).to be == true
     end
 
     it 'for Xcode >= 5.0 it returns a path that exists' do
@@ -101,7 +101,7 @@ describe RunLoop::SimControl do
           rspec_test_log "testing `sim_app_support_dir` for Xcode '#{xcode_version}'"
           local_sim_control.relaunch_sim({:hide_after => true})
           path = local_sim_control.instance_eval { sim_app_support_dir }
-          expect(File.exists?(path)).to be == true
+          expect(File.exist?(path)).to be == true
         end
       end
     end
@@ -118,7 +118,6 @@ describe RunLoop::SimControl do
         mocked_dir = Resources.shared.mocked_sim_support_dir
         expect(local_sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
         actual = local_sim_control.instance_eval { existing_sim_support_sdk_dirs }
-        rspec_info_log "actual return value => '#{actual}'"
         expect(actual).to be_a Array
         expect(actual.count).to be == 6
       end
@@ -155,7 +154,7 @@ describe RunLoop::SimControl do
         sdk_dir = File.expand_path(File.join(Dir.mktmpdir, 'iPhone Simulator/7.0.3-64'))
         sim_control.instance_eval { enable_accessibility_in_sdk_dir(sdk_dir) }
         plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
-        expect(File.exists?(plist_path)).to be == true
+        expect(File.exist?(plist_path)).to be == true
         # skipping most of the keys - the real test is whether we can launch.
         expect(sim_control.pbuddy.plist_read('AutomationEnabled', plist_path)).to be == 'true'
       end

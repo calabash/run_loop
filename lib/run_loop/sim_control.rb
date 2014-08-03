@@ -208,7 +208,7 @@ module RunLoop
         else
           break if dirs.all? { |dir|
             plist = File.expand_path("#{dir}/Library/Preferences/com.apple.Accessibility.plist")
-            File.exists?(plist)
+            File.exist?(plist)
           }
           sleep(0.2)
         end
