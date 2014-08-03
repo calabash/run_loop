@@ -9,13 +9,13 @@ describe RunLoop::Core do
       expect(File.exist?(default_template)).to be true
     end
 
+    xcode_installs = Resources.shared.alt_xcode_install_paths
     # if no /Xcode/*/*.app are found, there is no test - lucky you. :)
-    it 'returns a template for Xcode >= 5.0' do
-      xcode_installs = Resources.shared.alt_xcode_install_paths
-      if xcode_installs.empty?
-        rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
-      else
-        xcode_installs.each do |developer_dir|
+    if xcode_installs.empty?
+      rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
+    else
+      xcode_installs.each do |developer_dir|
+        it "returns a template for Xcode '#{developer_dir}'" do
           ENV['DEVELOPER_DIR'] = developer_dir
           default_template = RunLoop::Core.default_tracetemplate
           expect(File.exist?(default_template)).to be true
@@ -26,12 +26,12 @@ describe RunLoop::Core do
 
   describe '.udid_and_bundle_for_launcher' do
     describe 'when 5.1 <= xcode < 6.0' do
-      it "returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1' if simulator is not defined in the options args" do
-        options = {:app => Resources.shared.app_bundle_path}
-        valid_targets = [nil, '', 'simulator']
-        valid_versions = ['5.1', '5.1.1'].map { |elm| RunLoop::Version.new(elm) }
-        valid_targets.each do |target|
-          valid_versions.each do |version|
+      options = {:app => Resources.shared.app_bundle_path}
+      valid_targets = [nil, '', 'simulator']
+      valid_versions = ['5.1', '5.1.1'].map { |elm| RunLoop::Version.new(elm) }
+      valid_targets.each do |target|
+        valid_versions.each do |version|
+          it "returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1' for Xcode '#{version}' if simulator = '#{target.nil? ? 'nil' : target }'" do
             xctools = RunLoop::XCTools.new
             expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
             udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, xctools)
@@ -44,12 +44,12 @@ describe RunLoop::Core do
   end
 
   describe 'when xcode >= 6.0' do
-    it "returns 'iPhone 5 (8.0 Simulator)' if simulator is not defined in the options args" do
-      options = {:app => Resources.shared.app_bundle_path}
-      valid_targets = [nil, '', 'simulator']
-      valid_versions = ['6.0'].map { |elm| RunLoop::Version.new(elm) }
-      valid_targets.each do |target|
-        valid_versions.each do |version|
+    options = {:app => Resources.shared.app_bundle_path}
+    valid_targets = [nil, '', 'simulator']
+    valid_versions = ['6.0'].map { |elm| RunLoop::Version.new(elm) }
+    valid_targets.each do |target|
+      valid_versions.each do |version|
+        it "returns 'iPhone 5 (8.0 Simulator)' for Xcode '#{version}' if simulator = '#{target.nil? ? 'nil' : target }'" do
           xctools = RunLoop::XCTools.new
           expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
           udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, xctools)
