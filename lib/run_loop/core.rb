@@ -47,8 +47,9 @@ module RunLoop
       before = Time.now
       ensure_instruments_not_running!
 
+      sim_control ||= options[:sim_control] || RunLoop::SimControl.new
+      xctools ||= options[:xctools] || sim_control.xctools
 
-      sim_control = RunLoop::SimControl.new
       unless sim_control.xcode_version_gte_6?
         sim_control.enable_accessibility_on_sims
       end
@@ -85,7 +86,6 @@ module RunLoop
 
 
       # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
-      xctools = RunLoop::XCTools.new
       udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options, xctools)
 
       args = options.fetch(:args, [])
@@ -116,7 +116,8 @@ module RunLoop
                                               :results_dir => results_dir,
                                               :script => script,
                                               :log_file => log_file,
-                                              :args => args))
+                                              :args => args),
+                                xctools)
 
       log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
       cmd_str = cmd.join(' ')
@@ -223,8 +224,8 @@ module RunLoop
     end
 
     # @deprecated 1.0.0 replaced with Xctools#version
-    def self.xcode_version
-      XCTools.new.xcode_version.to_s
+    def self.xcode_version(xctools=XCTools.new)
+      xctools.xcode_version.to_s
     end
 
     def self.jruby?
@@ -360,7 +361,7 @@ module RunLoop
     end
 
 
-    def self.instruments_command(options)
+    def self.instruments_command(options, xctools=XCTools.new)
       udid = options[:udid]
       results_dir_trace = options[:results_dir_trace]
       bundle_dir_or_bundle_id = options[:bundle_dir_or_bundle_id]
@@ -372,7 +373,7 @@ module RunLoop
       instruments_prefix = instruments_command_prefix(udid, results_dir_trace)
       cmd = [
           instruments_prefix,
-          '-t', "\"#{automation_template}\"",
+          '-t', "\"#{automation_template(xctools)}\"",
           "\"#{bundle_dir_or_bundle_id}\"",
           '-e', 'UIARESULTSPATH', results_dir,
           '-e', 'UIASCRIPT', script,
@@ -384,15 +385,14 @@ module RunLoop
       cmd
     end
 
-    def self.automation_template(candidate = ENV['TRACE_TEMPLATE'])
+    def self.automation_template(xctools, candidate = ENV['TRACE_TEMPLATE'])
       unless candidate && File.exist?(candidate)
-        candidate = default_tracetemplate
+        candidate = default_tracetemplate xctools
       end
       candidate
     end
 
-    def self.default_tracetemplate
-      xctools = XCTools.new
+    def self.default_tracetemplate(xctools=XCTools.new)
       templates = xctools.instruments :templates
       templates.delete_if do |path|
         not path =~ /\/Automation.tracetemplate/

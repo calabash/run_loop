@@ -13,31 +13,27 @@ describe RunLoop do
                       :device_target => 'simulator'}
         }
 
-        it 'using current version of Xcode' do
-          xctools = RunLoop::XCTools.new
-          xcode_version = xctools.xcode_version
-          rspec_test_log "launching Xcode '#{xcode_version}' simulator"
-
-          if xcode_version >= xctools.v60
+        it 'using the current version of Xcode' do
+          sim_control = RunLoop::SimControl.new
+          xctools = sim_control.xctools
+          if xctools.xcode_version_gte_6?
             RunLoop::SimControl.new.launch_sim({:hide_after => true})
           end
-
+          @options[:sim_control] = sim_control
           expect(RunLoop.run(@options)).not_to be nil
         end
 
-        it 'using 5.1 <= Xcode < 6.0' do
-          rspec_warn_log 'only testing Xcode 5.1 and Xcode 5.1.1 - need to test 5.0*'
-          xcode_installs = Resources.shared.alt_xcode_install_paths '5.1'
-          if xcode_installs.empty?
-            rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
-          else
-            xcode_installs.each do |xcode_path|
-              RunLoop::SimControl.terminate_all_sims
-              ENV['DEVELOPER_DIR'] = xcode_path
-              xctools = RunLoop::XCTools.new
-              xcode_version = xctools.xcode_version
-              rspec_test_log "RunLoop.run for xcode version '#{xcode_version}'"
-              expect(RunLoop.run(@options)).not_to be nil
+        rspec_warn_log 'only testing Xcode 5.1 and Xcode 5.1.1 - need to test 5.0*'
+        xcode_installs = Resources.shared.alt_xcode_install_paths '5.1'
+        if xcode_installs.empty?
+          rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
+        else
+          xcode_installs.each do |xcode_path|
+              it "using Xcode '#{xcode_path}'" do
+                ENV['DEVELOPER_DIR'] = xcode_path
+                sim_control = RunLoop::SimControl.new
+                @options[:sim_control] = sim_control
+                expect(RunLoop.run(@options)).not_to be nil
             end
           end
         end

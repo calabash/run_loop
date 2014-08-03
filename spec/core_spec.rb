@@ -1,9 +1,36 @@
+require 'tmpdir'
+
 describe RunLoop::Core do
 
-  before(:each) { ENV.delete('DEVELOPER_DIR') }
+  before(:each) {
+    ENV.delete('DEVELOPER_DIR')
+    ENV.delete('TRACE_TEMPLATE')
+  }
+
+
+  describe '.automation_template' do
+    it 'respects the TRACE_TEMPLATE env var if the tracetemplate exists' do
+      dir = Dir.mktmpdir('tracetemplate')
+      tracetemplate = File.expand_path(File.join(dir, 'some.tracetemplate'))
+      FileUtils.touch tracetemplate
+      ENV['TRACE_TEMPLATE']=tracetemplate
+      xctools = RunLoop::XCTools.new
+      expect(RunLoop::Core.automation_template xctools).to be == tracetemplate
+    end
+
+    it 'ignores the TRACE_TEMPLATE env var if the tracetemplate does not exist' do
+      tracetemplate = '/tmp/some.tracetemplate'
+      ENV['TRACE_TEMPLATE']=tracetemplate
+      xctools = RunLoop::XCTools.new
+      actual = RunLoop::Core.automation_template(xctools)
+      expect(actual).not_to be == nil
+      expect(actual).not_to be == tracetemplate
+      expect(File.exist?(actual)).to be == true
+    end
+
+  end
 
   describe '.default_tracetemplate' do
-
     it 'returns a template for current version of Xcode' do
       default_template = RunLoop::Core.default_tracetemplate
       expect(File.exist?(default_template)).to be true
@@ -59,4 +86,5 @@ describe RunLoop::Core do
       end
     end
   end
+
 end
