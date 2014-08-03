@@ -32,9 +32,11 @@ describe RunLoop::Core do
         valid_versions = ['5.1', '5.1.1'].map { |elm| RunLoop::Version.new(elm) }
         valid_targets.each do |target|
           valid_versions.each do |version|
+            rspec_info_log "testing target = '#{target}' on Xcode version '#{version}'"
             xctools = RunLoop::XCTools.new
             expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
             udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, xctools)
+            rspec_info_log "==> '#{udid}'"
             expect(udid).to be == 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
             expect(apb).to be == options[:app]
           end
@@ -50,9 +52,11 @@ describe RunLoop::Core do
       valid_versions = ['6.0'].map { |elm| RunLoop::Version.new(elm) }
       valid_targets.each do |target|
         valid_versions.each do |version|
+          rspec_info_log "testing target = '#{target}' on Xcode version '#{version}'"
           xctools = RunLoop::XCTools.new
           expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
           udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, xctools)
+          rspec_info_log "==> '#{udid}'"
           expect(udid).to be == 'iPhone 5 (8.0 Simulator)'
           expect(apb).to be == options[:app]
         end

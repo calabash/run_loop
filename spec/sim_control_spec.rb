@@ -118,6 +118,7 @@ describe RunLoop::SimControl do
         mocked_dir = Resources.shared.mocked_sim_support_dir
         expect(local_sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
         actual = local_sim_control.instance_eval { existing_sim_support_sdk_dirs }
+        rspec_info_log "actual return value => '#{actual}'"
         expect(actual).to be_a Array
         expect(actual.count).to be == 6
       end

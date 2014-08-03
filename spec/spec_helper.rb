@@ -3,7 +3,7 @@ require 'run_loop'
 require 'resources'
 
 def travis_ci?
-  ENV['TRAVIS']
+  ENV['TRAVIS'].to_s == 'true'
 end
 
 def rspec_test_log(msg)
