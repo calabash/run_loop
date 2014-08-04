@@ -1,10 +1,11 @@
-[![Build Status](https://travis-ci.org/calabash/run_loop.svg?branch=master)](https://travis-ci.org/calabash/run_loop) [![License](https://go-shields.herokuapp.com/license-MIT-blue.png)](http://opensource.org/licenses/MIT)
+[![GitHub version](https://badge.fury.io/gh/calabash%2Frun_loop.svg)](http://badge.fury.io/gh/calabash%2Frun_loop) [![Build Status](https://travis-ci.org/calabash/run_loop.svg?branch=master)](https://travis-ci.org/calabash/run_loop) [![Dependency Status](https://gemnasium.com/calabash/run_loop.svg)](https://gemnasium.com/calabash/run_loop) [![License](https://go-shields.herokuapp.com/license-MIT-blue.png)](http://opensource.org/licenses/MIT)
 
 ## run_loop
 
 ### Supported Xcode Versions
 
 * Xcode >= 5.0
+* RECOMMEND - Xcode >= 5.1
 
 ### License
 
@@ -28,3 +29,19 @@ If you are compelled to update, you _must rebuild and replace the scripts/udidet
 At this time, there is no reason to update.
 
 - [1] https://github.com/vaskas/udidetect/pull/3
+
+### possibily helpful tools
+
+* simctl
+* sim
+* projectInfo
+
+### Guard
+
+Requires MacOS Growl - available in the AppStore.
+
+Will run the rspec tests automatically when files change.
+
+```
+$ bundle exec guard  start --no-interactions
+```

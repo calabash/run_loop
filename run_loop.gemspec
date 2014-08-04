@@ -20,9 +20,16 @@ Gem::Specification.new do |s|
 
   s.add_dependency('thor', '~> 0.19')
   s.add_dependency('json', '~> 1.8')
+  s.add_dependency('retriable', '~> 1.4')
+  s.add_dependency('CFPropertyList','~> 2.2')
 
   s.add_development_dependency('bundler', '~> 1.6')
   s.add_development_dependency('travis', '~> 1.6')
   s.add_development_dependency('rspec', '~> 3.0')
   s.add_development_dependency('rake', '~> 10.3')
+  s.add_development_dependency('awesome_print', '~> 1.2')
+  s.add_development_dependency('guard-rspec', '~> 4.3')
+  s.add_development_dependency('guard-bundler', '~> 2.0')
+  s.add_development_dependency('growl', '~> 1.0')
+  s.add_development_dependency('rb-readline', '~> 0.5')
 end

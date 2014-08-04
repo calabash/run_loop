@@ -47,6 +47,12 @@ module RunLoop
       before = Time.now
       ensure_instruments_not_running!
 
+
+      sim_control = RunLoop::SimControl.new
+      unless sim_control.xcode_version_gte_6?
+        sim_control.enable_accessibility_on_sims
+      end
+
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
         device_target = detect_connected_device
@@ -79,8 +85,8 @@ module RunLoop
 
 
       # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
-
-      udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options)
+      xctools = RunLoop::XCTools.new
+      udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options, xctools)
 
       args = options.fetch(:args, [])
 
@@ -164,7 +170,7 @@ module RunLoop
       run_loop
     end
 
-    def self.udid_and_bundle_for_launcher(device_target, options)
+    def self.udid_and_bundle_for_launcher(device_target, options, xctools=RunLoop::XCTools.new)
       bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
 
       unless bundle_dir_or_bundle_id
@@ -172,16 +178,21 @@ module RunLoop
       end
 
       udid = nil
-      if above_or_eql_version?('5.1', xcode_version)
+
+      if xctools.xcode_version_gte_51?
         if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          device_target = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+          if xctools.xcode_version_gte_6?
+            # the simulator can be either the textual name or the UDID (directory name)
+            device_target = 'iPhone 5 (8.0 Simulator)'
+          else
+            device_target = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+          end
         end
         udid = device_target
 
         unless /simulator/i.match(device_target)
           bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
         end
-
       else
         if device_target == 'simulator'
 
@@ -211,30 +222,9 @@ module RunLoop
       return udid, bundle_dir_or_bundle_id
     end
 
-    def self.above_or_eql_version?(target_version, xcode_version)
-      t_major,t_minor,t_patch = target_version.split('.')
-      x_major,x_minor,x_patch = xcode_version.split('.')
-      return true if x_major.to_i > t_major.to_i
-      return false if x_major.to_i < t_major.to_i
-      #major versions are equal
-      t_minor_i = (t_minor && t_minor.to_i || 0)
-      x_minor_i = (x_minor && x_minor.to_i || 0)
-      return true if x_minor_i > t_minor_i
-      return false if x_minor_i < t_minor_i
-      #minor versions are equal
-
-      t_patch_i = (t_patch && t_patch.to_i || 0)
-      x_patch_i = (x_patch && x_patch.to_i || 0)
-
-      x_patch_i >= t_patch_i
-    end
-
+    # @deprecated 1.0.0 replaced with Xctools#version
     def self.xcode_version
-      xcode_build_output = `xcrun xcodebuild -version`.split("\n")
-      xcode_build_output.each do |line|
-        match=/^Xcode\s(.*)$/.match(line.strip)
-        return match[1] if match && match.length > 1
-      end
+      XCTools.new.xcode_version.to_s
     end
 
     def self.jruby?
@@ -402,20 +392,13 @@ module RunLoop
     end
 
     def self.default_tracetemplate
-      cmd = 'xcrun instruments -s templates'
-      xc_version = self.xcode_version
-      if above_or_eql_version?('5.1', xc_version)
-        `#{cmd}`.split("\n").delete_if { |path| not path =~ /Automation.tracetemplate/ }.first
-      else
-        # prints to $stderr (>_>) - seriously?
-        Open3.popen3(cmd) do |_, _, stderr, _|
-          stderr.read.chomp.split(/(,|\(|")/).map do |elm|
-            elm.strip
-          end.delete_if do |path|
-            not path =~ /Automation.tracetemplate/
-          end.first
-        end
-      end
+      xctools = XCTools.new
+      templates = xctools.instruments :templates
+      templates.delete_if do |path|
+        not path =~ /\/Automation.tracetemplate/
+      end.delete_if do |path|
+        not path =~ /Xcode/
+      end.first
     end
 
     def self.log(message)
