@@ -283,41 +283,4 @@ describe RunLoop::SimControl do
       end
     end
   end
-
-  # describe '#simctl_list' do
-  #   describe 'raises an error when called' do
-  #     it 'on Xcode < 6' do
-  #       local_sim_control = RunLoop::SimControl.new
-  #       expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-  #       expect { local_sim_control.instance_eval { simctl_list(:any_arg) } }.to raise_error RuntimeError
-  #     end
-  #
-  #     if RunLoop::XCTools.new.xcode_version_gte_6?
-  #       it 'with an invalid argument' do
-  #         expect { sim_control.instance_eval { simctl_list(:invalid_arg) } }.to raise_error ArgumentError
-  #       end
-  #     end
-  #   end
-  #
-  #   if RunLoop::XCTools.new.xcode_version_gte_6?
-  #     describe 'valid arguments' do
-  #       it ':devices' do
-  #         # Xcode 6b4 does not return anything meaningful to stdout or stderr,
-  #         # so we check to see if the implementation has changed by testing that
-  #         # stdout is empty.
-  #         expect(sim_control.instance_eval { simctl_list :devices }).to be == true
-  #       end
-  #
-  #       it ':runtimes' do
-  #         actual = sim_control.instance_eval { simctl_list :runtimes }
-  #         expect(actual).to be_a Hash
-  #       end
-  #
-  #       it ':sessions' do
-  #         actual = sim_control.instance_eval { simctl_list :sessions }
-  #         expect(actual).to be_a Hash
-  #       end
-  #     end
-  #   end
-  # end
 end
