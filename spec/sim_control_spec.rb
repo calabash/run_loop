@@ -11,7 +11,7 @@ describe RunLoop::SimControl do
       expect(sim_control.xctools).to be_a RunLoop::XCTools
     end
 
-    it 'hash plist_buddy attr' do
+    it 'has plist_buddy attr' do
       expect(sim_control.pbuddy).to be_a RunLoop::PlistBuddy
     end
   end
@@ -62,15 +62,13 @@ describe RunLoop::SimControl do
       expect(sim_control.sim_is_running?).to be == true
     end
 
-    it 'with Xcode >= 5.0' do
-      xcode_installs = Resources.shared.alt_xcode_install_paths
-      if xcode_installs.empty?
-        rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
-      else
-        xcode_installs.each do |developer_dir|
-          RunLoop::SimControl.terminate_all_sims
+    xcode_installs = Resources.shared.alt_xcode_install_paths
+    if xcode_installs.empty?
+      rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
+    else
+      xcode_installs.each do |developer_dir|
+        it "with Xcode '#{developer_dir}'" do
           ENV['DEVELOPER_DIR'] = developer_dir
-          rspec_test_log "launching simulator from '#{developer_dir}'"
           local_sim_control = RunLoop::SimControl.new
           local_sim_control.relaunch_sim({:hide_after => true})
           expect(local_sim_control.sim_is_running?).to be == true
@@ -88,17 +86,15 @@ describe RunLoop::SimControl do
       expect(File.exist?(path)).to be == true
     end
 
-    it 'for Xcode >= 5.0 it returns a path that exists' do
-      xcode_installs = Resources.shared.alt_xcode_install_paths
-      if xcode_installs.empty?
-        rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
-      else
-        xcode_installs.each do |developer_dir|
+    xcode_installs = Resources.shared.alt_xcode_install_paths
+    if xcode_installs.empty?
+      rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
+    else
+      xcode_installs.each do |developer_dir|
+        it "returns a valid path for Xcode '#{developer_dir}'" do
           RunLoop::SimControl.terminate_all_sims
           ENV['DEVELOPER_DIR'] = developer_dir
           local_sim_control = RunLoop::SimControl.new
-          xcode_version = local_sim_control.xctools.xcode_version
-          rspec_test_log "testing `sim_app_support_dir` for Xcode '#{xcode_version}'"
           local_sim_control.relaunch_sim({:hide_after => true})
           path = local_sim_control.instance_eval { sim_app_support_dir }
           expect(File.exist?(path)).to be == true
@@ -112,15 +108,16 @@ describe RunLoop::SimControl do
 
     it 'for current version of Xcode it should return an Array' do
       local_sim_control = RunLoop::SimControl.new
+      mocked_dir = Resources.shared.mocked_sim_support_dir
+      expect(local_sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
+      actual = local_sim_control.instance_eval { existing_sim_sdk_or_device_data_dirs }
+      expect(actual).to be_a Array
+      expect(actual.count).to be == 6
+
       if local_sim_control.xcode_version_gte_6?
-        expect { local_sim_control.instance_eval { existing_sim_support_sdk_dirs }}.to raise_error RuntimeError
-      else
-        mocked_dir = Resources.shared.mocked_sim_support_dir
-        expect(local_sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
-        actual = local_sim_control.instance_eval { existing_sim_support_sdk_dirs }
-        expect(actual).to be_a Array
-        expect(actual.count).to be == 6
+        expect(actual.all? { |elm| elm =~ /^.*\/data$/ }).to be == true
       end
+
     end
   end
 
@@ -133,30 +130,121 @@ describe RunLoop::SimControl do
       end
 
       it 'with the current version of Xcode' do
-        if sim_control.xcode_version_gte_6?
-          expect { sim_control.reset_sim_content_and_settings(@opts) }.to raise_error RuntimeError
-        else
-          sim_control.reset_sim_content_and_settings(@opts)
-          actual = sim_control.instance_eval { existing_sim_support_sdk_dirs }
-          expect(actual).to be_a Array
-          expect(actual.count).to be >= 1
-        end
+        sim_control.reset_sim_content_and_settings(@opts)
+        actual = sim_control.instance_eval { existing_sim_sdk_or_device_data_dirs }
+        expect(actual).to be_a Array
+        expect(actual.count).to be >= 1
       end
     end
   end
 
   describe '#enable_accessibility_in_sdk_dir' do
-    before(:each) { RunLoop::SimControl.terminate_all_sims }
-    it 'with the current version of Xcode' do
-      if sim_control.xcode_version_gte_6?
-        expect { sim_control.instance_eval { enable_accessibility_in_sdk_dir('a', {}) }}.to raise_error RuntimeError
-      else
-        sdk_dir = File.expand_path(File.join(Dir.mktmpdir, 'iPhone Simulator/7.0.3-64'))
-        sim_control.instance_eval { enable_accessibility_in_sdk_dir(sdk_dir) }
+    describe 'raises an error' do
+      it 'on Xcode 6' do
+        local_sim_control = RunLoop::SimControl.new
+        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(true)
+        expect { local_sim_control.instance_eval { enable_accessibility_in_sdk_dir :any_arg } }.to raise_error RuntimeError
+      end
+    end
+
+    # Xcode 5 only method
+    unless RunLoop::XCTools.new.xcode_version_gte_6?
+      it 'with the current version of Xcode' do
+        sdk_dir = File.expand_path(File.join(Dir.mktmpdir, '7.0.3-64'))
         plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+        expect(sim_control.instance_eval { enable_accessibility_in_sdk_dir(sdk_dir) }).to be == true
         expect(File.exist?(plist_path)).to be == true
-        # skipping most of the keys - the real test is whether we can launch.
-        expect(sim_control.pbuddy.plist_read('AutomationEnabled', plist_path)).to be == 'true'
+      end
+    end
+
+    xcode_installs = Resources.shared.alt_xcode_install_paths
+    if xcode_installs.empty?
+      rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
+    else
+      xcode_installs.each do |developer_dir|
+        it "with Xcode '#{developer_dir}'" do
+          ENV['DEVELOPER_DIR'] = developer_dir
+          local_sim_control = RunLoop::SimControl.new
+          sdk_dir = File.expand_path(File.join(Dir.mktmpdir, '7.0.3-64'))
+          plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+          expect(local_sim_control.instance_eval { enable_accessibility_in_sdk_dir(sdk_dir) }).to be == true
+          expect(File.exist?(plist_path)).to be == true
+        end
+        # just test one
+        break
+      end
+    end
+  end
+
+  describe '#enable_accessibility_in_sim_data_dir' do
+    describe 'raises an error' do
+      it 'on Xcode < 6' do
+        local_sim_control = RunLoop::SimControl.new
+        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+        expect { local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(nil, nil, nil) } }.to raise_error RuntimeError
+      end
+    end
+
+    # Xcode >= 6 only method
+    if RunLoop::XCTools.new.xcode_version_gte_6?
+      describe 'with the current version of Xcode' do
+        local_sim_control = RunLoop::SimControl.new
+        sim_details = local_sim_control.instance_eval { sim_details(:udid) }
+        sdk7_udid = nil
+        sdk8_udid = nil
+        sim_details.each do |key, value|
+          if value[:sdk_version] >= RunLoop::Version.new('8.0')
+            sdk8_udid = key
+          elsif value[:sdk_version] < RunLoop::Version.new('8.0')
+            sdk7_udid = key
+          end
+          break if sdk8_udid and sdk7_udid
+        end
+        it 'and sdk < 8.0' do
+          sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{sdk7_udid}/data"))
+          plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+          expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+          expect(File.exist?(plist_path)).to be == true
+        end
+
+        it 'and sdk >= 8.0' do
+          sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{sdk8_udid}/data"))
+          plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+          expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+          expect(File.exist?(plist_path)).to be == true
+        end
+      end
+    end
+  end
+
+  describe '#sims_details' do
+    describe 'raises an error when called' do
+      it 'on XCode < 6' do
+        local_sim_control = RunLoop::SimControl.new
+        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+        expect { local_sim_control.instance_eval { sim_details(:any_arg) } }.to raise_error RuntimeError
+      end
+
+      if RunLoop::XCTools.new.xcode_version_gte_6?
+        it 'is passed an invalid argument' do
+          expect { sim_control.instance_eval { sim_details(:invalid_arg) } }.to raise_error ArgumentError
+        end
+      end
+    end
+
+    if RunLoop::XCTools.new.xcode_version_gte_6?
+      describe 'returns a hash with the primary key' do
+        it ':udid' do
+          actual = sim_control.instance_eval { sim_details :udid }
+          expect(actual).to be_a Hash
+          expect(actual.count).to be > 1
+        end
+
+        it ':launch_name' do
+          actual = sim_control.instance_eval { sim_details :launch_name }
+          expect(actual).to be_a Hash
+          expect(actual.count).to be > 1
+        end
       end
     end
   end
@@ -164,16 +252,30 @@ describe RunLoop::SimControl do
   describe '#enable_accessibility_on_sims' do
     before(:each) {
       RunLoop::SimControl.terminate_all_sims
-      sim_control.reset_sim_content_and_settings
     }
 
     it 'with the current version of Xcode' do
-      if sim_control.xcode_version_gte_6?
-        expect { sim_control.instance_eval { enable_accessibility_on_sims }}.to raise_error RuntimeError
-      else
-        expect(sim_control.enable_accessibility_on_sims).to be == true
+      expect(sim_control.enable_accessibility_on_sims).to be == true
+    end
+  end
+
+  describe '#simctl_reset' do
+    before(:each) {
+      RunLoop::SimControl.terminate_all_sims
+    }
+
+    describe 'raises an error if called' do
+      it 'on Xcode < 6' do
+        local_sim_control = RunLoop::SimControl.new
+        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+        expect { local_sim_control.instance_eval { simctl_reset } }.to raise_error RuntimeError
       end
     end
 
+    if RunLoop::XCTools.new.xcode_version_gte_6?
+      it 'resets the _all_ simulators' do
+        expect( sim_control.instance_eval { simctl_reset }).to be == true
+      end
+    end
   end
 end

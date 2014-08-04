@@ -8,6 +8,7 @@ ARGV.concat [ '--readline',
               '--prompt-mode',
               'simple']
 
+# monkey patch for AwesomePrint + objects that implement '=='
 module AwesomePrint
   class Formatter
     def awesome_self(object, type)
