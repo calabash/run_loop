@@ -11,7 +11,7 @@ describe RunLoop::SimControl do
       expect(sim_control.xctools).to be_a RunLoop::XCTools
     end
 
-    it 'hash plist_buddy attr' do
+    it 'has plist_buddy attr' do
       expect(sim_control.pbuddy).to be_a RunLoop::PlistBuddy
     end
   end
@@ -255,11 +255,6 @@ describe RunLoop::SimControl do
     }
 
     it 'with the current version of Xcode' do
-      if not sim_control.xcode_version_gte_6?
-        sim_control.reset_sim_content_and_settings
-      else
-        rspec_warn_log('skipping reset of content and settings until resetting on Xcode 6 works')
-      end
       expect(sim_control.enable_accessibility_on_sims).to be == true
     end
   end
