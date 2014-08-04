@@ -130,14 +130,10 @@ describe RunLoop::SimControl do
       end
 
       it 'with the current version of Xcode' do
-        if sim_control.xcode_version_gte_6?
-          expect { sim_control.reset_sim_content_and_settings(@opts) }.to raise_error RuntimeError
-        else
-          sim_control.reset_sim_content_and_settings(@opts)
-          actual = sim_control.instance_eval { existing_sim_sdk_or_device_data_dirs }
-          expect(actual).to be_a Array
-          expect(actual.count).to be >= 1
-        end
+        sim_control.reset_sim_content_and_settings(@opts)
+        actual = sim_control.instance_eval { existing_sim_sdk_or_device_data_dirs }
+        expect(actual).to be_a Array
+        expect(actual.count).to be >= 1
       end
     end
   end
@@ -265,6 +261,26 @@ describe RunLoop::SimControl do
         rspec_warn_log('skipping reset of content and settings until resetting on Xcode 6 works')
       end
       expect(sim_control.enable_accessibility_on_sims).to be == true
+    end
+  end
+
+  describe '#simctl_reset' do
+    before(:each) {
+      RunLoop::SimControl.terminate_all_sims
+    }
+
+    describe 'raises an error if called' do
+      it 'on Xcode < 6' do
+        local_sim_control = RunLoop::SimControl.new
+        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+        expect { local_sim_control.instance_eval { simctl_reset } }.to raise_error RuntimeError
+      end
+    end
+
+    if RunLoop::XCTools.new.xcode_version_gte_6?
+      it 'resets the _all_ simulators' do
+        expect( sim_control.instance_eval { simctl_reset }).to be == true
+      end
     end
   end
 

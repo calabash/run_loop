@@ -15,6 +15,7 @@ describe RunLoop do
 
         it 'using the current version of Xcode' do
           sim_control = RunLoop::SimControl.new
+          sim_control.reset_sim_content_and_settings
           xctools = sim_control.xctools
           if xctools.xcode_version_gte_6?
             RunLoop::SimControl.new.launch_sim({:hide_after => true})

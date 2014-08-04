@@ -155,9 +155,10 @@ module RunLoop
     end
 
     # Resets the simulator content and settings.  It is analogous to touching
-    # the menu item.
+    # the menu item _for every simulator_, regardless of SDK.
     #
-    # It works by deleting the following directories:
+    #
+    # On Xcode 5, it works by deleting the following directories:
     #
     # * ~/Library/Application Support/iPhone Simulator/Library
     # * ~/Library/Application Support/iPhone Simulator/Library/<sdk>[-64]
@@ -165,59 +166,62 @@ module RunLoop
     # and relaunching the iOS Simulator which will recreate the Library
     # directory and the latest SDK directory.
     #
+    # On Xcode 6, it uses the `simctl erase <udid>` command line tool.
+    #
     # @param [Hash] opts Optional controls for quitting and launching the simulator.
     # @option opts [Float] :post_quit_wait (1.0) How long to sleep after the
     #  simulator has quit.
     # @option opts [Float] :post_launch_wait (3.0) How long to sleep after the
     #  simulator has launched.  Waits longer than normal because we need the
-    #  simulator directories to be repopulated.
+    #  simulator directories to be repopulated. **NOTE:** This option is ignored
+    #  in Xcode 6.
     # @option opts [Boolean] :hide_after (false) If true, will attempt to Hide
     #  the simulator after it is launched.  This is useful `only when testing
     #  gem features` that require the simulator be launched repeated and you are
-    #  tired of your editor losing focus. :)
+    #  tired of your editor losing focus. :) **NOTE:** This option is ignored
+    #  in Xcode 6.
     def reset_sim_content_and_settings(opts={})
       default_opts = {:post_quit_wait => 1.0,
                       :post_launch_wait => 3.0,
                       :hide_after => false}
       merged_opts = default_opts.merge(opts)
 
+      quit_sim(merged_opts)
+
       # WARNING - DO NOT TRY TO DELETE Developer/CoreSimulator/Devices!
       # Very bad things will happen.  Unlike Xcode < 6, the re-launching the
       # simulator will _not_ recreate the SDK (aka Devices) directories.
       if xcode_version_gte_6?
-        raise 'resetting the simulator content and settings is NYI for Xcode >= 6'
-      end
-
-      quit_sim(merged_opts)
-
-      sim_lib_path = File.join(sim_app_support_dir, 'Library')
-      FileUtils.rm_rf(sim_lib_path)
-      existing_sim_sdk_or_device_data_dirs.each do |dir|
-        FileUtils.rm_rf(dir)
-      end
-
-      launch_sim(merged_opts)
-
-      # This is tricky because we need to wait for the simulator to recreate
-      # the directories.  Specifically, we need the Accessibility plist to be
-      # exist so subsequent calabash launches will be able to enable
-      # accessibility.
-      #
-      # The directories take ~3.0 - ~5.0 to create.
-      counter = 0
-      loop do
-        break if counter == 80
-        dirs = existing_sim_sdk_or_device_data_dirs
-        if dirs.count == 0
-          sleep(0.2)
-        else
-          break if dirs.all? { |dir|
-            plist = File.expand_path("#{dir}/Library/Preferences/com.apple.Accessibility.plist")
-            File.exist?(plist)
-          }
-          sleep(0.2)
+        simctl_reset
+      else
+        sim_lib_path = File.join(sim_app_support_dir, 'Library')
+        FileUtils.rm_rf(sim_lib_path)
+        existing_sim_sdk_or_device_data_dirs.each do |dir|
+          FileUtils.rm_rf(dir)
         end
-        counter = counter + 1
+        launch_sim(merged_opts)
+
+        # This is tricky because we need to wait for the simulator to recreate
+        # the directories.  Specifically, we need the Accessibility plist to be
+        # exist so subsequent calabash launches will be able to enable
+        # accessibility.
+        #
+        # The directories take ~3.0 - ~5.0 to create.
+        counter = 0
+        loop do
+          break if counter == 80
+          dirs = existing_sim_sdk_or_device_data_dirs
+          if dirs.count == 0
+            sleep(0.2)
+          else
+            break if dirs.all? { |dir|
+              plist = File.expand_path("#{dir}/Library/Preferences/com.apple.Accessibility.plist")
+              File.exist?(plist)
+            }
+            sleep(0.2)
+          end
+          counter = counter + 1
+        end
       end
     end
 
@@ -279,7 +283,7 @@ module RunLoop
           enable_accessibility_in_sdk_dir(dir, merged_opts)
         end
       end
-      results.all? { |elm| elm }
+      results.all?
     end
 
     private
@@ -564,7 +568,7 @@ module RunLoop
           end
           success
         end
-        res.all? { |elm| elm }
+        res.all?
       else
         FileUtils.mkdir_p("#{app_support_sdk_dir}/Library/Preferences")
         plist = CFPropertyList::List.new
@@ -661,7 +665,7 @@ module RunLoop
           end
         success
         end
-      res.all? { |elm| elm }
+      res.all?
     end
 
     # @!visibility private
@@ -697,7 +701,7 @@ module RunLoop
     #       :sdk_version => #<RunLoop::Version:0x007f8ee8a9a730 @major=8, @minor=0, @patch=nil>
     # },
     #
-    # @param [String] primary_key Can be on of `{:udid | :launch_name}`.
+    # @param [Symbol] primary_key Can be on of `{:udid | :launch_name}`.
     # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
     # @raise [RuntimeError] If called with an invalid `primary_key`.
     def sim_details(primary_key)
@@ -729,6 +733,44 @@ module RunLoop
         hash[key] = value
       end
       hash
+    end
+
+    # @!visibility private
+    # Uses the `simctl erase` command to reset the content and settings on _all_
+    # simulators.
+    #
+    # @todo Should this reset _every_ simulator or just the targeted simulator?
+    #  It is very slow to reset every simulator and if we are trying to respond
+    #  to RESET_BETWEEN_SCENARIOS we probably want to erase just the current
+    #  simulator.
+    #
+    # @note This is an Xcode 6 only method. Will raise an error if called on
+    #  Xcode < 6.
+    #
+    # @note This method will quit the simulator.
+    #
+    # @raise [RuntimeError] If called on Xcode < 6.
+    def simctl_reset
+      unless xcode_version_gte_6?
+        raise RuntimeError, 'this method is only available on Xcode >= 6'
+      end
+
+      quit_sim
+
+      sim_details = sim_details(:udid)
+      res = []
+      sim_details.each_key do |key|
+        cmd = "xcrun simctl erase #{key}"
+        Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+          out = stdout.read.strip
+          err = stderr.read.strip
+          if ENV['DEBUG_UNIX_CALLS'] == '1'
+            puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
+          end
+          res << err.empty?
+        end
+      end
+      res.all?
     end
 
     # def simctl_list(what)
@@ -785,7 +827,7 @@ module RunLoop
     # def simctl_list_devices
     #   # Xcode 6b4 does not return anything of interest to stdout or stderr. o_O
     #   cmd = 'xcrun simctl list devices'
-    #   Open3.popen3("#{cmd} ") do  |_, stdout,  stderr, _|
+    #   Open3.popen3(cmd) do  |_, stdout,  stderr, _|
     #     out = stdout.read.strip
     #     err = stderr.read.strip
     #     if ENV['DEBUG_UNIX_CALLS'] == '1'
@@ -799,7 +841,7 @@ module RunLoop
     #   # The 'com.apple.CoreSimulator.SimRuntime.iOS-7-0' is the runtime-id,
     #   # which can be used to create devices.
     #   cmd = 'xcrun simctl list runtimes'
-    #   Open3.popen3("#{cmd}") do  |_, stdout,  stderr, _|
+    #   Open3.popen3(cmd) do  |_, stdout,  stderr, _|
     #     out = stdout.read.strip
     #     err = stderr.read.strip
     #     if ENV['DEBUG_UNIX_CALLS'] == '1'
