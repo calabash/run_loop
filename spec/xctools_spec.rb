@@ -25,32 +25,34 @@ describe RunLoop::XCTools do
       expect(xctools.instruments).to be == 'xcrun instruments'
     end
 
-    it ':version returns cli version' do
-      version = xctools.instruments(:version)
-      expect(version >= RunLoop::Version.new('5.0')).to be true
-    end
-
-    it ':sims returns list of installed simulators' do
-      expect(xctools.instruments :sims).to be_a Array
-    end
-
-    describe 'when argument is :templates ' do
-      it 'returns a list of templates for current Xcode version' do
-        templates = xctools.instruments :templates
-        expect(templates).to be_a Array
-        expect(templates.empty?).to be false
+    describe 'when argument is' do
+      it ':version it returns cli version' do
+        version = xctools.instruments(:version)
+        expect(version >= RunLoop::Version.new('5.0')).to be true
       end
 
-      it 'returns a list of templates for Xcode >= 5.0' do
+      it ':sims it returns list of installed simulators' do
+        expect(xctools.instruments :sims).to be_a Array
+      end
+
+      describe ':templates it returns a list of templates for' do
+        it 'the current Xcode version' do
+          templates = xctools.instruments :templates
+          expect(templates).to be_a Array
+          expect(templates.empty?).to be false
+        end
+
         xcode_installs = Resources.shared.alt_xcode_install_paths
         if xcode_installs.empty?
           rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
         else
           xcode_installs.each do |developer_dir|
-            ENV['DEVELOPER_DIR'] = developer_dir
-            templates = xctools.instruments :templates
-            expect(templates).to be_a Array
-            expect(templates.empty?).to be false
+            it "#{developer_dir}" do
+              ENV['DEVELOPER_DIR'] = developer_dir
+              templates = xctools.instruments :templates
+              expect(templates).to be_a Array
+              expect(templates.empty?).to be false
+            end
           end
         end
       end
