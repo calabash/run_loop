@@ -10,6 +10,8 @@ module RunLoop
   # _current version of Xcode_.  The current Xcode version is the one returned
   # by `xcrun xcodebuild`.  The current Xcode version can be set using
   # `xcode-select` or overridden using the `DEVELOPER_DIR`.
+  #
+  # @todo `puts` calls need to be replaced with proper logging
   class SimControl
 
     # Returns an instance of XCTools.
@@ -119,7 +121,7 @@ module RunLoop
       # Tried the gentle approach first; it did not work.
       # SimControl.new.quit_sim({:post_quit_wait => 0.5})
 
-    processes =
+      processes =
             ['iPhone Simulator.app', 'iOS Simulator.app',
 
              # Multiple launchd_sim processes have been causing problems.  This
@@ -190,7 +192,7 @@ module RunLoop
 
       sim_lib_path = File.join(sim_app_support_dir, 'Library')
       FileUtils.rm_rf(sim_lib_path)
-      existing_sim_support_sdk_dirs.each do |dir|
+      existing_sim_sdk_or_device_data_dirs.each do |dir|
         FileUtils.rm_rf(dir)
       end
 
@@ -205,7 +207,7 @@ module RunLoop
       counter = 0
       loop do
         break if counter == 80
-        dirs = existing_sim_support_sdk_dirs
+        dirs = existing_sim_sdk_or_device_data_dirs
         if dirs.count == 0
           sleep(0.2)
         else
@@ -257,25 +259,25 @@ module RunLoop
     # @todo Testing this is _hard_.  ATM, I am using a reset sim content
     #  and settings + RunLoop.run to test.
     def enable_accessibility_on_sims(opts={})
-
-      if xcode_version_gte_6?
-        raise 'enabling accessibility on sims is NYI on Xcode >= 6'
-      end
-
       default_opts = {:verbose => false}
       merged_opts = default_opts.merge(opts)
 
-      possible = XCODE_5_SDKS.map do |sdk|
-        File.expand_path("~/Library/Application Support/iPhone Simulator/#{sdk}")
-      end
+      existing = existing_sim_sdk_or_device_data_dirs
 
-      # Accounting for the possibility of iOS 5 and iOS 6.0 SDK directories.
-      # but is this really necessary if we are supporting Xcode 5+ ?
-      existing = existing_sim_support_sdk_dirs
+      if xcode_version_gte_6?
+        details = sim_details :udid
+        results = existing.map do |dir|
+          enable_accessibility_in_sim_data_dir(dir, details, opts)
+        end
+      else
+        possible = XCODE_5_SDKS.map do |sdk|
+          File.expand_path("~/Library/Application Support/iPhone Simulator/#{sdk}")
+        end
 
-      dirs = (possible + existing).uniq
-      results = dirs.map do |dir|
-        enable_accessibility_in_sdk_dir(dir, merged_opts)
+        dirs = (possible + existing).uniq
+        results = dirs.map do |dir|
+          enable_accessibility_in_sdk_dir(dir, merged_opts)
+        end
       end
       results.all? { |elm| elm }
     end
@@ -296,19 +298,19 @@ module RunLoop
     # A hash table of the accessibility properties that control whether or not
     # accessibility is enabled and whether the AXInspector is visible.
     #
+    # @note Xcode 5 or Xcode 6 SDK < 8.0
+    #
     # @see #enable_accessibility_on_sims
-    ACCESSIBILITY_PROPERTIES_HASH =
+    SDK_LT_80_ACCESSIBILITY_PROPERTIES_HASH =
           {
-                # this is required
                 :access_enabled => {:key => 'AccessibilityEnabled',
                                     :value => 'true',
                                     :type => 'bool'},
-                # i _think_ this is legacy
+
                 :app_access_enabled => {:key => 'ApplicationAccessibilityEnabled',
                                         :value => 'true',
                                         :type => 'bool'},
 
-                # i don't know what this does
                 :automation_enabled => {:key => 'AutomationEnabled',
                                         :value => 'true',
                                         :type => 'bool'},
@@ -326,9 +328,64 @@ module RunLoop
                 # controls the frame of the Accessibility Inspector
                 # this is a 'string' => {{0, 0}, {276, 166}}
                 :inspector_frame => {:key => 'AXInspector.frame',
-                                     :value => '{{270, -13}, {276, 166}}',
-                                     :type => 'string'}
+                                     :value => '{{290, -24}, {276, 166}}',
+                                     #:value => '{{270, -13}, {276, 166}}',
+                                     :type => 'string'},
+
+
           }.freeze
+
+    # @!visibility private
+    # A hash table of the accessibility properties that control whether or not
+    # accessibility is enabled and whether the AXInspector is visible.
+    #
+    # @note Xcode 6 SDK >= 8.0
+    #
+    # @see #enable_accessibility_in_sim_data_dir
+    SDK_80_ACCESSIBILITY_PROPERTIES_HASH =
+          {
+                :access_enabled => {:key => 'AccessibilityEnabled',
+                                    :value => 'true',
+                                    :type => 'bool'},
+
+                :app_access_enabled => {:key => 'ApplicationAccessibilityEnabled',
+                                        :value => 1,
+                                        :type => 'integer'},
+
+                :automation_enabled => {:key => 'AutomationEnabled',
+                                        :value => 1,
+                                        :type => 'integer'},
+
+                # determines if the Accessibility Inspector is showing
+                :inspector_showing => {:key => 'AXInspectorEnabled',
+                                       :value => 1,
+                                       :type => 'integer'},
+
+                # controls if the Accessibility Inspector is expanded or not expanded
+                :inspector_full_size => {:key => 'AXInspector.enabled',
+                                         :value => 'false',
+                                         :type => 'bool'},
+
+                # controls the frame of the Accessibility Inspector
+                # this is a 'string' => {{0, 0}, {276, 166}}
+                :inspector_frame => {:key => 'AXInspector.frame',
+                                     :value => '{{290, -24}, {276, 166}}',
+                                     #:value => '{{270, -13}, {276, 166}}',
+                                     :type => 'string'},
+
+                # new and shiny - looks interesting!
+                :automation_disable_faux_collection_cells =>
+                      {
+                            :key => 'AutomationDisableFauxCollectionCells',
+                            :value =>  1,
+                            :type => 'integer'
+                      }
+          }.freeze
+
+    # @!visibility private
+    # A regex for finding directories under ~/Library/Developer/CoreSimulator/Devices
+    # and parsing the output of `simctl list sessions`.
+    XCODE_6_SIM_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
 
     # @!visibility private
     # Returns the current Simulator pid.
@@ -390,24 +447,49 @@ module RunLoop
     end
 
     # @!visibility private
-    # Returns a list of absolute paths the existing simulator directories.
+    # In Xcode 5, this returns a list of absolute paths to the existing
+    # simulators SDK directories.
+    #
+    # In Xcode 6, this returns a list of absolute paths to the existing
+    # simulators `<udid>/data` directories.
     #
     # @note This can _never_ be memoized to a variable; its value reflects the
     #  state of the file system at the time it is called.
     #
-    # A simulator 'exists' if has an Application Support directory. for
-    # example, the 6.1, 7.0.3-64, and 7.1 simulators exist if the following
-    # directories are present:
+    # In Xcode 5, a simulator 'exists' if it appears in the Application Support
+    # directory.  For example, the 6.1, 7.0.3-64, and 7.1 simulators exist if
+    # the following directories are present:
     #
-    #     ~/Library/Application Support/iPhone Simulator/Library/6.1
-    #     ~/Library/Application Support/iPhone Simulator/Library/7.0.3-64
-    #     ~/Library/Application Support/iPhone Simulator/Library/7.1
+    # ```
+    # ~/Library/Application Support/iPhone Simulator/Library/6.1
+    # ~/Library/Application Support/iPhone Simulator/Library/7.0.3-64
+    # ~/Library/Application Support/iPhone Simulator/Library/7.1
+    # ```
+    #
+    # In Xcode 6, a simulator 'exists' if it appears in the
+    # CoreSimulator/Devices directory.  For example:
+    #
+    # ```
+    # ~/Library/Developer/CoreSimulator/Devices/0BF52B67-F8BB-4246-A668-1880237DD17B
+    # ~/Library/Developer/CoreSimulator/Devices/2FCF6AFF-8C85-442F-B472-8D489ECBFAA5
+    # ~/Library/Developer/CoreSimulator/Devices/578A16BE-C31F-46E5-836E-66A2E77D89D4
+    # ```
+    #
+    # @example Xcode 5 behavior
+    #   ~/Library/Application Support/iPhone Simulator/Library/6.1
+    #   ~/Library/Application Support/iPhone Simulator/Library/7.0.3-64
+    #   ~/Library/Application Support/iPhone Simulator/Library/7.1
+    #
+    # @example Xcode 6 behavior
+    #   ~/Library/Developer/CoreSimulator/Devices/0BF52B67-F8BB-4246-A668-1880237DD17B/data
+    #   ~/Library/Developer/CoreSimulator/Devices/2FCF6AFF-8C85-442F-B472-8D489ECBFAA5/data
+    #   ~/Library/Developer/CoreSimulator/Devices/578A16BE-C31F-46E5-836E-66A2E77D89D4/data
     #
     # @return[Array<String>] a list of absolute paths to simulator directories
-    def existing_sim_support_sdk_dirs
+    def existing_sim_sdk_or_device_data_dirs
       base_dir = sim_app_support_dir
       if xcode_version_gte_6?
-        regex = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/
+        regex = XCODE_6_SIM_UDID_REGEX
       else
         regex = /(\d)\.(\d)\.?(\d)?(-64)?/
       end
@@ -425,7 +507,9 @@ module RunLoop
     # @!visibility private
     # Enables accessibility on the simulator indicated by `app_support_sdk_dir`.
     #
-    # @note  This will quit the simulator.
+    # @note This will quit the simulator.
+    #
+    # @note This is for Xcode 5 only.  Will raise an error if called on Xcode 6.
     #
     # @example
     #   path = '~/Library/Application Support/iPhone Simulator/6.1'
@@ -437,7 +521,7 @@ module RunLoop
     # this method will create a Library/Preferences/com.apple.Accessibility.plist
     # that (oddly) the Simulator will _not_ overwrite.
     #
-    # @see enable_accessibility_on_simulators for the public API.
+    # @see #enable_accessibility_on_sims for the public API.
     #
     # @param [String] app_support_sdk_dir the directory where the
     #   Library/Preferences/com.apple.Accessibility.plist can be found.
@@ -446,7 +530,13 @@ module RunLoop
     # @option opts [Boolean] :verbose controls logging output
     # @return [Boolean] if the plist exists and the plist was successfully
     #   updated.
+    # @raise [RuntimeError] If called when Xcode 6 is the active Xcode version.
     def enable_accessibility_in_sdk_dir(app_support_sdk_dir, opts={})
+
+      if xcode_version_gte_6?
+        raise RuntimeError, 'it is illegal to call this method when Xcode >= 6 is the current Xcode version'
+      end
+
       default_opts = {:verbose => false}
       merged_opts = default_opts.merge(opts)
 
@@ -459,7 +549,7 @@ module RunLoop
       plist_path = File.expand_path("#{app_support_sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
 
       if File.exist?(plist_path)
-        res = ACCESSIBILITY_PROPERTIES_HASH.map do |hash_key, settings|
+        res = SDK_LT_80_ACCESSIBILITY_PROPERTIES_HASH.map do |hash_key, settings|
           success = pbuddy.plist_set(settings[:key], settings[:type], settings[:value], plist_path)
           unless success
             if verbose
@@ -484,5 +574,253 @@ module RunLoop
         enable_accessibility_in_sdk_dir(app_support_sdk_dir, merged_opts)
       end
     end
+
+    # @!visibility private
+    # Enables accessibility on the simulator indicated by `sim_data_dir`.
+    #
+    # @note This will quit the simulator.
+    #
+    # @note This is for Xcode 6 only.  Will raise an error if called on Xcode 5.
+    #
+    # @note The Accessibility plist contents differ by iOS version.  For
+    #  example, iOS 8 uses Number instead of Boolean as the data type for
+    #  several entries.  It is an _error_ to try to set a Number type to a
+    #  Boolean value.  This is why we need the second arg:
+    #  `sim_details_key_with_udid` which is a hash that maps a sim udid to a
+    #  a simulator version number.  See the todo.
+    #
+    # @todo Should consider updating the API to pass just the version number instead
+    #  of passing the entire sim_details hash.
+    #
+    # @example
+    #   path = '~/Library/Developer/CoreSimulator/Devices/0BF52B67-F8BB-4246-A668-1880237DD17B'
+    #   enable_accessibility_in_sim_data_dir(path, sim_details(:udid))
+    #
+    # This method also hides the AXInspector.
+    #
+    # If the Library/Preferences/com.apple.Accessibility.plist does not exist
+    # this method will create a Library/Preferences/com.apple.Accessibility.plist
+    # that (oddly) the Simulator will _not_ overwrite.
+    #
+    # @see #enable_accessibility_on_sims for the public API.
+    #
+    # @param [String] sim_data_dir The directory where the
+    #   Library/Preferences/com.apple.Accessibility.plist can be found.
+    # @param [Hash] sim_details_key_with_udid A hash table of simulator details
+    #   that can be obtained by calling `sim_details(:udid)`.
+    #
+    # @param [Hash] opts controls the behavior of the method
+    # @option opts [Boolean] :verbose controls logging output
+    # @return [Boolean] if the plist exists and the plist was successfully
+    #   updated.
+    # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
+    def enable_accessibility_in_sim_data_dir(sim_data_dir, sim_details_key_with_udid, opts={})
+      unless xcode_version_gte_6?
+        raise RuntimeError, 'it is illegal to call this method when the Xcode < 6 is the current Xcode version'
+      end
+
+      default_opts = {:verbose => false}
+      merged_opts = default_opts.merge(opts)
+
+      quit_sim
+
+      verbose = merged_opts[:verbose]
+      target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
+      launch_name = sim_details_key_with_udid[target_udid][:launch_name]
+      sdk_version = sim_details_key_with_udid[target_udid][:sdk_version]
+
+      msgs = ["cannot enable accessibility for '#{target_udid}' - '#{launch_name}'"]
+      plist_path = File.expand_path("#{sim_data_dir}/Library/Preferences/com.apple.Accessibility.plist")
+
+      if sdk_version >= RunLoop::Version.new('8.0')
+        hash = SDK_80_ACCESSIBILITY_PROPERTIES_HASH
+      else
+        hash = SDK_LT_80_ACCESSIBILITY_PROPERTIES_HASH
+      end
+
+      unless File.exist? plist_path
+        FileUtils.mkdir_p("#{sim_data_dir}/Library/Preferences")
+        plist = CFPropertyList::List.new
+        data = {}
+        plist.value = CFPropertyList.guess(data)
+        plist.save(plist_path, CFPropertyList::List::FORMAT_BINARY)
+      end
+
+      res = hash.map do |hash_key, settings|
+        success = pbuddy.plist_set(settings[:key], settings[:type], settings[:value], plist_path)
+        unless success
+          if verbose
+            if settings[:type] == 'bool'
+              value = settings[:value] ? 'YES' : 'NO'
+            else
+              value = settings[:value]
+            end
+            msgs << "could not set #{hash_key} => '#{settings[:key]}' to #{value}"
+            puts "WARN: #{msgs.join("\n")}"
+          end
+          end
+        success
+        end
+      res.all? { |elm| elm }
+    end
+
+    # @!visibility private
+    # Returns a hash table that contains detailed information about the
+    # available simulators.  Use the `primary_key` to control the primary hash
+    # key.  The same information is available regardless of the `primary_key`.
+    # Choose a key that matches your access pattern.
+    #
+    # @note This is for Xcode 6 only.  Will raise an error if called on Xcode 5.
+    #
+    # @example :udid
+    # "FD50223C-C29E-497A-BF16-0D6451318251" => {
+    #       :launch_name => "iPad Retina (7.1 Simulator)",
+    #       :udid => "FD50223C-C29E-497A-BF16-0D6451318251",
+    #       :sdk_version => #<RunLoop::Version:0x007f8ee8a9aac8 @major=7, @minor=1, @patch=nil>
+    # },
+    # "21DED687-77F5-4125-A480-0DBA6A1BA6D1" => {
+    #       :launch_name => "iPad Retina (8.0 Simulator)",
+    #       :udid => "21DED687-77F5-4125-A480-0DBA6A1BA6D1",
+    #       :sdk_version => #<RunLoop::Version:0x007f8ee8a9a730 @major=8, @minor=0, @patch=nil>
+    # },
+    #
+    #
+    # @example :launch_name
+    # "iPad Retina (7.1 Simulator)" => {
+    #       :launch_name => "iPad Retina (7.1 Simulator)",
+    #       :udid => "FD50223C-C29E-497A-BF16-0D6451318251",
+    #       :sdk_version => #<RunLoop::Version:0x007f8ee8a9aac8 @major=7, @minor=1, @patch=nil>
+    # },
+    # "iPad Retina (8.0 Simulator)" => {
+    #       :launch_name => "iPad Retina (8.0 Simulator)",
+    #       :udid => "21DED687-77F5-4125-A480-0DBA6A1BA6D1",
+    #       :sdk_version => #<RunLoop::Version:0x007f8ee8a9a730 @major=8, @minor=0, @patch=nil>
+    # },
+    #
+    # @param [String] primary_key Can be on of `{:udid | :launch_name}`.
+    # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
+    # @raise [RuntimeError] If called with an invalid `primary_key`.
+    def sim_details(primary_key)
+      unless xcode_version_gte_6?
+        raise RuntimeError, 'this method is only available on Xcode >= 6'
+      end
+
+      allowed = [:udid, :launch_name]
+      unless allowed.include? primary_key
+        raise ArgumentError, "expected '#{primary_key}' to be one of '#{allowed}'"
+      end
+
+      hash = {}
+      xctools.instruments(:sims).each do |elm|
+        launch_name = elm[/\A.+\((\d\.\d(\.\d)? Simulator\))/, 0]
+        udid = elm[XCODE_6_SIM_UDID_REGEX,0]
+        sdk_version = elm[/(\d\.\d(\.\d)? Simulator)/, 0].split(' ').first
+        value =
+              {
+                    :launch_name => launch_name,
+                    :udid => udid,
+                    :sdk_version => RunLoop::Version.new(sdk_version)
+              }
+        if primary_key == :udid
+          key = udid
+        else
+          key = launch_name
+        end
+        hash[key] = value
+      end
+      hash
+    end
+
+    # def simctl_list(what)
+    #   unless xcode_version_gte_6?
+    #     raise RuntimeError, 'simctl is only available on Xcode >= 6'
+    #   end
+    #
+    #   case what
+    #     when :sessions
+    #       simctl_list_sessions
+    #     when :devices
+    #       # Xcode 6b4 does not return anything of interest to stdout or stderr. o_O
+    #       simctl_list_devices
+    #     when :runtimes
+    #       # The 'com.apple.CoreSimulator.SimRuntime.iOS-7-0' is the runtime-id,
+    #       # which can be used to create devices.
+    #       simctl_list_runtimes
+    #     else
+    #       allowed = [:sessions, :devices, :runtimes]
+    #       raise ArgumentError, "expected '#{what}' to be one of '#{allowed}'"
+    #   end
+    # end
+    #
+    # def simctl_list_sessions
+    #   cmd = 'xcrun simctl list sessions'
+    #   Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+    #     out = stdout.read.strip
+    #     err = stderr.read.strip
+    #     if ENV['DEBUG_UNIX_CALLS'] == '1'
+    #       puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
+    #     end
+    #
+    #     current_sdk = nil
+    #     res = {}
+    #     out.split("\n").each do |line|
+    #       possible_sdk = line[/(\d\.\d(\.\d)?)/,0]
+    #       if possible_sdk
+    #         current_sdk = possible_sdk
+    #         res[current_sdk] = []
+    #         next
+    #       end
+    #
+    #       if current_sdk
+    #         name = line.split('(').first.strip
+    #         udid = line[XCODE_6_SIM_UDID_REGEX,0]
+    #         state = line[/(Booted|Shutdown)/,0]
+    #         res[current_sdk] << {:name => name, :udid => udid, :state => state}
+    #       end
+    #     end
+    #     res
+    #   end
+    # end
+    #
+    # def simctl_list_devices
+    #   # Xcode 6b4 does not return anything of interest to stdout or stderr. o_O
+    #   cmd = 'xcrun simctl list devices'
+    #   Open3.popen3("#{cmd} ") do  |_, stdout,  stderr, _|
+    #     out = stdout.read.strip
+    #     err = stderr.read.strip
+    #     if ENV['DEBUG_UNIX_CALLS'] == '1'
+    #       puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
+    #     end
+    #     out.empty?
+    #   end
+    # end
+    #
+    # def simctl_list_runtimes
+    #   # The 'com.apple.CoreSimulator.SimRuntime.iOS-7-0' is the runtime-id,
+    #   # which can be used to create devices.
+    #   cmd = 'xcrun simctl list runtimes'
+    #   Open3.popen3("#{cmd}") do  |_, stdout,  stderr, _|
+    #     out = stdout.read.strip
+    #     err = stderr.read.strip
+    #     if ENV['DEBUG_UNIX_CALLS'] == '1'
+    #       puts "#{cmd}  => stdout: '#{out}' | stderr: '#{err}'"
+    #     end
+    #     # Ex.
+    #     # == Runtimes ==
+    #     # iOS 7.0 (7.0.3 - 11B507) (com.apple.CoreSimulator.SimRuntime.iOS-7-0)
+    #     # iOS 7.1 (7.1 - 11D167) (com.apple.CoreSimulator.SimRuntime.iOS-7-1)
+    #     # iOS 8.0 (8.0 - 12A4331d) (com.apple.CoreSimulator.SimRuntime.iOS-8-0)
+    #     lines = out.split("\n").delete_if { |line| not line =~ /com.apple.CoreSimulator.SimRuntime/ }
+    #     res = {}
+    #     lines.each do |line|
+    #       sdk_version = line[/(\d.\d)(.\d)?\s-/, 0].tr(' -','')
+    #       runtime = line[/com.apple.CoreSimulator.SimRuntime.iOS-\d-\d/,0]
+    #       value = {:sdk => sdk_version,  :runtime => runtime}
+    #       key = "sdk#{sdk_version.tr('.','')}".to_sym
+    #       res[key] = value
+    #     end
+    #     res
+    #   end
+    # end
   end
 end
