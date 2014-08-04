@@ -108,15 +108,16 @@ describe RunLoop::SimControl do
 
     it 'for current version of Xcode it should return an Array' do
       local_sim_control = RunLoop::SimControl.new
+      mocked_dir = Resources.shared.mocked_sim_support_dir
+      expect(local_sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
+      actual = local_sim_control.instance_eval { existing_sim_support_sdk_dirs }
+      expect(actual).to be_a Array
+      expect(actual.count).to be == 6
+
       if local_sim_control.xcode_version_gte_6?
-        expect { local_sim_control.instance_eval { existing_sim_support_sdk_dirs }}.to raise_error RuntimeError
-      else
-        mocked_dir = Resources.shared.mocked_sim_support_dir
-        expect(local_sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
-        actual = local_sim_control.instance_eval { existing_sim_support_sdk_dirs }
-        expect(actual).to be_a Array
-        expect(actual.count).to be == 6
+        expect(actual.all? { |elm| elm =~ /^.*\/data$/ }).to be == true
       end
+
     end
   end
 
@@ -145,15 +146,15 @@ describe RunLoop::SimControl do
     before(:each) { RunLoop::SimControl.terminate_all_sims }
     it 'with the current version of Xcode' do
       if sim_control.xcode_version_gte_6?
-        expect { sim_control.instance_eval { enable_accessibility_in_sdk_dir('a', {}) }}.to raise_error RuntimeError
+        sdk_dir = File.expand_path(File.join(Dir.mktmpdir, '0C661900-7C5D-4DED-8F78-6BA55AEFF097/data'))
       else
-        sdk_dir = File.expand_path(File.join(Dir.mktmpdir, 'iPhone Simulator/7.0.3-64'))
-        sim_control.instance_eval { enable_accessibility_in_sdk_dir(sdk_dir) }
-        plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
-        expect(File.exist?(plist_path)).to be == true
-        # skipping most of the keys - the real test is whether we can launch.
-        expect(sim_control.pbuddy.plist_read('AutomationEnabled', plist_path)).to be == 'true'
+        sdk_dir = File.expand_path(File.join(Dir.mktmpdir, '7.0.3-64'))
       end
+      plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+      sim_control.instance_eval { enable_accessibility_in_sdk_dir(sdk_dir) }
+      expect(File.exist?(plist_path)).to be == true
+      # skipping most of the keys - the real test is whether we can launch.
+      expect(sim_control.pbuddy.plist_read('AutomationEnabled', plist_path)).to be == 'true'
     end
   end
 
@@ -170,6 +171,5 @@ describe RunLoop::SimControl do
         expect(sim_control.enable_accessibility_on_sims).to be == true
       end
     end
-
   end
 end

@@ -179,6 +179,9 @@ module RunLoop
                       :hide_after => false}
       merged_opts = default_opts.merge(opts)
 
+      # WARNING - DO NOT TRY TO DELETE Developer/CoreSimulator/Devices!
+      # Very bad things will happen.  Unlike Xcode < 6, the re-launching the
+      # simulator will _not_ recreate the SDK (aka Devices) directories.
       if xcode_version_gte_6?
         raise 'resetting the simulator content and settings is NYI for Xcode >= 6'
       end
@@ -402,13 +405,20 @@ module RunLoop
     #
     # @return[Array<String>] a list of absolute paths to simulator directories
     def existing_sim_support_sdk_dirs
+      base_dir = sim_app_support_dir
       if xcode_version_gte_6?
-        raise 'simulator support sdk dirs are NYI in Xcode 6.0'
+        regex = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/
       else
-        sim_app_support_path = sim_app_support_dir
-        Dir.glob("#{sim_app_support_path}/*").select { |path|
-          path =~ /(\d)\.(\d)\.?(\d)?(-64)?/
-        }
+        regex = /(\d)\.(\d)\.?(\d)?(-64)?/
+      end
+      dirs = Dir.glob("#{base_dir}/*").select { |path|
+        path =~ regex
+      }
+
+      if xcode_version_gte_6?
+        dirs.map { |elm| File.expand_path(File.join(elm, 'data')) }
+      else
+        dirs
       end
     end
 
@@ -439,10 +449,6 @@ module RunLoop
     def enable_accessibility_in_sdk_dir(app_support_sdk_dir, opts={})
       default_opts = {:verbose => false}
       merged_opts = default_opts.merge(opts)
-
-      if xcode_version_gte_6?
-        raise 'enabling accessibility NYI for Xcode >= 6.0'
-      end
 
       quit_sim
 
