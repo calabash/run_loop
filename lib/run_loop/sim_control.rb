@@ -425,9 +425,9 @@ module RunLoop
     def sim_name
       @sim_name ||= lambda {
         if xcode_version_gte_6?
-          'iOS Simulator.app'
+          'iOS Simulator'
         else
-          'iPhone Simulator.app'
+          'iPhone Simulator'
         end
       }.call
     end

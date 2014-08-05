@@ -20,13 +20,13 @@ describe RunLoop::SimControl do
     it 'for Xcode >= 6.0' do
       xctools = sim_control.xctools
       expect(xctools).to receive(:xcode_version).and_return(xctools.v60)
-      expect(sim_control.instance_eval { sim_name }).to be == 'iOS Simulator.app'
+      expect(sim_control.instance_eval { sim_name }).to be == 'iOS Simulator'
     end
 
     it 'for Xcode < 6.0' do
       xctools = sim_control.xctools
       expect(xctools).to receive(:xcode_version).and_return(xctools.v51)
-      expect(sim_control.instance_eval { sim_name }).to be == 'iPhone Simulator.app'
+      expect(sim_control.instance_eval { sim_name }).to be == 'iPhone Simulator'
     end
   end
 
