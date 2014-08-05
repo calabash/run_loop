@@ -145,7 +145,7 @@ module RunLoop
         when :devices
           @devices ||= lambda {
             all = `#{instruments} -s devices`.chomp.split("\n")
-            valid = all.select { |device| device =~ /\A.+\(v(\d\.\d(\.\d)?\) \([a-f0-9]{40}\))/ }
+            valid = all.select { |device| device =~ /[a-f0-9]{40}/ }
             valid.map do |device|
               udid = device[/[a-f0-9]{40}/, 0]
               version = device[/(\d\.\d(\.\d)?)/, 0]
