@@ -319,21 +319,27 @@ module RunLoop
                                         :value => 'true',
                                         :type => 'bool'},
 
-                # determines if the Accessibility Inspector is showing
+                # Determines if the Accessibility Inspector is showing.
+                #
+                # It turns out we can set this to 'false' as of Xcode 5.1 and
+                # hide the inspector altogether.
+                #
+                # I don't know what the behavior is on Xcode 5.0*.
                 :inspector_showing => {:key => 'AXInspectorEnabled',
-                                       :value => 'false',
+                                       :value => 'true',
                                        :type => 'bool'},
 
-                # controls if the Accessibility Inspector is expanded or not expanded
+                # Controls if the Accessibility Inspector is expanded or not
+                # expanded.
                 :inspector_full_size => {:key => 'AXInspector.enabled',
                                          :value => 'false',
                                          :type => 'bool'},
 
-                # controls the frame of the Accessibility Inspector
-                # this is a 'string' => {{0, 0}, {276, 166}}
+                # Controls the frame of the Accessibility Inspector.
+                # This is the best we can do because the OS will rewrite the
+                # frame if it does not conform to some expected range.
                 :inspector_frame => {:key => 'AXInspector.frame',
-                                     :value => '{{290, -24}, {276, 166}}',
-                                     #:value => '{{270, -13}, {276, 166}}',
+                                     :value => '{{290, -13}, {276, 166}}',
                                      :type => 'string'},
 
 
@@ -360,9 +366,10 @@ module RunLoop
                                         :value => 1,
                                         :type => 'integer'},
 
-                # determines if the Accessibility Inspector is showing
+                # Determines if the Accessibility Inspector is showing.
+                # Hurray!  We can turn this off in Xcode 6.
                 :inspector_showing => {:key => 'AXInspectorEnabled',
-                                       :value => 1,
+                                       :value => 0,
                                        :type => 'integer'},
 
                 # controls if the Accessibility Inspector is expanded or not expanded
@@ -370,11 +377,15 @@ module RunLoop
                                          :value => 'false',
                                          :type => 'bool'},
 
-                # controls the frame of the Accessibility Inspector
-                # this is a 'string' => {{0, 0}, {276, 166}}
+                # Controls the frame of the Accessibility Inspector
+                #
+                # In Xcode 6, positioning this is difficult because the OS
+                # rewrites the value if the frame does not conform to an
+                # expected range.  This is the best we can do.
+                #
+                # But see :inspector_showing!  Woot!
                 :inspector_frame => {:key => 'AXInspector.frame',
-                                     :value => '{{290, -24}, {276, 166}}',
-                                     #:value => '{{270, -13}, {276, 166}}',
+                                     :value => '{{270, 0}, {276, 166}}',
                                      :type => 'string'},
 
                 # new and shiny - looks interesting!
