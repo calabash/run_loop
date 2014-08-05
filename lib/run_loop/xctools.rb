@@ -11,6 +11,8 @@ module RunLoop
   # _current version of Xcode_.  The current Xcode version is the one returned
   # by `xcrun xcodebuild`.  The current Xcode version can be set using
   # `xcode-select` or overridden using the `DEVELOPER_DIR`.
+  #
+  # @todo Refactor instruments related code to instruments class.
   class XCTools
 
     # Returns a version instance for `Xcode 6.0`; used to check for the
@@ -139,8 +141,20 @@ module RunLoop
               end
             end
           }.call
+
+        when :devices
+          @devices ||= lambda {
+            all = `#{instruments} -s devices`.chomp.split("\n")
+            valid = all.select { |device| device =~ /\A.+\(v(\d\.\d(\.\d)?\) \([a-f0-9]{40}\))/ }
+            valid.map do |device|
+              udid = device[/[a-f0-9]{40}/, 0]
+              version = device[/(\d\.\d(\.\d)?)/, 0]
+              name = device.split('(').first.strip
+              RunLoop::Device.new(name, version, udid)
+            end
+          }.call
         else
-          candidates = [:version, :sims]
+          candidates = [:version, :sims, :devices]
           raise(ArgumentError, "expected '#{cmd}' to be one of '#{candidates}'")
       end
     end

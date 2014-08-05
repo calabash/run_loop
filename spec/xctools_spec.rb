@@ -56,6 +56,14 @@ describe RunLoop::XCTools do
           end
         end
       end
+
+      it ':devices it returns a list of iOS devices' do
+        devices = xctools.instruments :devices
+        expect(devices).to be_a Array
+        unless devices.empty?
+          expect(devices.all? { |device| device.is_a? RunLoop::Device }).to be == true
+        end
+      end
     end
   end
 
