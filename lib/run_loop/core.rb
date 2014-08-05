@@ -398,7 +398,7 @@ module RunLoop
         not path =~ /\/Automation.tracetemplate/
       end.delete_if do |path|
         not path =~ /Xcode/
-      end.first
+      end.first.tr("\"", '').strip
     end
 
     def self.log(message)
