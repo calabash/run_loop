@@ -79,7 +79,7 @@ module RunLoop
         if merged_opts[:hide_after]
           `xcrun /usr/bin/osascript -e 'tell application "System Events" to keystroke "h" using command down'`
         end
-        sleep(merged_opts[:post_launch_wait]) if merged_opts[:post_quit_wait]
+        sleep(merged_opts[:post_launch_wait]) if merged_opts[:post_launch_wait]
       end
     end
 
