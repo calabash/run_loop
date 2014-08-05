@@ -50,9 +50,9 @@ module RunLoop
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
       xctools ||= options[:xctools] || sim_control.xctools
 
-      unless sim_control.xcode_version_gte_6?
-        sim_control.enable_accessibility_on_sims
-      end
+      # @todo only enable accessibility when there is simulator target
+      # @todo only enable accessibility on the targeted simulator
+      sim_control.enable_accessibility_on_sims({:verbose => true})
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
