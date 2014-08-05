@@ -42,16 +42,20 @@ describe RunLoop::XCTools do
           expect(templates.empty?).to be false
         end
 
-        xcode_installs = Resources.shared.alt_xcode_install_paths
-        if xcode_installs.empty?
-          rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
-        else
-          xcode_installs.each do |developer_dir|
-            it "#{developer_dir}" do
-              ENV['DEVELOPER_DIR'] = developer_dir
-              templates = xctools.instruments :templates
-              expect(templates).to be_a Array
-              expect(templates.empty?).to be false
+        describe 'regression' do
+          xcode_installs = Resources.shared.alt_xcode_install_paths
+          if xcode_installs.empty?
+            it 'no alternative versions of Xcode found' do
+              expect(true).to be == true
+            end
+          else
+            xcode_installs.each do |developer_dir|
+              it "#{developer_dir}" do
+                ENV['DEVELOPER_DIR'] = developer_dir
+                templates = xctools.instruments :templates
+                expect(templates).to be_a Array
+                expect(templates.empty?).to be false
+              end
             end
           end
         end
@@ -92,14 +96,18 @@ describe RunLoop::XCTools do
       expect(xctools.xcode_version).to be_a RunLoop::Version
     end
 
-    it 'works for any Xcode version >= 5.0' do
+    describe 'regression' do
       xcode_installs = Resources.shared.alt_xcode_install_paths
       if xcode_installs.empty?
-        rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
+        it 'no alternative versions of Xcode found' do
+          expect(true).to be == true
+        end
       else
         xcode_installs.each do |developer_dir|
-          ENV['DEVELOPER_DIR'] = developer_dir
-          expect(RunLoop::XCTools.new.xcode_version).to be_a RunLoop::Version
+          it "#{developer_dir}" do
+            ENV['DEVELOPER_DIR'] = developer_dir
+            expect(RunLoop::XCTools.new.xcode_version).to be_a RunLoop::Version
+          end
         end
       end
     end

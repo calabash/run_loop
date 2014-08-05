@@ -32,21 +32,25 @@ describe RunLoop::Core do
 
   describe '.default_tracetemplate' do
     describe 'returns a template for' do
-      it "Xcode #{RunLoop::XCTools.new.xcode_version}" do
+      it "Xcode #{Resources.shared.current_xcode_version}" do
         default_template = RunLoop::Core.default_tracetemplate
         expect(File.exist?(default_template)).to be true
       end
 
-      xcode_installs = Resources.shared.alt_xcode_install_paths
-      # if no /Xcode/*/*.app are found, there is no test - lucky you. :)
-      if xcode_installs.empty?
-        rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
-      else
-        xcode_installs.each do |developer_dir|
-          it "#{developer_dir}" do
-            ENV['DEVELOPER_DIR'] = developer_dir
-            default_template = RunLoop::Core.default_tracetemplate
-            expect(File.exist?(default_template)).to be true
+      describe 'regression' do
+        xcode_installs = Resources.shared.alt_xcode_install_paths
+        # if no /Xcode/*/*.app are found, there is no test - lucky you. :)
+        if xcode_installs.empty?
+          it 'no alternative versions of Xcode found' do
+            expect(true).to be == true
+          end
+        else
+          xcode_installs.each do |developer_dir|
+            it "#{developer_dir}" do
+              ENV['DEVELOPER_DIR'] = developer_dir
+              default_template = RunLoop::Core.default_tracetemplate
+              expect(File.exist?(default_template)).to be true
+            end
           end
         end
       end

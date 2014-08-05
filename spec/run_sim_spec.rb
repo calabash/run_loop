@@ -6,7 +6,7 @@ describe RunLoop do
   }
 
   describe 'run on simulator' do
-    it "Xcode #{RunLoop::XCTools.new.xcode_version}" do
+    it "Xcode #{Resources.shared.current_xcode_version}" do
       sim_control = RunLoop::SimControl.new
       sim_control.reset_sim_content_and_settings
 
