@@ -1,4 +1,4 @@
-unless travis_ci?
+unless Resources.shared.travis_ci?
 
   describe RunLoop do
 

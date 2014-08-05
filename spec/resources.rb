@@ -4,6 +4,10 @@ class Resources
     @resources ||= Resources.new
   end
 
+  def travis_ci?
+    @travis_ci ||= ENV['TRAVIS'].to_s == 'true'
+  end
+
   def current_xcode_version
     @current_xcode_version ||= lambda {
       ENV.delete('DEVELOPER_DIR')

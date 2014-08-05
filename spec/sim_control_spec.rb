@@ -153,7 +153,7 @@ describe RunLoop::SimControl do
     end
   end
 
-  unless travis_ci?
+  unless Resources.shared.travis_ci?
     describe '#reset_sim_content_and_settings' do
 
       before(:each) do
