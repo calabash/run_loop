@@ -18,10 +18,6 @@ module AwesomePrint
   end
 end
 
-def travis_ci?
-  ENV['TRAVIS'].to_s == 'true'
-end
-
 def rspec_test_log(msg)
   begin
     puts "\033[32mTEST: #{msg}\033[0m"

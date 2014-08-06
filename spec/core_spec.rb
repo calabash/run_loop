@@ -8,7 +8,11 @@ describe RunLoop::Core do
   }
 
 
+
   describe '.automation_template' do
+
+    after(:each) { ENV.delete('TRACE_TEMPLATE') }
+
     it 'respects the TRACE_TEMPLATE env var if the tracetemplate exists' do
       dir = Dir.mktmpdir('tracetemplate')
       tracetemplate = File.expand_path(File.join(dir, 'some.tracetemplate'))
@@ -31,21 +35,27 @@ describe RunLoop::Core do
   end
 
   describe '.default_tracetemplate' do
-    it 'returns a template for current version of Xcode' do
-      default_template = RunLoop::Core.default_tracetemplate
-      expect(File.exist?(default_template)).to be true
-    end
+    describe 'returns a template for' do
+      it "Xcode #{Resources.shared.current_xcode_version}" do
+        default_template = RunLoop::Core.default_tracetemplate
+        expect(File.exist?(default_template)).to be true
+      end
 
-    xcode_installs = Resources.shared.alt_xcode_install_paths
-    # if no /Xcode/*/*.app are found, there is no test - lucky you. :)
-    if xcode_installs.empty?
-      rspec_info_log 'no alternative versions of Xcode >= 5.0 found in /Xcode directory'
-    else
-      xcode_installs.each do |developer_dir|
-        it "returns a template for Xcode '#{developer_dir}'" do
-          ENV['DEVELOPER_DIR'] = developer_dir
-          default_template = RunLoop::Core.default_tracetemplate
-          expect(File.exist?(default_template)).to be true
+      describe 'regression' do
+        xcode_installs = Resources.shared.alt_xcode_install_paths
+        # if no /Xcode/*/*.app are found, there is no test - lucky you. :)
+        if xcode_installs.empty?
+          it 'no alternative versions of Xcode found' do
+            expect(true).to be == true
+          end
+        else
+          xcode_installs.each do |developer_dir|
+            it "#{developer_dir}" do
+              ENV['DEVELOPER_DIR'] = developer_dir
+              default_template = RunLoop::Core.default_tracetemplate
+              expect(File.exist?(default_template)).to be true
+            end
+          end
         end
       end
     end
