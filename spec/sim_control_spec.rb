@@ -122,7 +122,7 @@ describe RunLoop::SimControl do
         end
       else
         xcode_installs.each do |developer_dir|
-          it "returns a valid path for Xcode '#{developer_dir}'" do
+          it "returns a valid path for #{developer_dir}" do
             RunLoop::SimControl.terminate_all_sims
             ENV['DEVELOPER_DIR'] = developer_dir
             local_sim_control = RunLoop::SimControl.new
