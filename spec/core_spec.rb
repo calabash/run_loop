@@ -8,7 +8,11 @@ describe RunLoop::Core do
   }
 
 
+
   describe '.automation_template' do
+
+    after(:each) { ENV.delete('TRACE_TEMPLATE') }
+
     it 'respects the TRACE_TEMPLATE env var if the tracetemplate exists' do
       dir = Dir.mktmpdir('tracetemplate')
       tracetemplate = File.expand_path(File.join(dir, 'some.tracetemplate'))
