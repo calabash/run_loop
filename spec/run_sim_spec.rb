@@ -10,13 +10,18 @@ describe RunLoop do
       sim_control = RunLoop::SimControl.new
       sim_control.reset_sim_content_and_settings
 
-      options = {
-            :launch_retries => Resources.shared.travis_ci? ? 5 : 2,
-            :app => Resources.shared.app_bundle_path,
-            :device_target => 'simulator',
-            :sim_control => sim_control
-      }
-      expect(RunLoop.run(options)).not_to be nil
+      options =
+            {
+                  :app => Resources.shared.app_bundle_path,
+                  :device_target => 'simulator',
+                  :sim_control => sim_control
+            }
+
+      hash = nil
+      Retriable.retriable({:tries => Resources.shared.travis_ci? ? 5 : 2}) do
+        hash = RunLoop.run(options)
+      end
+      expect(hash).not_to be nil
     end
   end
 
@@ -36,13 +41,18 @@ describe RunLoop do
           sim_control = RunLoop::SimControl.new
           sim_control.reset_sim_content_and_settings
           expect(sim_control.xctools.xcode_version).to be == version
-          options = {
-                :launch_retries => 2,
-                :app => Resources.shared.app_bundle_path,
-                :device_target => 'simulator',
-                :sim_control => sim_control
-          }
-          expect(RunLoop.run(options)).not_to be nil
+          options =
+                {
+                      :app => Resources.shared.app_bundle_path,
+                      :device_target => 'simulator',
+                      :sim_control => sim_control
+                }
+
+          hash = nil
+          Retriable.retriable({:tries => 2}) do
+            hash = RunLoop.run(options)
+          end
+          expect(hash).not_to be nil
         end
       end
     end

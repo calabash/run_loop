@@ -31,15 +31,18 @@ unless Resources.shared.travis_ci?
               options =
                     {
                           :bundle_id => Resources.shared.bundle_id,
-                          :launch_retries => 2,
                           :udid => device.udid,
                           :device_target => device.udid,
                           :sim_control => RunLoop::SimControl.new,
                           :app => Resources.shared.bundle_id
-
                     }
               expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
-              expect(RunLoop.run(options)).not_to be nil
+
+              hash = nil
+              Retriable.retriable({:tries => 2}) do
+                hash = RunLoop.run(options)
+              end
+              expect(hash).not_to be nil
             end
           end
         end
@@ -66,7 +69,6 @@ unless Resources.shared.travis_ci?
                 options =
                       {
                             :bundle_id => Resources.shared.bundle_id,
-                            :launch_retries => 2,
                             :udid => device.udid,
                             :device_target => device.udid,
                             :sim_control => RunLoop::SimControl.new,
@@ -74,7 +76,11 @@ unless Resources.shared.travis_ci?
 
                       }
                 expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
-                expect(RunLoop.run(options)).not_to be nil
+                hash = nil
+                Retriable.retriable({:tries => 2}) do
+                  hash = RunLoop.run(options)
+                end
+                expect(hash).not_to be nil
               end
             end
           end
