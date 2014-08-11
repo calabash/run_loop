@@ -107,6 +107,8 @@ module RunLoop
 
       args = options.fetch(:args, [])
 
+      inject_dylib = options.fetch(:inject_dylib, (ENV['CALABASH_USE_DYLIB']=='1'))
+
       log_file ||= File.join(results_dir, 'run_loop.out')
 
       if ENV['DEBUG']=='1'
@@ -118,6 +120,7 @@ module RunLoop
         puts "log_file=#{log_file}"
         puts "timeout=#{timeout}"
         puts "args=#{args}"
+        puts "inject_dylib=#{inject_dylib}"
       end
 
       after = Time.now
@@ -159,10 +162,36 @@ module RunLoop
 
       uia_timeout = options[:uia_timeout] || (ENV['UIA_TIMEOUT'] && ENV['UIA_TIMEOUT'].to_f) || 10
 
+      raw_lldb_output = nil
       before = Time.now
       begin
         Timeout::timeout(timeout, TimeoutError) do
           read_response(run_loop, 0, uia_timeout)
+        end
+        if inject_dylib
+          lldb_template_file = File.join(scripts_path,'calabash.lldb.erb')
+          lldb_template = ERB.new(File.read(lldb_template_file))
+          lldb_template.filename = lldb_template_file
+
+          cf_bundle_executable = find_cf_bundle_executable(bundle_dir_or_bundle_id)
+          require 'calabash/dylibs'
+          dylib_path_for_target = Calabash::Dylibs.path_to_sim_dylib
+
+          lldb_cmd = lldb_template.result(binding)
+
+          tmpdir = Dir.mktmpdir('lldb_cmd')
+          lldb_script = File.join(tmpdir,'lldb')
+
+          File.open(lldb_script,'w') {|f| f.puts(lldb_cmd)}
+
+          if ENV['DEBUG'] == '1'
+            puts "lldb script #{lldb_script}"
+          end
+
+          raw_lldb_output = `lldb -s #{lldb_script}`
+          if ENV['DEBUG'] == '1'
+            puts raw_lldb_output
+          end
         end
       rescue TimeoutError => e
         if ENV['DEBUG']
@@ -175,6 +204,7 @@ module RunLoop
           puts "log_file=#{log_file}"
           puts "timeout=#{timeout}"
           puts "args=#{args}"
+          puts "lldb_output=#{raw_lldb_output}" if raw_lldb_output
         end
         raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
@@ -186,6 +216,15 @@ module RunLoop
       end
 
       run_loop
+    end
+
+    def self.find_cf_bundle_executable(bundle_dir_or_bundle_id)
+      unless File.directory?(bundle_dir_or_bundle_id)
+        raise "Injecting dylibs currently only works with simulator and app bundles"
+      end
+      info_plist = Dir[File.join(bundle_dir_or_bundle_id,'Info.plist')].first
+      raise "Unable to find Info.plist in #{bundle_dir_or_bundle_id}" if info_plist.nil?
+      `/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "#{info_plist}"`.strip
     end
 
     def self.udid_and_bundle_for_launcher(device_target, options, xctools=RunLoop::XCTools.new)
