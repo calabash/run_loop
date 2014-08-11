@@ -7,8 +7,6 @@ describe RunLoop::Core do
     ENV.delete('TRACE_TEMPLATE')
   }
 
-
-
   describe '.automation_template' do
 
     after(:each) { ENV.delete('TRACE_TEMPLATE') }
@@ -97,4 +95,19 @@ describe RunLoop::Core do
     end
   end
 
+  describe '.above_or_eql_version?' do
+    subject(:a) { RunLoop::Version.new('5.1.1') }
+    subject(:b) { RunLoop::Version.new('6.0') }
+    describe 'returns correct value when' do
+      it 'both args are RunLoop::Version' do
+        expect(RunLoop::Core.above_or_eql_version? a, b).to be == false
+        expect(RunLoop::Core.above_or_eql_version? b, a).to be == true
+      end
+
+      it 'both args are Strings' do
+        expect(RunLoop::Core.above_or_eql_version? a.to_s, b.to_s).to be == false
+        expect(RunLoop::Core.above_or_eql_version? b.to_s, a.to_s).to be == true
+      end
+    end
+  end
 end
