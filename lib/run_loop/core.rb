@@ -170,7 +170,8 @@ module RunLoop
         end
         if inject_dylib
           lldb_template_file = File.join(scripts_path,'calabash.lldb.erb')
-          lldb_template = ERB.new(File.read(lldb_template_file))
+          require 'erb'
+          lldb_template = ::ERB.new(File.read(lldb_template_file))
           lldb_template.filename = lldb_template_file
 
           cf_bundle_executable = find_cf_bundle_executable(bundle_dir_or_bundle_id)
