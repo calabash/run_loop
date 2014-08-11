@@ -1,0 +1,4 @@
+process attach -n '<%= cf_bundle_executable %>'
+expr (void*)dlopen("<%= dylib_path_for_target %>", 0x2)
+detach
+exit
