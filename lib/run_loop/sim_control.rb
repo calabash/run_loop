@@ -326,7 +326,7 @@ module RunLoop
                 #
                 # I don't know what the behavior is on Xcode 5.0*.
                 :inspector_showing => {:key => 'AXInspectorEnabled',
-                                       :value => 'true',
+                                       :value => 'false',
                                        :type => 'bool'},
 
                 # Controls if the Accessibility Inspector is expanded or not
