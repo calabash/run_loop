@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 1.9'
 
-  s.add_dependency('thor', '~> 0.19')
+  s.add_dependency('thor', '>= 0.18')
   s.add_dependency('json', '~> 1.8')
   s.add_dependency('retriable', '~> 1.4')
   s.add_dependency('CFPropertyList','~> 2.2')
