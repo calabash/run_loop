@@ -3,6 +3,7 @@ require 'tmpdir'
 require 'timeout'
 require 'json'
 require 'open3'
+require 'erb'
 
 module RunLoop
 
@@ -170,7 +171,6 @@ module RunLoop
         end
         if inject_dylib
           lldb_template_file = File.join(scripts_path,'calabash.lldb.erb')
-          require 'erb'
           lldb_template = ::ERB.new(File.read(lldb_template_file))
           lldb_template.filename = lldb_template_file
 
