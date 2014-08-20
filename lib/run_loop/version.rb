@@ -1,5 +1,5 @@
 module RunLoop
-  VERSION = '1.0.0.pre2'
+  VERSION = '1.0.0.pre4'
 
   # A model of a software release version that can be used to compare two versions.
   #
