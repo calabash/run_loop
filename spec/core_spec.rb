@@ -61,7 +61,7 @@ describe RunLoop::Core do
 
   describe '.udid_and_bundle_for_launcher' do
     describe 'when 5.1 <= xcode < 6.0' do
-      options = {:app => Resources.shared.app_bundle_path}
+      options = {:app => Resources.shared.cal_app_bundle_path}
       valid_targets = [nil, '', 'simulator']
       valid_versions = ['5.1', '5.1.1'].map { |elm| RunLoop::Version.new(elm) }
       valid_targets.each do |target|
@@ -79,7 +79,7 @@ describe RunLoop::Core do
   end
 
   describe 'when xcode >= 6.0' do
-    options = {:app => Resources.shared.app_bundle_path}
+    options = {:app => Resources.shared.cal_app_bundle_path}
     valid_targets = [nil, '', 'simulator']
     valid_versions = ['6.0'].map { |elm| RunLoop::Version.new(elm) }
     valid_targets.each do |target|
