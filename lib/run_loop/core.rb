@@ -249,11 +249,24 @@ module RunLoop
     #   `self.udid_and_bundle_for_launcher`
     #
     # @see {Core::RunLoop.udid_and_bundle_for_launcher}
-    # @todo Xcode >= 6 - need to be able to detect named simulators
     def self.simulator_target?(run_options, sim_control = RunLoop::SimControl.new)
       value = run_options[:device_target]
+
+      # match the behavior of udid_and_bundle_for_launcher
       return true if value.nil? or value == ''
-      value.downcase.include?('simulator') or sim_control.sim_udid? value
+
+      # support for 'simulator' and Xcode >= 5.1 device targets
+      return true if value.downcase.include?('simulator')
+
+      # if Xcode < 6.0, we are done
+      return false if not sim_control.xcode_version_gte_6?
+
+      # support for Xcode >= 6 simulator udids
+      return true if sim_control.sim_udid? value
+
+      # support for Xcode >= 6 'named simulators'
+      sims = sim_control.simulators.each
+      sims.find_index { |device| device.name == value } != nil
     end
 
     # Extracts the value of :inject_dylib from options Hash.

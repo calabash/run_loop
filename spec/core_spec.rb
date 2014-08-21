@@ -177,9 +177,43 @@ describe RunLoop::Core do
           end
         end
 
-        it ":device_target => Xcode 6 simulator UDID" do
-          options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
-          expect(RunLoop::Core.simulator_target?(options)).to be == true
+        if RunLoop::XCTools.new.xcode_version_gte_6?
+          describe 'Xcode 6 behaviors' do
+            it ":device_target => Xcode 6 simulator UDID" do
+              options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
+              expect(RunLoop::Core.simulator_target?(options)).to be == true
+            end
+          end
+
+          describe "'named simulator'" do
+            begin
+              it ":device_target => 'rspec-test-device'" do
+                device_type_id = 'iPhone 5s'
+                runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
+                cmd = "xcrun simctl create \"rspec-test-device\" \"#{device_type_id}\" \"#{runtime_id}\""
+                udid = `#{cmd}`
+                exit_code = $?.exitstatus
+                expect(udid).to_not be == nil
+                expect(exit_code).to be == 0
+                options = { :device_target => 'rspec-test-device' }
+                expect(RunLoop::Core.simulator_target?(options)).to be == true
+              end
+            ensure
+              local_sim_control = RunLoop::SimControl.new
+              simulators = local_sim_control.simulators
+              simulators.each do |device|
+                if device.name == 'rspec-test-device'
+                  udid = device.udid
+                  begin
+                    puts "deleting device '#{device}'"
+                    `xcrun simctl delete #{udid}`
+                  rescue Exception => e
+                    rspec_warn_log "Failed to remove named simulator: #{e}"
+                  end
+                end
+              end
+            end
+          end
         end
       end
     end
