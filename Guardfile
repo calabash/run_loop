@@ -7,7 +7,12 @@ end
 
 # must use all_after_pass => false b/c guard will try to run _all_ the specs in
 # spec/ regardless of whether or not we are watching that spec file.
-guard :rspec, cmd: 'bundle exec rspec', failed_mode: :focus, all_after_pass: false, all_on_start: true do
+# @todo file a bug about all_after_pass
+#
+# must use all_on_start => false b/c guard will try to run _all_ the specs in the
+# spec/ regardless of whether or not we are watching that spec file.
+# @todo file a bug about all_on_start
+guard :rspec, cmd: 'bundle exec rspec', failed_mode: :focus, all_after_pass: false, all_on_start: false do
 
   # running the sim specs is no fun because the simulator is always grabbing
   # control of the machine when it launches.
