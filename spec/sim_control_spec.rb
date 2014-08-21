@@ -345,6 +345,12 @@ describe RunLoop::SimControl do
         expect(local_sim_control).to receive(:xcode_version_gte_51?).and_return(false)
         expect { local_sim_control.simulators }.to raise_error RuntimeError
       end
+
+      if RunLoop::XCTools.new.xcode_version == RunLoop::Version.new('5.1.1')
+        it 'on Xcode == 5.1.1 b/c it is not implemented yet' do
+          expect { sim_control.simulators }.to raise_error NotImplementedError
+        end
+      end
     end
 
     if RunLoop::XCTools.new.xcode_version_gte_6?

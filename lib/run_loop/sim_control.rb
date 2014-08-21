@@ -318,7 +318,7 @@ module RunLoop
         end
         sims
       else
-        []
+        raise NotImplementedError, 'the simulators method is not available yet for Xcode 5.1.1'
       end
     end
 
