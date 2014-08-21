@@ -303,6 +303,25 @@ module RunLoop
       udid.length == 36 and udid[XCODE_6_SIM_UDID_REGEX,0] != nil
     end
 
+    def simulators
+      unless xcode_version_gte_51?
+        raise RuntimeError, 'simctl is only available on Xcode >= 6'
+      end
+
+      if xcode_version_gte_6?
+        hash = simctl_list :devices
+        sims = []
+        hash.each_pair do |sdk, list|
+          list.each do |details|
+            sims << RunLoop::Device.new(details[:name], sdk, details[:udid])
+          end
+        end
+        sims
+      else
+        []
+      end
+    end
+
     private
 
 

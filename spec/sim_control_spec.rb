@@ -337,4 +337,22 @@ describe RunLoop::SimControl do
       end
     end
   end
+
+  describe '#simulators' do
+    describe 'raises an error when called' do
+      it 'on Xcode < 5.1' do
+        local_sim_control = RunLoop::SimControl.new
+        expect(local_sim_control).to receive(:xcode_version_gte_51?).and_return(false)
+        expect { local_sim_control.simulators }.to raise_error RuntimeError
+      end
+    end
+
+    if RunLoop::XCTools.new.xcode_version_gte_6?
+      it 'returns a list RunLoop::Device instances' do
+        sims = sim_control.simulators
+        expect(sims).to be_a Array
+        expect(sims.empty?).to be == false
+      end
+    end
+  end
 end
