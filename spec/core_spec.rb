@@ -115,6 +115,7 @@ describe RunLoop::Core do
     describe 'raises an error' do
       # @todo this test is probably unnecessary
       it 'when options argument is not a Hash' do
+        expect { RunLoop::Core.dylib_path_from_options([]) }.to raise_error TypeError
         expect { RunLoop::Core.dylib_path_from_options(nil) }.to raise_error NoMethodError
       end
 
