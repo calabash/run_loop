@@ -68,9 +68,10 @@ module RunLoop
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
       xctools ||= options[:xctools] || sim_control.xctools
 
-      # @todo only enable accessibility when there is simulator target
-      # @todo only enable accessibility on the targeted simulator
-      sim_control.enable_accessibility_on_sims({:verbose => true})
+      if self.simulator_target?(options, sim_control)
+        # @todo only enable accessibility on the targeted simulator
+        sim_control.enable_accessibility_on_sims({:verbose => true})
+      end
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
@@ -236,6 +237,23 @@ module RunLoop
       end
 
       run_loop
+    end
+
+    # @!visibility private
+    # Are we targeting a simulator?
+    #
+    # @note  The behavior of this method is different than the corresponding
+    #   method in Calabash::Cucumber::Launcher method.  If
+    #   `:device_target => {nil | ''}`, then the calabash-ios method returns
+    #   _false_.  I am basing run-loop's behavior off the behavior in
+    #   `self.udid_and_bundle_for_launcher`
+    #
+    # @see {Core::RunLoop.udid_and_bundle_for_launcher}
+    # @todo Xcode >= 6 - need to be able to detect named simulators
+    def self.simulator_target?(run_options, sim_control = RunLoop::SimControl.new)
+      value = run_options[:device_target]
+      return true if value.nil? or value == ''
+      value.downcase.include?('simulator') or sim_control.sim_udid? value
     end
 
     # Extracts the value of :inject_dylib from options Hash.
