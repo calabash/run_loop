@@ -30,6 +30,22 @@ describe RunLoop::SimControl do
     end
   end
 
+  describe '#sim_udid? returns' do
+    it 'true when arg is an Xcode >= 6.0 simulator udid' do
+      expect(sim_control.sim_udid? '578A16BE-C31F-46E5-836E-66A2E77D89D4').to be == true
+    end
+
+    describe 'false when arg is not an Xcode => 6.0 simulator udid' do
+      it 'length is not correct' do
+        expect(sim_control.sim_udid? 'foo').to be == false
+      end
+
+      it 'pattern does not match' do
+        expect(sim_control.sim_udid? 'C31F-578A16BE-46E5-836E-66A2E77D89D4').to be == false
+      end
+    end
+  end
+
   describe '#sim_app_path' do
     it 'for Xcode >= 6.0' do
       xctools = sim_control.xctools

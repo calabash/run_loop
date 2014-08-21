@@ -286,6 +286,13 @@ module RunLoop
       results.all?
     end
 
+    # Is the arg a valid Xcode >= 6.0 simulator udid?
+    # @param [String] udid the String to check
+    # @return [Boolean] Returns true iff the `udid` matches /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/
+    def sim_udid?(udid)
+      udid.length == 36 and udid[XCODE_6_SIM_UDID_REGEX,0] != nil
+    end
+
     private
 
 
