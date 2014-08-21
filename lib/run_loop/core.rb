@@ -109,6 +109,8 @@ module RunLoop
       args = options.fetch(:args, [])
 
       inject_dylib = self.dylib_path_from_options options
+      # WIP This is brute-force call against all lldb processes.
+      self.ensure_lldb_not_running if inject_dylib
 
       log_file ||= File.join(results_dir, 'run_loop.out')
 
@@ -527,6 +529,21 @@ module RunLoop
       pids_str.split(',').map { |pid| pid.to_i }
     end
 
+    # @todo This is a WIP
+    # @todo Needs rspec test
+    def self.ensure_lldb_not_running
+      descripts = `xcrun ps x -o pid,command | grep "lldb" | grep -v grep`.strip.split("\n")
+      descripts.each do |process_desc|
+        pid = process_desc.split(' ').first
+        Open3.popen3("xcrun kill -9 #{pid} && xcrun wait #{pid}") do  |_, stdout,  stderr, _|
+          out = stdout.read.strip
+          err = stderr.read.strip
+          next if out.to_s.empty? and err.to_s.empty?
+          # there lots of 'ownership' problems trying to kill the lldb process
+          #puts "kill process '#{pid}' => stdout: '#{out}' | stderr: '#{err}'"
+        end
+      end
+    end
   end
 
 
