@@ -169,14 +169,19 @@ module RunLoop
         Timeout::timeout(timeout, TimeoutError) do
           read_response(run_loop, 0, uia_timeout)
         end
+
+        # inject_dylib will be nil or a path to a dylib
         if inject_dylib
           lldb_template_file = File.join(scripts_path,'calabash.lldb.erb')
           lldb_template = ::ERB.new(File.read(lldb_template_file))
           lldb_template.filename = lldb_template_file
 
+          # Special!
+          # These are required by the ERB in calabash.lldb.erb
+          # noinspection RubyUnusedLocalVariable
           cf_bundle_executable = find_cf_bundle_executable(bundle_dir_or_bundle_id)
-          require 'calabash/dylibs'
-          dylib_path_for_target = Calabash::Dylibs.path_to_sim_dylib
+          # noinspection RubyUnusedLocalVariable
+          dylib_path_for_target = inject_dylib
 
           lldb_cmd = lldb_template.result(binding)
 
