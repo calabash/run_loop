@@ -30,6 +30,16 @@ module RunLoop
       xctools.xcode_version_gte_6?
     end
 
+    # @!visibility private
+    # Are we running Xcode 5.1 or above?
+    #
+    # This is a convenience method.
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 5.1
+    def xcode_version_gte_51?
+      xctools.xcode_version_gte_51?
+    end
+
     # Return an instance of PlistBuddy.
     # @return [RunLoop::PlistBuddy] The plist buddy instance that is used internally.
     def pbuddy
