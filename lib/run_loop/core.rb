@@ -116,7 +116,12 @@ module RunLoop
       log_file ||= File.join(results_dir, 'run_loop.out')
 
       if ENV['DEBUG']=='1'
-        p options
+        exclude = [:device_target, :udid, :sim_control, :args, :inject_dylib, :app]
+        options.each_pair { |key, value|
+          unless exclude.include? key
+            puts "#{key} => #{value}"
+          end
+        }
         puts "device_target=#{device_target}"
         puts "udid=#{udid}"
         puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
