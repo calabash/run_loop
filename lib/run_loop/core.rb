@@ -192,6 +192,13 @@ module RunLoop
 
           if ENV['DEBUG'] == '1'
             puts "lldb script #{lldb_script}"
+            puts "=== lldb script ==="
+            counter = 0
+            File.open(lldb_script, 'r').readlines.each { |line|
+              puts "#{counter} #{line}"
+              counter = counter + 1
+            }
+            puts "=== lldb script ==="
           end
 
           raw_lldb_output = `xcrun lldb -s #{lldb_script}`

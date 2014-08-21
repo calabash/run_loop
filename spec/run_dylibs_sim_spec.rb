@@ -3,6 +3,7 @@ describe RunLoop do
   before(:each) {
     ENV.delete('DEVELOPER_DIR')
     ENV.delete('DEBUG')
+    ENV.delete('DEBUG_UNIX_CALLS')
     RunLoop::SimControl.terminate_all_sims
   }
 
@@ -35,8 +36,9 @@ describe RunLoop do
 
   unless Resources.shared.travis_ci?
     describe 'regression: injecting a dylib targeting the simulator with' do
-      # regression testing is not stable
-      if true
+      # Regression testing is not stable.  Use 'true' to skip the tests and
+      # 'false' to run them.
+      if false
         rspec_warn_log 'Skipping regression testing dylib injection b/c they are not stable.'
       else
         xcode_installs = Resources.shared.alt_xcodes_gte_xc51_hash
