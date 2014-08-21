@@ -108,7 +108,7 @@ module RunLoop
 
       args = options.fetch(:args, [])
 
-      inject_dylib = options.fetch(:inject_dylib, (ENV['CALABASH_USE_DYLIB']=='1'))
+      inject_dylib = self.dylib_path_from_options options
 
       log_file ||= File.join(results_dir, 'run_loop.out')
 
@@ -217,6 +217,26 @@ module RunLoop
       end
 
       run_loop
+    end
+
+    # Extracts the value of :inject_dylib from options Hash.
+    # @param options [Hash] arguments passed to {RunLoop.run}
+    # @return [String, nil] If the options contains :inject_dylibs and it is a
+    #  path to a dylib that exists, return the path.  Otherwise return nil or
+    #  raise an error.
+    # @raise [RuntimeError] If :inject_dylib points to a path that does not exist.
+    # @raise [ArgumentError] If :inject_dylib is not a String.
+    def self.dylib_path_from_options(options)
+      inject_dylib = options.fetch(:inject_dylib, nil)
+      return nil if inject_dylib.nil?
+      unless inject_dylib.is_a? String
+        raise ArgumentError, "Expected :inject_dylib to be a path to a dylib, but found '#{inject_dylib}'"
+      end
+      dylib_path = File.expand_path(inject_dylib)
+      unless File.exist?(dylib_path)
+        raise "Cannot load dylib.  The file '#{dylib_path}' does not exist."
+      end
+      dylib_path
     end
 
     def self.find_cf_bundle_executable(bundle_dir_or_bundle_id)

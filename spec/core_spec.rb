@@ -110,4 +110,35 @@ describe RunLoop::Core do
       end
     end
   end
+
+  describe '.dylib_path_from_options' do
+    describe 'raises an error' do
+      # @todo this test is probably unnecessary
+      it 'when options argument is not a Hash' do
+        expect { RunLoop::Core.dylib_path_from_options(nil) }.to raise_error NoMethodError
+      end
+
+      it 'when :inject_dylib is not a String' do
+        options = { :inject_dylib => true }
+        expect { RunLoop::Core.dylib_path_from_options(options) }.to raise_error ArgumentError
+      end
+
+      it 'when dylib does not exist' do
+        options = { :inject_dylib => 'foo/bar.dylib' }
+        expect { RunLoop::Core.dylib_path_from_options(options) }.to raise_error RuntimeError
+      end
+    end
+
+    describe 'returns' do
+      it 'nil if options does not contain :inject_dylib key' do
+        expect(RunLoop::Core.dylib_path_from_options({})).to be == nil
+      end
+
+      it 'value of :inject_dylib key if the path exists' do
+        path = Resources.shared.sim_dylib_path
+        options = { :inject_dylib => path }
+        expect(RunLoop::Core.dylib_path_from_options(options)).to be == path
+      end
+    end
+  end
 end
