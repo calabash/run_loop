@@ -201,9 +201,14 @@ module RunLoop
             puts "=== lldb script ==="
           end
 
-          raw_lldb_output = `xcrun lldb -s #{lldb_script}`
-          if ENV['DEBUG'] == '1'
-            puts raw_lldb_output
+          # Forcing a timeout.  Do not retry here.  If lldb is hanging,
+          # RunLoop::Core.run* needs to be called again.  Put another way,
+          # instruments and lldb must be terminated.
+          Retriable.retriable({:tries => 1, :timeout => 12, :interval => 1}) do
+            raw_lldb_output = `xcrun lldb -s #{lldb_script}`
+            if ENV['DEBUG'] == '1'
+              puts raw_lldb_output
+            end
           end
         end
       rescue TimeoutError => e
