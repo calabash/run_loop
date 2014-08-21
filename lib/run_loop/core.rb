@@ -194,7 +194,7 @@ module RunLoop
             puts "lldb script #{lldb_script}"
           end
 
-          raw_lldb_output = `lldb -s #{lldb_script}`
+          raw_lldb_output = `xcrun lldb -s #{lldb_script}`
           if ENV['DEBUG'] == '1'
             puts raw_lldb_output
           end
