@@ -3,6 +3,7 @@ require 'tmpdir'
 require 'timeout'
 require 'json'
 require 'open3'
+require 'erb'
 
 module RunLoop
 
@@ -107,6 +108,10 @@ module RunLoop
 
       args = options.fetch(:args, [])
 
+      inject_dylib = self.dylib_path_from_options options
+      # WIP This is brute-force call against all lldb processes.
+      self.ensure_lldb_not_running if inject_dylib
+
       log_file ||= File.join(results_dir, 'run_loop.out')
 
       if ENV['DEBUG']=='1'
@@ -118,6 +123,7 @@ module RunLoop
         puts "log_file=#{log_file}"
         puts "timeout=#{timeout}"
         puts "args=#{args}"
+        puts "inject_dylib=#{inject_dylib}"
       end
 
       after = Time.now
@@ -159,10 +165,53 @@ module RunLoop
 
       uia_timeout = options[:uia_timeout] || (ENV['UIA_TIMEOUT'] && ENV['UIA_TIMEOUT'].to_f) || 10
 
+      raw_lldb_output = nil
       before = Time.now
       begin
         Timeout::timeout(timeout, TimeoutError) do
           read_response(run_loop, 0, uia_timeout)
+        end
+
+        # inject_dylib will be nil or a path to a dylib
+        if inject_dylib
+          lldb_template_file = File.join(scripts_path,'calabash.lldb.erb')
+          lldb_template = ::ERB.new(File.read(lldb_template_file))
+          lldb_template.filename = lldb_template_file
+
+          # Special!
+          # These are required by the ERB in calabash.lldb.erb
+          # noinspection RubyUnusedLocalVariable
+          cf_bundle_executable = find_cf_bundle_executable(bundle_dir_or_bundle_id)
+          # noinspection RubyUnusedLocalVariable
+          dylib_path_for_target = inject_dylib
+
+          lldb_cmd = lldb_template.result(binding)
+
+          tmpdir = Dir.mktmpdir('lldb_cmd')
+          lldb_script = File.join(tmpdir,'lldb')
+
+          File.open(lldb_script,'w') {|f| f.puts(lldb_cmd)}
+
+          if ENV['DEBUG'] == '1'
+            puts "lldb script #{lldb_script}"
+            puts "=== lldb script ==="
+            counter = 0
+            File.open(lldb_script, 'r').readlines.each { |line|
+              puts "#{counter} #{line}"
+              counter = counter + 1
+            }
+            puts "=== lldb script ==="
+          end
+
+          # Forcing a timeout.  Do not retry here.  If lldb is hanging,
+          # RunLoop::Core.run* needs to be called again.  Put another way,
+          # instruments and lldb must be terminated.
+          Retriable.retriable({:tries => 1, :timeout => 12, :interval => 1}) do
+            raw_lldb_output = `xcrun lldb -s #{lldb_script}`
+            if ENV['DEBUG'] == '1'
+              puts raw_lldb_output
+            end
+          end
         end
       rescue TimeoutError => e
         if ENV['DEBUG']
@@ -175,6 +224,7 @@ module RunLoop
           puts "log_file=#{log_file}"
           puts "timeout=#{timeout}"
           puts "args=#{args}"
+          puts "lldb_output=#{raw_lldb_output}" if raw_lldb_output
         end
         raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
@@ -186,6 +236,35 @@ module RunLoop
       end
 
       run_loop
+    end
+
+    # Extracts the value of :inject_dylib from options Hash.
+    # @param options [Hash] arguments passed to {RunLoop.run}
+    # @return [String, nil] If the options contains :inject_dylibs and it is a
+    #  path to a dylib that exists, return the path.  Otherwise return nil or
+    #  raise an error.
+    # @raise [RuntimeError] If :inject_dylib points to a path that does not exist.
+    # @raise [ArgumentError] If :inject_dylib is not a String.
+    def self.dylib_path_from_options(options)
+      inject_dylib = options.fetch(:inject_dylib, nil)
+      return nil if inject_dylib.nil?
+      unless inject_dylib.is_a? String
+        raise ArgumentError, "Expected :inject_dylib to be a path to a dylib, but found '#{inject_dylib}'"
+      end
+      dylib_path = File.expand_path(inject_dylib)
+      unless File.exist?(dylib_path)
+        raise "Cannot load dylib.  The file '#{dylib_path}' does not exist."
+      end
+      dylib_path
+    end
+
+    def self.find_cf_bundle_executable(bundle_dir_or_bundle_id)
+      unless File.directory?(bundle_dir_or_bundle_id)
+        raise "Injecting dylibs currently only works with simulator and app bundles"
+      end
+      info_plist = Dir[File.join(bundle_dir_or_bundle_id,'Info.plist')].first
+      raise "Unable to find Info.plist in #{bundle_dir_or_bundle_id}" if info_plist.nil?
+      `/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "#{info_plist}"`.strip
     end
 
     def self.udid_and_bundle_for_launcher(device_target, options, xctools=RunLoop::XCTools.new)
@@ -450,6 +529,21 @@ module RunLoop
       pids_str.split(',').map { |pid| pid.to_i }
     end
 
+    # @todo This is a WIP
+    # @todo Needs rspec test
+    def self.ensure_lldb_not_running
+      descripts = `xcrun ps x -o pid,command | grep "lldb" | grep -v grep`.strip.split("\n")
+      descripts.each do |process_desc|
+        pid = process_desc.split(' ').first
+        Open3.popen3("xcrun kill -9 #{pid} && xcrun wait #{pid}") do  |_, stdout,  stderr, _|
+          out = stdout.read.strip
+          err = stderr.read.strip
+          next if out.to_s.empty? and err.to_s.empty?
+          # there lots of 'ownership' problems trying to kill the lldb process
+          #puts "kill process '#{pid}' => stdout: '#{out}' | stderr: '#{err}'"
+        end
+      end
+    end
   end
 
 

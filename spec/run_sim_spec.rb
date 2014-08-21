@@ -12,7 +12,7 @@ describe RunLoop do
 
       options =
             {
-                  :app => Resources.shared.app_bundle_path,
+                  :app => Resources.shared.cal_app_bundle_path,
                   :device_target => 'simulator',
                   :sim_control => sim_control
             }
@@ -43,7 +43,7 @@ describe RunLoop do
           expect(sim_control.xctools.xcode_version).to be == version
           options =
                 {
-                      :app => Resources.shared.app_bundle_path,
+                      :app => Resources.shared.cal_app_bundle_path,
                       :device_target => 'simulator',
                       :sim_control => sim_control
                 }

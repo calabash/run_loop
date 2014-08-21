@@ -19,12 +19,20 @@ class Resources
     @resources_dir = File.expand_path(File.join(File.dirname(__FILE__),  'resources'))
   end
 
+  def cal_app_bundle_path
+    @cal_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.app'))
+  end
+
   def app_bundle_path
-    @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.app'))
+    @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou.app'))
   end
 
   def ipa_path
     @ipa_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.ipa'))
+  end
+
+  def sim_dylib_path
+    @sim_dylib_path ||= File.expand_path(File.join(resources_dir, 'dylibs', 'libCalabashDynSim.dylib'))
   end
 
   def bundle_id

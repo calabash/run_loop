@@ -61,7 +61,7 @@ describe RunLoop::Core do
 
   describe '.udid_and_bundle_for_launcher' do
     describe 'when 5.1 <= xcode < 6.0' do
-      options = {:app => Resources.shared.app_bundle_path}
+      options = {:app => Resources.shared.cal_app_bundle_path}
       valid_targets = [nil, '', 'simulator']
       valid_versions = ['5.1', '5.1.1'].map { |elm| RunLoop::Version.new(elm) }
       valid_targets.each do |target|
@@ -79,7 +79,7 @@ describe RunLoop::Core do
   end
 
   describe 'when xcode >= 6.0' do
-    options = {:app => Resources.shared.app_bundle_path}
+    options = {:app => Resources.shared.cal_app_bundle_path}
     valid_targets = [nil, '', 'simulator']
     valid_versions = ['6.0'].map { |elm| RunLoop::Version.new(elm) }
     valid_targets.each do |target|
@@ -107,6 +107,37 @@ describe RunLoop::Core do
       it 'both args are Strings' do
         expect(RunLoop::Core.above_or_eql_version? a.to_s, b.to_s).to be == false
         expect(RunLoop::Core.above_or_eql_version? b.to_s, a.to_s).to be == true
+      end
+    end
+  end
+
+  describe '.dylib_path_from_options' do
+    describe 'raises an error' do
+      # @todo this test is probably unnecessary
+      it 'when options argument is not a Hash' do
+        expect { RunLoop::Core.dylib_path_from_options(nil) }.to raise_error NoMethodError
+      end
+
+      it 'when :inject_dylib is not a String' do
+        options = { :inject_dylib => true }
+        expect { RunLoop::Core.dylib_path_from_options(options) }.to raise_error ArgumentError
+      end
+
+      it 'when dylib does not exist' do
+        options = { :inject_dylib => 'foo/bar.dylib' }
+        expect { RunLoop::Core.dylib_path_from_options(options) }.to raise_error RuntimeError
+      end
+    end
+
+    describe 'returns' do
+      it 'nil if options does not contain :inject_dylib key' do
+        expect(RunLoop::Core.dylib_path_from_options({})).to be == nil
+      end
+
+      it 'value of :inject_dylib key if the path exists' do
+        path = Resources.shared.sim_dylib_path
+        options = { :inject_dylib => path }
+        expect(RunLoop::Core.dylib_path_from_options(options)).to be == path
       end
     end
   end
