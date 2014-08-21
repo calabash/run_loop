@@ -69,29 +69,32 @@ describe RunLoop::SimControl do
     end
   end
 
-  describe '#quit_sim and #launch_sim' do
-    before(:each) { RunLoop::SimControl.terminate_all_sims }
+  # flickering on Travis CI
+  unless Resources.shared.travis_ci?
+    describe '#quit_sim and #launch_sim' do
+      before(:each) { RunLoop::SimControl.terminate_all_sims }
 
-    it "with Xcode #{Resources.shared.current_xcode_version}" do
-      sim_control.launch_sim({:hide_after => false})
-      expect(sim_control.sim_is_running?).to be == true
+      it "with Xcode #{Resources.shared.current_xcode_version}" do
+        sim_control.launch_sim({:hide_after => false})
+        expect(sim_control.sim_is_running?).to be == true
 
-      sim_control.quit_sim
-      expect(sim_control.sim_is_running?).to be == false
-    end
+        sim_control.quit_sim
+        expect(sim_control.sim_is_running?).to be == false
+      end
 
-    xcode_installs = Resources.shared.alt_xcode_install_paths
-    unless xcode_installs.empty?
-      describe 'regression' do
-        xcode_installs.each do |developer_dir|
-          it "#{developer_dir}" do
-            ENV['DEVELOPER_DIR'] = developer_dir
-            local_sim_control = RunLoop::SimControl.new
-            local_sim_control.launch_sim({:hide_after => true})
-            expect(local_sim_control.sim_is_running?).to be == true
+      xcode_installs = Resources.shared.alt_xcode_install_paths
+      unless xcode_installs.empty?
+        describe 'regression' do
+          xcode_installs.each do |developer_dir|
+            it "#{developer_dir}" do
+              ENV['DEVELOPER_DIR'] = developer_dir
+              local_sim_control = RunLoop::SimControl.new
+              local_sim_control.launch_sim({:hide_after => true})
+              expect(local_sim_control.sim_is_running?).to be == true
 
-            local_sim_control.quit_sim
-            expect(local_sim_control.sim_is_running?).to be == false
+              local_sim_control.quit_sim
+              expect(local_sim_control.sim_is_running?).to be == false
+            end
           end
         end
       end
