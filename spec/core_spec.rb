@@ -115,6 +115,7 @@ describe RunLoop::Core do
     describe 'raises an error' do
       # @todo this test is probably unnecessary
       it 'when options argument is not a Hash' do
+        expect { RunLoop::Core.dylib_path_from_options([]) }.to raise_error TypeError
         expect { RunLoop::Core.dylib_path_from_options(nil) }.to raise_error NoMethodError
       end
 
@@ -138,6 +139,82 @@ describe RunLoop::Core do
         path = Resources.shared.sim_dylib_path
         options = { :inject_dylib => path }
         expect(RunLoop::Core.dylib_path_from_options(options)).to be == path
+      end
+    end
+  end
+
+  describe '.simulator_target?' do
+    describe 'raises an error' do
+      it 'when options argument is not a Hash' do
+        expect { RunLoop::Core.simulator_target?([]) }.to raise_error TypeError
+        expect { RunLoop::Core.simulator_target?(nil) }.to raise_error NoMethodError
+      end
+
+      describe 'returns true when' do
+        it 'there is no :device_target key' do
+          expect(RunLoop::Core.simulator_target?({})).to be == true
+        end
+
+        it ":device_target => 'simulator'" do
+          options = { :device_target => 'simulator' }
+          expect(RunLoop::Core.simulator_target?(options)).to be == true
+        end
+
+        it ":device_target => ''" do
+          options = { :device_target => '' }
+          expect(RunLoop::Core.simulator_target?(options)).to be == true
+        end
+
+        describe ":device_target => contains the word 'simulator'" do
+          it 'Xcode >= 6.0' do
+            options = { :device_target => 'iPhone 5 (8.0 Simulator)' }
+            expect(RunLoop::Core.simulator_target?(options)).to be == true
+          end
+
+          it '5.1 <= Xcode <= 5.1.1' do
+            options = { :device_target => 'iPhone Retina (4-inch) - Simulator - iOS 7.1' }
+            expect(RunLoop::Core.simulator_target?(options)).to be == true
+          end
+        end
+
+        if RunLoop::XCTools.new.xcode_version_gte_6?
+          describe 'Xcode 6 behaviors' do
+            it ":device_target => Xcode 6 simulator UDID" do
+              options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
+              expect(RunLoop::Core.simulator_target?(options)).to be == true
+            end
+          end
+
+          describe "'named simulator'" do
+            begin
+              it ":device_target => 'rspec-test-device'" do
+                device_type_id = 'iPhone 5s'
+                runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
+                cmd = "xcrun simctl create \"rspec-test-device\" \"#{device_type_id}\" \"#{runtime_id}\""
+                udid = `#{cmd}`
+                exit_code = $?.exitstatus
+                expect(udid).to_not be == nil
+                expect(exit_code).to be == 0
+                options = { :device_target => 'rspec-test-device' }
+                expect(RunLoop::Core.simulator_target?(options)).to be == true
+              end
+            ensure
+              local_sim_control = RunLoop::SimControl.new
+              simulators = local_sim_control.simulators
+              simulators.each do |device|
+                if device.name == 'rspec-test-device'
+                  udid = device.udid
+                  begin
+                    puts "deleting device '#{device}'"
+                    `xcrun simctl delete #{udid}`
+                  rescue Exception => e
+                    rspec_warn_log "Failed to remove named simulator: #{e}"
+                  end
+                end
+              end
+            end
+          end
+        end
       end
     end
   end

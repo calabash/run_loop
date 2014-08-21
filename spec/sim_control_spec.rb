@@ -30,6 +30,22 @@ describe RunLoop::SimControl do
     end
   end
 
+  describe '#sim_udid? returns' do
+    it 'true when arg is an Xcode >= 6.0 simulator udid' do
+      expect(sim_control.sim_udid? '578A16BE-C31F-46E5-836E-66A2E77D89D4').to be == true
+    end
+
+    describe 'false when arg is not an Xcode => 6.0 simulator udid' do
+      it 'length is not correct' do
+        expect(sim_control.sim_udid? 'foo').to be == false
+      end
+
+      it 'pattern does not match' do
+        expect(sim_control.sim_udid? 'C31F-578A16BE-46E5-836E-66A2E77D89D4').to be == false
+      end
+    end
+  end
+
   describe '#sim_app_path' do
     it 'for Xcode >= 6.0' do
       xctools = sim_control.xctools
@@ -53,29 +69,32 @@ describe RunLoop::SimControl do
     end
   end
 
-  describe '#quit_sim and #launch_sim' do
-    before(:each) { RunLoop::SimControl.terminate_all_sims }
+  # flickering on Travis CI
+  unless Resources.shared.travis_ci?
+    describe '#quit_sim and #launch_sim' do
+      before(:each) { RunLoop::SimControl.terminate_all_sims }
 
-    it "with Xcode #{Resources.shared.current_xcode_version}" do
-      sim_control.launch_sim({:hide_after => false})
-      expect(sim_control.sim_is_running?).to be == true
+      it "with Xcode #{Resources.shared.current_xcode_version}" do
+        sim_control.launch_sim({:hide_after => false})
+        expect(sim_control.sim_is_running?).to be == true
 
-      sim_control.quit_sim
-      expect(sim_control.sim_is_running?).to be == false
-    end
+        sim_control.quit_sim
+        expect(sim_control.sim_is_running?).to be == false
+      end
 
-    xcode_installs = Resources.shared.alt_xcode_install_paths
-    unless xcode_installs.empty?
-      describe 'regression' do
-        xcode_installs.each do |developer_dir|
-          it "#{developer_dir}" do
-            ENV['DEVELOPER_DIR'] = developer_dir
-            local_sim_control = RunLoop::SimControl.new
-            local_sim_control.launch_sim({:hide_after => true})
-            expect(local_sim_control.sim_is_running?).to be == true
+      xcode_installs = Resources.shared.alt_xcode_install_paths
+      unless xcode_installs.empty?
+        describe 'regression' do
+          xcode_installs.each do |developer_dir|
+            it "#{developer_dir}" do
+              ENV['DEVELOPER_DIR'] = developer_dir
+              local_sim_control = RunLoop::SimControl.new
+              local_sim_control.launch_sim({:hide_after => true})
+              expect(local_sim_control.sim_is_running?).to be == true
 
-            local_sim_control.quit_sim
-            expect(local_sim_control.sim_is_running?).to be == false
+              local_sim_control.quit_sim
+              expect(local_sim_control.sim_is_running?).to be == false
+            end
           end
         end
       end
@@ -289,6 +308,59 @@ describe RunLoop::SimControl do
     if RunLoop::XCTools.new.xcode_version_gte_6?
       it 'resets the _all_ simulators' do
         expect( sim_control.instance_eval { simctl_reset }).to be == true
+      end
+    end
+  end
+
+  describe '#simctl_list' do
+    describe 'raises an error when called' do
+      it 'on Xcode < 6' do
+        local_sim_control = RunLoop::SimControl.new
+        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+        expect { local_sim_control.instance_eval { simctl_list(:any_arg) } }.to raise_error RuntimeError
+      end
+
+      if RunLoop::XCTools.new.xcode_version_gte_6?
+        it 'with an invalid argument' do
+          expect { sim_control.instance_eval { simctl_list(:invalid_arg) } }.to raise_error ArgumentError
+        end
+      end
+    end
+
+    if RunLoop::XCTools.new.xcode_version_gte_6?
+      describe 'valid arguments' do
+        it ':devices' do
+          expect(sim_control.instance_eval { simctl_list :devices }).to be_a Hash
+        end
+
+        it ':runtimes' do
+          actual = sim_control.instance_eval { simctl_list :runtimes }
+          expect(actual).to be_a Hash
+        end
+      end
+    end
+  end
+
+  describe '#simulators' do
+    describe 'raises an error when called' do
+      it 'on Xcode < 5.1' do
+        local_sim_control = RunLoop::SimControl.new
+        expect(local_sim_control).to receive(:xcode_version_gte_51?).and_return(false)
+        expect { local_sim_control.simulators }.to raise_error RuntimeError
+      end
+
+      if RunLoop::XCTools.new.xcode_version == RunLoop::Version.new('5.1.1')
+        it 'on Xcode == 5.1.1 b/c it is not implemented yet' do
+          expect { sim_control.simulators }.to raise_error NotImplementedError
+        end
+      end
+    end
+
+    if RunLoop::XCTools.new.xcode_version_gte_6?
+      it 'returns a list RunLoop::Device instances' do
+        sims = sim_control.simulators
+        expect(sims).to be_a Array
+        expect(sims.empty?).to be == false
       end
     end
   end

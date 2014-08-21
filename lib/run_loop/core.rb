@@ -68,9 +68,10 @@ module RunLoop
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
       xctools ||= options[:xctools] || sim_control.xctools
 
-      # @todo only enable accessibility when there is simulator target
-      # @todo only enable accessibility on the targeted simulator
-      sim_control.enable_accessibility_on_sims({:verbose => true})
+      if self.simulator_target?(options, sim_control)
+        # @todo only enable accessibility on the targeted simulator
+        sim_control.enable_accessibility_on_sims({:verbose => true})
+      end
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
@@ -115,7 +116,12 @@ module RunLoop
       log_file ||= File.join(results_dir, 'run_loop.out')
 
       if ENV['DEBUG']=='1'
-        p options
+        exclude = [:device_target, :udid, :sim_control, :args, :inject_dylib, :app]
+        options.each_pair { |key, value|
+          unless exclude.include? key
+            puts "#{key} => #{value}"
+          end
+        }
         puts "device_target=#{device_target}"
         puts "udid=#{udid}"
         puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
@@ -236,6 +242,36 @@ module RunLoop
       end
 
       run_loop
+    end
+
+    # @!visibility private
+    # Are we targeting a simulator?
+    #
+    # @note  The behavior of this method is different than the corresponding
+    #   method in Calabash::Cucumber::Launcher method.  If
+    #   `:device_target => {nil | ''}`, then the calabash-ios method returns
+    #   _false_.  I am basing run-loop's behavior off the behavior in
+    #   `self.udid_and_bundle_for_launcher`
+    #
+    # @see {Core::RunLoop.udid_and_bundle_for_launcher}
+    def self.simulator_target?(run_options, sim_control = RunLoop::SimControl.new)
+      value = run_options[:device_target]
+
+      # match the behavior of udid_and_bundle_for_launcher
+      return true if value.nil? or value == ''
+
+      # support for 'simulator' and Xcode >= 5.1 device targets
+      return true if value.downcase.include?('simulator')
+
+      # if Xcode < 6.0, we are done
+      return false if not sim_control.xcode_version_gte_6?
+
+      # support for Xcode >= 6 simulator udids
+      return true if sim_control.sim_udid? value
+
+      # support for Xcode >= 6 'named simulators'
+      sims = sim_control.simulators.each
+      sims.find_index { |device| device.name == value } != nil
     end
 
     # Extracts the value of :inject_dylib from options Hash.

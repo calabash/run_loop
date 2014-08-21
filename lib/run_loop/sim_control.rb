@@ -30,6 +30,16 @@ module RunLoop
       xctools.xcode_version_gte_6?
     end
 
+    # @!visibility private
+    # Are we running Xcode 5.1 or above?
+    #
+    # This is a convenience method.
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 5.1
+    def xcode_version_gte_51?
+      xctools.xcode_version_gte_51?
+    end
+
     # Return an instance of PlistBuddy.
     # @return [RunLoop::PlistBuddy] The plist buddy instance that is used internally.
     def pbuddy
@@ -284,6 +294,32 @@ module RunLoop
         end
       end
       results.all?
+    end
+
+    # Is the arg a valid Xcode >= 6.0 simulator udid?
+    # @param [String] udid the String to check
+    # @return [Boolean] Returns true iff the `udid` matches /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/
+    def sim_udid?(udid)
+      udid.length == 36 and udid[XCODE_6_SIM_UDID_REGEX,0] != nil
+    end
+
+    def simulators
+      unless xcode_version_gte_51?
+        raise RuntimeError, 'simctl is only available on Xcode >= 6'
+      end
+
+      if xcode_version_gte_6?
+        hash = simctl_list :devices
+        sims = []
+        hash.each_pair do |sdk, list|
+          list.each do |details|
+            sims << RunLoop::Device.new(details[:name], sdk, details[:udid])
+          end
+        end
+        sims
+      else
+        raise NotImplementedError, 'the simulators method is not available yet for Xcode 5.1.1'
+      end
     end
 
     private
@@ -782,6 +818,137 @@ module RunLoop
         end
       end
       res.all?
+    end
+
+    # @!visibility private
+    #
+    # A ruby interface to the `simctl list` command.
+    #
+    # @note This is an Xcode >= 6.0 method.
+    # @raise [RuntimeError] if called on Xcode < 6.0
+    # @return [Hash] A hash whose primary key is a base SDK.  For example,
+    #  SDK 7.0.3 => "7.0".  The value of the Hash will vary based on what is
+    #  being listed.
+    def simctl_list(what)
+      unless xcode_version_gte_6?
+        raise RuntimeError, 'simctl is only available on Xcode >= 6'
+      end
+
+      case what
+        when :devices
+          simctl_list_devices
+        when :runtimes
+          # The 'com.apple.CoreSimulator.SimRuntime.iOS-7-0' is the runtime-id,
+          # which can be used to create devices.
+          simctl_list_runtimes
+        else
+          allowed = [:devices, :runtimes]
+          raise ArgumentError, "expected '#{what}' to be one of '#{allowed}'"
+      end
+    end
+
+    # @!visibility private
+    #
+    # Helper method for simctl_list.
+    #
+    # @example
+    #   RunLoop::SimControl.new.simctl_list :devices
+    #   {
+    #         "7.1" =>
+    #               [
+    #                     {
+    #                           :name => "iPhone 4s",
+    #                           :udid => "3BC5E3D7-9B81-4CE0-9C76-1888287F507B",
+    #                           :state => "Shutdown"
+    #                     }
+    #               ],
+    #         "8.0" => [
+    #               {
+    #                     :name => "iPad 2",
+    #                     :udid => "D8F224D3-A59F-4F01-81AB-1959557A7E4E",
+    #                     :state => "Shutdown"
+    #               }
+    #         ]
+    #   }
+    # @return [Hash<Array<Hash>>] Lists of available simulator details keyed by
+    #  base sdk version.
+    # @see #simctl_list
+    def simctl_list_devices
+      cmd = 'xcrun simctl list devices'
+      Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+        out = stdout.read.strip
+        err = stderr.read.strip
+        if ENV['DEBUG_UNIX_CALLS'] == '1'
+          puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
+        end
+
+        current_sdk = nil
+        res = {}
+        out.split("\n").each do |line|
+          possible_sdk = line[/(\d\.\d(\.\d)?)/,0]
+          if possible_sdk
+            current_sdk = possible_sdk
+            res[current_sdk] = []
+            next
+          end
+
+          if current_sdk
+            name = line.split('(').first.strip
+            udid = line[XCODE_6_SIM_UDID_REGEX,0]
+            state = line[/(Booted|Shutdown)/,0]
+            res[current_sdk] << {:name => name, :udid => udid, :state => state}
+          end
+        end
+        res
+      end
+    end
+
+    # @!visibility private
+    # Helper method for simctl_list
+    #
+    # @example
+    #  RunLoop::SimControl.new.simctl_list :runtimes
+    #  {
+    #        "7.0" => {
+    #              :sdk => "7.0.3",
+    #              :runtime => "com.apple.CoreSimulator.SimRuntime.iOS-7-0"
+    #        },
+    #        "7.1" => {
+    #              :sdk => "7.1",
+    #              :runtime => "com.apple.CoreSimulator.SimRuntime.iOS-7-1"
+    #        },
+    #        "8.0" => {
+    #              :sdk => "8.0",
+    #              :runtime => "com.apple.CoreSimulator.SimRuntime.iOS-8-0"
+    #        }
+    #  }
+    # @see #simctl_list
+    def simctl_list_runtimes
+      # The 'com.apple.CoreSimulator.SimRuntime.iOS-7-0' is the runtime-id,
+      # which can be used to create devices.
+      cmd = 'xcrun simctl list runtimes'
+      Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+        out = stdout.read.strip
+        err = stderr.read.strip
+        if ENV['DEBUG_UNIX_CALLS'] == '1'
+          puts "#{cmd}  => stdout: '#{out}' | stderr: '#{err}'"
+        end
+        # Ex.
+        # == Runtimes ==
+        # iOS 7.0 (7.0.3 - 11B507) (com.apple.CoreSimulator.SimRuntime.iOS-7-0)
+        # iOS 7.1 (7.1 - 11D167) (com.apple.CoreSimulator.SimRuntime.iOS-7-1)
+        # iOS 8.0 (8.0 - 12A4331d) (com.apple.CoreSimulator.SimRuntime.iOS-8-0)
+        lines = out.split("\n").delete_if { |line| not line =~ /com.apple.CoreSimulator.SimRuntime/ }
+        res = {}
+        lines.each do |line|
+          key = line[/iOS (\d.\d)/,1]
+          sdk_version = line[/(\d.\d)(.\d)?\s-/, 0].tr(' -','')
+          runtime = line[/com.apple.CoreSimulator.SimRuntime.iOS-\d-\d/,0]
+          value = {:sdk => sdk_version,  :runtime => runtime}
+          res[key] = value
+        end
+        res
+      end
     end
   end
 end
