@@ -22,6 +22,8 @@ module RunLoop
         :run_loop_host => 'run_loop_host.js'
     }
 
+    READ_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'read-cmd.sh')
+
     def self.scripts_path
       SCRIPTS_PATH
     end
@@ -78,6 +80,10 @@ module RunLoop
         device_target = detect_connected_device
       end
 
+      if device_target.nil? || device_target == 'simulator'
+        sim_control.enable_accessibility_on_sims({:verbose => true})
+      end
+
       log_file = options[:log_path]
       timeout = options[:timeout] || 30
 
@@ -96,12 +102,23 @@ module RunLoop
 
       code = File.read(options[:script])
       code = code.gsub(/\$PATH/, results_dir)
+      code = code.gsub(/\$READ_SCRIPT_PATH/, READ_SCRIPT_PATH)
       code = code.gsub(/\$MODE/, 'FLUSH') unless options[:no_flush]
 
-      repl_path = File.join(results_dir, 'repl-cmd.txt')
+      repl_path = File.join(results_dir, 'repl-cmd.pipe')
+      FileUtils.rm_f(repl_path)
       File.open(repl_path, 'w') { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
+      #unless system(%Q[mkfifo "#{repl_path}"])
+      #  raise 'Unable to create pipe (mkfifo failed)'
+      #end
 
-      File.open(script, 'w') { |file| file.puts code }
+
+      cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
+      File.open(script, 'w') do |file|
+        file.puts IO.read(cal_script)
+        file.puts code
+
+      end
 
 
       # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
@@ -174,6 +191,7 @@ module RunLoop
       raw_lldb_output = nil
       before = Time.now
       begin
+
         Timeout::timeout(timeout, TimeoutError) do
           read_response(run_loop, 0, uia_timeout)
         end
@@ -327,6 +345,7 @@ module RunLoop
           bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
         end
       else
+        puts "Xcode lt 51"
         if device_target == 'simulator'
 
           unless File.exist?(bundle_dir_or_bundle_id)

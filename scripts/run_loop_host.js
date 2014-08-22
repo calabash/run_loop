@@ -1,4 +1,4 @@
-#import "calabash_script_uia.js"
+//#import "calabash_script_uia.js"
 
 if (typeof JSON !== 'object') {
     JSON = {};
@@ -151,7 +151,11 @@ var commandPath = "$PATH";
 if (!/\/$/.test(commandPath)) {
     commandPath += "/";
 }
-commandPath += "repl-cmd.txt";
+commandPath += "repl-cmd.pipe";
+
+var blockingReadScriptPath = "$READ_SCRIPT_PATH";
+
+
 
 
 var _expectedIndex = 0,//expected index of next command
@@ -269,12 +273,14 @@ var target = null,
 
 while (true) {
     target = UIATarget.localTarget();
+
     host = target.host();
-    target.delay(0.2);
     try {
-        _process = host.performTaskWithPathArgumentsTimeout("/bin/cat",
-            [commandPath],
-            2);
+        Log.output("Read command...");
+        _process = host.performTaskWithPathArgumentsTimeout("/bin/bash",
+            [blockingReadScriptPath, commandPath],
+            //[commandPath],
+            60*100);
 
     } catch (e) {
         Log.output("Timeout on cat...");
