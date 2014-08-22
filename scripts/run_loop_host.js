@@ -276,18 +276,17 @@ while (true) {
 
     host = target.host();
     try {
-        Log.output("Read command...");
         _process = host.performTaskWithPathArgumentsTimeout("/bin/bash",
             [blockingReadScriptPath, commandPath],
             //[commandPath],
-            60*100);
+            1);
 
     } catch (e) {
-        Log.output("Timeout on cat...");
+        Log.output("Timeout on read command...");
         continue;
     }
     if (_process.exitCode != 0) {
-        Log.output("unable to execute /bin/cat " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr);
+        Log.output("unable to execute: " + blockingReadScriptPath + " " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr + _process.stdout);
     }
     else {
         _input = _process.stdout;
@@ -297,7 +296,9 @@ while (true) {
                 _actualIndex = parseInt(_input.substring(0, _index), 10);
                 if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
                     _exp = _input.substring(_index + 1, _input.length);
+                    Log.output("Execute: "+_exp);
                     _result = eval(_exp);
+                    Log.output("res: "+_result);
                 }
                 else {//likely old command is lingering...
                     continue;
@@ -315,6 +316,7 @@ while (true) {
         }
 
         _expectedIndex++;
+        Log.output("log result: "+_result);
         Log.result("success", _result);
 
     }

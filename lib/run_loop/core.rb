@@ -80,10 +80,6 @@ module RunLoop
         device_target = detect_connected_device
       end
 
-      if device_target.nil? || device_target == 'simulator'
-        sim_control.enable_accessibility_on_sims({:verbose => true})
-      end
-
       log_file = options[:log_path]
       timeout = options[:timeout] || 30
 
@@ -107,19 +103,19 @@ module RunLoop
 
       repl_path = File.join(results_dir, 'repl-cmd.pipe')
       FileUtils.rm_f(repl_path)
-      File.open(repl_path, 'w') { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
-      #unless system(%Q[mkfifo "#{repl_path}"])
-      #  raise 'Unable to create pipe (mkfifo failed)'
-      #end
 
+      uia_strategy = options[:uia_strategy]
+      if uia_strategy == :host
+        unless system(%Q[mkfifo "#{repl_path}"])
+          raise 'Unable to create pipe (mkfifo failed)'
+        end
+      end
 
       cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
       File.open(script, 'w') do |file|
         file.puts IO.read(cal_script)
         file.puts code
-
       end
-
 
       # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
       udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options, xctools)
@@ -145,6 +141,7 @@ module RunLoop
         puts "script=#{script}"
         puts "log_file=#{log_file}"
         puts "timeout=#{timeout}"
+        puts "uia_strategy=#{options[:uia_strategy]}"
         puts "args=#{args}"
         puts "inject_dylib=#{inject_dylib}"
       end
@@ -184,13 +181,22 @@ module RunLoop
         f.write pid
       end
 
-      run_loop = {:pid => pid, :udid => udid, :app => bundle_dir_or_bundle_id, :repl_path => repl_path, :log_file => log_file, :results_dir => results_dir}
+      run_loop = {:pid => pid,
+                  :index => 1,
+                  :uia_strategy => uia_strategy,
+                  :udid => udid,
+                  :app => bundle_dir_or_bundle_id,
+                  :repl_path => repl_path,
+                  :log_file => log_file,
+                  :results_dir => results_dir}
 
       uia_timeout = options[:uia_timeout] || (ENV['UIA_TIMEOUT'] && ENV['UIA_TIMEOUT'].to_f) || 10
 
       raw_lldb_output = nil
       before = Time.now
       begin
+
+        File.open(repl_path, 'w') { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
 
         Timeout::timeout(timeout, TimeoutError) do
           read_response(run_loop, 0, uia_timeout)
@@ -247,6 +253,7 @@ module RunLoop
           puts "script=#{script}"
           puts "log_file=#{log_file}"
           puts "timeout=#{timeout}"
+          puts "uia_strategy=#{uia_strategy}"
           puts "args=#{args}"
           puts "lldb_output=#{raw_lldb_output}" if raw_lldb_output
         end
@@ -385,26 +392,10 @@ module RunLoop
 
     def self.write_request(run_loop, cmd)
       repl_path = run_loop[:repl_path]
+      index = run_loop[:index]
+      File.open(repl_path, 'w') {|f| f.puts("#{index}:#{cmd}")}
+      run_loop[:index] = index + 1
 
-      cur = File.read(repl_path)
-
-      colon = cur.index(':')
-
-      if colon.nil?
-        raise "Illegal contents of #{repl_path}: #{cur}"
-      end
-      index = cur[0, colon].to_i + 1
-
-
-      tmp_cmd = File.join(File.dirname(repl_path), '__repl-cmd.txt')
-      File.open(tmp_cmd, 'w') do |f|
-        f.write("#{index}:#{cmd}")
-        if ENV['DEBUG']
-          puts "Wrote: #{index}:#{cmd}"
-        end
-      end
-
-      FileUtils.mv(tmp_cmd, repl_path)
       index
     end
 
@@ -603,8 +594,19 @@ module RunLoop
 
 
   def self.run(options={})
-    script = validate_script(options)
+
+    uia_strategy = options[:uia_strategy]
+    if uia_strategy
+      if uia_strategy == :host
+        script = Core.script_for_key(:run_loop_host)
+      else
+        script = Core.script_for_key(:run_loop_fast_uia)
+      end
+    else
+      uia_strategy, script = validate_script(options)
+    end
     options[:script] = script
+    options[:uia_strategy] = uia_strategy
 
     Core.run_with_options(options)
   end
@@ -655,24 +657,37 @@ module RunLoop
 
 
   def self.validate_script(options)
+    if options[:calabash_lite]
+      return :host, Core.script_for_key(:run_loop_host)
+    end
+    uia_strategy = options[:uia_strategy]
+    if uia_strategy
+      if uia_strategy == :host
+        script = :run_loop_host
+      elsif uia_strategy == :preferences
+        script = :run_loop_fast_uia
+      else
+        raise "Invalid :uia_strategy #{uia_strategy}"
+      end
+      return uia_strategy, Core.script_for_key(script)
+    end
+
     script = options[:script]
     if script
       if script.is_a?(Symbol)
+        uia_strategy = (script == :run_loop_fast_uia ? :preferences : :host)
         script = Core.script_for_key(script)
         unless script
           raise "Unknown script for symbol: #{options[:script]}. Options: #{Core::SCRIPTS.keys.join(', ')}"
         end
-      elsif script.is_a?(String)
-        unless File.exist?(script)
-          raise "File does not exist: #{script}"
-        end
       else
-        raise "Unknown type for :script key: #{options[:script].class}"
+        raise "Script must be a symbol: #{script}"
       end
     else
       script = Core.script_for_key(:run_loop_fast_uia)
+      uia_strategy = :preferences
     end
-    script
+    return uia_strategy, script
   end
 
 end
