@@ -352,7 +352,6 @@ module RunLoop
           bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
         end
       else
-        puts "Xcode lt 51"
         if device_target == 'simulator'
 
           unless File.exist?(bundle_dir_or_bundle_id)
