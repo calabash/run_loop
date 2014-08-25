@@ -1,4 +1,4 @@
-#import "calabash_script_uia.js"
+//#import "calabash_script_uia.js"
 
 if (typeof JSON !== 'object') {
     JSON = {};
@@ -151,7 +151,11 @@ var commandPath = "$PATH";
 if (!/\/$/.test(commandPath)) {
     commandPath += "/";
 }
-commandPath += "repl-cmd.txt";
+commandPath += "repl-cmd.pipe";
+
+var blockingReadScriptPath = "$READ_SCRIPT_PATH";
+
+
 
 
 var _expectedIndex = 0,//expected index of next command
@@ -269,19 +273,20 @@ var target = null,
 
 while (true) {
     target = UIATarget.localTarget();
+
     host = target.host();
-    target.delay(0.2);
     try {
-        _process = host.performTaskWithPathArgumentsTimeout("/bin/cat",
-            [commandPath],
-            2);
+        _process = host.performTaskWithPathArgumentsTimeout("/bin/bash",
+            [blockingReadScriptPath, commandPath],
+            //[commandPath],
+            1);
 
     } catch (e) {
-        Log.output("Timeout on cat...");
+        Log.output("Timeout on read command...");
         continue;
     }
     if (_process.exitCode != 0) {
-        Log.output("unable to execute /bin/cat " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr);
+        Log.output("unable to execute: " + blockingReadScriptPath + " " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr + _process.stdout);
     }
     else {
         _input = _process.stdout;
@@ -291,7 +296,9 @@ while (true) {
                 _actualIndex = parseInt(_input.substring(0, _index), 10);
                 if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
                     _exp = _input.substring(_index + 1, _input.length);
+                    Log.output("Execute: "+_exp);
                     _result = eval(_exp);
+                    Log.output("res: "+_result);
                 }
                 else {//likely old command is lingering...
                     continue;
@@ -309,6 +316,7 @@ while (true) {
         }
 
         _expectedIndex++;
+        Log.output("log result: "+_result);
         Log.result("success", _result);
 
     }

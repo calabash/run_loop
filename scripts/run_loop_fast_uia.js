@@ -1,5 +1,3 @@
-#import "calabash_script_uia.js"
-
 if (typeof JSON !== 'object') {
     JSON = {};
 }
