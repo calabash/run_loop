@@ -1,6 +1,6 @@
 [![GitHub version](https://badge.fury.io/gh/calabash%2Frun_loop.svg)](http://badge.fury.io/gh/calabash%2Frun_loop) [![Build Status](https://travis-ci.org/calabash/run_loop.svg?branch=master)](https://travis-ci.org/calabash/run_loop) [![Dependency Status](https://gemnasium.com/calabash/run_loop.svg)](https://gemnasium.com/calabash/run_loop) [![License](https://go-shields.herokuapp.com/license-MIT-blue.png)](http://opensource.org/licenses/MIT)
 
-## run_loop
+## Run Loop
 
 ### Supported Xcode Versions
 
@@ -9,11 +9,11 @@
 
 ### License
 
-run_loop is available under the MIT license. See the LICENSE file for more info.
+Run Loop is available under the MIT license. See the LICENSE file for more info.
 
 ### Versioning
 
-run_loop follows the spirit of Semantic Versioning. [1]  However, the semantic versioning spec is incompatible with RubyGem's patterns for pre-release gems. [2]
+Run Loop follows the spirit of Semantic Versioning. [1]  However, the semantic versioning spec is incompatible with RubyGem's patterns for pre-release gems. [2]
 
 _"But returning to the practical: No release version of SemVer is compatible with Rubygems."_ - David Kellum
 
