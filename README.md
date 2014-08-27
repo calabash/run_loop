@@ -1,24 +1,27 @@
 [![GitHub version](https://badge.fury.io/gh/calabash%2Frun_loop.svg)](http://badge.fury.io/gh/calabash%2Frun_loop) [![Build Status](https://travis-ci.org/calabash/run_loop.svg?branch=master)](https://travis-ci.org/calabash/run_loop) [![Dependency Status](https://gemnasium.com/calabash/run_loop.svg)](https://gemnasium.com/calabash/run_loop) [![License](https://go-shields.herokuapp.com/license-MIT-blue.png)](http://opensource.org/licenses/MIT)
 
-## run_loop
+## Run Loop
 
 ### Supported Xcode Versions
 
-* Xcode >= 5.0
-* RECOMMEND - Xcode >= 5.1
+* Xcode >= 5.1
+
+_There is experimental support for Xcode 6b6.  Other Xcode beta versions may or may not work._
 
 ### License
 
-run_loop is available under the MIT license. See the LICENSE file for more info.
+Run Loop is available under the MIT license. See the LICENSE file for more info.
 
 ### Versioning
 
-run_loop follows the spirit of Semantic Versioning. [1]  However, the semantic versioning spec is incompatible with RubyGem's patterns for pre-release gems. [2]
+Run Loop follows the spirit of Semantic Versioning. [1]  However, the semantic versioning spec is incompatible with RubyGem's patterns for pre-release gems. [2]
 
 _"But returning to the practical: No release version of SemVer is compatible with Rubygems."_ - David Kellum
 
 - [1] http://semver.org/
 - [2] http://gravitext.com/2012/07/22/versioning.html
+
+## For Run Loop Gem Developers
 
 ### IMPORTANT note to devs RE: udidetect submodule
 
@@ -30,7 +33,7 @@ At this time, there is no reason to update.
 
 - [1] https://github.com/vaskas/udidetect/pull/3
 
-### possibily helpful tools
+### new Xcode 6 programs
 
 * simctl
 * sim
@@ -39,8 +42,6 @@ At this time, there is no reason to update.
 ### Guard
 
 Requires MacOS Growl - available in the AppStore.
-
-Will run the rspec tests automatically when files change.
 
 ```
 $ bundle exec guard  start --no-interactions
