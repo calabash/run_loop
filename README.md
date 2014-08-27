@@ -21,6 +21,8 @@ _"But returning to the practical: No release version of SemVer is compatible wit
 - [1] http://semver.org/
 - [2] http://gravitext.com/2012/07/22/versioning.html
 
+## For Run Loop Gem Developers
+
 ### IMPORTANT note to devs RE: udidetect submodule
 
 The current head of the udidetect head does not include the udidetect binary.
@@ -31,7 +33,7 @@ At this time, there is no reason to update.
 
 - [1] https://github.com/vaskas/udidetect/pull/3
 
-### possibily helpful tools
+### new Xcode 6 programs
 
 * simctl
 * sim
@@ -40,8 +42,6 @@ At this time, there is no reason to update.
 ### Guard
 
 Requires MacOS Growl - available in the AppStore.
-
-Will run the rspec tests automatically when files change.
 
 ```
 $ bundle exec guard  start --no-interactions
