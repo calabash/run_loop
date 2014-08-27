@@ -39,10 +39,63 @@ At this time, there is no reason to update.
 * sim
 * projectInfo
 
-### Guard
+### Tests
+
+###### Failing Tests
+
+```
+1) RunLoop regression: injecting a dylib targeting the simulator with Xcode 6.0
+```
+
+###### Unstable Tests
+
+```
+2) RunLoop regression: running on physical devices Xcode 6.0
+```
+
+#### CI
+
+* https://travis-ci.org/calabash/calabash-ios
+* https://travis-ci.org/calabash/run_loop
+* https://travis-ci.org/calabash/calabash-ios-server
+* Calabash iOS toolchain testing - http://ci.endoftheworl.de:8080/
+
+To simulate CI locally:
+
+```
+[run-loop] $ scripts/ci/travis/local-run-as-travis.rb
+```
+
+#### Rspec
+
+Take a break because these test launch and quit the simulator multiple times which hijacks your machine.  You have enough time to take some deep breaths and do some stretching.  You'll feel better afterward.  For continuous TDD/BDD see the Guard section below (most simulator tests are disabled in Guard).
+
+```
+[run-loop] $ be rake spec
+```
+
+#### Device Testing
+
+Each connected device running iOS 6.0 <= iOS < 8.0 is targeted with one test.
+
+##### Regression vs. Xcode version
+
+If you have alternative Xcode installs that look like this:
+
+```
+/Xcode/5.1/Xcode.app
+/Xcode/5.1.1/Xcode.app
+/Xcode/6b6/Xcode6-Beta6.app
+```
+
+The rspec tests will do regression testing against each version.
+
+##### Guard
 
 Requires MacOS Growl - available in the AppStore.
 
 ```
 $ bundle exec guard  start --no-interactions
 ```
+
+Most of the tests that involve launching the simulator are not run in Guard.
