@@ -247,25 +247,6 @@ UIATarget.onAlert = function (alert) {
     return true;
 };
 
-/*
- (defn sanitize
- "Removes elements not serializable to preferences"
- [x]
-
- (cond
- (nil? x) ":nil"
- (string? x) x
- (keyword? x) (name x)
- (map? x) (into {}
- (map (fn [[k v]]
- [k (sanitize v)])
- x))
- (coll? x) (map sanitize x)
- (instance? js/UIAElement x) (.toString x)
- :else x))
-
- */
-
 var target = null,
     failureMessage = null,
     preferences = null,

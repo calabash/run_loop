@@ -167,8 +167,6 @@ var _expectedIndex = 0,//expected index of next command
     _process;//host command process
 
 var Log = (function () {
-    // According to Appium,
-    //16384 is the buffer size used by instruments
     var forceFlush = [],
         N = "$MODE" == "FLUSH" ? 16384 : 0,
         i = N;
@@ -218,13 +216,14 @@ function isLocationPrompt(alert) {
     var exps = [
             ["OK", /vil bruge din aktuelle placering/],
             ["OK", /Would Like to Use Your Current Location/],
-            ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/]
+            ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
+            ["OK", /Would Like to Access Your Photos/]
         ],
         ans, exp,
-        txt,
-        txts;
+        txt;
 
     txt = findAlertViewText(alert);
+    Log.output({"output":"alert: "+txt}, true);
     for (var i = 0; i < exps.length; i++) {
         ans = exps[i][0];
         exp = exps[i][1];
@@ -236,6 +235,7 @@ function isLocationPrompt(alert) {
 }
 
 UIATarget.onAlert = function (alert) {
+    Log.output({"output":"on alert"}, true);
     var target = UIATarget.localTarget();
     target.pushTimeout(10);
     function attemptTouchOKOnLocation(retry_count) {
@@ -279,7 +279,7 @@ while (true) {
         _process = host.performTaskWithPathArgumentsTimeout("/bin/bash",
             [blockingReadScriptPath, commandPath],
             //[commandPath],
-            1);
+            1000);
 
     } catch (e) {
         Log.output("Timeout on read command...");
@@ -298,7 +298,6 @@ while (true) {
                     _exp = _input.substring(_index + 1, _input.length);
                     Log.output("Execute: "+_exp);
                     _result = eval(_exp);
-                    Log.output("res: "+_result);
                 }
                 else {//likely old command is lingering...
                     continue;
@@ -315,9 +314,7 @@ while (true) {
             continue;
         }
 
-        _expectedIndex++;
-        Log.output("log result: "+_result);
+        _expectedIndex = Math.max(_actualIndex+1, _expectedIndex+1);
         Log.result("success", _result);
-
     }
 }
