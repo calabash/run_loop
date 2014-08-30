@@ -614,11 +614,13 @@ module RunLoop
       if uia_strategy
         script = default_script_for_uia_strategy(uia_strategy)
       else
-        unless options[:calabash_lite]
-          raise 'RunLoop.run requires setting at least one of :script, :uia_strategy, :calabash_lite'
+        if options[:calabash_lite]
+          uia_strategy = :host
+          script = Core.script_for_key(:run_loop_host)
+        else
+          uia_strategy = :preferences
+          script = default_script_for_uia_strategy(uia_strategy)
         end
-        uia_strategy = :host
-        script = Core.script_for_key(:run_loop_host)
       end
     end
     # At this point, 'script' has been chosen, but uia_strategy might not
