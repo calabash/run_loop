@@ -222,9 +222,9 @@ module RunLoop
           lldb_cmd = lldb_template.result(binding)
 
           tmpdir = Dir.mktmpdir('lldb_cmd')
-          lldb_script = File.join(tmpdir,'lldb')
+          lldb_script = File.join(tmpdir, 'lldb')
 
-          File.open(lldb_script,'w') {|f| f.puts(lldb_cmd)}
+          File.open(lldb_script, 'w') { |f| f.puts(lldb_cmd) }
 
           if ENV['DEBUG'] == '1'
             puts "lldb script #{lldb_script}"
@@ -327,7 +327,7 @@ module RunLoop
       unless File.directory?(bundle_dir_or_bundle_id)
         raise "Injecting dylibs currently only works with simulator and app bundles"
       end
-      info_plist = Dir[File.join(bundle_dir_or_bundle_id,'Info.plist')].first
+      info_plist = Dir[File.join(bundle_dir_or_bundle_id, 'Info.plist')].first
       raise "Unable to find Info.plist in #{bundle_dir_or_bundle_id}" if info_plist.nil?
       `/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "#{info_plist}"`.strip
     end
@@ -396,7 +396,7 @@ module RunLoop
     def self.write_request(run_loop, cmd)
       repl_path = run_loop[:repl_path]
       index = run_loop[:index]
-      File.open(repl_path, 'w') {|f| f.puts("#{index}:#{cmd}")}
+      File.open(repl_path, 'w') { |f| f.puts("#{index}:#{cmd}") }
       run_loop[:index] = index + 1
 
       index
@@ -584,7 +584,7 @@ module RunLoop
       descripts = `xcrun ps x -o pid,command | grep "lldb" | grep -v grep`.strip.split("\n")
       descripts.each do |process_desc|
         pid = process_desc.split(' ').first
-        Open3.popen3("xcrun kill -9 #{pid} && xcrun wait #{pid}") do  |_, stdout,  stderr, _|
+        Open3.popen3("xcrun kill -9 #{pid} && xcrun wait #{pid}") do |_, stdout, stderr, _|
           out = stdout.read.strip
           err = stderr.read.strip
           next if out.to_s.empty? and err.to_s.empty?
