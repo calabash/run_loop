@@ -279,14 +279,16 @@ while (true) {
         _process = host.performTaskWithPathArgumentsTimeout("/bin/bash",
             [blockingReadScriptPath, commandPath],
             //[commandPath],
-            1000);
+            5);
 
     } catch (e) {
         Log.output("Timeout on read command...");
         continue;
     }
     if (_process.exitCode != 0) {
-        Log.output("unable to execute: " + blockingReadScriptPath + " " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr + _process.stdout);
+        if (_process.exitCode != 15) {
+            Log.output("unable to execute: " + blockingReadScriptPath + " " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr + _process.stdout);
+        }
     }
     else {
         _input = _process.stdout;
