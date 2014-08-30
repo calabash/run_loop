@@ -19,7 +19,8 @@ module RunLoop
     SCRIPTS = {
         :dismiss => 'run_dismiss_location.js',
         :run_loop_fast_uia => 'run_loop_fast_uia.js',
-        :run_loop_host => 'run_loop_host.js'
+        :run_loop_host => 'run_loop_host.js',
+        :run_loop_basic => 'run_loop_basic.js'
     }
 
     READ_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'read-cmd.sh')
@@ -196,15 +197,18 @@ module RunLoop
       before = Time.now
       begin
 
-        File.open(repl_path, 'w') { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
-
-        Timeout::timeout(timeout, TimeoutError) do
-          read_response(run_loop, 0, uia_timeout)
+        if options[:validate_channel]
+          options[:validate_channel].call(run_loop, 0, uia_timeout)
+        else
+          File.open(repl_path, 'w') { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
+          Timeout::timeout(timeout, TimeoutError) do
+            read_response(run_loop, 0, uia_timeout)
+          end
         end
 
         # inject_dylib will be nil or a path to a dylib
         if inject_dylib
-          lldb_template_file = File.join(scripts_path,'calabash.lldb.erb')
+          lldb_template_file = File.join(scripts_path, 'calabash.lldb.erb')
           lldb_template = ::ERB.new(File.read(lldb_template_file))
           lldb_template.filename = lldb_template_file
 
@@ -591,19 +595,47 @@ module RunLoop
     end
   end
 
+  def self.default_script_for_uia_strategy(uia_strategy)
+    case uia_strategy
+      when :preferences
+        Core.script_for_key(:run_loop_fast_uia)
+      when :host
+        Core.script_for_key(:run_loop_host)
+      else
+        Core.script_for_key(:run_loop_basic)
+    end
+  end
 
   def self.run(options={})
-
     uia_strategy = options[:uia_strategy]
-    if uia_strategy
-      if uia_strategy == :host
-        script = Core.script_for_key(:run_loop_host)
-      else
-        script = Core.script_for_key(:run_loop_fast_uia)
-      end
+    if options[:script]
+      script = validate_script(options[:script])
     else
-      uia_strategy, script = validate_script(options)
+      if uia_strategy
+        script = default_script_for_uia_strategy(uia_strategy)
+      else
+        unless options[:calabash_lite]
+          raise 'RunLoop.run requires setting at least one of :script, :uia_strategy, :calabash_lite'
+        end
+        uia_strategy = :host
+        script = Core.script_for_key(:run_loop_host)
+      end
     end
+    # At this point, 'script' has been chosen, but uia_strategy might not
+    unless uia_strategy
+      desired_script = options[:script]
+      if desired_script.is_a?(String) #custom path to script
+        uia_strategy = :host
+      elsif desired_script == :run_loop_host
+        uia_strategy = :host
+      elsif desired_script == :run_loop_fast_uia
+        uia_strategy = :preferences
+      else
+        raise "Inconsistent state: desired script #{desired_script} has not uia_strategy"
+      end
+    end
+    # At this point script and uia_strategy selected
+
     options[:script] = script
     options[:uia_strategy] = uia_strategy
 
@@ -655,38 +687,20 @@ module RunLoop
   end
 
 
-  def self.validate_script(options)
-    if options[:calabash_lite]
-      return :host, Core.script_for_key(:run_loop_host)
-    end
-    uia_strategy = options[:uia_strategy]
-    if uia_strategy
-      if uia_strategy == :host
-        script = :run_loop_host
-      elsif uia_strategy == :preferences
-        script = :run_loop_fast_uia
-      else
-        raise "Invalid :uia_strategy #{uia_strategy}"
+  def self.validate_script(script)
+    if script.is_a?(String)
+      unless File.exist?(script)
+        raise "Unable to find file: #{script}"
       end
-      return uia_strategy, Core.script_for_key(script)
-    end
-
-    script = options[:script]
-    if script
-      if script.is_a?(Symbol)
-        uia_strategy = (script == :run_loop_fast_uia ? :preferences : :host)
-        script = Core.script_for_key(script)
-        unless script
-          raise "Unknown script for symbol: #{options[:script]}. Options: #{Core::SCRIPTS.keys.join(', ')}"
-        end
-      else
-        raise "Script must be a symbol: #{script}"
+    elsif script.is_a?(Symbol)
+      script = Core.script_for_key(script)
+      unless script
+        raise "Unknown script for symbol: #{script}. Options: #{Core::SCRIPTS.keys.join(', ')}"
       end
     else
-      script = Core.script_for_key(:run_loop_fast_uia)
-      uia_strategy = :preferences
+      raise "Script must be a symbol or path: #{script}"
     end
-    return uia_strategy, script
+    script
   end
 
 end
