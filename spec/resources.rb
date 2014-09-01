@@ -39,12 +39,18 @@ class Resources
     @bundle_id = 'com.xamarin.chou-cal'
   end
 
-  def alt_xcode_install_paths(version=nil)
-    if version
-      Dir.glob('/Xcode/*/*.app/Contents/Developer').select { |elm| elm =~ /\/Xcode\/(#{version})/ }
-    else
-      @alt_xcode_install_paths ||= Dir.glob('/Xcode/*/*.app/Contents/Developer').select { |elm| elm =~ /\/Xcode\/[^4]/ }
-    end
+  def alt_xcode_install_paths
+    @alt_xcode_install_paths ||= lambda {
+      min_xcode_version = RunLoop::Version.new('5.1')
+      Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
+        xcode_version = path[/(\d\.\d(\.\d)?)/, 0]
+        if RunLoop::Version.new(xcode_version) >= min_xcode_version
+          path
+        else
+          nil
+        end
+      end
+    }.call.compact
   end
 
   def alt_xcodes_gte_xc51_hash
