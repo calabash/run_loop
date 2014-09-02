@@ -145,6 +145,11 @@ module RunLoop
 
       log_file ||= File.join(results_dir, 'run_loop.out')
 
+      after = Time.now
+      if ENV['DEBUG']=='1'
+        puts "Preparation took #{after-before} seconds"
+      end
+
       discovered_options =
             {
                   :udid => udid,
@@ -158,13 +163,6 @@ module RunLoop
       merged_options = options.merge(discovered_options)
 
       self.log_run_loop_options(merged_options, xctools)
-
-      after = Time.now
-
-      if ENV['DEBUG']=='1'
-        puts "Preparation took #{after-before} seconds"
-
-      end
 
       cmd = instruments_command(merged_options, xctools)
 
