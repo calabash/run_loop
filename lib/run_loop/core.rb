@@ -4,6 +4,7 @@ require 'timeout'
 require 'json'
 require 'open3'
 require 'erb'
+require 'ap'
 
 module RunLoop
 
@@ -140,21 +141,14 @@ module RunLoop
       merged_options = options.merge(discovered_options)
 
       if ENV['DEBUG']=='1'
-        exclude = [:device_target, :udid, :sim_control, :args, :inject_dylib, :app]
-        options.each_pair { |key, value|
-          unless exclude.include? key
-            puts "#{key} => #{value}"
-          end
-        }
-        puts "device_target=#{device_target}"
-        puts "udid=#{udid}"
-        puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
-        puts "script=#{script}"
-        puts "log_file=#{log_file}"
-        puts "timeout=#{timeout}"
-        puts "uia_strategy=#{options[:uia_strategy]}"
-        puts "args=#{args}"
-        puts "inject_dylib=#{inject_dylib}"
+        # Ignore :sim_control b/c it is a ruby object; printing is not useful.
+        ignored_keys = [:sim_control]
+        options_to_log = {}
+        merged_options.each_pair do |key, value|
+          next if ignored_keys.include?(key)
+          options_to_log[key] = value
+        end
+        ap(options_to_log, {:sort_keys => true})
       end
 
       after = Time.now
