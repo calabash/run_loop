@@ -148,6 +148,11 @@ module RunLoop
           next if ignored_keys.include?(key)
           options_to_log[key] = value
         end
+        # Objects that override '==' cannot be printed by awesome_print
+        # https://github.com/michaeldv/awesome_print/issues/154
+        # RunLoop::Version overrides '=='
+        options_to_log[:xcode] = xctools.xcode_version.to_s
+        options_to_log[:xcode_path] = xctools.xcode_developer_dir
         ap(options_to_log, {:sort_keys => true})
       end
 
