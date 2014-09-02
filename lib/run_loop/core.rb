@@ -127,6 +127,18 @@ module RunLoop
 
       log_file ||= File.join(results_dir, 'run_loop.out')
 
+      discovered_options =
+            {
+                  :udid => udid,
+                  :results_dir_trace => results_dir_trace,
+                  :bundle_dir_or_bundle_id => bundle_dir_or_bundle_id,
+                  :results_dir => results_dir,
+                  :script => script,
+                  :log_file => log_file,
+                  :args => args
+            }
+      merged_options = options.merge(discovered_options)
+
       if ENV['DEBUG']=='1'
         exclude = [:device_target, :udid, :sim_control, :args, :inject_dylib, :app]
         options.each_pair { |key, value|
@@ -152,14 +164,7 @@ module RunLoop
 
       end
 
-      cmd = instruments_command(options.merge(:udid => udid,
-                                              :results_dir_trace => results_dir_trace,
-                                              :bundle_dir_or_bundle_id => bundle_dir_or_bundle_id,
-                                              :results_dir => results_dir,
-                                              :script => script,
-                                              :log_file => log_file,
-                                              :args => args),
-                                xctools)
+      cmd = instruments_command(merged_options, xctools)
 
       log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
       cmd_str = cmd.join(' ')
