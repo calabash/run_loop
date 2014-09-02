@@ -252,17 +252,11 @@ module RunLoop
         end
       rescue TimeoutError => e
         if ENV['DEBUG']
-          puts "Failed to launch\n"
-          puts "reason=#{e}: #{e && e.message} "
-          puts "device_target=#{device_target}"
-          puts "udid=#{udid}"
-          puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
-          puts "script=#{script}"
-          puts "log_file=#{log_file}"
-          puts "timeout=#{timeout}"
-          puts "uia_strategy=#{uia_strategy}"
-          puts "args=#{args}"
-          puts "lldb_output=#{raw_lldb_output}" if raw_lldb_output
+          puts "Failed to launch."
+          puts "#{e}: #{e && e.message}"
+          if raw_lldb_output
+            puts "LLDB OUTPUT: #{raw_lldb_output}"
+          end
         end
         raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
