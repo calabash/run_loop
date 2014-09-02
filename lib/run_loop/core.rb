@@ -30,6 +30,23 @@ module RunLoop
       SCRIPTS_PATH
     end
 
+    def self.log_run_loop_options(options, xctools)
+      return unless ENV['DEBUG'] == '1'
+      # Ignore :sim_control b/c it is a ruby object; printing is not useful.
+      ignored_keys = [:sim_control]
+      options_to_log = {}
+      options.each_pair do |key, value|
+        next if ignored_keys.include?(key)
+        options_to_log[key] = value
+      end
+      # Objects that override '==' cannot be printed by awesome_print
+      # https://github.com/michaeldv/awesome_print/issues/154
+      # RunLoop::Version overrides '=='
+      options_to_log[:xcode] = xctools.xcode_version.to_s
+      options_to_log[:xcode_path] = xctools.xcode_developer_dir
+      ap(options_to_log, {:sort_keys => true})
+    end
+
     # @deprecated since 1.0.0
     # still used extensively in calabash-ios launcher
     def self.above_or_eql_version?(target_version, xcode_version)
@@ -140,21 +157,7 @@ module RunLoop
             }
       merged_options = options.merge(discovered_options)
 
-      if ENV['DEBUG']=='1'
-        # Ignore :sim_control b/c it is a ruby object; printing is not useful.
-        ignored_keys = [:sim_control]
-        options_to_log = {}
-        merged_options.each_pair do |key, value|
-          next if ignored_keys.include?(key)
-          options_to_log[key] = value
-        end
-        # Objects that override '==' cannot be printed by awesome_print
-        # https://github.com/michaeldv/awesome_print/issues/154
-        # RunLoop::Version overrides '=='
-        options_to_log[:xcode] = xctools.xcode_version.to_s
-        options_to_log[:xcode_path] = xctools.xcode_developer_dir
-        ap(options_to_log, {:sort_keys => true})
-      end
+      self.log_run_loop_options(merged_options, xctools)
 
       after = Time.now
 
