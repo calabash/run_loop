@@ -20,7 +20,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.0
     def v60
-      @xc60 ||= Version.new('6.0')
+      @xc60 ||= RunLoop::Version.new('6.0')
     end
 
     # Returns a version instance for `Xcode 5.1`; used to check for the
@@ -28,7 +28,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 5.1
     def v51
-      @xc51 ||= Version.new('5.1')
+      @xc51 ||= RunLoop::Version.new('5.1')
     end
 
     # Returns a version instance for `Xcode 5.0`; ; used to check for the
@@ -36,7 +36,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 5.0
     def v50
-      @xc50 ||= Version.new('5.0')
+      @xc50 ||= RunLoop::Version.new('5.0')
     end
 
     # Are we running Xcode 6 or above?
@@ -60,7 +60,7 @@ module RunLoop
     def xcode_version
       @xcode_version ||= lambda {
         xcode_build_output = `xcrun xcodebuild -version`.split(/\s/)[1]
-        Version.new(xcode_build_output)
+        RunLoop::Version.new(xcode_build_output)
       }.call
     end
 
@@ -115,7 +115,7 @@ module RunLoop
             Retriable.retriable({:tries => 5}) do
               Open3.popen3("#{instruments}") do |_, _, stderr, _|
                 version_str = stderr.read.chomp.split(/\s/)[2]
-                Version.new(version_str)
+                RunLoop::Version.new(version_str)
               end
             end
           }.call
@@ -173,11 +173,11 @@ module RunLoop
     def instruments_supports_hyphen_s?(version=instruments(:version))
       @instruments_supports_hyphen_s ||= lambda {
         if version.is_a? String
-          _version = Version.new(version)
+          _version = RunLoop::Version.new(version)
         else
           _version = version
         end
-        _version >= Version.new('5.1')
+        _version >= RunLoop::Version.new('5.1')
       }.call
     end
   end
