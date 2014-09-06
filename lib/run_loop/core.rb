@@ -107,9 +107,7 @@ module RunLoop
 
       uia_strategy = options[:uia_strategy]
       if uia_strategy == :host
-        unless system(%Q[mkfifo "#{repl_path}"])
-          raise 'Unable to create pipe (mkfifo failed)'
-        end
+        create_uia_pipe(repl_path)
       end
 
       cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
@@ -387,6 +385,24 @@ module RunLoop
     # @deprecated 1.0.0 replaced with Xctools#version
     def self.xcode_version(xctools=XCTools.new)
       xctools.xcode_version.to_s
+    end
+
+    def self.create_uia_pipe(repl_path)
+      begin
+        Timeout::timeout(5, TimeoutError) do
+          loop do
+            begin
+              FileUtils.rm_f(repl_path)
+              return repl_path if system(%Q[mkfifo "#{repl_path}"])
+            rescue Errno::EINTR => e
+              #retry
+              sleep(0.1)
+            end
+          end
+        end
+      rescue TimeoutError => _
+        raise TimeoutError, 'Unable to create pipe (mkfifo failed)'
+      end
     end
 
     def self.jruby?
