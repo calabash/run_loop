@@ -17,7 +17,6 @@ unless Resources.shared.travis_ci?
 
     describe 'injecting a dylib targeting the simulator with' do
       it "Xcode #{Resources.shared.current_xcode_version}" do
-        ENV['DEBUG'] = '1'
         sim_control = RunLoop::SimControl.new
         sim_control.reset_sim_content_and_settings
 
@@ -53,7 +52,6 @@ unless Resources.shared.travis_ci?
               version = install_hash[:version]
               path = install_hash[:path]
               it "Xcode #{version} @ #{path}" do
-                ENV['DEBUG'] = '1'
                 expect(ENV.has_value? 'DEVELOPER_DIR').to be == false
                 ENV['DEVELOPER_DIR'] = path
                 sim_control = RunLoop::SimControl.new

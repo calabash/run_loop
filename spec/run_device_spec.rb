@@ -4,6 +4,14 @@ unless Resources.shared.travis_ci?
 
     before(:each) {
       ENV.delete('DEVELOPER_DIR')
+      ENV.delete('DEBUG')
+      ENV.delete('DEBUG_UNIX_CALLS')
+    }
+
+    after(:each) {
+      ENV.delete('DEVELOPER_DIR')
+      ENV.delete('DEBUG')
+      ENV.delete('DEBUG_UNIX_CALLS')
     }
 
     context 'running on physical devices' do
