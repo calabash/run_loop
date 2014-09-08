@@ -26,37 +26,27 @@ unless Resources.shared.travis_ci?
           expect(true).to be == true
         end
       else
-        ios8 = RunLoop::Version.new('8.0')
-        ios7 = RunLoop::Version.new('7.0')
         physical_devices.each do |device|
-          if (xctools.xcode_version < xctools.v60 and device.version >= ios8) or
-                (xctools.xcode_version >= xctools.v60 and device.version < ios7)
-            it "skipping #{device.name} iOS #{device.version} because it is not supported on #{xctools.xcode_version}" do
-              expect(true).to be == true
-            end
-          else
-            it "on #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version}" do
-              options =
-                    {
-                          :bundle_id => Resources.shared.bundle_id,
-                          :udid => device.udid,
-                          :device_target => device.udid,
-                          :sim_control => RunLoop::SimControl.new,
-                          :app => Resources.shared.bundle_id
-                    }
-              expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
+          it "on #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version}" do
+            options =
+                  {
+                        :bundle_id => Resources.shared.bundle_id,
+                        :udid => device.udid,
+                        :device_target => device.udid,
+                        :sim_control => RunLoop::SimControl.new,
+                        :app => Resources.shared.bundle_id
+                  }
+            expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
 
-              hash = nil
-              Retriable.retriable({:tries => 2}) do
-                hash = RunLoop.run(options)
-              end
-              expect(hash).not_to be nil
+            hash = nil
+            Retriable.retriable({:tries => 2}) do
+              hash = RunLoop.run(options)
             end
+            expect(hash).not_to be nil
           end
         end
       end
     end
-
 
     describe 'regression: running on physical devices' do
       outer_xctools = RunLoop::XCTools.new
@@ -69,27 +59,21 @@ unless Resources.shared.travis_ci?
           physical_devices.each do |device|
             it "Xcode #{version} @ #{path} #{device.name} iOS #{device.version}" do
               ENV['DEVELOPER_DIR'] = path
-              inner_tools = RunLoop::XCTools.new
-              ios8 = RunLoop::Version.new('8.0')
-              ios7 = RunLoop::Version.new('7.0')
-              unless (inner_tools.xcode_version < inner_tools.v60 and device.version >= ios8) or
-                    (inner_tools.xcode_version >= inner_tools.v60 and device.version < ios7)
-                options =
-                      {
-                            :bundle_id => Resources.shared.bundle_id,
-                            :udid => device.udid,
-                            :device_target => device.udid,
-                            :sim_control => RunLoop::SimControl.new,
-                            :app => Resources.shared.bundle_id
+              options =
+                    {
+                          :bundle_id => Resources.shared.bundle_id,
+                          :udid => device.udid,
+                          :device_target => device.udid,
+                          :sim_control => RunLoop::SimControl.new,
+                          :app => Resources.shared.bundle_id
 
-                      }
-                expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
-                hash = nil
-                Retriable.retriable({:tries => 2}) do
-                  hash = RunLoop.run(options)
-                end
-                expect(hash).not_to be nil
+                    }
+              expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
+              hash = nil
+              Retriable.retriable({:tries => 2}) do
+                hash = RunLoop.run(options)
               end
+              expect(hash).not_to be nil
             end
           end
         end
