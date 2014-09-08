@@ -22,7 +22,6 @@ Gem::Specification.new do |s|
   s.add_dependency('json', '~> 1.8')
   # matches XTC requirement; would like to use ~> 1.4.0
   s.add_dependency 'retriable', '~> 1.3.3.1'
-
   s.add_dependency('CFPropertyList','~> 2.2')
 
   s.add_development_dependency('bundler', '~> 1.6')

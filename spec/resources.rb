@@ -161,7 +161,9 @@ class Resources
 
   def install(udid, ipa, bundle_id, installer)
     if bundle_installed? udid, bundle_id, installer
-      puts "\033[32mINFO: bundle '#{bundle_id}' is already installed\033[0m"
+      if ENV['DEBUG_UNIX_CALLS'] == '1'
+        puts "\033[32mINFO: bundle '#{bundle_id}' is already installed\033[0m"
+      end
       return true
     end
     cmd = "#{installer} -u #{udid} --install #{ipa}"

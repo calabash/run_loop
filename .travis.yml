@@ -13,4 +13,9 @@ rvm:
   - 2.1.1
 
 notifications:
-  email: false
+  email:
+    recipients:
+      - joshuajmoody@gmail.com
+      - karl.krukow@xamarin.com
+    on_success: change
+    on_failure: always
