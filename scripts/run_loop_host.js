@@ -281,7 +281,7 @@ while (true) {
         _process = host.performTaskWithPathArgumentsTimeout("/bin/bash",
             [blockingReadScriptPath, commandPath],
             //[commandPath],
-            5);
+           1);
 
     } catch (e) {
         Log.output("Timeout on read command...");
