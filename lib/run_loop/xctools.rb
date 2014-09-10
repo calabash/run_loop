@@ -121,8 +121,17 @@ module RunLoop
           }.call
         when :sims
           @instruments_sims ||=  lambda {
-            devices = `#{instruments} -s devices`.chomp.split("\n")
-            devices.select { |device| device.downcase.include?('simulator') }
+            # Instruments 6 spams a lot of error messages.  I don't like to
+            # hide them, but they seem to be around to stay (Xcode 6 GM).
+            cmd = "#{instruments} -s devices"
+            Open3.popen3(cmd) do |_, stdout, stderr, _|
+              devices = stdout.read.chomp.split("\n")
+              if ENV['DEBUG_UNIX_CALLS'] == '1'
+                err = stderr.read.strip
+                $stderr.puts err
+              end
+              devices.select { |device| device.downcase.include?('simulator') }
+            end
           }.call
 
         when :templates
