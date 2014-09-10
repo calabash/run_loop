@@ -555,11 +555,17 @@ module RunLoop
 
     def self.default_tracetemplate(xctools=XCTools.new)
       templates = xctools.instruments :templates
-      templates.delete_if do |path|
-        not path =~ /\/Automation.tracetemplate/
-      end.delete_if do |path|
-        not path =~ /Xcode/
-      end.first.tr("\"", '').strip
+      if xctools.xcode_version_gte_6?
+        templates.delete_if do |name|
+          not name == 'Automation'
+        end.first
+      else
+        templates.delete_if do |path|
+          not path =~ /\/Automation.tracetemplate/
+        end.delete_if do |path|
+          not path =~ /Xcode/
+        end.first.tr("\"", '').strip
+      end
     end
 
     def self.log(message)
