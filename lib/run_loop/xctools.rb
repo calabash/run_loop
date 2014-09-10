@@ -128,7 +128,9 @@ module RunLoop
         when :templates
           @instruments_templates ||= lambda {
             cmd = "#{instruments} -s templates"
-            if self.xcode_version >= self.v51
+            if self.xcode_version >= self.v60
+              `#{cmd}`.split("\n").map { |elm| elm.strip.tr('"', '') }
+            elsif self.xcode_version >= self.v51
               `#{cmd}`.split("\n").delete_if do |path|
                 not path =~ /tracetemplate/
               end.map { |elm| elm.strip }

@@ -40,6 +40,9 @@ describe RunLoop::XCTools do
           templates = xctools.instruments :templates
           expect(templates).to be_a Array
           expect(templates.empty?).to be false
+          unless xctools.xcode_version_gte_6?
+            expect(templates.all? { |path| File.exists? path }).to be == true
+          end
         end
 
         describe 'regression' do
@@ -55,6 +58,9 @@ describe RunLoop::XCTools do
                 templates = xctools.instruments :templates
                 expect(templates).to be_a Array
                 expect(templates.empty?).to be false
+                unless xctools.xcode_version_gte_6?
+                  expect(templates.all? { |path| File.exists? path }).to be == true
+                end
               end
             end
           end
