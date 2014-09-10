@@ -33,10 +33,17 @@ describe RunLoop::Core do
   end
 
   describe '.default_tracetemplate' do
+
+    let (:xctools) { RunLoop::XCTools.new }
+
     describe 'returns a template for' do
       it "Xcode #{Resources.shared.current_xcode_version}" do
         default_template = RunLoop::Core.default_tracetemplate
-        expect(File.exist?(default_template)).to be true
+        if xctools.xcode_version_gte_6?
+          expect(default_template).to be == 'Automation'
+        else
+          expect(File.exist?(default_template)).to be true
+        end
       end
 
       describe 'regression' do
@@ -51,7 +58,11 @@ describe RunLoop::Core do
             it "#{developer_dir}" do
               ENV['DEVELOPER_DIR'] = developer_dir
               default_template = RunLoop::Core.default_tracetemplate
-              expect(File.exist?(default_template)).to be true
+              if xctools.xcode_version_gte_6?
+                expect(default_template).to be == 'Automation'
+              else
+                expect(File.exist?(default_template)).to be true
+              end
             end
           end
         end
