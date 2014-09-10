@@ -138,7 +138,13 @@ module RunLoop
           @instruments_templates ||= lambda {
             cmd = "#{instruments} -s templates"
             if self.xcode_version >= self.v60
-              `#{cmd}`.split("\n").map { |elm| elm.strip.tr('"', '') }
+              Open3.popen3(cmd) do |_, stdout, stderr, _|
+                if ENV['DEBUG_UNIX_CALLS'] == '1'
+                  err = stderr.read.strip
+                  $stderr.puts err
+                end
+                stdout.read.chomp.split("\n").map { |elm| elm.strip.tr('"', '') }
+              end
             elsif self.xcode_version >= self.v51
               `#{cmd}`.split("\n").delete_if do |path|
                 not path =~ /tracetemplate/
