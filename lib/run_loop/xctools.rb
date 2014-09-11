@@ -108,6 +108,14 @@ module RunLoop
       instruments = 'xcrun instruments'
       return instruments if cmd == nil
 
+      # Xcode 6 GM is spamming "WebKit Threading Violations"
+      stderr_filter = lambda { |stderr|
+        stderr.read.strip.split("\n").each do |line|
+          unless line[/WebKit Threading Violation/, 0]
+            $stderr.puts line
+          end
+        end
+      }
       case cmd
         when :version
           @instruments_version ||= lambda {
@@ -121,15 +129,24 @@ module RunLoop
           }.call
         when :sims
           @instruments_sims ||=  lambda {
-            devices = `#{instruments} -s devices`.chomp.split("\n")
-            devices.select { |device| device.downcase.include?('simulator') }
+            # Instruments 6 spams a lot of error messages.  I don't like to
+            # hide them, but they seem to be around to stay (Xcode 6 GM).
+            cmd = "#{instruments} -s devices"
+            Open3.popen3(cmd) do |_, stdout, stderr, _|
+              stderr_filter.call(stderr)
+              devices = stdout.read.chomp.split("\n")
+              devices.select { |device| device.downcase.include?('simulator') }
+            end
           }.call
 
         when :templates
           @instruments_templates ||= lambda {
             cmd = "#{instruments} -s templates"
             if self.xcode_version >= self.v60
-              `#{cmd}`.split("\n").map { |elm| elm.strip.tr('"', '') }
+              Open3.popen3(cmd) do |_, stdout, stderr, _|
+                stderr_filter.call(stderr)
+                stdout.read.chomp.split("\n").map { |elm| elm.strip.tr('"', '') }
+              end
             elsif self.xcode_version >= self.v51
               `#{cmd}`.split("\n").delete_if do |path|
                 not path =~ /tracetemplate/
@@ -146,13 +163,17 @@ module RunLoop
 
         when :devices
           @devices ||= lambda {
-            all = `#{instruments} -s devices`.chomp.split("\n")
-            valid = all.select { |device| device =~ /[a-f0-9]{40}/ }
-            valid.map do |device|
-              udid = device[/[a-f0-9]{40}/, 0]
-              version = device[/(\d\.\d(\.\d)?)/, 0]
-              name = device.split('(').first.strip
-              RunLoop::Device.new(name, version, udid)
+            cmd = "#{instruments} -s devices"
+            Open3.popen3(cmd) do |_, stdout, stderr, _|
+              stderr_filter.call(stderr)
+              all = stdout.read.chomp.split("\n")
+              valid = all.select { |device| device =~ /[a-f0-9]{40}/ }
+              valid.map do |device|
+                udid = device[/[a-f0-9]{40}/, 0]
+                version = device[/(\d\.\d(\.\d)?)/, 0]
+                name = device.split('(').first.strip
+                RunLoop::Device.new(name, version, udid)
+              end
             end
           }.call
         else
