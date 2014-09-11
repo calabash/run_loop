@@ -108,6 +108,14 @@ module RunLoop
       instruments = 'xcrun instruments'
       return instruments if cmd == nil
 
+      # Xcode 6 GM is spamming "WebKit Threading Violations"
+      stderr_filter = lambda { |stderr|
+        stderr.read.strip.split("\n").each do |line|
+          unless line[/WebKit Threading Violation/, 0]
+            $stderr.puts line
+          end
+        end
+      }
       case cmd
         when :version
           @instruments_version ||= lambda {
@@ -125,11 +133,8 @@ module RunLoop
             # hide them, but they seem to be around to stay (Xcode 6 GM).
             cmd = "#{instruments} -s devices"
             Open3.popen3(cmd) do |_, stdout, stderr, _|
+              stderr_filter.call(stderr)
               devices = stdout.read.chomp.split("\n")
-              if ENV['DEBUG_UNIX_CALLS'] == '1'
-                err = stderr.read.strip
-                $stderr.puts err
-              end
               devices.select { |device| device.downcase.include?('simulator') }
             end
           }.call
@@ -139,10 +144,7 @@ module RunLoop
             cmd = "#{instruments} -s templates"
             if self.xcode_version >= self.v60
               Open3.popen3(cmd) do |_, stdout, stderr, _|
-                if ENV['DEBUG_UNIX_CALLS'] == '1'
-                  err = stderr.read.strip
-                  $stderr.puts err
-                end
+                stderr_filter.call(stderr)
                 stdout.read.chomp.split("\n").map { |elm| elm.strip.tr('"', '') }
               end
             elsif self.xcode_version >= self.v51
@@ -163,10 +165,7 @@ module RunLoop
           @devices ||= lambda {
             cmd = "#{instruments} -s devices"
             Open3.popen3(cmd) do |_, stdout, stderr, _|
-              if ENV['DEBUG_UNIX_CALLS'] == '1'
-                err = stderr.read.strip
-                $stderr.puts err
-              end
+              stderr_filter.call(stderr)
               all = stdout.read.chomp.split("\n")
               valid = all.select { |device| device =~ /[a-f0-9]{40}/ }
               valid.map do |device|
