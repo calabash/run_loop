@@ -161,13 +161,20 @@ module RunLoop
 
         when :devices
           @devices ||= lambda {
-            all = `#{instruments} -s devices`.chomp.split("\n")
-            valid = all.select { |device| device =~ /[a-f0-9]{40}/ }
-            valid.map do |device|
-              udid = device[/[a-f0-9]{40}/, 0]
-              version = device[/(\d\.\d(\.\d)?)/, 0]
-              name = device.split('(').first.strip
-              RunLoop::Device.new(name, version, udid)
+            cmd = "#{instruments} -s devices"
+            Open3.popen3(cmd) do |_, stdout, stderr, _|
+              if ENV['DEBUG_UNIX_CALLS'] == '1'
+                err = stderr.read.strip
+                $stderr.puts err
+              end
+              all = stdout.read.chomp.split("\n")
+              valid = all.select { |device| device =~ /[a-f0-9]{40}/ }
+              valid.map do |device|
+                udid = device[/[a-f0-9]{40}/, 0]
+                version = device[/(\d\.\d(\.\d)?)/, 0]
+                name = device.split('(').first.strip
+                RunLoop::Device.new(name, version, udid)
+              end
             end
           }.call
         else
