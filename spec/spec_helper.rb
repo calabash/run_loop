@@ -18,6 +18,26 @@ module AwesomePrint
   end
 end
 
+module Kernel
+  def capture_stdout
+    out = StringIO.new
+    $stdout = out
+    yield
+    return out
+  ensure
+    $stdout = STDOUT
+  end
+
+  def capture_stderr
+    out = StringIO.new
+    $stderr = out
+    yield
+    return out
+  ensure
+    $stderr = STDERR
+  end
+end
+
 def rspec_test_log(msg)
   begin
     puts "\033[32mTEST: #{msg}\033[0m"

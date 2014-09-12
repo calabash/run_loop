@@ -4,6 +4,7 @@ require 'timeout'
 require 'json'
 require 'open3'
 require 'erb'
+require 'ap'
 
 module RunLoop
 
@@ -27,6 +28,23 @@ module RunLoop
 
     def self.scripts_path
       SCRIPTS_PATH
+    end
+
+    def self.log_run_loop_options(options, xctools)
+      return unless ENV['DEBUG'] == '1'
+      # Ignore :sim_control b/c it is a ruby object; printing is not useful.
+      ignored_keys = [:sim_control]
+      options_to_log = {}
+      options.each_pair do |key, value|
+        next if ignored_keys.include?(key)
+        options_to_log[key] = value
+      end
+      # Objects that override '==' cannot be printed by awesome_print
+      # https://github.com/michaeldv/awesome_print/issues/154
+      # RunLoop::Version overrides '=='
+      options_to_log[:xcode] = xctools.xcode_version.to_s
+      options_to_log[:xcode_path] = xctools.xcode_developer_dir
+      ap(options_to_log, {:sort_keys => true})
     end
 
     # @deprecated since 1.0.0
@@ -127,39 +145,26 @@ module RunLoop
 
       log_file ||= File.join(results_dir, 'run_loop.out')
 
-      if ENV['DEBUG']=='1'
-        exclude = [:device_target, :udid, :sim_control, :args, :inject_dylib, :app]
-        options.each_pair { |key, value|
-          unless exclude.include? key
-            puts "#{key} => #{value}"
-          end
-        }
-        puts "device_target=#{device_target}"
-        puts "udid=#{udid}"
-        puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
-        puts "script=#{script}"
-        puts "log_file=#{log_file}"
-        puts "timeout=#{timeout}"
-        puts "uia_strategy=#{options[:uia_strategy]}"
-        puts "args=#{args}"
-        puts "inject_dylib=#{inject_dylib}"
-      end
-
       after = Time.now
-
       if ENV['DEBUG']=='1'
         puts "Preparation took #{after-before} seconds"
-
       end
 
-      cmd = instruments_command(options.merge(:udid => udid,
-                                              :results_dir_trace => results_dir_trace,
-                                              :bundle_dir_or_bundle_id => bundle_dir_or_bundle_id,
-                                              :results_dir => results_dir,
-                                              :script => script,
-                                              :log_file => log_file,
-                                              :args => args),
-                                xctools)
+      discovered_options =
+            {
+                  :udid => udid,
+                  :results_dir_trace => results_dir_trace,
+                  :bundle_dir_or_bundle_id => bundle_dir_or_bundle_id,
+                  :results_dir => results_dir,
+                  :script => script,
+                  :log_file => log_file,
+                  :args => args
+            }
+      merged_options = options.merge(discovered_options)
+
+      self.log_run_loop_options(merged_options, xctools)
+
+      cmd = instruments_command(merged_options, xctools)
 
       log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
       cmd_str = cmd.join(' ')
@@ -247,17 +252,11 @@ module RunLoop
         end
       rescue TimeoutError => e
         if ENV['DEBUG']
-          puts "Failed to launch\n"
-          puts "reason=#{e}: #{e && e.message} "
-          puts "device_target=#{device_target}"
-          puts "udid=#{udid}"
-          puts "bundle_dir_or_bundle_id=#{bundle_dir_or_bundle_id}"
-          puts "script=#{script}"
-          puts "log_file=#{log_file}"
-          puts "timeout=#{timeout}"
-          puts "uia_strategy=#{uia_strategy}"
-          puts "args=#{args}"
-          puts "lldb_output=#{raw_lldb_output}" if raw_lldb_output
+          puts "Failed to launch."
+          puts "#{e}: #{e && e.message}"
+          if raw_lldb_output
+            puts "LLDB OUTPUT: #{raw_lldb_output}"
+          end
         end
         raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
