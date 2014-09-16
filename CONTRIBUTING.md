@@ -6,11 +6,20 @@ The Calabash iOS Toolchain uses git-flow.
 
 See these links for information about git-flow and git best practices.
 
-* http://danielkummer.github.io/git-flow-cheatsheet/
-* https://www.atlassian.com/git/workflows#!workflow-gitflow
+##### Git Flow Step-by-Step guide
+
+* https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow
+
+##### Git Best Practices
+
 * http://justinhileman.info/article/changing-history/
 
-All pull requests should be based off the `develop` branch.
+##### git-flow command line tool
+
+We don't use the git-flow tools, but this is useful anyway.
+
+* http://danielkummer.github.io/git-flow-cheatsheet/
+
 
 Start your work on a feature branch based off develop.
 
