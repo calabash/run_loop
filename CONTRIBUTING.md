@@ -40,7 +40,29 @@ $ git push -u origin feature/my-new-feature
 
 ## Releasing
 
-At the moment we are not using release branches; we will cut releases by merging develop into master.
+### Create the release branch
+
+```
+$ git co develop
+$ git pull
+$ git checkout -b release-<next number> develop
+```
+
+No more features can be added.  All in-progress features and un-merged pull-requests must wait for the next release.
+
+You can, and should, make changes to the documentation.  You can bump the gem version.
+
+### Create a pull request for the release branch
+
+Do this very soon after you make the release branch to notify the team that you are planning a release.
+
+```
+$ git push -u origin release-<next number>
+```
+
+Again, no more features can be added to this pull request.  Only changes to documentation are allowed.  You can bump the gem version.
+
+### Cut a new release
 
 ```
 # Make sure all pull requests have been merged to `develop`
