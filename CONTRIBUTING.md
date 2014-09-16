@@ -1,6 +1,8 @@
 ## Contributing
 
-Run-loop is transitioning to a git-flow workflow.
+***All pull requests should be based off the `develop` branch.***
+
+The Calabash iOS Toolchain uses git-flow.
 
 See these links for information about git-flow and git best practices.
 
