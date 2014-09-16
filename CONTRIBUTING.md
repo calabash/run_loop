@@ -71,23 +71,40 @@ Again, no more features can be added to this pull request.  Only changes to docu
 # * http://ci.endoftheworl.de:8080/ # Briar jobs.
 
 # Get the latest develop.
+
+$ git fetch
 $ git co develop
 $ git pull origin develop
 
 # Get the latest master. If all is well, there should be no changes in master!
+
+$ git fetch
 $ git co master
 $ git pull origin master
 
-# Merge develop into master, run the tests and push.
-$ git merge develop
+# Get the latest release.
+
+$ git fetch
+$ git co -t origin/release-<next number>
+
+# Merge release into master, run the tests and push.
+$ git co master
+$ git merge release-<next number>
 $ be rake rspec
+$ git push
+
+# Merge release into develop, run the tests and push.
+$ git co develop
+$ git merge release-<next number>
+$ be rake rspec
+$ git push
+
+# Delete the release branch
+$ git push origin :release-0.1
+$ git br -d release-0.1
 
 # All is well!
-$ git push origin master
+$ git co master
 $ gem update --system
 $ rake release
 ```
-
-
-
-
