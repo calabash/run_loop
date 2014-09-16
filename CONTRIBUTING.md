@@ -20,6 +20,7 @@ We don't use the git-flow tools, but this is useful anyway.
 
 * http://danielkummer.github.io/git-flow-cheatsheet/
 
+## Start a Feature
 
 Start your work on a feature branch based off develop.
 
