@@ -157,6 +157,61 @@ describe RunLoop::Core do
     end
   end
 
+  describe '.log_run_loop_options' do
+    let(:options) {
+      {
+            :sim_control => RunLoop::SimControl.new,
+            :app => "/Users/deltron0/git/run-loop/spec/resources/chou-cal.app",
+            :args => [],
+            :bundle_dir_or_bundle_id => "/Users/deltron0/git/run-loop/spec/resources/chou-cal.app",
+            :device_target => "simulator",
+            :log_file => "/var/folders/bx/5wplnzxx7492fynry0m_hw080000gp/T/run_loop20140902-3459-an9lx8/run_loop.out",
+            :results_dir => "/var/folders/bx/5wplnzxx7492fynry0m_hw080000gp/T/run_loop20140902-3459-an9lx8",
+            :results_dir_trace => "/var/folders/bx/5wplnzxx7492fynry0m_hw080000gp/T/run_loop20140902-3459-an9lx8/trace",
+            :script => "/var/folders/bx/5wplnzxx7492fynry0m_hw080000gp/T/run_loop20140902-3459-an9lx8/_run_loop.js",
+            :udid => "iPhone Retina (4-inch) - Simulator - iOS 7.1",
+            :uia_strategy => :preferences,
+      }
+    }
+    let(:xctools) { RunLoop::XCTools.new }
+
+    before(:each) { ENV.delete('DEBUG') }
+    after(:each) { ENV.delete('DEBUG') }
+
+    it "when DEBUG != '1' it logs nothing" do
+      ENV['DEBUG'] = '0'
+      out = capture_stdout do
+        RunLoop::Core.log_run_loop_options(options, xctools)
+      end
+      expect(out.string).to be == ''
+    end
+
+    describe "when DEBUG == '1'" do
+      before(:each) { ENV['DEBUG'] = '1' }
+      it 'does some logging' do
+        out = capture_stdout do
+          RunLoop::Core.log_run_loop_options(options, xctools)
+        end
+        expect(out.string).not_to be == ''
+      end
+
+      it 'does not print :sim_control key' do
+        out = capture_stdout do
+          RunLoop::Core.log_run_loop_options(options, xctools)
+        end
+        expect(out.string[/:sim_control/]).to be == nil
+      end
+
+      it 'does print xcode details' do
+        out = capture_stdout do
+          RunLoop::Core.log_run_loop_options(options, xctools)
+        end
+        expect(out.string[/:xcode/]).to be == ':xcode'
+        expect(out.string[/:xcode_path/]).to be == ':xcode_path'
+      end
+    end
+  end
+
   describe '.simulator_target?' do
     describe 'raises an error' do
       it 'when options argument is not a Hash' do
