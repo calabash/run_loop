@@ -168,9 +168,9 @@ module RunLoop
 
       log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
       cmd_str = cmd.join(' ')
-      if ENV['DEBUG']
-        log(cmd_str)
-      end
+
+      log(cmd_str) if ENV['DEBUG'] == '1'
+
       if !jruby? && RUBY_VERSION && RUBY_VERSION.start_with?('1.8')
         pid = fork do
           exec(cmd_str)
@@ -251,7 +251,7 @@ module RunLoop
           end
         end
       rescue TimeoutError => e
-        if ENV['DEBUG']
+        if ENV['DEBUG'] == '1'
           puts "Failed to launch."
           puts "#{e}: #{e && e.message}"
           if raw_lldb_output
