@@ -112,7 +112,8 @@ class Resources
   end
 
   def ideviceinstaller_available?
-    File.exist? ideviceinstaller_bin_path
+    path = ideviceinstaller_bin_path
+    path and File.exist? ideviceinstaller_bin_path
   end
 
   def ideviceinstaller(device_udid, cmd, opts={})
