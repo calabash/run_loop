@@ -329,6 +329,21 @@ module RunLoop
       `/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "#{info_plist}"`.strip
     end
 
+    # Returns the a default simulator to target.  This default needs to be one
+    # that installed by default in the current Xcode version.
+    #
+    # For historical reasons, the most recent non-64b SDK should be used.
+    #
+    # @param [RunLoop::XCTools] xcode_tools Used to detect the current xcode
+    #  version.
+    def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
+      if xcode_tools.xcode_version_gte_6?
+        'iPhone 5 (8.0 Simulator)'
+      else
+        'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+      end
+    end
+
     def self.udid_and_bundle_for_launcher(device_target, options, xctools=RunLoop::XCTools.new)
       bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
 
