@@ -200,7 +200,8 @@ module RunLoop
     def reset_sim_content_and_settings(opts={})
       default_opts = {:post_quit_wait => 1.0,
                       :post_launch_wait => 3.0,
-                      :hide_after => false}
+                      :hide_after => false,
+                      :sim_udid => nil}
       merged_opts = default_opts.merge(opts)
 
       quit_sim(merged_opts)
@@ -209,7 +210,7 @@ module RunLoop
       # Very bad things will happen.  Unlike Xcode < 6, the re-launching the
       # simulator will _not_ recreate the SDK (aka Devices) directories.
       if xcode_version_gte_6?
-        simctl_reset
+        simctl_reset(merged_opts[:sim_udid])
       else
         sim_lib_path = File.join(sim_app_support_dir, 'Library')
         FileUtils.rm_rf(sim_lib_path)
