@@ -39,6 +39,22 @@ class Resources
     @bundle_id = 'com.xamarin.chou-cal'
   end
 
+  def core_simulator_home_dir
+    @core_simulator_home_dir = File.expand_path('~/Library/Developer/CoreSimulator')
+  end
+
+  def core_simulator_device_dir(sim_udid=nil)
+    if sim_udid.nil?
+      @core_simulator_device_dir = File.expand_path(File.join(core_simulator_home_dir, 'Devices'))
+    else
+      File.expand_path(File.join(core_simulator_device_dir, sim_udid))
+    end
+  end
+
+  def core_simulator_device_containers_dir(sim_udid)
+    File.expand_path(File.join(core_simulator_device_dir(sim_udid), 'Containers'))
+  end
+
   def alt_xcode_install_paths
     @alt_xcode_install_paths ||= lambda {
       min_xcode_version = RunLoop::Version.new('5.1')
