@@ -804,19 +804,33 @@ module RunLoop
       quit_sim
 
       sim_details = sim_details(:udid)
-      res = []
-      sim_details.each_key do |key|
-        cmd = "xcrun simctl erase #{key}"
-        Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+
+      simctl_erase = lambda { |udid|
+        cmd = "xcrun simctl erase #{udid}"
+        Open3.popen3(cmd) do  |_, stdout,  stderr, wait_thr|
           out = stdout.read.strip
           err = stderr.read.strip
           if ENV['DEBUG_UNIX_CALLS'] == '1'
             puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
           end
-          res << err.empty?
+          wait_thr.value.success?
+        end
+      }
+
+      # Call erase on all simulators
+      if sim_udid.nil?
+        res = []
+        sim_details.each_key do |key|
+          res << simctl_erase.call(key)
+        end
+        res.all?
+      else
+        if sim_details[sim_udid]
+          simctl_erase.call(sim_udid)
+        else
+          raise "Could not find simulator with udid '#{sim_udid}'"
         end
       end
-      res.all?
     end
 
     # @!visibility private
