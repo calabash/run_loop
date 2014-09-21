@@ -186,6 +186,19 @@ describe RunLoop::SimControl do
         expect(actual).to be_a Array
         expect(actual.count).to be >= 1
       end
+
+      # Xcode >= 6 only method
+      if RunLoop::XCTools.new.xcode_version_gte_6?
+        describe "with Xcode #{Resources.shared.current_xcode_version}" do
+          it "can reset the content and settings on a single simulator" do
+            udid = sim_control.instance_eval { sim_details :udid }.keys.sample
+            options = @opts.merge({:sim_udid => udid})
+            sim_control.reset_sim_content_and_settings(options)
+            containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
+            expect(File.exist? containers_dir).to be == false
+          end
+        end
+      end
     end
   end
 
