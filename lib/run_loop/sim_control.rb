@@ -783,21 +783,20 @@ module RunLoop
     end
 
     # @!visibility private
-    # Uses the `simctl erase` command to reset the content and settings on _all_
-    # simulators.
+    # Uses the `simctl erase` command to reset a simulator content and settings.
+    # If no `sim_udid` is nil, _all_ simulators are reset.
     #
-    # @todo Should this reset _every_ simulator or just the targeted simulator?
-    #  It is very slow to reset every simulator and if we are trying to respond
-    #  to RESET_BETWEEN_SCENARIOS we probably want to erase just the current
-    #  simulator.
-    #
-    # @note This is an Xcode 6 only method. Will raise an error if called on
+    # # @note This is an Xcode 6 only method. It will raise an error if called on
     #  Xcode < 6.
     #
     # @note This method will quit the simulator.
     #
+    # @param [String] sim_udid The udid of the simulator that will be reset.
+    #   If sim_udid is nil, _all_ simulators will be reset.
     # @raise [RuntimeError] If called on Xcode < 6.
-    def simctl_reset
+    # @raise [RuntimeError] If `sim_udid` is not a valid simulator udid.  Valid
+    #  simulator udids are determined by calling `simctl list`.
+    def simctl_reset(sim_udid = nil)
       unless xcode_version_gte_6?
         raise RuntimeError, 'this method is only available on Xcode >= 6'
       end
