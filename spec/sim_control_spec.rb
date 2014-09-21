@@ -297,17 +297,33 @@ describe RunLoop::SimControl do
       RunLoop::SimControl.terminate_all_sims
     }
 
-    describe 'raises an error if called' do
-      it 'on Xcode < 6' do
-        local_sim_control = RunLoop::SimControl.new
-        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-        expect { local_sim_control.instance_eval { simctl_reset } }.to raise_error RuntimeError
-      end
+    it 'raises an error if on Xcode < 6' do
+      local_sim_control = RunLoop::SimControl.new
+      expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+      expect { local_sim_control.instance_eval { simctl_reset } }.to raise_error RuntimeError
     end
 
     if RunLoop::XCTools.new.xcode_version_gte_6?
-      it 'resets the _all_ simulators' do
+      it 'resets the _all_ simulators when sim_udid is nil' do
         expect( sim_control.instance_eval { simctl_reset }).to be == true
+        sim_details = sim_control.instance_eval { sim_details(:udid) }
+        sim_details.each_key { |udid|
+          containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
+          expect(File.exist? containers_dir).to be == false
+        }
+      end
+
+      describe 'when sim_udid arg is not nil' do
+        it 'raises an error when the sim_udid is invalid' do
+          expect { sim_control.instance_eval { simctl_reset('unknown udid') } }.to raise_error RuntimeError
+        end
+        it 'resets the simulator with corresponding udid' do
+          sim_details = sim_control.instance_eval { sim_details(:udid) }
+          udid = sim_details.keys.sample
+          expect( sim_control.instance_eval { simctl_reset(udid) } ).to be == true
+          containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
+          expect(File.exist? containers_dir).to be == false
+        end
       end
     end
   end
