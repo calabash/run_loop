@@ -168,9 +168,9 @@ module RunLoop
 
       log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
       cmd_str = cmd.join(' ')
-      if ENV['DEBUG']
-        log(cmd_str)
-      end
+
+      log(cmd_str) if ENV['DEBUG'] == '1'
+
       if !jruby? && RUBY_VERSION && RUBY_VERSION.start_with?('1.8')
         pid = fork do
           exec(cmd_str)
@@ -251,7 +251,7 @@ module RunLoop
           end
         end
       rescue TimeoutError => e
-        if ENV['DEBUG']
+        if ENV['DEBUG'] == '1'
           puts "Failed to launch."
           puts "#{e}: #{e && e.message}"
           if raw_lldb_output
@@ -329,6 +329,21 @@ module RunLoop
       `/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "#{info_plist}"`.strip
     end
 
+    # Returns the a default simulator to target.  This default needs to be one
+    # that installed by default in the current Xcode version.
+    #
+    # For historical reasons, the most recent non-64b SDK should be used.
+    #
+    # @param [RunLoop::XCTools] xcode_tools Used to detect the current xcode
+    #  version.
+    def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
+      if xcode_tools.xcode_version_gte_6?
+        'iPhone 5 (8.0 Simulator)'
+      else
+        'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+      end
+    end
+
     def self.udid_and_bundle_for_launcher(device_target, options, xctools=RunLoop::XCTools.new)
       bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
 
@@ -340,12 +355,7 @@ module RunLoop
 
       if xctools.xcode_version_gte_51?
         if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          if xctools.xcode_version_gte_6?
-            # the simulator can be either the textual name or the UDID (directory name)
-            device_target = 'iPhone 5 (8.0 Simulator)'
-          else
-            device_target = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-          end
+          device_target = self.default_simulator(xctools)
         end
         udid = device_target
 
@@ -382,7 +392,7 @@ module RunLoop
     end
 
     # @deprecated 1.0.0 replaced with Xctools#version
-    def self.xcode_version(xctools=XCTools.new)
+    def self.xcode_version(xctools=RunLoop::XCTools.new)
       xctools.xcode_version.to_s
     end
 
@@ -521,7 +531,7 @@ module RunLoop
     end
 
 
-    def self.instruments_command(options, xctools=XCTools.new)
+    def self.instruments_command(options, xctools=RunLoop::XCTools.new)
       udid = options[:udid]
       results_dir_trace = options[:results_dir_trace]
       bundle_dir_or_bundle_id = options[:bundle_dir_or_bundle_id]
@@ -552,7 +562,7 @@ module RunLoop
       candidate
     end
 
-    def self.default_tracetemplate(xctools=XCTools.new)
+    def self.default_tracetemplate(xctools=RunLoop::XCTools.new)
       templates = xctools.instruments :templates
       if xctools.xcode_version_gte_6?
         templates.delete_if do |name|

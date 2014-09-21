@@ -164,9 +164,14 @@ module RunLoop
       end
     end
 
-    # Resets the simulator content and settings.  It is analogous to touching
-    # the menu item _for every simulator_, regardless of SDK.
+    # Resets the simulator content and settings.
     #
+    # In Xcode < 6, it is analogous to touching the menu item _for every
+    #  simulator_, regardless of SDK.
+    #
+    # In Xcode 6, the default is the same; the content and settings for every
+    #  simulator is erased.  However, in Xcode 6 it is possible to pass
+    #  a `:sim_udid` as a option to erase an individual simulator.
     #
     # On Xcode 5, it works by deleting the following directories:
     #
@@ -190,10 +195,13 @@ module RunLoop
     #  gem features` that require the simulator be launched repeated and you are
     #  tired of your editor losing focus. :) **NOTE:** This option is ignored
     #  in Xcode 6.
+    # @option opts [String] :sim_udid (nil) The udid of the simulator to reset.
+    #  **NOTE:** This option is ignored in Xcode < 6.
     def reset_sim_content_and_settings(opts={})
       default_opts = {:post_quit_wait => 1.0,
                       :post_launch_wait => 3.0,
-                      :hide_after => false}
+                      :hide_after => false,
+                      :sim_udid => nil}
       merged_opts = default_opts.merge(opts)
 
       quit_sim(merged_opts)
@@ -202,7 +210,7 @@ module RunLoop
       # Very bad things will happen.  Unlike Xcode < 6, the re-launching the
       # simulator will _not_ recreate the SDK (aka Devices) directories.
       if xcode_version_gte_6?
-        simctl_reset
+        simctl_reset(merged_opts[:sim_udid])
       else
         sim_lib_path = File.join(sim_app_support_dir, 'Library')
         FileUtils.rm_rf(sim_lib_path)
@@ -783,21 +791,20 @@ module RunLoop
     end
 
     # @!visibility private
-    # Uses the `simctl erase` command to reset the content and settings on _all_
-    # simulators.
+    # Uses the `simctl erase` command to reset a simulator content and settings.
+    # If no `sim_udid` is nil, _all_ simulators are reset.
     #
-    # @todo Should this reset _every_ simulator or just the targeted simulator?
-    #  It is very slow to reset every simulator and if we are trying to respond
-    #  to RESET_BETWEEN_SCENARIOS we probably want to erase just the current
-    #  simulator.
-    #
-    # @note This is an Xcode 6 only method. Will raise an error if called on
+    # # @note This is an Xcode 6 only method. It will raise an error if called on
     #  Xcode < 6.
     #
     # @note This method will quit the simulator.
     #
+    # @param [String] sim_udid The udid of the simulator that will be reset.
+    #   If sim_udid is nil, _all_ simulators will be reset.
     # @raise [RuntimeError] If called on Xcode < 6.
-    def simctl_reset
+    # @raise [RuntimeError] If `sim_udid` is not a valid simulator udid.  Valid
+    #  simulator udids are determined by calling `simctl list`.
+    def simctl_reset(sim_udid = nil)
       unless xcode_version_gte_6?
         raise RuntimeError, 'this method is only available on Xcode >= 6'
       end
@@ -805,19 +812,33 @@ module RunLoop
       quit_sim
 
       sim_details = sim_details(:udid)
-      res = []
-      sim_details.each_key do |key|
-        cmd = "xcrun simctl erase #{key}"
-        Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+
+      simctl_erase = lambda { |udid|
+        cmd = "xcrun simctl erase #{udid}"
+        Open3.popen3(cmd) do  |_, stdout,  stderr, wait_thr|
           out = stdout.read.strip
           err = stderr.read.strip
           if ENV['DEBUG_UNIX_CALLS'] == '1'
             puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
           end
-          res << err.empty?
+          wait_thr.value.success?
+        end
+      }
+
+      # Call erase on all simulators
+      if sim_udid.nil?
+        res = []
+        sim_details.each_key do |key|
+          res << simctl_erase.call(key)
+        end
+        res.all?
+      else
+        if sim_details[sim_udid]
+          simctl_erase.call(sim_udid)
+        else
+          raise "Could not find simulator with udid '#{sim_udid}'"
         end
       end
-      res.all?
     end
 
     # @!visibility private
