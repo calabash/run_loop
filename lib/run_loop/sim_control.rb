@@ -164,9 +164,14 @@ module RunLoop
       end
     end
 
-    # Resets the simulator content and settings.  It is analogous to touching
-    # the menu item _for every simulator_, regardless of SDK.
+    # Resets the simulator content and settings.
     #
+    # In Xcode < 6, it is analogous to touching the menu item _for every
+    #  simulator_, regardless of SDK.
+    #
+    # In Xcode 6, the default is the same; the content and settings for every
+    #  simulator is erased.  However, in Xcode 6 it is possible to pass
+    #  a `:sim_udid` as a option to erase an individual simulator.
     #
     # On Xcode 5, it works by deleting the following directories:
     #
@@ -190,6 +195,8 @@ module RunLoop
     #  gem features` that require the simulator be launched repeated and you are
     #  tired of your editor losing focus. :) **NOTE:** This option is ignored
     #  in Xcode 6.
+    # @option opts [String] :sim_udid (nil) The udid of the simulator to reset.
+    #  **NOTE:** This option is ignored in Xcode < 6.
     def reset_sim_content_and_settings(opts={})
       default_opts = {:post_quit_wait => 1.0,
                       :post_launch_wait => 3.0,
