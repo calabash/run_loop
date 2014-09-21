@@ -382,7 +382,7 @@ module RunLoop
     end
 
     # @deprecated 1.0.0 replaced with Xctools#version
-    def self.xcode_version(xctools=XCTools.new)
+    def self.xcode_version(xctools=RunLoop::XCTools.new)
       xctools.xcode_version.to_s
     end
 
@@ -521,7 +521,7 @@ module RunLoop
     end
 
 
-    def self.instruments_command(options, xctools=XCTools.new)
+    def self.instruments_command(options, xctools=RunLoop::XCTools.new)
       udid = options[:udid]
       results_dir_trace = options[:results_dir_trace]
       bundle_dir_or_bundle_id = options[:bundle_dir_or_bundle_id]
@@ -552,7 +552,7 @@ module RunLoop
       candidate
     end
 
-    def self.default_tracetemplate(xctools=XCTools.new)
+    def self.default_tracetemplate(xctools=RunLoop::XCTools.new)
       templates = xctools.instruments :templates
       if xctools.xcode_version_gte_6?
         templates.delete_if do |name|
