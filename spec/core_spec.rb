@@ -73,6 +73,35 @@ describe RunLoop::Core do
     end
   end
 
+  describe '.default_simulator' do
+    it "when Xcode 5.1 it returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1'" do
+      version = RunLoop::Version.new('5.1')
+      xctools = RunLoop::XCTools.new
+      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+      expected = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+      actual = RunLoop::Core.default_simulator(xctools)
+      expect(actual).to be == expected
+    end
+
+    it "when Xcode 5.1.1 it returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1'" do
+      version = RunLoop::Version.new('5.1.1')
+      xctools = RunLoop::XCTools.new
+      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+      expected = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+      actual = RunLoop::Core.default_simulator(xctools)
+      expect(actual).to be == expected
+    end
+
+    it "when Xcode > 5 it returns 'iPhone 5 (8.0 Simulator)" do
+      version = RunLoop::Version.new('6.0')
+      xctools = RunLoop::XCTools.new
+      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+      expected = 'iPhone 5 (8.0 Simulator)'
+      actual = RunLoop::Core.default_simulator(xctools)
+      expect(actual).to be == expected
+    end
+  end
+
   describe '.udid_and_bundle_for_launcher' do
     describe 'when 5.1 <= xcode < 6.0' do
       options = {:app => Resources.shared.cal_app_bundle_path}
