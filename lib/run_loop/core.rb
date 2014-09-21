@@ -355,12 +355,7 @@ module RunLoop
 
       if xctools.xcode_version_gte_51?
         if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          if xctools.xcode_version_gte_6?
-            # the simulator can be either the textual name or the UDID (directory name)
-            device_target = 'iPhone 5 (8.0 Simulator)'
-          else
-            device_target = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-          end
+          device_target = self.default_simulator(xctools)
         end
         udid = device_target
 
