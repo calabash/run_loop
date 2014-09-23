@@ -83,7 +83,6 @@ module RunLoop
     end
 
     def self.run_with_options(options)
-      puts "RUNNING WITH OPTIONS"
       before = Time.now
 
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
