@@ -216,6 +216,7 @@ function isLocationPrompt(alert) {
     var exps = [
             ["OK", /vil bruge din aktuelle placering/],
             ["OK", /Would Like to Use Your Current Location/],
+            ["Allow", /access your location/],
             ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
             ["OK", /Would Like to Access Your Photos/],
             ["OK", /Would Like to Access Your Contacts/],
