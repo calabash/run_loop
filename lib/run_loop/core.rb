@@ -83,11 +83,13 @@ module RunLoop
     end
 
     def self.run_with_options(options)
+      puts "RUNNING WITH OPTIONS"
       before = Time.now
-      ensure_instruments_not_running!
 
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
       xctools ||= options[:xctools] || sim_control.xctools
+
+      RunLoop::Instruments.new.kill_instruments(xctools)
 
       if self.simulator_target?(options, sim_control)
         # @todo only enable accessibility on the targeted simulator
@@ -505,20 +507,9 @@ module RunLoop
 
     end
 
+    # @deprecated 1.0.5
     def self.pids_for_run_loop(run_loop, &block)
-      results_dir = run_loop[:results_dir]
-      udid = run_loop[:udid]
-      instruments_prefix = instruments_command_prefix(udid, results_dir)
-
-      pids_str = `ps x -o pid,command | grep -v grep | grep "#{instruments_prefix.gsub(%Q["], %Q[\\"])}" | awk '{printf "%s,", $1}'`
-      pids = pids_str.split(',').map { |pid| pid.to_i }
-      if block_given?
-        pids.each do |pid|
-          block.call(pid)
-        end
-      else
-        pids
-      end
+      RunLoop::Instruments.new.instruments_pids(&block)
     end
 
     def self.instruments_command_prefix(udid, results_dir_trace)
@@ -591,22 +582,18 @@ module RunLoop
       end
     end
 
+    # @deprecated 1.0.5
     def self.ensure_instruments_not_running!
-      instruments_pids.each do |pid|
-        if ENV['DEBUG']=='1'
-          puts "Found instruments #{pid}. Killing..."
-        end
-        `kill -9 #{pid} && wait #{pid} &> /dev/null`
-      end
+      RunLoop::Instruments.new.kill_instruments
     end
 
     def self.instruments_running?
-      instruments_pids.size > 0
+      RunLoop::Instruments.new.instruments_running?
     end
 
+    # @deprecated 1.0.5
     def self.instruments_pids
-      pids_str = `ps x -o pid,command | grep -v grep | grep "instruments" | awk '{printf "%s,", $1}'`.strip
-      pids_str.split(',').map { |pid| pid.to_i }
+      RunLoop::Instruments.new.instruments_pids
     end
 
     # @todo This is a WIP
@@ -700,17 +687,11 @@ module RunLoop
   def self.stop(run_loop, out=Dir.pwd)
     return if run_loop.nil?
     results_dir = run_loop[:results_dir]
-
     dest = out
 
-
-    Core.pids_for_run_loop(run_loop) do |pid|
-      Process.kill('TERM', pid.to_i)
-    end
-
+    RunLoop::Instruments.new.kill_instruments
 
     FileUtils.mkdir_p(dest)
-
     if results_dir
       pngs = Dir.glob(File.join(results_dir, 'Run 1', '*.png'))
     else
