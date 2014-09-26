@@ -1,7 +1,10 @@
+require 'singleton'
+
 class Resources
+  include Singleton
 
   def self.shared
-    @resources ||= Resources.new
+    Resources.instance
   end
 
   def travis_ci?
