@@ -42,7 +42,9 @@ describe RunLoop::Core do
     describe 'returns a template for' do
       it "Xcode #{Resources.shared.current_xcode_version}" do
         default_template = RunLoop::Core.default_tracetemplate
-        if xctools.xcode_version_gte_6?
+        if xctools.xcode_version_gte_61?
+          expect(File.exist?(default_template)).to be true
+        elsif xctools.xcode_version_gte_6?
           expect(default_template).to be == 'Automation'
         else
           expect(File.exist?(default_template)).to be true
@@ -61,7 +63,9 @@ describe RunLoop::Core do
             it "#{developer_dir}" do
               ENV['DEVELOPER_DIR'] = developer_dir
               default_template = RunLoop::Core.default_tracetemplate
-              if xctools.xcode_version_gte_6?
+              if xctools.xcode_version_gte_61?
+                expect(File.exist?(default_template)).to be true
+              elsif xctools.xcode_version_gte_6?
                 expect(default_template).to be == 'Automation'
               else
                 expect(File.exist?(default_template)).to be true
