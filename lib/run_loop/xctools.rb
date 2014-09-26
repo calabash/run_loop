@@ -19,6 +19,14 @@ module RunLoop
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.0
+    def v61
+      @xc61 ||= RunLoop::Version.new('6.1')
+    end
+
+    # Returns a version instance for `Xcode 6.0`; used to check for the
+    # availability of features and paths to various items on the filesystem.
+    #
+    # @return [RunLoop::Version] 6.0
     def v60
       @xc60 ||= RunLoop::Version.new('6.0')
     end
@@ -37,6 +45,13 @@ module RunLoop
     # @return [RunLoop::Version] 5.0
     def v50
       @xc50 ||= RunLoop::Version.new('5.0')
+    end
+
+    # Are we running Xcode 6.1 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 6.1
+    def xcode_version_gte_61?
+      @xcode_gte_61 ||= xcode_version >= v61
     end
 
     # Are we running Xcode 6 or above?
