@@ -131,7 +131,9 @@ module RunLoop
 
       cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
       File.open(script, 'w') do |file|
-        file.puts IO.read(cal_script)
+        if include_calabash_script?(options)
+          file.puts IO.read(cal_script)
+        end
         file.puts code
       end
 
@@ -269,6 +271,24 @@ module RunLoop
       end
 
       run_loop
+    end
+
+    # @!visibility private
+    # Usually we include CalabashScript to ease uia automation.
+    # However in certain scenarios we don't load it since
+    # it slows down the UIAutomation initialization process
+    # occasionally causing privacy/security dialogs not to be automated.
+    #
+    # @return {boolean} true if CalabashScript should be loaded
+    def self.include_calabash_script?(options)
+
+      if (options[:include_calabash_script] == false) || options[:dismiss_immediate_dialogs]
+         return false
+      end
+      if Core.script_for_key(:run_loop_basic) == options[:script]
+        return options[:include_calabash_script]
+      end
+      true
     end
 
     # @!visibility private
