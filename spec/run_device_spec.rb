@@ -28,7 +28,7 @@ unless Resources.shared.travis_ci?
       else
         physical_devices.each do |device|
           if device.version >= RunLoop::Version.new('8.0') and xctools.xcode_version < RunLoop::Version.new('6.0')
-            it "combination not supported - skipping #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version}" do
+            it "Skipping #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version} - combination not supported" do
               expect(true).to be == true
             end
           else
@@ -64,7 +64,7 @@ unless Resources.shared.travis_ci?
           path = install_hash[:path]
           physical_devices.each do |device|
             if device.version >= RunLoop::Version.new('8.0') and version < RunLoop::Version.new('6.0')
-              it "combination not supported - skipping #{device.name} iOS #{device.version} Xcode #{version}" do
+              it "Skipping #{device.name} iOS #{device.version} Xcode #{version}- combination not supported" do
                 expect(true).to be == true
               end
             else
