@@ -35,7 +35,12 @@ Dir.glob('./lib/run_loop/**/*.rb').each { |file|
   puts 'done!'
 }
 
-motd=["Let's get this done!", 'Ready to rumble.', 'Enjoy.', 'Remember to breathe.',
+spec_resources = './spec/resources.rb'
+print "require '#{spec_resources}'..."
+require spec_resources
+puts 'done!'
+
+  motd=["Let's get this done!", 'Ready to rumble.', 'Enjoy.', 'Remember to breathe.',
       'Take a deep breath.', "Isn't it time for a break?", 'Can I get you a coffee?',
       'What is a calabash anyway?', 'Smile! You are on camera!', 'Let op! Wild Rooster!',
       "Don't touch that button!", "I'm gonna take this to 11.", 'Console. Engaged.',

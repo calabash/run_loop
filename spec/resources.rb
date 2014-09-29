@@ -1,7 +1,12 @@
+require 'singleton'
+
 class Resources
+  include Singleton
+
+  attr_accessor :fake_instruments_pids
 
   def self.shared
-    @resources ||= Resources.new
+    Resources.instance
   end
 
   def travis_ci?
@@ -219,5 +224,28 @@ class Resources
       raise "could not uninstall '#{bundle_id}' on '#{udid}'"
     end
     true
+  end
+
+  def path_to_fake_instruments
+    @path_to_instruments_rb ||= File.join(resources_dir, 'fake-instruments.rb')
+  end
+
+  def fork_fake_instruments_process
+    pid = Process.fork
+    if pid.nil?
+      exec("#{path_to_fake_instruments}")
+    else
+      @fake_instruments_pids ||= []
+      @fake_instruments_pids << pid
+      Process.detach(pid)
+    end
+  end
+
+  def kill_fake_instruments_process
+    return if @fake_instruments_pids.nil?
+    @fake_instruments_pids.each do |pid|
+      Process.kill('TERM', pid)
+    end
+    @fake_instruments_pids = []
   end
 end
