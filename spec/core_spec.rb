@@ -307,7 +307,6 @@ describe RunLoop::Core do
                 if device.name == 'rspec-test-device'
                   udid = device.udid
                   begin
-                    puts "deleting device '#{device}'"
                     `xcrun simctl delete #{udid}`
                   rescue Exception => e
                     rspec_warn_log "Failed to remove named simulator: #{e}"
