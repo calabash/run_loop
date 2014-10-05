@@ -274,7 +274,7 @@ var target = null,
     host = null;
 
 
-
+Log.output('Starting loop');
 while (true) {
     target = UIATarget.localTarget();
 
