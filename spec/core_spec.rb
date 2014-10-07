@@ -287,28 +287,30 @@ describe RunLoop::Core do
             end
           end
 
-          describe "'named simulator'" do
+          describe "named simulator" do
 
             after(:each) do
-              local_sim_control = RunLoop::SimControl.new
-              simulators = local_sim_control.simulators
-              simulators.each do |device|
-                if device.name == 'rspec-test-device'
-                  udid = device.udid
-                  begin
+              pid = fork do
+                local_sim_control = RunLoop::SimControl.new
+                simulators = local_sim_control.simulators
+                simulators.each do |device|
+                  if device.name == 'rspec-test-device'
+                    udid = device.udid
                     `xcrun simctl delete #{udid}`
-                  rescue Exception => e
-                    rspec_warn_log "Failed to remove named simulator: #{e}"
+                    exit!
                   end
                 end
               end
+              sleep(1)
+              Process.kill('QUIT', pid)
             end
 
             it ":device_target => 'rspec-test-device'" do
               device_type_id = 'iPhone 5s'
               runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
-              cmd = "xcrun simctl create \"rspec-test-device\" \"#{device_type_id}\" \"#{runtime_id}\""
+              cmd = "xcrun simctl create rspec-test-device \"#{device_type_id}\" \"#{runtime_id}\""
               udid = `#{cmd}`.strip
+              sleep 2
               exit_code = $?.exitstatus
               expect(udid).to_not be == nil
               expect(exit_code).to be == 0
