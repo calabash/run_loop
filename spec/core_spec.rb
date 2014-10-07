@@ -288,19 +288,8 @@ describe RunLoop::Core do
           end
 
           describe "'named simulator'" do
-            begin
-              it ":device_target => 'rspec-test-device'" do
-                device_type_id = 'iPhone 5s'
-                runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
-                cmd = "xcrun simctl create \"rspec-test-device\" \"#{device_type_id}\" \"#{runtime_id}\""
-                udid = `#{cmd}`
-                exit_code = $?.exitstatus
-                expect(udid).to_not be == nil
-                expect(exit_code).to be == 0
-                options = { :device_target => 'rspec-test-device' }
-                expect(RunLoop::Core.simulator_target?(options)).to be == true
-              end
-            ensure
+
+            after(:each) do
               local_sim_control = RunLoop::SimControl.new
               simulators = local_sim_control.simulators
               simulators.each do |device|
@@ -313,6 +302,18 @@ describe RunLoop::Core do
                   end
                 end
               end
+            end
+
+            it ":device_target => 'rspec-test-device'" do
+              device_type_id = 'iPhone 5s'
+              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
+              cmd = "xcrun simctl create \"rspec-test-device\" \"#{device_type_id}\" \"#{runtime_id}\""
+              udid = `#{cmd}`.strip
+              exit_code = $?.exitstatus
+              expect(udid).to_not be == nil
+              expect(exit_code).to be == 0
+              options = { :device_target => 'rspec-test-device' }
+              expect(RunLoop::Core.simulator_target?(options)).to be == true
             end
           end
         end
