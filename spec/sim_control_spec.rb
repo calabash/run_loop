@@ -259,6 +259,11 @@ describe RunLoop::SimControl do
           expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
           expect(File.exist?(plist_path)).to be == true
         end
+
+        it 'can skip directories not reported by instruments' do
+          sdk_dir = "~/Library/Developer/CoreSimulator/Devices/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
+          expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+        end
       end
     end
   end
