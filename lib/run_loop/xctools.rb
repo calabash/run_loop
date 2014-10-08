@@ -157,16 +157,7 @@ module RunLoop
         when :templates
           @instruments_templates ||= lambda {
             cmd = "#{instruments} -s templates"
-            if self.xcode_version >= self.v61
-              Open3.popen3(cmd) do |_, stdout, stderr, _|
-                stderr_filter.call(stderr)
-                stdout.read.chomp.split("\n").map do |line|
-                  line.strip.tr('"', '')
-                end.delete_if do |path|
-                  not path =~ /tracetemplate/
-                end
-              end
-            elsif self.xcode_version >= self.v60
+            if self.xcode_version >= self.v60
               Open3.popen3(cmd) do |_, stdout, stderr, _|
                 stderr_filter.call(stderr)
                 stdout.read.chomp.split("\n").map { |elm| elm.strip.tr('"', '') }
