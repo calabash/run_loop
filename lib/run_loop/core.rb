@@ -92,7 +92,7 @@ module RunLoop
 
       if self.simulator_target?(options, sim_control)
         # @todo only enable accessibility on the targeted simulator
-        sim_control.enable_accessibility_on_sims({:verbose => true})
+        sim_control.enable_accessibility_on_sims({:verbose => false})
       end
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
