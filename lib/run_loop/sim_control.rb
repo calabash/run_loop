@@ -685,9 +685,20 @@ module RunLoop
 
       verbose = merged_opts[:verbose]
       target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
-      launch_name = sim_details_key_with_udid[target_udid][:launch_name]
-      sdk_version = sim_details_key_with_udid[target_udid][:sdk_version]
 
+      # Directory contains simulators not reported by instruments -s devices
+      simulator_details = sim_details_key_with_udid[target_udid]
+      if simulator_details.nil?
+        if verbose
+          xcode_version = xctools.xcode_version
+          puts ["INFO: Skipping '#{target_udid}' directory because",
+                "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
+        end
+        return true
+      end
+
+      launch_name = simulator_details.fetch(:launch_name, nil)
+      sdk_version = simulator_details.fetch(:sdk_version, nil)
       msgs = ["cannot enable accessibility for '#{target_udid}' - '#{launch_name}'"]
       plist_path = File.expand_path("#{sim_data_dir}/Library/Preferences/com.apple.Accessibility.plist")
 
