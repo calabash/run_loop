@@ -358,7 +358,9 @@ module RunLoop
     # @param [RunLoop::XCTools] xcode_tools Used to detect the current xcode
     #  version.
     def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
-      if xcode_tools.xcode_version_gte_6?
+      if xcode_tools.xcode_version_gte_61?
+        'iPhone 5 (8.1 Simulator)'
+      elsif xcode_tools.xcode_version_gte_6?
         'iPhone 5 (8.0 Simulator)'
       else
         'iPhone Retina (4-inch) - Simulator - iOS 7.1'
