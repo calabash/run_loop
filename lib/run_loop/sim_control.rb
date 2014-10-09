@@ -668,7 +668,7 @@ module RunLoop
     #
     # @param [String] sim_data_dir The directory where the
     #   Library/Preferences/com.apple.Accessibility.plist can be found.
-    # @param [Hash] sim_details_key_with_udid A hash table of simulator details
+    # @param [Hash] sim_details_keyed_with_udid A hash table of simulator details
     #   that can be obtained by calling `sim_details(:udid)`.
     #
     # @param [Hash] opts controls the behavior of the method
@@ -676,7 +676,7 @@ module RunLoop
     # @return [Boolean] If the plist exists and the plist was successfully
     #   updated or if the directory was skipped (see code comments).
     # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
-    def enable_accessibility_in_sim_data_dir(sim_data_dir, sim_details_key_with_udid, opts={})
+    def enable_accessibility_in_sim_data_dir(sim_data_dir, sim_details_keyed_with_udid, opts={})
       unless xcode_version_gte_6?
         raise RuntimeError, 'it is illegal to call this method when the Xcode < 6 is the current Xcode version'
       end
@@ -690,7 +690,7 @@ module RunLoop
       target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
 
       # Directory contains simulators not reported by instruments -s devices
-      simulator_details = sim_details_key_with_udid[target_udid]
+      simulator_details = sim_details_keyed_with_udid[target_udid]
       if simulator_details.nil?
         if verbose
           xcode_version = xctools.xcode_version
@@ -753,7 +753,7 @@ module RunLoop
     #
     # @param [String] sim_data_dir The directory where the
     #   Library/Preferences/com.apple.Preferences.plist can be found.
-    # @param [Hash] sim_details_key_with_udid A hash table of simulator details
+    # @param [Hash] sim_details_keyed_with_udid A hash table of simulator details
     #   that can be obtained by calling `sim_details(:udid)`.
     #
     # @param [Hash] opts controls the behavior of the method
@@ -761,7 +761,7 @@ module RunLoop
     # @return [Boolean] If the plist exists and the plist was successfully
     #  updated or if the directory was skipped (see code comments).
     # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
-    def enable_keyboard_in_sim_data_dir(sim_data_dir, sim_details_key_with_udid, opts={})
+    def enable_keyboard_in_sim_data_dir(sim_data_dir, sim_details_keyed_with_udid, opts={})
       unless xcode_version_gte_6?
         raise RuntimeError, 'it is illegal to call this method when the Xcode < 6 is the current Xcode version'
       end
@@ -779,7 +779,7 @@ module RunLoop
       target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
 
       # Directory contains simulators not reported by instruments -s devices
-      simulator_details = sim_details_key_with_udid[target_udid]
+      simulator_details = sim_details_keyed_with_udid[target_udid]
       if simulator_details.nil?
         if verbose
           xcode_version = xctools.xcode_version
