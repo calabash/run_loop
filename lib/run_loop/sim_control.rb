@@ -290,6 +290,9 @@ module RunLoop
         details = sim_details :udid
         results = existing.map do |dir|
           enable_accessibility_in_sim_data_dir(dir, details, opts)
+          # This is done here so we don't have to make a public method
+          # to enable the keyboards for all devices.
+          enable_keyboard_in_sim_data_dir(dir, details, opts)
         end
       else
         possible = XCODE_5_SDKS.map do |sdk|
@@ -665,15 +668,15 @@ module RunLoop
     #
     # @param [String] sim_data_dir The directory where the
     #   Library/Preferences/com.apple.Accessibility.plist can be found.
-    # @param [Hash] sim_details_key_with_udid A hash table of simulator details
+    # @param [Hash] sim_details_keyed_with_udid A hash table of simulator details
     #   that can be obtained by calling `sim_details(:udid)`.
     #
     # @param [Hash] opts controls the behavior of the method
     # @option opts [Boolean] :verbose controls logging output
-    # @return [Boolean] if the plist exists and the plist was successfully
-    #   updated.
+    # @return [Boolean] If the plist exists and the plist was successfully
+    #   updated or if the directory was skipped (see code comments).
     # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
-    def enable_accessibility_in_sim_data_dir(sim_data_dir, sim_details_key_with_udid, opts={})
+    def enable_accessibility_in_sim_data_dir(sim_data_dir, sim_details_keyed_with_udid, opts={})
       unless xcode_version_gte_6?
         raise RuntimeError, 'it is illegal to call this method when the Xcode < 6 is the current Xcode version'
       end
@@ -685,9 +688,20 @@ module RunLoop
 
       verbose = merged_opts[:verbose]
       target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
-      launch_name = sim_details_key_with_udid[target_udid][:launch_name]
-      sdk_version = sim_details_key_with_udid[target_udid][:sdk_version]
 
+      # Directory contains simulators not reported by instruments -s devices
+      simulator_details = sim_details_keyed_with_udid[target_udid]
+      if simulator_details.nil?
+        if verbose
+          xcode_version = xctools.xcode_version
+          puts ["INFO: Skipping '#{target_udid}' directory because",
+                "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
+        end
+        return true
+      end
+
+      launch_name = simulator_details.fetch(:launch_name, nil)
+      sdk_version = simulator_details.fetch(:sdk_version, nil)
       msgs = ["cannot enable accessibility for '#{target_udid}' - '#{launch_name}'"]
       plist_path = File.expand_path("#{sim_data_dir}/Library/Preferences/com.apple.Accessibility.plist")
 
@@ -717,10 +731,86 @@ module RunLoop
             msgs << "could not set #{hash_key} => '#{settings[:key]}' to #{value}"
             puts "WARN: #{msgs.join("\n")}"
           end
-          end
+        end
         success
         end
       res.all?
+    end
+
+    # @!visibility private
+    # Enables the keyboard to be shown by default on the new Xcode 6 simulators.
+    #
+    # The new CoreSimulator environment has a new Hardware > Keyboard > Connect
+    #  Hardware Keyboard option which is on by default and prevents the native
+    #  keyboard from being presented.
+    #
+    # @note This will quit the simulator.
+    #
+    # @note This is for Xcode 6 only.  Will raise an error if called on Xcode 5.
+    #
+    # If the Library/Preferences/com.apple.Preferences.plist file doesn't exist
+    # this method will create one with the content to activate the keyboard.
+    #
+    # @param [String] sim_data_dir The directory where the
+    #   Library/Preferences/com.apple.Preferences.plist can be found.
+    # @param [Hash] sim_details_keyed_with_udid A hash table of simulator details
+    #   that can be obtained by calling `sim_details(:udid)`.
+    #
+    # @param [Hash] opts controls the behavior of the method
+    # @option opts [Boolean] :verbose controls logging output
+    # @return [Boolean] If the plist exists and the plist was successfully
+    #  updated or if the directory was skipped (see code comments).
+    # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
+    def enable_keyboard_in_sim_data_dir(sim_data_dir, sim_details_keyed_with_udid, opts={})
+      unless xcode_version_gte_6?
+        raise RuntimeError, 'it is illegal to call this method when the Xcode < 6 is the current Xcode version'
+      end
+
+      hash = {:key => 'AutomaticMinimizationEnabled',
+              :value => 0,
+              :type => 'integer'}
+
+      default_opts = {:verbose => false}
+      merged_opts = default_opts.merge(opts)
+
+      quit_sim
+
+      verbose = merged_opts[:verbose]
+      target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
+
+      # Directory contains simulators not reported by instruments -s devices
+      simulator_details = sim_details_keyed_with_udid[target_udid]
+      if simulator_details.nil?
+        if verbose
+          xcode_version = xctools.xcode_version
+          puts ["INFO: Skipping '#{target_udid}' directory because",
+                "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
+        end
+        return true
+      end
+
+      launch_name = simulator_details.fetch(:launch_name, nil)
+
+      msgs = ["cannot enable keyboard for '#{target_udid}' - '#{launch_name}'"]
+      plist_path = File.expand_path("#{sim_data_dir}/Library/Preferences/com.apple.Preferences.plist")
+
+      unless File.exist? plist_path
+        FileUtils.mkdir_p("#{sim_data_dir}/Library/Preferences")
+        plist = CFPropertyList::List.new
+        data = {}
+        plist.value = CFPropertyList.guess(data)
+        plist.save(plist_path, CFPropertyList::List::FORMAT_BINARY)
+      end
+
+      success = pbuddy.plist_set(hash[:key], hash[:type], hash[:value], plist_path)
+      unless success
+        if verbose
+          msgs << "could not set #{hash[:key]} => '#{hash[:key]}' to #{hash[:value]}"
+          puts "WARN: #{msgs.join("\n")}"
+        end
+      end
+
+      success
     end
 
     # @!visibility private

@@ -42,9 +42,7 @@ describe RunLoop::Core do
     describe 'returns a template for' do
       it "Xcode #{Resources.shared.current_xcode_version}" do
         default_template = RunLoop::Core.default_tracetemplate
-        if xctools.xcode_version_gte_61?
-          expect(File.exist?(default_template)).to be true
-        elsif xctools.xcode_version_gte_6?
+        if xctools.xcode_version_gte_6?
           expect(default_template).to be == 'Automation'
         else
           expect(File.exist?(default_template)).to be true
@@ -63,9 +61,7 @@ describe RunLoop::Core do
             it "#{developer_dir}" do
               ENV['DEVELOPER_DIR'] = developer_dir
               default_template = RunLoop::Core.default_tracetemplate
-              if xctools.xcode_version_gte_61?
-                expect(File.exist?(default_template)).to be true
-              elsif xctools.xcode_version_gte_6?
+              if xctools.xcode_version_gte_6?
                 expect(default_template).to be == 'Automation'
               else
                 expect(File.exist?(default_template)).to be true
@@ -96,11 +92,20 @@ describe RunLoop::Core do
       expect(actual).to be == expected
     end
 
-    it "when Xcode > 5 it returns 'iPhone 5 (8.0 Simulator)" do
+    it "when Xcode 6.0* it returns 'iPhone 5 (8.0 Simulator)'" do
       version = RunLoop::Version.new('6.0')
       xctools = RunLoop::XCTools.new
       expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
       expected = 'iPhone 5 (8.0 Simulator)'
+      actual = RunLoop::Core.default_simulator(xctools)
+      expect(actual).to be == expected
+    end
+
+    it "when Xcode 6.1* it returns 'iPhone 5 (8.1 Simulator)'" do
+      version = RunLoop::Version.new('6.1')
+      xctools = RunLoop::XCTools.new
+      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+      expected = 'iPhone 5 (8.1 Simulator)'
       actual = RunLoop::Core.default_simulator(xctools)
       expect(actual).to be == expected
     end
@@ -287,32 +292,35 @@ describe RunLoop::Core do
             end
           end
 
-          describe "'named simulator'" do
-            begin
-              it ":device_target => 'rspec-test-device'" do
-                device_type_id = 'iPhone 5s'
-                runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
-                cmd = "xcrun simctl create \"rspec-test-device\" \"#{device_type_id}\" \"#{runtime_id}\""
-                udid = `#{cmd}`
-                exit_code = $?.exitstatus
-                expect(udid).to_not be == nil
-                expect(exit_code).to be == 0
-                options = { :device_target => 'rspec-test-device' }
-                expect(RunLoop::Core.simulator_target?(options)).to be == true
-              end
-            ensure
-              local_sim_control = RunLoop::SimControl.new
-              simulators = local_sim_control.simulators
-              simulators.each do |device|
-                if device.name == 'rspec-test-device'
-                  udid = device.udid
-                  begin
+          describe "named simulator" do
+
+            after(:each) do
+              pid = fork do
+                local_sim_control = RunLoop::SimControl.new
+                simulators = local_sim_control.simulators
+                simulators.each do |device|
+                  if device.name == 'rspec-test-device'
+                    udid = device.udid
                     `xcrun simctl delete #{udid}`
-                  rescue Exception => e
-                    rspec_warn_log "Failed to remove named simulator: #{e}"
+                    exit!
                   end
                 end
               end
+              sleep(1)
+              Process.kill('QUIT', pid)
+            end
+
+            it ":device_target => 'rspec-test-device'" do
+              device_type_id = 'iPhone 5s'
+              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
+              cmd = "xcrun simctl create rspec-test-device \"#{device_type_id}\" \"#{runtime_id}\""
+              udid = `#{cmd}`.strip
+              sleep 2
+              exit_code = $?.exitstatus
+              expect(udid).to_not be == nil
+              expect(exit_code).to be == 0
+              options = { :device_target => 'rspec-test-device' }
+              expect(RunLoop::Core.simulator_target?(options)).to be == true
             end
           end
         end

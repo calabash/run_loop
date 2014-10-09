@@ -259,6 +259,44 @@ describe RunLoop::SimControl do
           expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
           expect(File.exist?(plist_path)).to be == true
         end
+
+        it 'can skip directories not reported by instruments' do
+          sdk_dir = "~/Library/Developer/CoreSimulator/Devices/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
+          expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+        end
+      end
+    end
+  end
+
+  describe '#enable_keyboard_in_sim_data_dir' do
+    describe 'raises an error' do
+      it 'on Xcode < 6' do
+        local_sim_control = RunLoop::SimControl.new
+        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+        expect { local_sim_control.instance_eval { enable_keyboard_in_sim_data_dir(nil, nil, nil) } }.to raise_error RuntimeError
+      end
+    end
+
+    if RunLoop::XCTools.new.xcode_version_gte_6?
+      describe "with Xcode #{Resources.shared.current_xcode_version}" do
+        local_sim_control = RunLoop::SimControl.new
+        sim_details = local_sim_control.instance_eval { sim_details(:udid) }
+        simulator_udid = nil
+        sim_details.each do |key, value|
+          simulator_udid = key
+          break if simulator_udid
+        end
+        it 'sets the keyboard preferences' do
+          sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{simulator_udid}/data"))
+          plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Preferences.plist")
+          expect(local_sim_control.instance_eval { enable_keyboard_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+          expect(File.exist?(plist_path)).to be == true
+        end
+
+        it 'can skip directories not reported by instruments' do
+          sdk_dir = "~/Library/Developer/CoreSimulator/Devices/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
+          expect(local_sim_control.instance_eval { enable_keyboard_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+        end
       end
     end
   end

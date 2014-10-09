@@ -1,5 +1,12 @@
 ## Change Log
 
+### 1.0.9
+
+* #57 Enable Xcode 6 simulator keyboards by default thanks @gwynantj
+* #56 Default simulator for Xcode 6.1 GM seed 2 should be iPhone 5 iOS 8.1
+* #55 Enabling accessibility on simulators can skip CoreSimulator directories
+* #54 Fix default_tracetemplate for Xcode 6.1 GM seed 2
+
 ### 1.0.8
 
 * #48 Fixes 'No such process (Errno::ESRCH)' error when terminating instruments

@@ -92,7 +92,7 @@ module RunLoop
 
       if self.simulator_target?(options, sim_control)
         # @todo only enable accessibility on the targeted simulator
-        sim_control.enable_accessibility_on_sims({:verbose => true})
+        sim_control.enable_accessibility_on_sims({:verbose => false})
       end
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
@@ -358,7 +358,9 @@ module RunLoop
     # @param [RunLoop::XCTools] xcode_tools Used to detect the current xcode
     #  version.
     def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
-      if xcode_tools.xcode_version_gte_6?
+      if xcode_tools.xcode_version_gte_61?
+        'iPhone 5 (8.1 Simulator)'
+      elsif xcode_tools.xcode_version_gte_6?
         'iPhone 5 (8.0 Simulator)'
       else
         'iPhone Retina (4-inch) - Simulator - iOS 7.1'
@@ -574,21 +576,11 @@ module RunLoop
 
     def self.default_tracetemplate(xctools=RunLoop::XCTools.new)
       templates = xctools.instruments :templates
-      if xctools.xcode_version_gte_61?
-        templates.delete_if do |path|
-          not path =~ /\/Automation.tracetemplate/
-        end.delete_if do |path|
-          not path =~ /Xcode/
-        end.first.tr("\"", '').strip
-      elsif xctools.xcode_version_gte_6?
-        templates.delete_if do |name|
-          not name == 'Automation'
-        end.first
+      if xctools.xcode_version_gte_6?
+        templates.select { |name| name == 'Automation' }.first
       else
-        templates.delete_if do |path|
-          not path =~ /\/Automation.tracetemplate/
-        end.delete_if do |path|
-          not path =~ /Xcode/
+        templates.select do |path|
+          path =~ /\/Automation.tracetemplate/ and path =~ /Xcode/
         end.first.tr("\"", '').strip
       end
     end
