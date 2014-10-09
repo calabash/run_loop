@@ -673,8 +673,8 @@ module RunLoop
     #
     # @param [Hash] opts controls the behavior of the method
     # @option opts [Boolean] :verbose controls logging output
-    # @return [Boolean] if the plist exists and the plist was successfully
-    #   updated.
+    # @return [Boolean] If the plist exists and the plist was successfully
+    #   updated or if the directory was skipped (see code comments).
     # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
     def enable_accessibility_in_sim_data_dir(sim_data_dir, sim_details_key_with_udid, opts={})
       unless xcode_version_gte_6?
@@ -740,21 +740,26 @@ module RunLoop
     # @!visibility private
     # Enables the keyboard to be shown by default on the new Xcode 6 simulators.
     #
+    # The new CoreSimulator environment has a new Hardware > Keyboard > Connect
+    #  Hardware Keyboard option which is on by default and prevents the native
+    #  keyboard from being presented.
+    #
     # @note This will quit the simulator.
     #
     # @note This is for Xcode 6 only.  Will raise an error if called on Xcode 5.
     #
     # If the Library/Preferences/com.apple.Preferences.plist file doesn't exist
-    # this method will create one with the content to activate the keyboard
+    # this method will create one with the content to activate the keyboard.
     #
     # @param [String] sim_data_dir The directory where the
-    #   Library/Preferences/com.apple.Accessibility.plist can be found.
+    #   Library/Preferences/com.apple.Preferences.plist can be found.
     # @param [Hash] sim_details_key_with_udid A hash table of simulator details
     #   that can be obtained by calling `sim_details(:udid)`.
     #
     # @param [Hash] opts controls the behavior of the method
     # @option opts [Boolean] :verbose controls logging output
-    # @return [Boolean] if the plist exists and the plist was successfully updated.
+    # @return [Boolean] If the plist exists and the plist was successfully
+    #  updated or if the directory was skipped (see code comments).
     # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
     def enable_keyboard_in_sim_data_dir(sim_data_dir, sim_details_key_with_udid, opts={})
       unless xcode_version_gte_6?
