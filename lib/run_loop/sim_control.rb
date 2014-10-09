@@ -805,7 +805,7 @@ module RunLoop
       success = pbuddy.plist_set(hash[:key], hash[:type], hash[:value], plist_path)
       unless success
         if verbose
-          msgs << "could not set #{hash_key} => '#{settings[:key]}' to #{value}"
+          msgs << "could not set #{hash[:key]} => '#{hash[:key]}' to #{hash[:value]}"
           puts "WARN: #{msgs.join("\n")}"
         end
       end
