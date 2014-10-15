@@ -1,4 +1,5 @@
 language: objective-c
+cache: bundle
 
 before_script:
   - gem uninstall -Vax --force --no-abort-on-dependent run_loop
