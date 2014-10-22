@@ -4,9 +4,9 @@
 
 ### Supported Xcode Versions
 
-* Xcode >= 5.1
-
-_There is experimental support for Xcode 6b6.  Other Xcode beta versions may or may not work._
+* Xcode >= 5.1.1
+* Xcode 6.0, 6.0.1
+* Xcode 6.1
 
 ### License
 
