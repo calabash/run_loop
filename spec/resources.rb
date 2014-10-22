@@ -62,7 +62,7 @@ class Resources
 
   def alt_xcode_install_paths
     @alt_xcode_install_paths ||= lambda {
-      min_xcode_version = RunLoop::Version.new('5.1')
+      min_xcode_version = RunLoop::Version.new('5.1.1')
       Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
         xcode_version = path[/(\d\.\d(\.\d)?)/, 0]
         if RunLoop::Version.new(xcode_version) >= min_xcode_version
@@ -74,7 +74,7 @@ class Resources
     }.call.compact
   end
 
-  def alt_xcodes_gte_xc51_hash
+  def alt_xcode_details_hash(skip_versions=[RunLoop::Version.new('6.0')])
     @alt_xcodes_gte_xc51_hash ||= lambda {
       ENV.delete('DEVELOPER_DIR')
       xcode_select_path = RunLoop::XCTools.new.xcode_developer_dir
@@ -85,7 +85,9 @@ class Resources
           version = RunLoop::XCTools.new.xcode_version
           if path == xcode_select_path
             nil
-          elsif version >= RunLoop::Version.new('5.1')
+          elsif skip_versions.include?(version)
+            nil
+          elsif version >= RunLoop::Version.new('5.1.1')
             {
                   :version => RunLoop::XCTools.new.xcode_version,
                   :path => path

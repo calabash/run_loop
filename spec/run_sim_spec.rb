@@ -34,7 +34,7 @@ describe RunLoop do
   end
 
   describe 'regression: run on simulators' do
-    xcode_installs = Resources.shared.alt_xcodes_gte_xc51_hash
+    xcode_installs = Resources.shared.alt_xcode_details_hash
     if xcode_installs.empty?
       it 'no alternative Xcode installs' do
         expect(true).to be == true

@@ -43,7 +43,7 @@ unless Resources.shared.travis_ci? or true
         if false
           rspec_warn_log 'Skipping regression testing dylib injection b/c they are not stable.'
         else
-          xcode_installs = Resources.shared.alt_xcodes_gte_xc51_hash
+          xcode_installs = Resources.shared.alt_xcode_details_hash
           if xcode_installs.empty?
             it 'no alternative Xcode installs' do
               expect(true).to be == true
