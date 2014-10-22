@@ -56,8 +56,8 @@ unless Resources.shared.travis_ci?
 
     describe 'regression: running on physical devices' do
       outer_xctools = RunLoop::XCTools.new
-      xcode_installs = Resources.shared.alt_xcodes_gte_xc51_hash
       physical_devices = outer_xctools.instruments :devices
+      xcode_installs = Resources.shared.alt_xcode_details_hash
       if not xcode_installs.empty? and Resources.shared.ideviceinstaller_available? and not physical_devices.empty?
         xcode_installs.each do |install_hash|
           version = install_hash[:version]

@@ -340,7 +340,7 @@ describe RunLoop::Instruments do
 
       describe 'regression: running on physical devices' do
         xctools = RunLoop::XCTools.new
-        xcode_installs = Resources.shared.alt_xcodes_gte_xc51_hash
+        xcode_installs = Resources.shared.alt_xcode_details_hash
         physical_devices = xctools.instruments :devices
         if not xcode_installs.empty? and Resources.shared.ideviceinstaller_available? and not physical_devices.empty?
           xcode_installs.each do |install_hash|
