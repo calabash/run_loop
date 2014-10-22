@@ -297,7 +297,7 @@ describe RunLoop::Instruments do
     unless Resources.shared.travis_ci?
       describe 'running against devices' do
         xctools = RunLoop::XCTools.new
-        physical_devices = xctools.instruments :devices
+        physical_devices = Resources.shared.physical_devices_for_testing(xctools)
         if physical_devices.empty?
           it 'no devices attached to this computer' do
             expect(true).to be == true
@@ -340,8 +340,8 @@ describe RunLoop::Instruments do
 
       describe 'regression: running on physical devices' do
         xctools = RunLoop::XCTools.new
+        physical_devices = Resources.shared.physical_devices_for_testing(xctools)
         xcode_installs = Resources.shared.alt_xcode_details_hash
-        physical_devices = xctools.instruments :devices
         if not xcode_installs.empty? and Resources.shared.ideviceinstaller_available? and not physical_devices.empty?
           xcode_installs.each do |install_hash|
             version = install_hash[:version]

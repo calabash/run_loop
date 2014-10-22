@@ -16,7 +16,7 @@ unless Resources.shared.travis_ci?
 
     context 'running on physical devices' do
       xctools = RunLoop::XCTools.new
-      physical_devices = xctools.instruments :devices
+      physical_devices = Resources.shared.physical_devices_for_testing(xctools)
       if physical_devices.empty?
         it 'no devices attached to this computer' do
           expect(true).to be == true
@@ -56,7 +56,7 @@ unless Resources.shared.travis_ci?
 
     describe 'regression: running on physical devices' do
       outer_xctools = RunLoop::XCTools.new
-      physical_devices = outer_xctools.instruments :devices
+      physical_devices = Resources.shared.physical_devices_for_testing(outer_xctools)
       xcode_installs = Resources.shared.alt_xcode_details_hash
       if not xcode_installs.empty? and Resources.shared.ideviceinstaller_available? and not physical_devices.empty?
         xcode_installs.each do |install_hash|
