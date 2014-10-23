@@ -51,7 +51,6 @@ describe RunLoop::Core do
 
       describe 'regression' do
         xcode_installs = Resources.shared.alt_xcode_install_paths
-        # if no /Xcode/*/*.app are found, there is no test - lucky you. :)
         if xcode_installs.empty?
           it 'no alternative versions of Xcode found' do
             expect(true).to be == true
