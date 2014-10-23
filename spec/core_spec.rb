@@ -328,7 +328,11 @@ describe RunLoop::Core do
 
             it ":device_target => 'rspec-test-device'" do
               device_type_id = 'iPhone 5s'
-              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
+              if RunLoop::XCTools.new.xcode_version_gte_61?
+                runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-1'
+              else
+                runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
+              end
               cmd = "xcrun simctl create rspec-test-device \"#{device_type_id}\" \"#{runtime_id}\""
               udid = `#{cmd}`.strip
               sleep 2
