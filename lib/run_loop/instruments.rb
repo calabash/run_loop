@@ -45,6 +45,7 @@ module RunLoop
             puts "Sending '#{kill_signal}' to instruments process '#{pid}'"
           end
           Process.kill(kill_signal, pid.to_i)
+          Process.wait(pid, Process::WNOHANG)
         rescue Exception => e
           if ENV['DEBUG'] == '1'
             puts "Could not kill process '#{pid.to_i}' - ignoring #{e}"
