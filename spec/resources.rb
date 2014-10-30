@@ -280,4 +280,36 @@ class Resources
       end
     }.call
   end
+
+  def launch_instruments_app(xcode_tools = RunLoop::XCTools.new)
+    dev_dir = xcode_tools.xcode_developer_dir
+    instruments_app = File.join(dev_dir, '..', 'Applications', 'Instruments.app')
+    pid = Process.fork
+    if pid.nil?
+      exec "open #{instruments_app}"
+    else
+      Process.detach pid
+      poll_until = Time.now + 5
+      delay = 0.1
+      while Time.now < poll_until
+        ps_output = `ps x -o pid,comm | grep Instruments.app | grep -v grep`.strip
+        break if ps_output[/Instruments\.app/, 0]
+        sleep delay
+      end
+    end
+  end
+
+  def kill_instruments_app(instruments_obj = RunLoop::Instruments.new)
+    ps_output = `ps x -o pid,comm | grep Instruments.app | grep -v grep`.strip
+    lines = ps_output.lines("\n").map { |line| line.strip }
+    lines.each do |line|
+      tokens = line.strip.split(' ').map { |token| token.strip }
+      pid = tokens.fetch(0, nil)
+      process_description = tokens[1..-1].join(' ')
+      if process_description[/Instruments\.app/, 0]
+        Process.kill('TERM', pid.to_i)
+        instruments_obj.instance_eval {  wait_for_process_to_terminate pid.to_i }
+      end
+    end
+  end
 end
