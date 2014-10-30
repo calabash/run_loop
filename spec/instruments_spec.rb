@@ -380,4 +380,21 @@ describe RunLoop::Instruments do
       end
     end
   end
+
+  describe '#instruments_app_running?' do
+
+    before(:each) { Resources.shared.kill_instruments_app }
+    after(:each) { Resources.shared.kill_instruments_app }
+
+    it 'returns true when Instruments.app is running' do
+      Resources.shared.launch_instruments_app
+      sleep 1
+      expect(instruments.instruments_app_running?).to be == true
+    end
+
+    it 'returns false when Instruments.app is not running' do
+      Resources.shared.kill_instruments_app(instruments)
+      expect(instruments.instruments_app_running?).to be == false
+    end
+  end
 end
