@@ -48,7 +48,7 @@ module RunLoop
           Process.wait(pid, Process::WNOHANG)
         rescue Exception => e
           if ENV['DEBUG'] == '1'
-            puts "Could not kill process '#{pid.to_i}' - ignoring #{e}"
+            puts "Could not kill and wait for process '#{pid.to_i}' - ignoring exception '#{e}'"
           end
         end
 
