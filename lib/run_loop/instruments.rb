@@ -67,6 +67,19 @@ module RunLoop
       end
     end
 
+    # Is the Instruments.app running?
+    #
+    # If the Instruments.app is running, the instruments command line tool
+    # cannot take control of applications.
+    def instruments_app_running?
+      ps_output = `ps x -o pid,comm | grep Instruments.app | grep -v grep`.strip
+      if ps_output[/Instruments\.app/, 0]
+        true
+      else
+        false
+      end
+    end
+
     private
 
     # @!visibility private
