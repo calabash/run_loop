@@ -294,6 +294,8 @@ var target = null,
             UIALogger.logMessage("Write result...");
             target.frontMostApp().setPreferencesValueForKey(sanitized, __calabashResponse);
             UIALogger.logMessage("Check successful storage...")
+            UIATarget.localTarget().delay(0.1);
+            UIALogger.logMessage("Post delay...")
             res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
             if (res && res['index'] == sanitized['index']) {
                 UIALogger.logMessage("Storage succeeded: "+ res['index']);
@@ -338,6 +340,7 @@ while (true) {
     }
 
     _actualIndex = preferences['index'];
+    UIALogger.logMessage("index " + _actualIndex + ", expecting: "+_expectedIndex+" -> command: "+ preferences['command']);
     if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
         _exp = preferences['command'];
         UIALogger.logMessage("index " + _actualIndex + " is command: "+ _exp);

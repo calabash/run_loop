@@ -62,7 +62,7 @@ class Resources
 
   def alt_xcode_install_paths
     @alt_xcode_install_paths ||= lambda {
-      min_xcode_version = RunLoop::Version.new('5.1')
+      min_xcode_version = RunLoop::Version.new('5.1.1')
       Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
         xcode_version = path[/(\d\.\d(\.\d)?)/, 0]
         if RunLoop::Version.new(xcode_version) >= min_xcode_version
@@ -74,7 +74,7 @@ class Resources
     }.call.compact
   end
 
-  def alt_xcodes_gte_xc51_hash
+  def alt_xcode_details_hash(skip_versions=[RunLoop::Version.new('6.0')])
     @alt_xcodes_gte_xc51_hash ||= lambda {
       ENV.delete('DEVELOPER_DIR')
       xcode_select_path = RunLoop::XCTools.new.xcode_developer_dir
@@ -85,7 +85,9 @@ class Resources
           version = RunLoop::XCTools.new.xcode_version
           if path == xcode_select_path
             nil
-          elsif version >= RunLoop::Version.new('5.1')
+          elsif skip_versions.include?(version)
+            nil
+          elsif version >= RunLoop::Version.new('5.1.1')
             {
                   :version => RunLoop::XCTools.new.xcode_version,
                   :path => path
@@ -247,5 +249,67 @@ class Resources
       Process.kill('TERM', pid)
     end
     @fake_instruments_pids = []
+  end
+
+  def incompatible_xcode_ios_version(device_version, xcode_version)
+    [(device_version >= RunLoop::Version.new('8.0') and xcode_version < RunLoop::Version.new('6.0')),
+     (device_version >= RunLoop::Version.new('8.1') and xcode_version < RunLoop::Version.new('6.1'))].any?
+  end
+
+  def idevice_id_bin_path
+    @idevice_id_bin_path ||= `which idevice_id`.chomp!
+  end
+
+  def idevice_id_available?
+    path = idevice_id_bin_path
+    path and File.exist? path
+  end
+
+  def physical_devices_for_testing(xcode_tools)
+    # Xcode 6 + iOS 8 - devices on the same network, whether development or not,
+    # appear when calling $ xcrun instruments -s devices. For the purposes of
+    # testing, we will only try to connect to devices that are connected via
+    # udid.
+    @physical_devices_for_testing ||= lambda {
+      devices = xcode_tools.instruments(:devices)
+      if idevice_id_available?
+        white_list = `#{idevice_id_bin_path} -l`.strip.split("\n")
+        devices.select { | device | white_list.include?(device.udid) }
+      else
+        devices
+      end
+    }.call
+  end
+
+  def launch_instruments_app(xcode_tools = RunLoop::XCTools.new)
+    dev_dir = xcode_tools.xcode_developer_dir
+    instruments_app = File.join(dev_dir, '..', 'Applications', 'Instruments.app')
+    pid = Process.fork
+    if pid.nil?
+      exec "open #{instruments_app}"
+    else
+      Process.detach pid
+      poll_until = Time.now + 5
+      delay = 0.1
+      while Time.now < poll_until
+        ps_output = `ps x -o pid,comm | grep Instruments.app | grep -v grep`.strip
+        break if ps_output[/Instruments\.app/, 0]
+        sleep delay
+      end
+    end
+  end
+
+  def kill_instruments_app(instruments_obj = RunLoop::Instruments.new)
+    ps_output = `ps x -o pid,comm | grep Instruments.app | grep -v grep`.strip
+    lines = ps_output.lines("\n").map { |line| line.strip }
+    lines.each do |line|
+      tokens = line.strip.split(' ').map { |token| token.strip }
+      pid = tokens.fetch(0, nil)
+      process_description = tokens[1..-1].join(' ')
+      if process_description[/Instruments\.app/, 0]
+        Process.kill('TERM', pid.to_i)
+        instruments_obj.instance_eval {  wait_for_process_to_terminate pid.to_i }
+      end
+    end
   end
 end

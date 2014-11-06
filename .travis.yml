@@ -1,7 +1,9 @@
 language: objective-c
+cache: bundle
 
-before_install:
+before_script:
   - gem uninstall -Vax --force --no-abort-on-dependent run_loop
+  - scripts/ci/travis/instruments-auth.sh
 
 script:
   - scripts/ci/travis/install-gem-ci.rb

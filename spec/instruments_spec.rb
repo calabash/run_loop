@@ -297,7 +297,7 @@ describe RunLoop::Instruments do
     unless Resources.shared.travis_ci?
       describe 'running against devices' do
         xctools = RunLoop::XCTools.new
-        physical_devices = xctools.instruments :devices
+        physical_devices = Resources.shared.physical_devices_for_testing(xctools)
         if physical_devices.empty?
           it 'no devices attached to this computer' do
             expect(true).to be == true
@@ -308,7 +308,7 @@ describe RunLoop::Instruments do
           end
         else
           physical_devices.each do |device|
-            if device.version >= RunLoop::Version.new('8.0') and xctools.xcode_version < RunLoop::Version.new('6.0')
+            if Resources.shared.incompatible_xcode_ios_version(device.version, xctools.xcode_version)
               it "Skipping #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version} - combination not supported" do
                 expect(true).to be == true
               end
@@ -340,14 +340,14 @@ describe RunLoop::Instruments do
 
       describe 'regression: running on physical devices' do
         xctools = RunLoop::XCTools.new
-        xcode_installs = Resources.shared.alt_xcodes_gte_xc51_hash
-        physical_devices = xctools.instruments :devices
+        physical_devices = Resources.shared.physical_devices_for_testing(xctools)
+        xcode_installs = Resources.shared.alt_xcode_details_hash
         if not xcode_installs.empty? and Resources.shared.ideviceinstaller_available? and not physical_devices.empty?
           xcode_installs.each do |install_hash|
             version = install_hash[:version]
             path = install_hash[:path]
             physical_devices.each do |device|
-              if device.version >= RunLoop::Version.new('8.0') and version < RunLoop::Version.new('6.0')
+              if Resources.shared.incompatible_xcode_ios_version(device.version, version)
                 it "Skipping #{device.name} iOS #{device.version} Xcode #{version} - combination not supported" do
                   expect(true).to be == true
                 end
@@ -378,6 +378,23 @@ describe RunLoop::Instruments do
           end
         end
       end
+    end
+  end
+
+  describe '#instruments_app_running?' do
+
+    before(:each) { Resources.shared.kill_instruments_app }
+    after(:each) { Resources.shared.kill_instruments_app }
+
+    it 'returns true when Instruments.app is running' do
+      Resources.shared.launch_instruments_app
+      sleep 1
+      expect(instruments.instruments_app_running?).to be == true
+    end
+
+    it 'returns false when Instruments.app is not running' do
+      Resources.shared.kill_instruments_app(instruments)
+      expect(instruments.instruments_app_running?).to be == false
     end
   end
 end

@@ -45,9 +45,10 @@ module RunLoop
             puts "Sending '#{kill_signal}' to instruments process '#{pid}'"
           end
           Process.kill(kill_signal, pid.to_i)
+          Process.wait(pid, Process::WNOHANG)
         rescue Exception => e
           if ENV['DEBUG'] == '1'
-            puts "Could not kill process '#{pid.to_i}' - ignoring #{e}"
+            puts "Could not kill and wait for process '#{pid.to_i}' - ignoring exception '#{e}'"
           end
         end
 
@@ -63,6 +64,19 @@ module RunLoop
             puts "Ignoring #{e.message}"
           end
         end
+      end
+    end
+
+    # Is the Instruments.app running?
+    #
+    # If the Instruments.app is running, the instruments command line tool
+    # cannot take control of applications.
+    def instruments_app_running?
+      ps_output = `ps x -o pid,comm | grep Instruments.app | grep -v grep`.strip
+      if ps_output[/Instruments\.app/, 0]
+        true
+      else
+        false
       end
     end
 

@@ -1,8 +1,10 @@
 # Disabling the dylib tests because they fail in Xcode 6 environments.
-unless Resources.shared.travis_ci? or true
-
-  describe RunLoop do
-
+describe 'Dynamically linking with calabash dylib' do
+  if Resources.shared.travis_ci? or true
+    it 'Skipping because dylib tests in Xcode 6 is broken and experimental' do
+      expect(true).to be == true
+    end
+  else
     before(:each) {
       ENV.delete('DEVELOPER_DIR')
       ENV.delete('DEBUG')
@@ -43,7 +45,7 @@ unless Resources.shared.travis_ci? or true
         if false
           rspec_warn_log 'Skipping regression testing dylib injection b/c they are not stable.'
         else
-          xcode_installs = Resources.shared.alt_xcodes_gte_xc51_hash
+          xcode_installs = Resources.shared.alt_xcode_details_hash
           if xcode_installs.empty?
             it 'no alternative Xcode installs' do
               expect(true).to be == true

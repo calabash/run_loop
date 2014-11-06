@@ -642,6 +642,17 @@ module RunLoop
   end
 
   def self.run(options={})
+
+    if RunLoop::Instruments.new.instruments_app_running?
+      msg =
+            [
+                  "Please quit the Instruments.app.",
+                  "If Instruments.app is open, the instruments command line",
+                  "tool cannot take control of your application."
+            ]
+      raise msg.join("\n")
+    end
+
     uia_strategy = options[:uia_strategy]
     if options[:script]
       script = validate_script(options[:script])

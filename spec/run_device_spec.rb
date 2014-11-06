@@ -16,7 +16,7 @@ unless Resources.shared.travis_ci?
 
     context 'running on physical devices' do
       xctools = RunLoop::XCTools.new
-      physical_devices = xctools.instruments :devices
+      physical_devices = Resources.shared.physical_devices_for_testing(xctools)
       if physical_devices.empty?
         it 'no devices attached to this computer' do
           expect(true).to be == true
@@ -27,7 +27,7 @@ unless Resources.shared.travis_ci?
         end
       else
         physical_devices.each do |device|
-          if device.version >= RunLoop::Version.new('8.0') and xctools.xcode_version < RunLoop::Version.new('6.0')
+          if Resources.shared.incompatible_xcode_ios_version(device.version, xctools.xcode_version)
             it "Skipping #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version} - combination not supported" do
               expect(true).to be == true
             end
@@ -56,14 +56,14 @@ unless Resources.shared.travis_ci?
 
     describe 'regression: running on physical devices' do
       outer_xctools = RunLoop::XCTools.new
-      xcode_installs = Resources.shared.alt_xcodes_gte_xc51_hash
-      physical_devices = outer_xctools.instruments :devices
+      physical_devices = Resources.shared.physical_devices_for_testing(outer_xctools)
+      xcode_installs = Resources.shared.alt_xcode_details_hash
       if not xcode_installs.empty? and Resources.shared.ideviceinstaller_available? and not physical_devices.empty?
         xcode_installs.each do |install_hash|
           version = install_hash[:version]
           path = install_hash[:path]
           physical_devices.each do |device|
-            if device.version >= RunLoop::Version.new('8.0') and version < RunLoop::Version.new('6.0')
+            if Resources.shared.incompatible_xcode_ios_version(device.version, version)
               it "Skipping #{device.name} iOS #{device.version} Xcode #{version}- combination not supported" do
                 expect(true).to be == true
               end
