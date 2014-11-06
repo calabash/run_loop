@@ -1,5 +1,11 @@
 ## Change Log
 
+### 1.1.0
+
+* #69 Stability uia timeout/lost write/read
+* #68 Raise an error with a helpful message when Instruments.app is open
+* #61 After killing instruments, try Process.wait
+
 ### 1.0.9
 
 * #57 Enable Xcode 6 simulator keyboards by default thanks @gwynantj
