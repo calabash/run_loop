@@ -76,35 +76,30 @@ $ git fetch
 $ git co develop
 $ git pull origin develop
 
-# Get the latest master. If all is well, there should be no changes in master!
+# Make a release branch.
 
-$ git fetch
-$ git co master
-$ git pull origin master
-
-# Get the latest release.
-
-$ git fetch
-$ git co -t origin/release-<next number>
-
-# Merge release into master, run the tests and push.
-$ git co master
-$ git merge release-<next number>
-$ be rake rspec
-$ git push
-
-# Merge release into develop, run the tests and push.
 $ git co develop
-$ git merge release-<next number>
-$ be rake rspec
-$ git push
+$ git co -b release/1.1.0
 
-# Delete the release branch
-$ git push origin :release-0.1
-$ git br -d release-0.1
+# *** Bump the version in lib/version! ***
+# *** Add changes to CHANGELOG.md ***
+$ git push -u origin release
 
-# All is well!
+# *** Make pull request targeting _master_ (not develop) ***
+# *** Let CI run. ***
+# *** Merge the PR. ***
+
 $ git co master
+$ git pull
 $ gem update --system
 $ rake release
+
+# Clean up.
+
+$ git co develop
+$ git merge --no-ff release/1.1.0
+$ git push
+$ git br -d release/1.1.0
+
+# Celebrate.
 ```
