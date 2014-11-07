@@ -288,15 +288,16 @@ var target = null,
         var sanitized = _sanitize(response),
             i = 0,
             MAX_TRIES=120,
-            res;
+            res,
+            tmp;
 
         for (i=0; i<MAX_TRIES; i+=1) {
             UIALogger.logMessage("Write result...");
-            target.frontMostApp().preferencesValueForKey(__calabashResponse);
-            UIALogger.logMessage("Last response..."+__calabashResponse);
+            tmp = target.frontMostApp().preferencesValueForKey(__calabashResponse);
+            UIALogger.logMessage("Last response..."+tmp);
             target.frontMostApp().setPreferencesValueForKey(sanitized, __calabashResponse);
             res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
-            UIALogger.logMessage("Next response..."+__calabashResponse);
+            UIALogger.logMessage("Next response..."+res);
             if (res && res['index'] == sanitized['index']) {
                 UIALogger.logMessage("Storage succeeded: "+ res['index']);
                 return;
