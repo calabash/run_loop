@@ -297,7 +297,7 @@ var target = null,
             UIALogger.logMessage("Last response..."+tmp);
             target.frontMostApp().setPreferencesValueForKey(sanitized, __calabashResponse);
             res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
-            UIALogger.logMessage("Next response..."+res);
+            UIALogger.logMessage("Next response..."+(res && res['value']);
             if (res && res['index'] == sanitized['index']) {
                 UIALogger.logMessage("Storage succeeded: "+ res['index']);
                 return;
