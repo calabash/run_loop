@@ -296,8 +296,13 @@ var target = null,
             tmp = target.frontMostApp().preferencesValueForKey(__calabashResponse);
             UIALogger.logMessage("Last response..."+tmp);
             target.frontMostApp().setPreferencesValueForKey(sanitized, __calabashResponse);
+            res = target.frontMostApp().preferencesValueForKey(__calabashRequest);
             res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
-            UIALogger.logMessage("Next response..."+(res && res['value']);
+            UIALogger.logMessage("Next response..."+(res && res['value']));
+            target.delay(0.1);
+            res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
+            UIALogger.logMessage("Post delay response..."+(res && res['value']));
+
             if (res && res['index'] == sanitized['index']) {
                 UIALogger.logMessage("Storage succeeded: "+ res['index']);
                 return;
@@ -373,5 +378,5 @@ while (true) {
         continue;
     }
     _expectedIndex = Math.max(_actualIndex+1, _expectedIndex+1);
-    target.delay(0.1);
+    target.delay(0.2);
 }
