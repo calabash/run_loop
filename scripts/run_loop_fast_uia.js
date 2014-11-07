@@ -292,17 +292,17 @@ var target = null,
 
         for (i=0; i<MAX_TRIES; i+=1) {
             UIALogger.logMessage("Write result...");
+            target.frontMostApp().preferencesValueForKey(__calabashResponse);
+            UIALogger.logMessage("Last response..."+__calabashResponse);
             target.frontMostApp().setPreferencesValueForKey(sanitized, __calabashResponse);
-            UIALogger.logMessage("Check successful storage...")
-            UIATarget.localTarget().delay(0.1);
-            UIALogger.logMessage("Post delay...")
             res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
+            UIALogger.logMessage("Next response..."+__calabashResponse);
             if (res && res['index'] == sanitized['index']) {
                 UIALogger.logMessage("Storage succeeded: "+ res['index']);
                 return;
             } else {
-                UIALogger.logMessage("Storage failed: "+ res);
-                target.delay(0.5);
+                UIALogger.logMessage("Storage failed: "+ res + " Retrying...");
+                target.delay(0.2);
             }
         }
         throw new Error("Unable to write to preferences");
@@ -320,9 +320,8 @@ var target = null,
                    "index":index});
     };
 
+UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(0, __calabashResponse);
 UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(null, __calabashResponse);
-UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(0, __calabashRequest);
-
 Log.result('success',true,true);
 target = UIATarget.localTarget();
 while (true) {
@@ -340,11 +339,10 @@ while (true) {
     }
 
     _actualIndex = preferences['index'];
-    UIALogger.logMessage("index " + _actualIndex + ", expecting: "+_expectedIndex+" -> command: "+ preferences['command']);
     if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
+        UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(null, __calabashResponse);
         _exp = preferences['command'];
         UIALogger.logMessage("index " + _actualIndex + " is command: "+ _exp);
-        target.frontMostApp().setPreferencesValueForKey(null, __calabashRequest);
         try {
             if (_exp == 'break;') {
                 _success("OK", _actualIndex);
