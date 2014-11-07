@@ -318,10 +318,20 @@ var target = null,
                    "value":err.toString(),
                    "backtrace":(err.stack ? err.stack.toString() : ""),
                    "index":index});
+    },
+    _resetCalabashPreferences = function () {
+        //Implementation is weird but reading pref values seems to have side effects
+        //also deleting a key seemed to require writing 0 and then null :)
+        var app = UIATarget.localTarget().frontMostApp();
+        app.preferencesValueForKey(__calabashRequest);
+        app.preferencesValueForKey(__calabashResponse);
+        app.setPreferencesValueForKey(0, __calabashResponse);
+        app.setPreferencesValueForKey(null, __calabashResponse);
+        app.setPreferencesValueForKey(0, __calabashRequest);
+        app.setPreferencesValueForKey(null, __calabashRequest);
     };
 
-UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(0, __calabashResponse);
-UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(null, __calabashResponse);
+_resetCalabashPreferences();
 Log.result('success',true,true);
 target = UIATarget.localTarget();
 while (true) {
@@ -362,7 +372,5 @@ while (true) {
         continue;
     }
     _expectedIndex = Math.max(_actualIndex+1, _expectedIndex+1);
-
-
-    target.delay(0.2);
+    target.delay(0.1);
 }
