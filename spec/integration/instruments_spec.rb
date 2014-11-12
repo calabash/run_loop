@@ -31,7 +31,7 @@ describe RunLoop::Instruments do
               }
 
         hash = nil
-        Retriable.retriable({:tries => Resources.shared.travis_ci? ? 5 : 2}) do
+        Retriable.retriable({:tries => Resources.shared.launch_retries}) do
           hash = RunLoop.run(options)
         end
         expect(hash).not_to be nil
@@ -60,7 +60,7 @@ describe RunLoop::Instruments do
                     }
 
               hash = nil
-              Retriable.retriable({:tries => Resources.shared.travis_ci? ? 5 : 2}) do
+              Retriable.retriable({:tries => Resources.shared.launch_retries}) do
                 hash = RunLoop.run(options)
               end
               expect(hash).not_to be nil
@@ -189,7 +189,7 @@ describe RunLoop::Instruments do
             }
 
       hash = nil
-      Retriable.retriable({:tries => Resources.shared.travis_ci? ? 5 : 2}) do
+      Retriable.retriable({:tries => Resources.shared.launch_retries}) do
         hash = RunLoop.run(options)
       end
       expect(hash).not_to be nil
