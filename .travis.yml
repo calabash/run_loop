@@ -19,5 +19,7 @@ notifications:
     recipients:
       - joshuajmoody@gmail.com
       - karl.krukow@xamarin.com
+      - michael.john.kirk@gmail.com
+      - sam.vevang@gmail.com
     on_success: change
     on_failure: always
