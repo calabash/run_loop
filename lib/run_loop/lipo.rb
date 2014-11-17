@@ -8,10 +8,11 @@ module RunLoop
   # @note All lipo commands are run in the context of `xcrun`.
   class Lipo
 
+   attr_accessor :bundle_path
+
    def initialize(bundle_path)
+     @bundle_path = bundle_path
      @plist_buddy = RunLoop::PlistBuddy.new
-     plist_path = find_plist_path(bundle_path)
-     @binary_path = find_binary_path(plist_path)
    end
 
    def verify_arch(list_of_archs)
@@ -21,28 +22,28 @@ module RunLoop
    end
 
    def info
-     # -info
-     # shell out to lipo and return a list of architectures
+     execute_lipo("-info #{binary_path}") do |stdin, stdout, stderr, wait_thr| 
+       # WIP
+       stdin.split('architectures:')[1]
+     end
    end
 
    private
 
-   def shell_out_to_lipo(argument)
-     # build the command line here
-
-     Open3.popen3("xcrun lipo #{argument}") do |stdin, stdout, stderr, wait_thr|
-       return {stdout: stdout.read.strip, stderr: stderr.read.strip, status_code: wait_thr.status.code}
+   def execute_lipo(argument)
+     command = "xcrun lipo #{argument}"
+     Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
+       yield stdin, stdout, stderr, wait_thr
      end
    end
 
-   def find_plist_path(bundle_path)
-     # inspect the bunlde path and return the path to 
+   def plist_path
+     File.join(@bundle_path, 'Info.plist');
    end
 
-   def find_binary_path(plist_path)
-      # return the path to the binary
-      plist_path = find_plist_path
-      # lookup path to binary using plist buddy
+   def binary_path
+     binary_relative_path = @plist_buddy.plist_read('CFBundleExecutable', plist_path)
+     File.join(@bundle_path, binary_relative_path);
    end
   end
 end
