@@ -30,5 +30,4 @@ describe RunLoop::Lipo do
       it { is_expected.to match_array ['armv7', 'arm64']}
     end
   end
-
 end

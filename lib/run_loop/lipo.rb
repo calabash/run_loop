@@ -15,8 +15,8 @@ module RunLoop
    end
 
    def verify_arch(list_of_archs)
-      # -verify_arch list-of-arches
-      # shell out to lipo and pass the binary path 
+     # -verify_arch list-of-arches
+     # shell out to lipo and pass the binary path
      # return a bool
    end
 

@@ -44,6 +44,10 @@ class Resources
     @sim_dylib_path ||= File.expand_path(File.join(resources_dir, 'dylibs', 'libCalabashDynSim.dylib'))
   end
 
+  def multi_arch_app_bundle_path
+    @multi_arch_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'lipo', 'Payload', 'chou-cal.app'))
+  end
+
   def bundle_id
     @bundle_id = 'com.xamarin.chou-cal'
   end
