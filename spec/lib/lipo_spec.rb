@@ -20,8 +20,14 @@ describe RunLoop::Lipo do
 
   describe '#info' do
     subject{ lipo.info }
-    it 'should return a list of architectures supported by the binary' do
+    context 'binary is not FAT' do
+      it { is_expected.to be_a Array  }
+      it { is_expected.to match_array ['i386']  }
+    end
 
+    context 'binary is FAT' do
+      let(:app_bundle_path) { Resources.shared.multi_arch_app_bundle_path }
+      it { is_expected.to match_array ['armv7', 'arm64']}
     end
   end
 
