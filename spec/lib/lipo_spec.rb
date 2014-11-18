@@ -1,4 +1,3 @@
-require 'pry'
 describe RunLoop::Lipo do
 
   let(:app_bundle_path) { Resources.shared.app_bundle_path }
