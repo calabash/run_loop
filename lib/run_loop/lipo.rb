@@ -20,10 +20,12 @@ module RunLoop
      # return a bool
    end
 
+   # Returns a list of architecture in the binary.
+   # @return [Array<String>] A list of architecture.
    def info
-     execute_lipo("-info #{binary_path}") do |stdin, stdout, stderr, wait_thr| 
-       # WIP
-       stdin.split('architectures:')[1]
+     execute_lipo("-info #{binary_path}") do |stdout, stderr, wait_thr|
+       output = stdout.read.strip
+       output.split(':')[-1].strip.split
      end
    end
 
