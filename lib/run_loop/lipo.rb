@@ -31,8 +31,8 @@ module RunLoop
 
    def execute_lipo(argument)
      command = "xcrun lipo #{argument}"
-     Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
-       yield stdin, stdout, stderr, wait_thr
+     Open3.popen3(command) do |_, stdout, stderr, wait_thr|
+       yield stdout, stderr, wait_thr
      end
    end
 
