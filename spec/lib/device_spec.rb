@@ -1,5 +1,6 @@
 describe RunLoop::Device do
 
+  context 'creating a new instance' do
   subject!(:version) { RunLoop::Version.new('7.1.2') }
   subject(:device) { RunLoop::Device.new('name', version , 'udid') }
 
@@ -23,5 +24,6 @@ describe RunLoop::Device do
         expect(local_device.version).to be == RunLoop::Version.new('7.1.2')
       end
     end
+  end
   end
 end
