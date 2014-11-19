@@ -39,4 +39,17 @@ describe RunLoop::Device do
       it { is_expected.to be == true }
     end
   end
+
+  describe '#physical_device?' do
+    subject { device.physical_device? }
+    context 'physical device' do
+      let(:device) { RunLoop::Device.new('name', '8.1.1', 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d') }
+      it { is_expected.to be == true }
+    end
+
+    context 'simulator' do
+      let(:device) { RunLoop::Device.new('name', '8.1.1', 'not a device udid') }
+      it { is_expected.to be == false }
+    end
+  end
 end

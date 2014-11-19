@@ -20,8 +20,13 @@ module RunLoop
     # Is this device a simulator?
     # @return [Boolean] Return true if this device is a simulator.
     def simulator?
-      not (self.udid =~ /[a-f0-9]{40}/) == 0
+      not physical_device?
+    end
+
+    # Is this is a physical device?
+    # @return [Boolean] Return true if this is a physical device.
+    def physical_device?
+      (self.udid =~ /[a-f0-9]{40}/) == 0
     end
   end
-
 end
