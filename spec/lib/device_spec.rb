@@ -26,5 +26,17 @@ describe RunLoop::Device do
       end
     end
   end
+
+  describe '#simulator?' do
+    subject { device.simulator? }
+    context 'physical device' do
+      let(:device) { RunLoop::Device.new('name', '8.1.1', 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d') }
+      it { is_expected.to be == false }
+    end
+
+    context 'simulator' do
+      let(:device) { RunLoop::Device.new('name', '8.1.1', 'not a device udid') }
+      it { is_expected.to be == true }
+    end
   end
 end
