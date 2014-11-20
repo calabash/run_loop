@@ -61,6 +61,17 @@ class Resources
     File.expand_path(File.join(core_simulator_device_dir(sim_udid), 'Containers'))
   end
 
+  def with_developer_dir(developer_dir, &block)
+    original_developer_dir = ENV['DEVELOPER_DIR']
+    begin
+      ENV.delete('DEVELOPER_DIR')
+      ENV['DEVELOPER_DIR'] = developer_dir
+      block.call
+    ensure
+      ENV['DEVELOPER_DIR'] = original_developer_dir
+    end
+  end
+
   def alt_xcode_install_paths
     @alt_xcode_install_paths ||= lambda {
       min_xcode_version = RunLoop::Version.new('5.1.1')
