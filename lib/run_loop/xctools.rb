@@ -15,10 +15,10 @@ module RunLoop
   # @todo Refactor instruments related code to instruments class.
   class XCTools
 
-    # Returns a version instance for `Xcode 6.0`; used to check for the
+    # Returns a version instance for `Xcode 6.1`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
-    # @return [RunLoop::Version] 6.0
+    # @return [RunLoop::Version] 6.1
     def v61
       @xc61 ||= RunLoop::Version.new('6.1')
     end
