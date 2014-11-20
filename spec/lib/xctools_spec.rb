@@ -85,6 +85,10 @@ describe RunLoop::XCTools do
     it { expect(xctools.instruments_supports_hyphen_s? '4.6.3').to be == false }
   end
 
+  describe '#xc62' do
+    it { expect(xctools.v62).to be == RunLoop::Version.new('6.2') }
+  end
+
   describe '#xc61' do
     it { expect(xctools.v61).to be == RunLoop::Version.new('6.1') }
   end
