@@ -18,10 +18,7 @@ class Resources
   end
 
   def current_xcode_version
-    @current_xcode_version ||= lambda {
-      ENV.delete('DEVELOPER_DIR')
-      RunLoop::XCTools.new.xcode_version
-    }.call
+    @current_xcode_version ||= RunLoop::XCTools.new.xcode_version
   end
 
   def resources_dir
