@@ -102,6 +102,16 @@ module RunLoop
             end
     end
 
+    # Is this a beta version of Xcode?
+    #
+    # @note Relies on Xcode beta versions having and app bundle named Xcode-Beta.app
+    # @return [Boolean] True if the Xcode version is beta.
+    def xcode_is_beta?
+      @xcode_is_beta ||= lambda {
+        (xcode_developer_dir =~ /Xcode-Beta.app/) != nil
+      }.call
+    end
+
     # Method for interacting with instruments.
     #
     # @example Getting a runnable command for instruments

@@ -159,4 +159,15 @@ describe RunLoop::XCTools do
     end
   end
 
+  describe '#xcode_is_beta?' do
+    it 'returns true if the bundle name is Xcode-Beta.app' do
+      stub_env('DEVELOPER_DIR', '/Xcode/6.2/Xcode-Beta.app/Contents/Developer')
+      expect(RunLoop::XCTools.new.xcode_is_beta?).to be == true
+    end
+
+    it 'returns false if the bundle name is not Xcode-Beta.app' do
+      stub_env('DEVELOPER_DIR', '/Xcode/6.2/Xcode.app/Contents/Developer')
+      expect(RunLoop::XCTools.new.xcode_is_beta?).to be == false
+    end
+  end
 end
