@@ -36,14 +36,29 @@ describe RunLoop::Core do
   end
 
   describe '.default_tracetemplate' do
-
-    let (:xctools) { RunLoop::XCTools.new }
+    it 'raises an error when template cannot be found' do
+      xctools = RunLoop::XCTools.new
+      templates =
+            [
+                  "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Leaks.tracetemplate",
+                  "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Network.tracetemplate",
+                  "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/System Trace.tracetemplate",
+                  "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Time Profiler.tracetemplate",
+            ]
+      expect(xctools).to receive(:instruments).with(:templates).and_return(templates)
+      expect { RunLoop::Core.default_tracetemplate(xctools) }.to raise_error
+    end
 
     describe 'returns a template for' do
       it "Xcode #{Resources.shared.current_xcode_version}" do
-        default_template = RunLoop::Core.default_tracetemplate
+        xctools = RunLoop::XCTools.new
+        default_template = RunLoop::Core.default_tracetemplate(xctools)
         if xctools.xcode_version_gte_6?
-          expect(default_template).to be == 'Automation'
+          if xctools.xcode_is_beta?
+            expect(File.exist?(default_template)).to be true
+          else
+            expect(default_template).to be == 'Automation'
+          end
         else
           expect(File.exist?(default_template)).to be true
         end
