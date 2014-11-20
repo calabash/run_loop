@@ -52,4 +52,33 @@ describe RunLoop::Device do
       it { is_expected.to be == false }
     end
   end
+
+  describe '#instruments_identifier' do
+    subject { device.instruments_identifier }
+    context 'physical device' do
+      let(:device) { RunLoop::Device.new('name', '8.1.1', 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d') }
+      it { is_expected.to be == 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d' }
+    end
+
+    describe 'simulator' do
+      context 'with Major.Minor SDK version' do
+        let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid') }
+        it { is_expected.to be == 'Form Factor (8.1 Simulator)' }
+      end
+
+      context 'with Major.Minor.Patch SDK version' do
+        let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid') }
+        it { is_expected.to be == 'Form Factor (7.0.3 Simulator)' }
+      end
+
+      describe 'Xcode < 6' do
+        let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid') }
+        let(:xcode_tools) { RunLoop::XCTools.new }
+        it 'raises an error' do
+          expect(xcode_tools).to receive(:xcode_version_gte_6?).and_return(false)
+          expect { device.instruments_identifier(xcode_tools) }.to raise_error
+        end
+      end
+    end
+  end
 end
