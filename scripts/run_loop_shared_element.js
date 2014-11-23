@@ -253,20 +253,6 @@ UIATarget.onAlert = function (alert) {
 
     attemptTouchOKOnLocation(0);
     target.popTimeout();
-    for (var i=0;i<_RUN_LOOP_MAX_RETRY_AFTER_HANDLER;i++) {
-        req = app.preferencesValueForKey(__calabashRequest);
-        rsp = app.preferencesValueForKey(__calabashResponse);
-        actualIndex = req && req['index'];
-        if (req && !isNaN(actualIndex) && actualIndex <= _lastResponse['index']) {
-            UIALogger.logMessage("Deleting previous response: "+(rsp && rsp['index']));
-            app.setPreferencesValueForKey(0, __calabashRequest);
-            app.setPreferencesValueForKey(null, __calabashRequest);
-        }
-        if (_lastResponse) {
-            UIALogger.logMessage("Re-Writing response: "+_lastResponse['value']);
-            _response(_lastResponse);
-        }
-    }
     return true;
 };
 
@@ -282,6 +268,7 @@ var _calabashSharedTextField = null,
     _response = function(response) {
         response.type = 'response';
         var jsonResponse = JSON.stringify(response);
+        UIALogger.logMessage("Response: "+ jsonResponse);
         _calabashSharedTextField.setValue(jsonResponse);
     },
     _success = function(result,index) {
@@ -294,15 +281,20 @@ var _calabashSharedTextField = null,
             "backtrace":(err.stack ? err.stack.toString() : ""),
             "index":index};
         _response(_lastResponse);
-    };
+    },
+    _syncDoneJSON='{"type":"syncDone"}';
 
 target = UIATarget.localTarget();
 while (!_calabashSharedTextField) {
-    _firstElement = uia.window().elements()[0];
+    UIALogger.logMessage("Waiting for shared element...");
+    _firstElement = target.frontMostApp().mainWindow().elements()[0];
+    target.frontMostApp().mainWindow().logElementTree();
     if (_firstElement instanceof UIATextField) {
         if (_firstElement.name() == __calabashSharedTextFieldName) {
           _calabashSharedTextField = _firstElement;
-          _calabashSharedTextField.setValue('{"type":"syncDone"}');
+          UIALogger.logMessage("Found shared element... Responding: syncDone");
+          _calabashSharedTextField.setValue(_syncDoneJSON);
+          target.delay(0.5);
           break;
         }
     }
@@ -312,7 +304,7 @@ while (!_calabashSharedTextField) {
 while (true) {
     _request = _calabashSharedTextField.value();
 
-    if (!_request) {
+    if (!_request || _request === _syncDoneJSON) {
         target.delay(0.2);
         continue;
     }
