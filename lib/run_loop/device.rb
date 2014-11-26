@@ -51,6 +51,18 @@ module RunLoop
       not self.physical_device?
     end
 
+    # Return the instruction set for this device.
+    #
+    # **Simulator**
+    # The simulator instruction set will be i386 or x86_64 depending on the
+    # the (marketing) name of the device.
+    #
+    # @note Finding the instruction set of a device requires a third-party tool
+    #  like ideviceinfo.  Example:
+    #  `$ ideviceinfo  -u 89b59 < snip > ab7ba --key 'CPUArchitecture' => arm64`
+    #
+    # @raise [RuntimeError] Raises an error if this device is a physical device.
+    # @return [String] An instruction set.
     def instruction_set
       if self.simulator?
         if ['iPhone 4s', 'iPhone 5', 'iPad 2', 'iPad Retina'].include?(self.name)
@@ -59,10 +71,7 @@ module RunLoop
           'x86_64'
         end
       else
-        raise 'Finding this instruction set of a device requires a third-party tool like ideviceinfo'
-        # Example
-        # $ ideviceinfo  -u 89b59 < snip > ab7ba --key 'CPUArchitecture'
-        # arm64
+        raise 'Finding the instruction set of a device requires a third-party tool like ideviceinfo'
       end
     end
   end
