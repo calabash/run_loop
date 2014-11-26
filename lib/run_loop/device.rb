@@ -17,6 +17,16 @@ module RunLoop
       @udid = udid
     end
 
-  end
+    # Is this a physical device?
+    # @return [Boolean] Returns true if this is a device.
+    def physical_device?
+      not self.udid[/[a-f0-9]{40}/, 0].nil?
+    end
 
+    # Is this a simulator?
+    # @return [Boolean] Returns true if this is a simulator.
+    def simulator?
+      not self.physical_device?
+    end
+  end
 end
