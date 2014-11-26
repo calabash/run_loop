@@ -21,12 +21,13 @@ describe RunLoop::Lipo do
   describe '#info' do
     subject{ lipo.info }
     context 'binary is not FAT' do
+      let (:app_bundle_path) { Resources.shared.app_bundle_path_i386 }
       it { is_expected.to be_a Array  }
       it { is_expected.to match_array ['i386']  }
     end
 
     context 'binary is FAT' do
-      let(:app_bundle_path) { Resources.shared.multi_arch_app_bundle_path }
+      let(:app_bundle_path) { Resources.shared.app_bundle_path_arm_FAT }
       it { is_expected.to match_array ['armv7', 'arm64']}
     end
   end

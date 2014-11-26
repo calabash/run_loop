@@ -41,8 +41,12 @@ class Resources
     @sim_dylib_path ||= File.expand_path(File.join(resources_dir, 'dylibs', 'libCalabashDynSim.dylib'))
   end
 
-  def multi_arch_app_bundle_path
-    @multi_arch_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'lipo', 'Payload', 'chou-cal.app'))
+  def app_bundle_path_arm_FAT
+    @app_bundle_path_arm_FAT ||= File.expand_path(File.join(resources_dir, 'lipo', 'arm-FAT', 'Payload', 'chou-cal.app'))
+  end
+
+  def app_bundle_path_i386
+    @app_bundle_path_i386 ||= File.expand_path(File.join(resources_dir, 'lipo', 'i386', 'chou.app'))
   end
 
   def bundle_id
