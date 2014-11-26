@@ -149,7 +149,7 @@ module RunLoop
       log_file ||= File.join(results_dir, 'run_loop.out')
 
       after = Time.now
-      if ENV['DEBUG']=='1'
+      if ENV['DEBUG'] == '1'
         puts "Preparation took #{after-before} seconds"
       end
 
