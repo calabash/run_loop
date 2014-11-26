@@ -90,11 +90,6 @@ module RunLoop
 
       RunLoop::Instruments.new.kill_instruments(xctools)
 
-      if self.simulator_target?(options, sim_control)
-        # @todo only enable accessibility on the targeted simulator
-        sim_control.enable_accessibility_on_sims({:verbose => false})
-      end
-
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
         device_target = detect_connected_device
@@ -164,6 +159,11 @@ module RunLoop
                   :args => args
             }
       merged_options = options.merge(discovered_options)
+
+      if self.simulator_target?(merged_options, sim_control)
+        # @todo only enable accessibility on the targeted simulator
+        sim_control.enable_accessibility_on_sims({:verbose => false})
+      end
 
       self.log_run_loop_options(merged_options, xctools)
 
