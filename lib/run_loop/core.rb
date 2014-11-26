@@ -358,7 +358,9 @@ module RunLoop
     # @param [RunLoop::XCTools] xcode_tools Used to detect the current xcode
     #  version.
     def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
-      if xcode_tools.xcode_version_gte_61?
+      if xcode_tools.xcode_version_gte_62?
+        'iPhone 5 (8.2 Simulator)'
+      elsif xcode_tools.xcode_version_gte_61?
         'iPhone 5 (8.1 Simulator)'
       elsif xcode_tools.xcode_version_gte_6?
         'iPhone 5 (8.0 Simulator)'
@@ -576,13 +578,29 @@ module RunLoop
 
     def self.default_tracetemplate(xctools=RunLoop::XCTools.new)
       templates = xctools.instruments :templates
-      if xctools.xcode_version_gte_6?
-        templates.select { |name| name == 'Automation' }.first
-      else
-        templates.select do |path|
-          path =~ /\/Automation.tracetemplate/ and path =~ /Xcode/
-        end.first.tr("\"", '').strip
-      end
+
+      # xcrun instruments -s templates
+      # Xcode >= 6 will return known, Apple defined tracetemplates as names
+      #  e.g.  Automation, Zombies, Allocations
+      #
+      # Xcode < 6 will return known, Apple defined tracetemplates as paths.
+      #
+      # Xcode 6 Beta versions also return paths, but revert to 'normal'
+      # behavior when GM is released.
+      res = templates.select { |name| name == 'Automation' }.first
+      return res if res
+
+      res = templates.select do |path|
+        path =~ /\/Automation.tracetemplate/ and path =~ /Xcode/
+      end.first.tr("\"", '').strip
+      return res if res
+
+      msgs = ['Expected instruments to report an Automation tracetemplate.',
+              'Please report this as bug:  https://github.com/calabash/run_loop/issues',
+              "In the bug report, include the output of:\n",
+              '$ xcrun xcodebuild -version',
+              "$ xcrun instruments -s templates\n"]
+      raise msgs.join("\n")
     end
 
     def self.log(message)

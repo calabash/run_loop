@@ -33,4 +33,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency('guard-bundler', '~> 2.0')
   s.add_development_dependency('growl', '~> 1.0')
   s.add_development_dependency('rb-readline', '~> 0.5')
+  s.add_development_dependency('stub_env', '~> 0.2')
 end

@@ -18,10 +18,7 @@ class Resources
   end
 
   def current_xcode_version
-    @current_xcode_version ||= lambda {
-      ENV.delete('DEVELOPER_DIR')
-      RunLoop::XCTools.new.xcode_version
-    }.call
+    @current_xcode_version ||= RunLoop::XCTools.new.xcode_version
   end
 
   def resources_dir
@@ -68,6 +65,17 @@ class Resources
     File.expand_path(File.join(core_simulator_device_dir(sim_udid), 'Containers'))
   end
 
+  def with_developer_dir(developer_dir, &block)
+    original_developer_dir = ENV['DEVELOPER_DIR']
+    begin
+      ENV.delete('DEVELOPER_DIR')
+      ENV['DEVELOPER_DIR'] = developer_dir
+      block.call
+    ensure
+      ENV['DEVELOPER_DIR'] = original_developer_dir
+    end
+  end
+
   def alt_xcode_install_paths
     @alt_xcode_install_paths ||= lambda {
       min_xcode_version = RunLoop::Version.new('5.1.1')
@@ -84,14 +92,13 @@ class Resources
 
   def alt_xcode_details_hash(skip_versions=[RunLoop::Version.new('6.0')])
     @alt_xcodes_gte_xc51_hash ||= lambda {
-      ENV.delete('DEVELOPER_DIR')
-      xcode_select_path = RunLoop::XCTools.new.xcode_developer_dir
-      paths =  alt_xcode_install_paths
-      paths.map do |path|
-        begin
+      active_xcode_path = RunLoop::XCTools.new.xcode_developer_dir
+      with_developer_dir(active_xcode_path) do
+        paths =  alt_xcode_install_paths
+        paths.map do |path|
           ENV['DEVELOPER_DIR'] = path
           version = RunLoop::XCTools.new.xcode_version
-          if path == xcode_select_path
+          if path == active_xcode_path
             nil
           elsif skip_versions.include?(version)
             nil
@@ -103,8 +110,6 @@ class Resources
           else
             nil
           end
-        ensure
-          ENV.delete('DEVELOPER_DIR')
         end
       end
     }.call.compact

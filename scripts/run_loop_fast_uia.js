@@ -146,10 +146,12 @@ if (typeof JSON !== 'object') {
 }());
 
 
+_RUN_LOOP_MAX_RETRY_AFTER_HANDLER = 10;
 var _expectedIndex = 0,//expected index of next command
     _actualIndex=0,//actual index of next command by reading commandPath
     _exp,//expression to be eval'ed
-    _result;
+    _result,
+    _lastResponse=null;
 
 var Log = (function () {
     var forceFlush = [],
@@ -221,8 +223,11 @@ function isLocationPrompt(alert) {
 }
 
 UIATarget.onAlert = function (alert) {
-    Log.output({"output":"on alert"}, true);
-    var target = UIATarget.localTarget();
+    var target = UIATarget.localTarget(),
+        app = target.frontMostApp(),
+        req = null,
+        rsp = null,
+        actualIndex = null;
     target.pushTimeout(10);
     function attemptTouchOKOnLocation(retry_count) {
         retry_count = retry_count || 0;
@@ -248,6 +253,20 @@ UIATarget.onAlert = function (alert) {
 
     attemptTouchOKOnLocation(0);
     target.popTimeout();
+    for (var i=0;i<_RUN_LOOP_MAX_RETRY_AFTER_HANDLER;i++) {
+        req = app.preferencesValueForKey(__calabashRequest);
+        rsp = app.preferencesValueForKey(__calabashResponse);
+        actualIndex = req && req['index'];
+        if (req && !isNaN(actualIndex) && actualIndex <= _lastResponse['index']) {
+            UIALogger.logMessage("Deleting previous response: "+(rsp && rsp['index']));
+            app.setPreferencesValueForKey(0, __calabashRequest);
+            app.setPreferencesValueForKey(null, __calabashRequest);
+        }
+        if (_lastResponse) {
+            UIALogger.logMessage("Re-Writing response: "+_lastResponse['value']);
+            _response(_lastResponse);
+        }
+    }
     return true;
 };
 
@@ -288,41 +307,54 @@ var target = null,
         var sanitized = _sanitize(response),
             i = 0,
             MAX_TRIES=120,
-            res;
+            res,
+            tmp;
 
         for (i=0; i<MAX_TRIES; i+=1) {
-            UIALogger.logMessage("Write result...");
+            tmp = target.frontMostApp().preferencesValueForKey(__calabashResponse);
+            UIALogger.logMessage("Last response..."+(tmp && tmp['index']+"->"+tmp['value']));
             target.frontMostApp().setPreferencesValueForKey(sanitized, __calabashResponse);
-            UIALogger.logMessage("Check successful storage...")
-            UIATarget.localTarget().delay(0.1);
-            UIALogger.logMessage("Post delay...")
+            res = target.frontMostApp().preferencesValueForKey(__calabashRequest);
             res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
+            UIALogger.logMessage("Next response..."+(res && res['value']));
+            target.delay(0.1);
+            res = target.frontMostApp().preferencesValueForKey(__calabashResponse);
+            UIALogger.logMessage("Post delay response..."+(res && res['value']));
             if (res && res['index'] == sanitized['index']) {
                 UIALogger.logMessage("Storage succeeded: "+ res['index']);
                 return;
             } else {
-                UIALogger.logMessage("Storage failed: "+ res);
-                target.delay(0.5);
+                UIALogger.logMessage("Storage failed: "+ res + " Retrying...");
+                target.delay(0.2);
             }
         }
         throw new Error("Unable to write to preferences");
-
     },
     _success = function(result,index) {
-
-        _response({"status":'success', "value":result, "index": index});
+        _lastResponse = {"status":'success', "value":result, "index": index};
+        _response(_lastResponse);
 
     },
     _failure = function(err, index) {
-        _response({"status":'error',
-                   "value":err.toString(),
-                   "backtrace":(err.stack ? err.stack.toString() : ""),
-                   "index":index});
+        _lastResponse = {"status":'error',
+                         "value":err.toString(),
+                         "backtrace":(err.stack ? err.stack.toString() : ""),
+                         "index":index};
+        _response(_lastResponse);
+    },
+    _resetCalabashPreferences = function () {
+        //Implementation is weird but reading pref values seems to have side effects
+        //also deleting a key seemed to require writing 0 and then null :)
+        var app = UIATarget.localTarget().frontMostApp();
+        app.preferencesValueForKey(__calabashRequest);
+        app.preferencesValueForKey(__calabashResponse);
+        app.setPreferencesValueForKey(0, __calabashResponse);
+        app.setPreferencesValueForKey(null, __calabashResponse);
+        app.setPreferencesValueForKey(0, __calabashRequest);
+        app.setPreferencesValueForKey(null, __calabashRequest);
     };
 
-UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(null, __calabashResponse);
-UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(0, __calabashRequest);
-
+_resetCalabashPreferences();
 Log.result('success',true,true);
 target = UIATarget.localTarget();
 while (true) {
@@ -340,11 +372,10 @@ while (true) {
     }
 
     _actualIndex = preferences['index'];
-    UIALogger.logMessage("index " + _actualIndex + ", expecting: "+_expectedIndex+" -> command: "+ preferences['command']);
     if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
+        UIATarget.localTarget().frontMostApp().setPreferencesValueForKey(null, __calabashResponse);
         _exp = preferences['command'];
         UIALogger.logMessage("index " + _actualIndex + " is command: "+ _exp);
-        target.frontMostApp().setPreferencesValueForKey(null, __calabashRequest);
         try {
             if (_exp == 'break;') {
                 _success("OK", _actualIndex);
@@ -364,7 +395,5 @@ while (true) {
         continue;
     }
     _expectedIndex = Math.max(_actualIndex+1, _expectedIndex+1);
-
-
     target.delay(0.2);
 }

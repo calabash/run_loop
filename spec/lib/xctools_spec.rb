@@ -85,6 +85,10 @@ describe RunLoop::XCTools do
     it { expect(xctools.instruments_supports_hyphen_s? '4.6.3').to be == false }
   end
 
+  describe '#xc62' do
+    it { expect(xctools.v62).to be == RunLoop::Version.new('6.2') }
+  end
+
   describe '#xc61' do
     it { expect(xctools.v61).to be == RunLoop::Version.new('6.1') }
   end
@@ -120,6 +124,18 @@ describe RunLoop::XCTools do
           end
         end
       end
+    end
+  end
+
+  describe '#xcode_version_gte_62?' do
+    it 'returns true for Xcode >= 6.2' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('6.2'))
+      expect(xctools.xcode_version_gte_62?).to be == true
+    end
+
+    it 'returns false for Xcode < 6.2' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('6.1'))
+      expect(xctools.xcode_version_gte_62?).to be == false
     end
   end
 
@@ -159,4 +175,15 @@ describe RunLoop::XCTools do
     end
   end
 
+  describe '#xcode_is_beta?' do
+    it 'returns true if the bundle name is Xcode-Beta.app' do
+      stub_env('DEVELOPER_DIR', '/Xcode/6.2/Xcode-Beta.app/Contents/Developer')
+      expect(RunLoop::XCTools.new.xcode_is_beta?).to be == true
+    end
+
+    it 'returns false if the bundle name is not Xcode-Beta.app' do
+      stub_env('DEVELOPER_DIR', '/Xcode/6.2/Xcode.app/Contents/Developer')
+      expect(RunLoop::XCTools.new.xcode_is_beta?).to be == false
+    end
+  end
 end

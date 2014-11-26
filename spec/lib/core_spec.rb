@@ -36,35 +36,56 @@ describe RunLoop::Core do
   end
 
   describe '.default_tracetemplate' do
-
-    let (:xctools) { RunLoop::XCTools.new }
+    it 'raises an error when template cannot be found' do
+      xctools = RunLoop::XCTools.new
+      templates =
+            [
+                  "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Leaks.tracetemplate",
+                  "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Network.tracetemplate",
+                  "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/System Trace.tracetemplate",
+                  "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Time Profiler.tracetemplate",
+            ]
+      expect(xctools).to receive(:instruments).with(:templates).and_return(templates)
+      expect { RunLoop::Core.default_tracetemplate(xctools) }.to raise_error
+    end
 
     describe 'returns a template for' do
       it "Xcode #{Resources.shared.current_xcode_version}" do
-        default_template = RunLoop::Core.default_tracetemplate
+        xctools = RunLoop::XCTools.new
+        default_template = RunLoop::Core.default_tracetemplate(xctools)
         if xctools.xcode_version_gte_6?
-          expect(default_template).to be == 'Automation'
+          if xctools.xcode_is_beta?
+            expect(File.exist?(default_template)).to be true
+          else
+            expect(default_template).to be == 'Automation'
+          end
         else
           expect(File.exist?(default_template)).to be true
         end
       end
 
       describe 'regression' do
-        xcode_installs = Resources.shared.alt_xcode_install_paths
+        xcode_installs = Resources.shared.alt_xcode_details_hash
         if xcode_installs.empty?
           it 'no alternative versions of Xcode found' do
             expect(true).to be == true
           end
         else
-          xcode_installs.each do |developer_dir|
-            it "#{developer_dir}" do
-              ENV['DEVELOPER_DIR'] = developer_dir
-              default_template = RunLoop::Core.default_tracetemplate
-              if xctools.xcode_version_gte_6?
-                expect(default_template).to be == 'Automation'
-              else
-                expect(File.exist?(default_template)).to be true
-              end
+          xcode_installs.each do |xcode_details|
+            it "#{xcode_details[:path]} - #{xcode_details[:version]}" do
+              Resources.shared.with_developer_dir(xcode_details[:path]) {
+                xctools = RunLoop::XCTools.new
+                default_template = RunLoop::Core.default_tracetemplate(xctools)
+                if xctools.xcode_version_gte_6?
+                  if xctools.xcode_is_beta?
+                    expect(File.exist?(default_template)).to be true
+                  else
+                    expect(default_template).to be == 'Automation'
+                  end
+                else
+                  expect(File.exist?(default_template)).to be true
+                end
+              }
             end
           end
         end
@@ -108,6 +129,16 @@ describe RunLoop::Core do
       actual = RunLoop::Core.default_simulator(xctools)
       expect(actual).to be == expected
     end
+
+    it "when Xcode 6.2* it returns 'iPhone 5 (8.2 Simulator)'" do
+      version = RunLoop::Version.new('6.2')
+      xctools = RunLoop::XCTools.new
+      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+      expected = 'iPhone 5 (8.2 Simulator)'
+      actual = RunLoop::Core.default_simulator(xctools)
+      expect(actual).to be == expected
+    end
+
   end
 
   describe '.udid_and_bundle_for_launcher' do
