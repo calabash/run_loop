@@ -51,8 +51,6 @@ module RunLoop
       not self.physical_device?
     end
 
-    private
-
     def instruction_set
       if self.simulator?
         if ['iPhone 4s', 'iPhone 5', 'iPad 2', 'iPad Retina'].include?(self.name)
