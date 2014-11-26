@@ -2,6 +2,10 @@ require 'open3'
 
 module RunLoop
 
+  # An error class for signaling an incompatible architecture.
+  class IncompatibleArchitecture < StandardError
+  end
+
   # A class for interacting with the lipo command-line tool to verify that an
   # executable is valid for the test target (device or simulator).
   #
@@ -61,7 +65,8 @@ module RunLoop
 
        instruction_set = device.instruction_set
        unless arches.include?(instruction_set)
-         raise ['Binary at:',
+         raise RunLoop::IncompatibleArchitecture,
+               ['Binary at:',
                 binary_path,
                 "does not contain a compatible architecture for target device.",
                 "Expected '#{instruction_set}' but found #{arches}."].join("\n")
