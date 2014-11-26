@@ -2,7 +2,8 @@ require 'open3'
 
 module RunLoop
 
-  # A class for interacting with the lipo command-line tool.
+  # A class for interacting with the lipo command-line tool to verify that an
+  # executable is valid for the test target (device or simulator).
   #
   # @note All lipo commands are run in the context of `xcrun`.
   class Lipo
