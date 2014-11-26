@@ -56,9 +56,9 @@ module RunLoop
     def instruction_set
       if self.simulator?
         if ['iPhone 4s', 'iPhone 5', 'iPad 2', 'iPad Retina'].include?(self.name)
-          :i386
+          'i386'
         else
-          :x86_64
+          'x86_64'
         end
       else
         raise 'Finding this instruction set of a device requires a third-party tool like ideviceinfo'

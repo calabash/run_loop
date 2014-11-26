@@ -96,13 +96,13 @@ describe RunLoop::Device do
       context 'is an i386 Simulator' do
         ['iPhone 4s', 'iPhone 5', 'iPad 2', 'iPad Retina'].each do |sim_name|
           let(:name) { sim_name }
-          it { is_expected.to be == :i386 }
+          it { is_expected.to be == 'i386' }
         end
       end
 
       context 'is any other simulator' do
         let(:name) { 'iPad Air' }
-        it { is_expected.to be == :x86_64 }
+        it { is_expected.to be == 'x86_64' }
       end
     end
   end
