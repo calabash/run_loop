@@ -50,4 +50,29 @@ describe RunLoop::Device do
       it { is_expected.to be == false }
     end
   end
+
+  describe '#instruction_set' do
+    describe 'is a physical device' do
+      it 'raises an error' do
+        device = RunLoop::Device.new('name', '7.1.2', '30c4b52a41d0f6c64a44bd01ff2966f03105de1e')
+        expect { device.send(:instruction_set) }.to raise_error
+      end
+    end
+
+    context 'CoreSimulators' do
+      let (:device) { RunLoop::Device.new(name, '7.1.2', '77DA3AC3-EB3E-4B24-B899-4A20E315C318') }
+      subject { device.send(:instruction_set) }
+      context 'is an i386 Simulator' do
+        ['iPhone 4s', 'iPhone 5', 'iPad 2', 'iPad Retina'].each do |sim_name|
+          let(:name) { sim_name }
+          it { is_expected.to be == :i386 }
+        end
+      end
+
+      context 'is any other simulator' do
+        let(:name) { 'iPad Air' }
+        it { is_expected.to be == :x86_64 }
+      end
+    end
+  end
 end
