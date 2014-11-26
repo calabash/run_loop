@@ -49,7 +49,7 @@ module RunLoop
 
    def binary_path
      binary_relative_path = @plist_buddy.plist_read('CFBundleExecutable', plist_path)
-     File.join(@bundle_path, binary_relative_path);
+     File.join(@bundle_path, binary_relative_path)
    end
   end
 end
