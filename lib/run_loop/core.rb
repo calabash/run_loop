@@ -82,6 +82,48 @@ module RunLoop
       nil
     end
 
+    # Raise an error if the application binary is not compatible with the
+    # target simulator.
+    #
+    # @note This method is implemented for CoreSimulator environments only;
+    #  for Xcode < 6.0 this method does nothing.
+    #
+    # @param [Hash] launch_options These options need to contain the app bundle
+    #   path and a udid that corresponds to a simulator name or simulator udid.
+    #   In practical terms:  call this after merging the original launch
+    #   options with those options that are discovered.
+    #
+    # @param [RunLoop::SimControl] sim_control A simulator control object.
+    # @raise [RuntimeError] Raises an error if the `launch_options[:udid]`
+    #  cannot be used to find a simulator.
+    # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
+    #  application binary is not compatible with the target simulator.
+    def self.expect_compatible_simulator_architecture(launch_options, sim_control)
+      if sim_control.xcode_version_gte_6?
+        sim_identifier = launch_options[:udid]
+        simulator = sim_control.simulators.find do |simulator|
+          [simulator.instruments_identifier(sim_control.xctools),
+           simulator.udid].include?(sim_identifier)
+        end
+
+        if simulator.nil?
+          raise "Could not find simulator with identifier '#{sim_identifier}'"
+        end
+
+        lipo = RunLoop::Lipo.new(launch_options[:bundle_dir_or_bundle_id])
+        lipo.expect_compatible_arch(simulator)
+        if ENV['DEBUG'] == '1'
+          puts "Simulator instruction set '#{simulator.instruction_set}' is compatible with #{lipo.info}"
+        end
+        true
+      else
+        if ENV['DEBUG'] == '1'
+          puts "Xcode #{sim_control.xctools.xcode_version} detected; skipping simulator architecture check."
+        end
+        false
+      end
+    end
+
     def self.run_with_options(options)
       before = Time.now
 
@@ -163,6 +205,7 @@ module RunLoop
       if self.simulator_target?(merged_options, sim_control)
         # @todo only enable accessibility on the targeted simulator
         sim_control.enable_accessibility_on_sims({:verbose => false})
+        self.expect_compatible_simulator_architecture(merged_options, sim_control)
       end
 
       self.log_run_loop_options(merged_options, xctools)
