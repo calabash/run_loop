@@ -53,7 +53,7 @@ module RunLoop
    #  ideviceinfo to find the target device's instruction set.
    # @param [RunLoop::Device] device The test target.
    # @raise [RuntimeError] Raises an error if the device is a physical device.
-   # @raise [RuntimeError] Raises an error if the instruction set of the target
+   # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the instruction set of the target
    #   device is not compatible with the executable in the application.
    def expect_compatible_arch(device)
      if device.physical_device?
