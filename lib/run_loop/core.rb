@@ -20,6 +20,7 @@ module RunLoop
     SCRIPTS = {
         :dismiss => 'run_dismiss_location.js',
         :run_loop_fast_uia => 'run_loop_fast_uia.js',
+        :run_loop_shared_element => 'run_loop_shared_element.js',
         :run_loop_host => 'run_loop_host.js',
         :run_loop_basic => 'run_loop_basic.js'
     }
@@ -654,6 +655,8 @@ module RunLoop
         Core.script_for_key(:run_loop_fast_uia)
       when :host
         Core.script_for_key(:run_loop_host)
+      when :shared_element
+        Core.script_for_key(:run_loop_shared_element)
       else
         Core.script_for_key(:run_loop_basic)
     end
@@ -696,6 +699,8 @@ module RunLoop
         uia_strategy = :host
       elsif desired_script == :run_loop_fast_uia
         uia_strategy = :preferences
+      elsif desired_script == :run_loop_shared_element
+        uia_strategy = :shared_element
       else
         raise "Inconsistent state: desired script #{desired_script} has not uia_strategy"
       end
