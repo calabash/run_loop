@@ -25537,6 +25537,11 @@ String.prototype.calabash_script$query$IQuery$_query$arity$3 = function(kw, coll
   var kw__$1 = this;
   return calabash_script.query.filter_by_type.call(null, cljs.core.keyword.call(null, kw__$1), calabash_script.query.dir_seq.call(null, dir, coll));
 };
+cljs.core.Symbol.prototype.calabash_script$query$IQuery$ = true;
+cljs.core.Symbol.prototype.calabash_script$query$IQuery$_query$arity$3 = function(s, coll, dir) {
+  var s__$1 = this;
+  return calabash_script.query._query.call(null, cljs.core.keyword.call(null, s__$1), coll, dir);
+};
 cljs.core.Keyword.prototype.calabash_script$query$IQuery$ = true;
 cljs.core.Keyword.prototype.calabash_script$query$IQuery$_query$arity$3 = function(kw, coll, dir) {
   var kw__$1 = this;
