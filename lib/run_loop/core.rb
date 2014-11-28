@@ -744,7 +744,7 @@ module RunLoop
 
     timeout = options[:timeout] || 60
     logger = options[:logger]
-    interrupt_retry_timeout = options[:interrupt_retry_timeout] || 15
+    interrupt_retry_timeout = options[:interrupt_retry_timeout] || 25
 
     expected_index = run_loop[:index]
     result = nil
@@ -824,7 +824,7 @@ module RunLoop
     if device_logger && device_logger.respond_to?(:info)
       logger.info(msg)
     else
-      puts msg
+      puts msg if ENV['DEBUG'] == '1'
     end
   end
 end
