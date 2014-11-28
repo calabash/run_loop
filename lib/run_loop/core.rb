@@ -721,21 +721,64 @@ module RunLoop
     Core.run_with_options(options)
   end
 
-  def self.send_command(run_loop, cmd, timeout=60)
+  def self.send_command(run_loop, cmd, options={timeout: 60}, num_retries=0, last_error=nil)
+    if num_retries > 3
+      if last_error
+        raise last_error
+      else
+        raise "Max retries exceeded #{num_retries} > 3. No error recorded."
+      end
+    end
+
+    if options.is_a?(Numeric)
+      options = {timeout: options}
+    end
 
     if not cmd.is_a?(String)
       raise "Illegal command #{cmd} (must be a string)"
     end
 
+    if not options.is_a?(Hash)
+      raise "Illegal options #{options} (must be a Hash (or number for compatibility))"
+    end
 
-    expected_index = Core.write_request(run_loop, cmd)
+    timeout = options[:timeout] || 60
+    logger = options[:logger]
+    interrupt_retry_timeout = options[:interrupt_retry_timeout] || 15
+
+    expected_index = run_loop[:index]
     result = nil
+    begin
+      expected_index = Core.write_request(run_loop, cmd)
+    rescue Errno::EINTR => intr_error
+      # Attempt recover from interrupt by attempting to read result (assuming write went OK)
+      # or retry if attempted read result fails
+      run_loop[:index] = expected_index # restore expected index in case it changed
+      log_info(logger, "Core.write_request was interrupted: #{intr_error}. Attempting recovery...")
+      sleep(1) # Arbitrary wait in hope that the system condition causing the interrupt passes
+      if intr_error && intr_error.backtrace
+        log_info(logger, "backtrace: #{intr_error.backtrace.join("\n")}")
+      end
+      log_info(logger, "Attempting read in case the request was received... Please wait (#{interrupt_retry_timeout})...")
+      begin
+        Timeout::timeout(interrupt_retry_timeout, TimeoutError) do
+          result = Core.read_response(run_loop, expected_index)
+        end
+        # Update run_loop expected index since we succeeded in reading the index
+        run_loop[:index] = expected_index + 1
+        log_info(logger, "Did read response for interrupted request of index #{expected_index}... Proceeding.")
+        return result
+      rescue TimeoutError => _
+        log_info(logger, "Read did not result in a response for index #{expected_index}... Retrying send_command...")
+        return send_command(run_loop, cmd, options, num_retries+1, intr_error)
+      end
+    end
+
 
     begin
       Timeout::timeout(timeout, TimeoutError) do
         result = Core.read_response(run_loop, expected_index)
       end
-
     rescue TimeoutError => _
       raise TimeoutError, "Time out waiting for UIAutomation run-loop for command #{cmd}. Waiting for index:#{expected_index}"
     end
@@ -776,4 +819,12 @@ module RunLoop
     script
   end
 
+  def self.log_info(device_logger, message)
+    msg = "#{Time.now}: #{message}"
+    if device_logger && device_logger.respond_to?(:info)
+      logger.info(msg)
+    else
+      puts msg
+    end
+  end
 end
