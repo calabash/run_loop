@@ -207,7 +207,8 @@ module RunLoop
         if options[:validate_channel]
           options[:validate_channel].call(run_loop, 0, uia_timeout)
         else
-          File.open(repl_path, 'w') { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
+          cmd = "UIALogger.logMessage('Listening for run loop commands')"
+          File.open(repl_path, 'w') { |file| file.puts "0:#{cmd}" }
           Timeout::timeout(timeout, TimeoutError) do
             read_response(run_loop, 0, uia_timeout)
           end
@@ -447,10 +448,17 @@ module RunLoop
     def self.write_request(run_loop, cmd)
       repl_path = run_loop[:repl_path]
       index = run_loop[:index]
-      File.open(repl_path, 'w') { |f| f.puts("#{index}:#{cmd}") }
+      cmd_str = "#{index}:#{escape_host_command(cmd)}"
+      log(cmd_str) if ENV['DEBUG'] == '1'
+      File.open(repl_path, 'w') { |f| f.puts(cmd_str) }
       run_loop[:index] = index + 1
 
       index
+    end
+
+    def self.escape_host_command(cmd)
+      backquote = "\\"
+      cmd.gsub(backquote,backquote*4)
     end
 
     def self.read_response(run_loop, expected_index, empty_file_timeout=10)

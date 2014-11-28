@@ -161,7 +161,7 @@ var blockingReadScriptPath = "$READ_SCRIPT_PATH";
 var _expectedIndex = 0,//expected index of next command
     _actualIndex,//actual index of next command by reading commandPath
     _index,//index of ':' char in command
-    _exp,//expression to be eval'ed
+    _exp = null,//expression to be eval'ed
     _result,//result of eval
     _input,//command
     _process;//host command process
@@ -302,7 +302,7 @@ while (true) {
                 _actualIndex = parseInt(_input.substring(0, _index), 10);
                 if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
                     _exp = _input.substring(_index + 1, _input.length);
-                    Log.output("Execute: "+_exp);
+                    UIALogger.logMessage("Execute command: "+_exp);
                     _result = eval(_exp);
                 }
                 else {//likely old command is lingering...
@@ -315,7 +315,7 @@ while (true) {
 
         }
         catch (err) {
-            Log.result("error", err.toString() + "  " + (err.stack ? err.stack.toString() : ""));
+            Log.result("error", "Input: " + (_exp ? _exp.toString() : "null") + ". Error: " + err.toString() + "  " + (err.stack ? err.stack.toString() : ""));
             _expectedIndex++;
             continue;
         }
