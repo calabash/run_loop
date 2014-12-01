@@ -12,7 +12,10 @@ module RunLoop
   # @note All lipo commands are run in the context of `xcrun`.
   class Lipo
 
-   attr_accessor :bundle_path
+    # The path to the application bundle we are inspecting.
+    # @!attribute [wr] bundle_path
+    # @return [String] The path to the application bundle (.app).
+    attr_accessor :bundle_path
 
    def initialize(bundle_path)
      @bundle_path = bundle_path
