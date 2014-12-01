@@ -378,4 +378,53 @@ describe RunLoop::Core do
       end
     end
   end
+
+  describe '.expect_compatible_simulator_architecture' do
+    it 'is not implemented for Xcode < 6.0' do
+      sim_control = RunLoop::SimControl.new
+      expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+      expect(
+            RunLoop::Core.expect_compatible_simulator_architecture({},
+                                                                   sim_control)
+      ).to be == false
+    end
+
+    context 'raises error' do
+      it 'when launch_options[:udid] cannot be used to find simulator' do
+       launch_options = {:udid => 'invalid simulator id' }
+       sim_control = RunLoop::SimControl.new
+       expect {
+         RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                sim_control)
+       }.to raise_error RuntimeError
+      end
+
+      it 'when architecture is incompatible with instruction set of target device' do
+        launch_options = {:udid =>  RunLoop::Core.default_simulator,
+                          :bundle_dir_or_bundle_id => Resources.shared.app_bundle_path_arm_FAT }
+        sim_control = RunLoop::SimControl.new
+        expect_any_instance_of(RunLoop::Device).to receive(:instruction_set).and_return('nonsense')
+        expect {
+          RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                 sim_control)
+        }.to raise_error RunLoop::IncompatibleArchitecture
+      end
+    end
+
+    subject {
+      RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                             sim_control)
+    }
+
+    if RunLoop::XCTools.new.xcode_version_gte_6?
+      context 'simulator an binary are compatible' do
+        let(:sim_control) { RunLoop::SimControl.new }
+        let(:launch_options) { { :udid =>  RunLoop::Core.default_simulator,
+                                 :bundle_dir_or_bundle_id =>
+                                       Resources.shared.app_bundle_path_i386
+        }}
+        it { is_expected.to be == true }
+      end
+    end
+  end
 end

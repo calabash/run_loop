@@ -64,7 +64,7 @@ unless Resources.shared.travis_ci?
           path = install_hash[:path]
           physical_devices.each do |device|
             if Resources.shared.incompatible_xcode_ios_version(device.version, version)
-              it "Skipping #{device.name} iOS #{device.version} Xcode #{version}- combination not supported" do
+              it "Skipping #{device.name} iOS #{device.version} Xcode #{version} - combination not supported" do
                 expect(true).to be == true
               end
             else

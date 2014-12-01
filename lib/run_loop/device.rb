@@ -17,18 +17,6 @@ module RunLoop
       @udid = udid
     end
 
-    # Is this device a simulator?
-    # @return [Boolean] Return true if this device is a simulator.
-    def simulator?
-      not physical_device?
-    end
-
-    # Is this is a physical device?
-    # @return [Boolean] Return true if this is a physical device.
-    def physical_device?
-      (self.udid =~ /[a-f0-9]{40}/) == 0
-    end
-
     # Returns and instruments-ready device identifier that is a suitable value
     # for DEVICE_TARGET environment variable.
     #
@@ -48,6 +36,42 @@ module RunLoop
           version_part = "#{self.version.major}.#{self.version.minor}"
         end
         "#{self.name} (#{version_part} Simulator)"
+      end
+    end
+
+    # Is this a physical device?
+    # @return [Boolean] Returns true if this is a device.
+    def physical_device?
+      not self.udid[/[a-f0-9]{40}/, 0].nil?
+    end
+
+    # Is this a simulator?
+    # @return [Boolean] Returns true if this is a simulator.
+    def simulator?
+      not self.physical_device?
+    end
+
+    # Return the instruction set for this device.
+    #
+    # **Simulator**
+    # The simulator instruction set will be i386 or x86_64 depending on the
+    # the (marketing) name of the device.
+    #
+    # @note Finding the instruction set of a device requires a third-party tool
+    #  like ideviceinfo.  Example:
+    #  `$ ideviceinfo  -u 89b59 < snip > ab7ba --key 'CPUArchitecture' => arm64`
+    #
+    # @raise [RuntimeError] Raises an error if this device is a physical device.
+    # @return [String] An instruction set.
+    def instruction_set
+      if self.simulator?
+        if ['iPhone 4s', 'iPhone 5', 'iPad 2', 'iPad Retina'].include?(self.name)
+          'i386'
+        else
+          'x86_64'
+        end
+      else
+        raise 'Finding the instruction set of a device requires a third-party tool like ideviceinfo'
       end
     end
   end
