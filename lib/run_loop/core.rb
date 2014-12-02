@@ -865,7 +865,7 @@ module RunLoop
   def self.log_info(device_logger, message)
     msg = "#{Time.now}: #{message}"
     if device_logger && device_logger.respond_to?(:info)
-      logger.info(msg)
+      device_logger.info(msg)
     else
       puts msg if ENV['DEBUG'] == '1'
     end
