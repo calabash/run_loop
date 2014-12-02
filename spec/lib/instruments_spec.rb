@@ -3,14 +3,12 @@ describe RunLoop::Instruments do
   let (:instruments) { RunLoop::Instruments.new }
 
   before(:each) {
-    ENV.delete('DEVELOPER_DIR')
     ENV.delete('DEBUG')
     ENV.delete('DEBUG_UNIX_CALLS')
     RunLoop::SimControl.terminate_all_sims
   }
 
   after(:each) {
-    ENV.delete('DEVELOPER_DIR')
     ENV.delete('DEBUG')
     ENV.delete('DEBUG_UNIX_CALLS')
     #RunLoop::SimControl.terminate_all_sims
@@ -139,12 +137,13 @@ describe RunLoop::Instruments do
       else
         xcode_installs.each do |developer_dir|
           it "#{developer_dir}" do
-            ENV['DEVELOPER_DIR'] = developer_dir
-            xcode_tools = RunLoop::XCTools.new
-            expected =  xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
-            expect(instruments.instance_eval {
-              kill_signal(xcode_tools)
-            }).to be == expected
+            Resources.shared.with_developer_dir(developer_dir) do
+              xcode_tools = RunLoop::XCTools.new
+              expected =  xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
+              expect(instruments.instance_eval {
+                       kill_signal(xcode_tools)
+                     }).to be == expected
+            end
           end
         end
       end
