@@ -3,13 +3,11 @@ unless Resources.shared.travis_ci?
   describe RunLoop do
 
     before(:each) {
-      ENV.delete('DEVELOPER_DIR')
       ENV.delete('DEBUG')
       ENV.delete('DEBUG_UNIX_CALLS')
     }
 
     after(:each) {
-      ENV.delete('DEVELOPER_DIR')
       ENV.delete('DEBUG')
       ENV.delete('DEBUG_UNIX_CALLS')
     }
@@ -69,22 +67,23 @@ unless Resources.shared.travis_ci?
               end
             else
               it "Xcode #{version} @ #{path} #{device.name} iOS #{device.version}" do
-                ENV['DEVELOPER_DIR'] = path
-                options =
-                      {
-                            :bundle_id => Resources.shared.bundle_id,
-                            :udid => device.udid,
-                            :device_target => device.udid,
-                            :sim_control => RunLoop::SimControl.new,
-                            :app => Resources.shared.bundle_id
+                Resources.shared.with_developer_dir(path) do
+                  options =
+                        {
+                              :bundle_id => Resources.shared.bundle_id,
+                              :udid => device.udid,
+                              :device_target => device.udid,
+                              :sim_control => RunLoop::SimControl.new,
+                              :app => Resources.shared.bundle_id
 
-                      }
-                expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
-                hash = nil
-                Retriable.retriable({:tries => 2}) do
-                  hash = RunLoop.run(options)
+                        }
+                  expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
+                  hash = nil
+                  Retriable.retriable({:tries => 2}) do
+                    hash = RunLoop.run(options)
+                  end
+                  expect(hash).not_to be nil
                 end
-                expect(hash).not_to be nil
               end
             end
           end
