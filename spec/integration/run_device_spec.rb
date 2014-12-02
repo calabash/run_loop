@@ -2,16 +2,6 @@ unless Resources.shared.travis_ci?
 
   describe RunLoop do
 
-    before(:each) {
-      ENV.delete('DEBUG')
-      ENV.delete('DEBUG_UNIX_CALLS')
-    }
-
-    after(:each) {
-      ENV.delete('DEBUG')
-      ENV.delete('DEBUG_UNIX_CALLS')
-    }
-
     context 'running on physical devices' do
       xctools = RunLoop::XCTools.new
       physical_devices = Resources.shared.physical_devices_for_testing(xctools)

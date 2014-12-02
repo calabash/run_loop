@@ -3,15 +3,10 @@ describe RunLoop::Instruments do
   let (:instruments) { RunLoop::Instruments.new }
 
   before(:each) {
-    ENV.delete('DEBUG')
-    ENV.delete('DEBUG_UNIX_CALLS')
     RunLoop::SimControl.terminate_all_sims
   }
 
   after(:each) {
-    ENV.delete('DEBUG')
-    ENV.delete('DEBUG_UNIX_CALLS')
-    #RunLoop::SimControl.terminate_all_sims
     Resources.shared.kill_fake_instruments_process
   }
 

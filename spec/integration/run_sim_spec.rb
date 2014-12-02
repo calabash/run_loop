@@ -1,14 +1,7 @@
 describe RunLoop do
 
   before(:each) {
-    ENV.delete('DEBUG')
-    ENV.delete('DEBUG_UNIX_CALLS')
     RunLoop::SimControl.terminate_all_sims
-  }
-
-  after(:each) {
-    ENV.delete('DEBUG')
-    ENV.delete('DEBUG_UNIX_CALLS')
   }
 
   describe 'run on simulator' do

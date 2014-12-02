@@ -6,14 +6,7 @@ describe 'Dynamically linking with calabash dylib' do
     end
   else
     before(:each) {
-      ENV.delete('DEBUG')
-      ENV.delete('DEBUG_UNIX_CALLS')
       RunLoop::SimControl.terminate_all_sims
-    }
-
-    after(:each) {
-      ENV.delete('DEBUG')
-      ENV.delete('DEBUG_UNIX_CALLS')
     }
 
     describe 'injecting a dylib targeting the simulator with' do
