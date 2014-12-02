@@ -46,7 +46,7 @@ describe RunLoop do
                     }
 
               hash = nil
-              Retriable.retriable({:tries => 2}) do
+              Retriable.retriable({:tries => Resources.shared.launch_retries}) do
                 hash = RunLoop.run(options)
               end
               expect(hash).not_to be nil
