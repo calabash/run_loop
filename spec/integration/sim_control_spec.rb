@@ -2,8 +2,6 @@ require 'tmpdir'
 
 describe RunLoop::SimControl do
 
-  before(:each) { ENV.delete('DEVELOPER_DIR') }
-
   subject(:sim_control) { RunLoop::SimControl.new }
 
   # flickering on Travis CI
@@ -24,13 +22,14 @@ describe RunLoop::SimControl do
         describe 'regression' do
           xcode_installs.each do |developer_dir|
             it "#{developer_dir}" do
-              ENV['DEVELOPER_DIR'] = developer_dir
-              local_sim_control = RunLoop::SimControl.new
-              local_sim_control.launch_sim({:hide_after => true})
-              expect(local_sim_control.sim_is_running?).to be == true
+              Resources.shared.with_developer_dir(developer_dir) do
+                local_sim_control = RunLoop::SimControl.new
+                local_sim_control.launch_sim({:hide_after => true})
+                expect(local_sim_control.sim_is_running?).to be == true
 
-              local_sim_control.quit_sim
-              expect(local_sim_control.sim_is_running?).to be == false
+                local_sim_control.quit_sim
+                expect(local_sim_control.sim_is_running?).to be == false
+              end
             end
           end
         end
@@ -52,10 +51,11 @@ describe RunLoop::SimControl do
       describe 'regression' do
         xcode_installs.each do |developer_dir|
           it "#{developer_dir}" do
-            ENV['DEVELOPER_DIR'] = developer_dir
-            local_sim_control = RunLoop::SimControl.new
-            local_sim_control.relaunch_sim({:hide_after => true})
-            expect(local_sim_control.sim_is_running?).to be == true
+            Resources.shared.with_developer_dir(developer_dir) do
+              local_sim_control = RunLoop::SimControl.new
+              local_sim_control.relaunch_sim({:hide_after => true})
+              expect(local_sim_control.sim_is_running?).to be == true
+            end
           end
         end
       end
@@ -80,11 +80,12 @@ describe RunLoop::SimControl do
         xcode_installs.each do |developer_dir|
           it "returns a valid path for #{developer_dir}" do
             RunLoop::SimControl.terminate_all_sims
-            ENV['DEVELOPER_DIR'] = developer_dir
-            local_sim_control = RunLoop::SimControl.new
-            local_sim_control.relaunch_sim({:hide_after => true})
-            path = local_sim_control.instance_eval { sim_app_support_dir }
-            expect(File.exist?(path)).to be == true
+            Resources.shared.with_developer_dir(developer_dir) do
+              local_sim_control = RunLoop::SimControl.new
+              local_sim_control.relaunch_sim({:hide_after => true})
+              path = local_sim_control.instance_eval { sim_app_support_dir }
+              expect(File.exist?(path)).to be == true
+            end
           end
         end
       end
