@@ -41,13 +41,13 @@ module RunLoop
       # It is difficult to test using a block.
       instruments_pids.each do |pid|
         begin
-          if ENV['DEBUG'] == '1'
+          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
             puts "Sending '#{kill_signal}' to instruments process '#{pid}'"
           end
           Process.kill(kill_signal, pid.to_i)
           Process.wait(pid, Process::WNOHANG)
         rescue Exception => e
-          if ENV['DEBUG'] == '1'
+          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX'] == '1'
             puts "Could not kill and wait for process '#{pid.to_i}' - ignoring exception '#{e}'"
           end
         end
@@ -55,12 +55,12 @@ module RunLoop
         # Process.wait or `wait` here is pointless.  The pid may or may not be
         # a child of this Process.
         begin
-          if ENV['DEBUG'] == '1'
+          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
             puts "Waiting for instruments '#{pid}' to terminate"
           end
           wait_for_process_to_terminate(pid, {:timeout => 2.0})
         rescue Exception => e
-          if ENV['DEBUG'] == '1'
+          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
             puts "Ignoring #{e.message}"
           end
         end
