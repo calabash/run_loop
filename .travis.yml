@@ -4,6 +4,7 @@ cache: bundle
 before_script:
   - gem uninstall -Vax --force --no-abort-on-dependent run_loop
   - scripts/ci/travis/instruments-auth.sh
+  - scripts/ci/travis/make-and-install-test-binaries.rb
 
 script:
   - scripts/ci/travis/install-gem-ci.rb
