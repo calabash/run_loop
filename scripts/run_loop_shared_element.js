@@ -284,11 +284,10 @@ var _calabashSharedTextField = null,
     },
     _syncDoneJSON='{"type":"syncDone"}';
 
+UIALogger.logMessage("Waiting for shared element...");
 target = UIATarget.localTarget();
 while (!_calabashSharedTextField) {
-    UIALogger.logMessage("Waiting for shared element...");
     _firstElement = target.frontMostApp().mainWindow().elements()[0];
-    target.frontMostApp().mainWindow().logElementTree();
     if (_firstElement instanceof UIATextField) {
         if (_firstElement.name() == __calabashSharedTextFieldName) {
           _calabashSharedTextField = _firstElement;
@@ -298,7 +297,7 @@ while (!_calabashSharedTextField) {
           break;
         }
     }
-    target.delay(0.5);
+    target.delay(0.3);
 }
 
 while (true) {
