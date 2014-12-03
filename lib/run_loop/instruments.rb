@@ -95,7 +95,7 @@ module RunLoop
     # ```
     # $ ps x -o pid,command | grep -v grep | grep instruments
     # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
-    FIND_PIDS_CMD = 'ps x -o pid,comm | grep -v grep | grep instruments'
+    FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
     #
