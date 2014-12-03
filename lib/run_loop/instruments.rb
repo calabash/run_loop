@@ -41,13 +41,13 @@ module RunLoop
       # It is difficult to test using a block.
       instruments_pids.each do |pid|
         begin
-          if ENV['DEBUG'] == '1'
+          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
             puts "Sending '#{kill_signal}' to instruments process '#{pid}'"
           end
           Process.kill(kill_signal, pid.to_i)
           Process.wait(pid, Process::WNOHANG)
         rescue Exception => e
-          if ENV['DEBUG'] == '1'
+          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX'] == '1'
             puts "Could not kill and wait for process '#{pid.to_i}' - ignoring exception '#{e}'"
           end
         end
@@ -55,12 +55,12 @@ module RunLoop
         # Process.wait or `wait` here is pointless.  The pid may or may not be
         # a child of this Process.
         begin
-          if ENV['DEBUG'] == '1'
+          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
             puts "Waiting for instruments '#{pid}' to terminate"
           end
           wait_for_process_to_terminate(pid, {:timeout => 2.0})
         rescue Exception => e
-          if ENV['DEBUG'] == '1'
+          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
             puts "Ignoring #{e.message}"
           end
         end
@@ -83,19 +83,20 @@ module RunLoop
     private
 
     # @!visibility private
-    # When run from calabash, expect this:
     #
     # ```
     # $ ps x -o pid,command | grep -v grep | grep instruments
     # 98081 sh -c xcrun instruments -w "43be3f89d9587e9468c24672777ff6241bd91124" < args >
     # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
     # ```
+    #
     # When run from run-loop (via rspec), expect this:
     #
     # ```
     # $ ps x -o pid,command | grep -v grep | grep instruments
     # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
-    FIND_PIDS_CMD = 'ps x -o pid,comm | grep -v grep | grep instruments'
+    # ```
+    FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
     #
@@ -140,7 +141,7 @@ module RunLoop
         else
           nil
         end
-      end.compact
+      end.compact.sort
     end
 
     # @!visibility private
