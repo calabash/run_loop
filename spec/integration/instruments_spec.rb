@@ -178,7 +178,7 @@ describe RunLoop::Instruments do
   end
 
   describe '#pids_from_ps_output' do
-    it 'when instruments process is running returns 1 process' do
+    it 'when instruments process is running returns 2 processes' do
       sim_control = RunLoop::SimControl.new
       sim_control.reset_sim_content_and_settings
       options =
@@ -195,7 +195,7 @@ describe RunLoop::Instruments do
       expect(hash).not_to be nil
       expect(instruments.instance_eval {
         pids_from_ps_output.count
-      }).to be == 1
+      }).to be == 2
     end
   end
 end
