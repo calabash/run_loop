@@ -1,13 +1,12 @@
 describe RunLoop::XCTools do
 
-  before(:each) { ENV.delete('DEVELOPER_DIR') }
-
   subject(:xctools) { RunLoop::XCTools.new }
 
   describe '#xcode_developer_dir' do
     it 'respects the DEVELOPER_DIR env var' do
-      ENV['DEVELOPER_DIR'] = '/foo/bar'
-      expect(xctools.xcode_developer_dir).to be == ENV['DEVELOPER_DIR']
+      Resources.shared.with_developer_dir('/foo/bar') do
+        expect(xctools.xcode_developer_dir).to be == ENV['DEVELOPER_DIR']
+      end
     end
 
     it 'or it returns the value of xcode-select' do
@@ -54,12 +53,13 @@ describe RunLoop::XCTools do
           else
             xcode_installs.each do |developer_dir|
               it "#{developer_dir}" do
-                ENV['DEVELOPER_DIR'] = developer_dir
-                templates = xctools.instruments :templates
-                expect(templates).to be_a Array
-                expect(templates.empty?).to be false
-                unless xctools.xcode_version_gte_6?
-                  expect(templates.all? { |path| File.exists? path }).to be == true
+                Resources.shared.with_developer_dir(developer_dir) do
+                  templates = xctools.instruments :templates
+                  expect(templates).to be_a Array
+                  expect(templates.empty?).to be false
+                  unless xctools.xcode_version_gte_6?
+                    expect(templates.all? { |path| File.exists? path }).to be == true
+                  end
                 end
               end
             end
@@ -119,8 +119,9 @@ describe RunLoop::XCTools do
       else
         xcode_installs.each do |developer_dir|
           it "#{developer_dir}" do
-            ENV['DEVELOPER_DIR'] = developer_dir
-            expect(RunLoop::XCTools.new.xcode_version).to be_a RunLoop::Version
+            Resources.shared.with_developer_dir(developer_dir) do
+              expect(RunLoop::XCTools.new.xcode_version).to be_a RunLoop::Version
+            end
           end
         end
       end

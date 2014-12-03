@@ -2,8 +2,6 @@ require 'tmpdir'
 
 describe RunLoop::SimControl do
 
-  before(:each) { ENV.delete('DEVELOPER_DIR') }
-
   subject(:sim_control) { RunLoop::SimControl.new }
 
   describe '.new' do

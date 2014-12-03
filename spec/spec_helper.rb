@@ -3,6 +3,7 @@ require 'run_loop'
 require 'awesome_print'
 require 'resources'
 require 'stub_env'
+require 'pry'
 
 # monkey patch for AwesomePrint + objects that implement '=='
 module AwesomePrint

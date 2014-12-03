@@ -3,7 +3,6 @@ require 'tmpdir'
 describe RunLoop::Core do
 
   before(:each) {
-    ENV.delete('DEVELOPER_DIR')
     ENV.delete('TRACE_TEMPLATE')
   }
 

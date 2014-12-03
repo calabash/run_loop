@@ -3,17 +3,10 @@ describe RunLoop::Instruments do
   let (:instruments) { RunLoop::Instruments.new }
 
   before(:each) {
-    ENV.delete('DEVELOPER_DIR')
-    ENV.delete('DEBUG')
-    ENV.delete('DEBUG_UNIX_CALLS')
     RunLoop::SimControl.terminate_all_sims
   }
 
   after(:each) {
-    ENV.delete('DEVELOPER_DIR')
-    ENV.delete('DEBUG')
-    ENV.delete('DEBUG_UNIX_CALLS')
-    #RunLoop::SimControl.terminate_all_sims
     Resources.shared.kill_fake_instruments_process
   }
 
@@ -49,24 +42,25 @@ describe RunLoop::Instruments do
         else
           xcode_installs.each do |developer_dir|
             it "#{developer_dir}" do
-              ENV['DEVELOPER_DIR'] = developer_dir
-              sim_control = RunLoop::SimControl.new
-              sim_control.reset_sim_content_and_settings
-              options =
-                    {
-                          :app => Resources.shared.cal_app_bundle_path,
-                          :device_target => 'simulator',
-                          :sim_control => sim_control
-                    }
+              Resources.shared.with_developer_dir(developer_dir) do
+                sim_control = RunLoop::SimControl.new
+                sim_control.reset_sim_content_and_settings
+                options =
+                      {
+                            :app => Resources.shared.cal_app_bundle_path,
+                            :device_target => 'simulator',
+                            :sim_control => sim_control
+                      }
 
-              hash = nil
-              Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-                hash = RunLoop.run(options)
+                hash = nil
+                Retriable.retriable({:tries => Resources.shared.launch_retries}) do
+                  hash = RunLoop.run(options)
+                end
+                expect(hash).not_to be nil
+                expect(instruments.instruments_running?).to be == true
+                instruments.kill_instruments(sim_control.xctools)
+                expect(instruments.instruments_running?).to be == false
               end
-              expect(hash).not_to be nil
-              expect(instruments.instruments_running?).to be == true
-              instruments.kill_instruments(sim_control.xctools)
-              expect(instruments.instruments_running?).to be == false
             end
           end
         end
@@ -132,25 +126,26 @@ describe RunLoop::Instruments do
                 end
               else
                 it "Xcode #{version} @ #{path} #{device.name} iOS #{device.version}" do
-                  ENV['DEVELOPER_DIR'] = path
-                  options =
-                        {
-                              :bundle_id => Resources.shared.bundle_id,
-                              :udid => device.udid,
-                              :device_target => device.udid,
-                              :sim_control => RunLoop::SimControl.new,
-                              :app => Resources.shared.bundle_id
+                  Resources.shared.with_developer_dir(path) do
+                    options =
+                          {
+                                :bundle_id => Resources.shared.bundle_id,
+                                :udid => device.udid,
+                                :device_target => device.udid,
+                                :sim_control => RunLoop::SimControl.new,
+                                :app => Resources.shared.bundle_id
 
-                        }
-                  expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
-                  hash = nil
-                  Retriable.retriable({:tries => 2}) do
-                    hash = RunLoop.run(options)
+                          }
+                    expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
+                    hash = nil
+                    Retriable.retriable({:tries => 2}) do
+                      hash = RunLoop.run(options)
+                    end
+                    expect(hash).not_to be nil
+                    expect(instruments.instruments_running?).to be == true
+                    instruments.kill_instruments(xctools)
+                    expect(instruments.instruments_running?).to be == false
                   end
-                  expect(hash).not_to be nil
-                  expect(instruments.instruments_running?).to be == true
-                  instruments.kill_instruments(xctools)
-                  expect(instruments.instruments_running?).to be == false
                 end
               end
             end
