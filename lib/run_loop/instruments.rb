@@ -83,18 +83,19 @@ module RunLoop
     private
 
     # @!visibility private
-    # When run from calabash, expect this:
     #
     # ```
     # $ ps x -o pid,command | grep -v grep | grep instruments
     # 98081 sh -c xcrun instruments -w "43be3f89d9587e9468c24672777ff6241bd91124" < args >
     # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
     # ```
+    #
     # When run from run-loop (via rspec), expect this:
     #
     # ```
     # $ ps x -o pid,command | grep -v grep | grep instruments
     # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
+    # ```
     FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
