@@ -141,7 +141,7 @@ module RunLoop
         else
           nil
         end
-      end.compact
+      end.compact.sort
     end
 
     # @!visibility private
