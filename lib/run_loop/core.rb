@@ -11,6 +11,9 @@ module RunLoop
   class TimeoutError < RuntimeError
   end
 
+  class WriteFailedError < RuntimeError
+  end
+
   module Core
 
     START_DELIMITER = "OUTPUT_JSON:\n"
@@ -488,15 +491,39 @@ module RunLoop
       RUBY_PLATFORM == 'java'
     end
 
-    def self.write_request(run_loop, cmd)
+    def self.write_request(run_loop, cmd, logger=nil)
       repl_path = run_loop[:repl_path]
       index = run_loop[:index]
       cmd_str = "#{index}:#{escape_host_command(cmd)}"
-      log(cmd_str) if ENV['DEBUG'] == '1'
-      File.open(repl_path, 'w') { |f| f.puts(cmd_str) }
+      should_log = (ENV['DEBUG'] == '1')
+      RunLoop.log_info(logger, cmd_str) if should_log
+      write_succeeded = false
+      2.times do |i|
+        RunLoop.log_info(logger, "Trying write of command #{cmd_str} at index #{index}") if should_log
+        File.open(repl_path, 'w') { |f| f.puts(cmd_str) }
+        write_succeeded = validate_index_written(run_loop, index, logger)
+        break if write_succeeded
+      end
+      unless write_succeeded
+        RunLoop.log_info(logger, 'Failing...Raising RunLoop::WriteFailedError') if should_log
+        raise RunLoop::WriteFailedError.new("Trying write of command #{cmd_str} at index #{index}")
+      end
       run_loop[:index] = index + 1
 
       index
+    end
+
+    def self.validate_index_written(run_loop, index, logger)
+      begin
+        Timeout::timeout(10, TimeoutError) do
+          Core.read_response(run_loop, index, 10, 'last_index')
+        end
+        RunLoop.log_info(logger, "validate index written for index #{index} ok")
+        return true
+      rescue TimeoutError => _
+        RunLoop.log_info(logger, "validate index written for index #{index} failed. Retrying.")
+        return false
+      end
     end
 
     def self.escape_host_command(cmd)
@@ -504,7 +531,7 @@ module RunLoop
       cmd.gsub(backquote,backquote*4)
     end
 
-    def self.read_response(run_loop, expected_index, empty_file_timeout=10)
+    def self.read_response(run_loop, expected_index, empty_file_timeout=10, search_for_property='index')
 
       log_file = run_loop[:log_file]
       initial_offset = run_loop[:initial_offset] || 0
@@ -566,7 +593,7 @@ module RunLoop
           if ENV['DEBUG_READ']=='1'
             p parsed_result
           end
-          json_index_if_present = parsed_result['index']
+          json_index_if_present = parsed_result[search_for_property]
           if json_index_if_present && json_index_if_present == expected_index
             result = parsed_result
             break
@@ -792,16 +819,12 @@ module RunLoop
     expected_index = run_loop[:index]
     result = nil
     begin
-      expected_index = Core.write_request(run_loop, cmd)
-    rescue Errno::EINTR => intr_error
+      expected_index = Core.write_request(run_loop, cmd, logger)
+    rescue RunLoop::WriteFailedError, Errno::EINTR => write_error
       # Attempt recover from interrupt by attempting to read result (assuming write went OK)
       # or retry if attempted read result fails
       run_loop[:index] = expected_index # restore expected index in case it changed
-      log_info(logger, "Core.write_request was interrupted: #{intr_error}. Attempting recovery...")
-      sleep(1) # Arbitrary wait in hope that the system condition causing the interrupt passes
-      if intr_error && intr_error.backtrace
-        log_info(logger, "backtrace: #{intr_error.backtrace.join("\n")}")
-      end
+      log_info(logger, "Core.write_request failed: #{write_error}. Attempting recovery...")
       log_info(logger, "Attempting read in case the request was received... Please wait (#{interrupt_retry_timeout})...")
       begin
         Timeout::timeout(interrupt_retry_timeout, TimeoutError) do
@@ -813,7 +836,7 @@ module RunLoop
         return result
       rescue TimeoutError => _
         log_info(logger, "Read did not result in a response for index #{expected_index}... Retrying send_command...")
-        return send_command(run_loop, cmd, options, num_retries+1, intr_error)
+        return send_command(run_loop, cmd, options, num_retries+1, write_error)
       end
     end
 
