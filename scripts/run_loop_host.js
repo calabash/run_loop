@@ -302,7 +302,7 @@ while (true) {
                 _actualIndex = parseInt(_input.substring(0, _index), 10);
                 if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
                     _exp = _input.substring(_index + 1, _input.length);
-                    UIALogger.logMessage("Execute command: "+_exp);
+                    Log.output(_actualIndex);
                     _result = eval(_exp);
                 }
                 else {//likely old command is lingering...
