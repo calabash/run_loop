@@ -221,6 +221,7 @@ function isLocationPrompt(alert) {
             ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
             ["OK", /Would Like to Access Your Photos/],
             ["OK", /Would Like to Access Your Contacts/],
+            ["OK", /Location Accuracy/],
             ["OK", /запрашивает разрешение на использование Ващей текущей пгеопозиции/]
         ],
         ans, exp,
