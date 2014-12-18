@@ -196,20 +196,28 @@ function findAlertViewText(alert) {
     return txt;
 }
 
-function isLocationPrompt(alert) {
-    var exps = [
-            ["OK", /vil bruge din aktuelle placering/],
-            ["OK", /Would Like to Use Your Current Location/],
-            ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
-            ["OK", /Would Like to Send You Notifications/],
-            ["Allow", /access your location/],
-            ["OK", /Would Like to Access Your Photos/],
-            ["OK", /Would Like to Access Your Contacts/],
-            ["OK", /Location Accuracy/],
-            ["OK", /запрашивает разрешение на использование Ващей текущей пгеопозиции/]
-        ],
-        ans, exp,
-        txt;
+function isExternallyGeneratedAlert(alert) {
+    var exps =
+                [
+                    // Location Alerts
+                    ["OK", /vil bruge din aktuelle placering/],
+                    ["OK", /Would Like to Use Your Current Location/],
+                    ["Allow", /access your location/],
+                    ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
+                    ["OK", /Location Accuracy/],
+                    ["OK", /запрашивает разрешение на использование Ващей текущей пгеопозиции/],
+
+                    // Notifications
+                    ["OK", /Would Like to Send You Notifications/],
+
+                    // Photos
+                    ["OK", /Would Like to Access Your Photos/],
+
+                    // Contacts
+                    ["OK", /Would Like to Access Your Contacts/]
+                ],
+          ans, exp,
+          txt;
 
     txt = findAlertViewText(alert);
     Log.output({"output":"alert: "+txt}, true);
@@ -237,7 +245,7 @@ UIATarget.onAlert = function (alert) {
             return;
         }
         try {
-            var answer = isLocationPrompt(alert);
+            var answer = isExternallyGeneratedAlert(alert);
             if (answer) {
                 alert.buttons()[answer].tap();
             }
