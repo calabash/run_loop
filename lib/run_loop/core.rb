@@ -29,6 +29,7 @@ module RunLoop
     }
 
     READ_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'read-cmd.sh')
+    TIMEOUT_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'timeout3')
 
     def self.scripts_path
       SCRIPTS_PATH
@@ -128,10 +129,6 @@ module RunLoop
       end
     end
 
-    def self.read_script_command
-      "#{File.join(SCRIPTS_PATH, 'timeout3')} #{READ_SCRIPT_PATH}"
-    end
-
     def self.run_with_options(options)
       before = Time.now
 
@@ -163,7 +160,8 @@ module RunLoop
 
       code = File.read(options[:script])
       code = code.gsub(/\$PATH/, results_dir)
-      code = code.gsub(/\$READ_SCRIPT_PATH/, read_script_command)
+      code = code.gsub(/\$READ_SCRIPT_PATH/, READ_SCRIPT_PATH)
+      code = code.gsub(/\$TIMEOUT_SCRIPT_PATH/, TIMEOUT_SCRIPT_PATH)
       code = code.gsub(/\$MODE/, 'FLUSH') unless options[:no_flush]
 
       repl_path = File.join(results_dir, 'repl-cmd.pipe')

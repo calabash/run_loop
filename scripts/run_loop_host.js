@@ -153,7 +153,9 @@ if (!/\/$/.test(commandPath)) {
 }
 commandPath += "repl-cmd.pipe";
 
-var blockingReadScriptPath = "$READ_SCRIPT_PATH";
+var timeoutScriptPath = "$TIMEOUT_SCRIPT_PATH",
+    readPipeScriptPath = "$READ_SCRIPT_PATH";
+
 
 
 
@@ -281,18 +283,17 @@ while (true) {
 
     host = target.host();
     try {
-        _process = host.performTaskWithPathArgumentsTimeout("/bin/bash",
-            [blockingReadScriptPath, commandPath],
-            //[commandPath],
-           1);
+        _process = host.performTaskWithPathArgumentsTimeout(timeoutScriptPath,
+            [readPipeScriptPath, commandPath],
+           10);
 
     } catch (e) {
-        Log.output("Timeout on read command...");
+        Log.output("Timeout on read command..." + e);
         continue;
     }
     if (_process.exitCode != 0) {
         if (_process.exitCode != 15) {
-            Log.output("unable to execute: " + blockingReadScriptPath + " " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr + _process.stdout);
+            Log.output("unable to execute: " + timeoutScriptPath + " " +readPipeScriptPath + " " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr + _process.stdout);
         }
     }
     else {
