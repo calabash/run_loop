@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# A specialized version of
+# http://www.bashcookbook.com/bashinfo/source/bash-4.0/examples/scripts/timeout3
+# Note the non-standard use of sleep 0.1, which is out
+# of standard but works on OS X and Ubuntu
+# Original design by Dmitry V Golovashkin <Dmitry.Golovashkin@sas.com>
+(
+    ((t = 50))
+
+    while ((t > 0)); do
+        sleep 0.1
+        kill -0 $$ || exit 0
+        ((t -= 1))
+    done
+
+    # Be nice, post SIGTERM first.
+    # The 'exit 0' below will be executed if any preceeding command fails.
+    kill -s SIGTERM $$ && kill -0 $$ || exit 0
+    sleep $delay
+    kill -s SIGKILL $$
+) 2> /dev/null &
+
+exec "$@"
