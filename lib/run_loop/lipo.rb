@@ -79,10 +79,21 @@ module RunLoop
 
     # Returns a list of architecture in the binary.
     # @return [Array<String>] A list of architecture.
+    # @raise [RuntimeError] If the output of lipo cannot be parsed.
     def info
-      execute_lipo("-info #{binary_path}") do |stdout, _, _|
+      execute_lipo("-info #{binary_path}") do |stdout, stderr, wait_thr|
         output = stdout.read.strip
-        output.split(':')[-1].strip.split
+        begin
+          output.split(':')[-1].strip.split
+        rescue Exception => e
+          msg = ['Expected to be able to parse the output of lipo.',
+                 "cmd:    'lipo -info #{binary_path}'",
+                 "stdout: '#{output}'",
+                 "stderr: '#{stderr.read.strip}'",
+                 "exit code: '#{wait_thr.value}'",
+                 e.message]
+          raise msg.join("\n")
+        end
       end
     end
 
