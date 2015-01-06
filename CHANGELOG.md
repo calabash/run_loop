@@ -1,5 +1,23 @@
 ## Change Log
 
+### 1.2.0
+
+* Improved :host strategy.
+* Improved :preferences strategy.
+* Improved escaping across all strategies.
+* Experimental support for Xcode 6.2 beta.
+* #94 Round coordinates in uia
+* #93 Allow dismissal of Location accuracy when bluetooth is disabled
+* #91 Add updated CalabashScript to retry key entry if there is a failure
+* #90 Updated Calabash Script to support swipe via drag
+* #87 instruments process are becoming orphaned because the parent is killed before the child
+* #84 Fix bad ref to logger
+* #81 UITest: Fix querying Symbols and bump run loop prerelease version
+* #80 Ensure compatible arch before launching on device
+* #79 UIA strategy shared element
+* #78 Default simulator for xcode 6.2 beta
+* #76 Device class can provide instruments ready simulator names
+
 ### 1.1.0
 
 * #69 Stability uia timeout/lost write/read
