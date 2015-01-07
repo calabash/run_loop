@@ -30,6 +30,17 @@ describe RunLoop::Lipo do
       let(:app_bundle_path) { Resources.shared.app_bundle_path_arm_FAT }
       it { is_expected.to match_array ['armv7', 'arm64']}
     end
+
+    it 'raises an error if lipo output cannot be parsed' do
+      stream = lambda { |string|  StringIO.new(string, 'r') }
+      class RunLoop::Lipo::RSpec::ProcessStatus
+        def value() 1 end
+      end
+      expect(lipo).to receive(:execute_lipo).and_yield(stream.call(''),
+                                                       stream.call('stderr output'),
+                                                       RunLoop::Lipo::RSpec::ProcessStatus.new)
+      expect { lipo.info }.to raise_error
+    end
   end
 
   describe '#expect_compatible_arch' do
