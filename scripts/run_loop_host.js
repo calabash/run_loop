@@ -153,7 +153,9 @@ if (!/\/$/.test(commandPath)) {
 }
 commandPath += "repl-cmd.pipe";
 
-var blockingReadScriptPath = "$READ_SCRIPT_PATH";
+var timeoutScriptPath = "$TIMEOUT_SCRIPT_PATH",
+    readPipeScriptPath = "$READ_SCRIPT_PATH";
+
 
 
 
@@ -161,7 +163,7 @@ var blockingReadScriptPath = "$READ_SCRIPT_PATH";
 var _expectedIndex = 0,//expected index of next command
     _actualIndex,//actual index of next command by reading commandPath
     _index,//index of ':' char in command
-    _exp,//expression to be eval'ed
+    _exp = null,//expression to be eval'ed
     _result,//result of eval
     _input,//command
     _process;//host command process
@@ -221,6 +223,7 @@ function isLocationPrompt(alert) {
             ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
             ["OK", /Would Like to Access Your Photos/],
             ["OK", /Would Like to Access Your Contacts/],
+            ["OK", /Location Accuracy/],
             ["OK", /запрашивает разрешение на использование Ващей текущей пгеопозиции/]
         ],
         ans, exp,
@@ -280,18 +283,17 @@ while (true) {
 
     host = target.host();
     try {
-        _process = host.performTaskWithPathArgumentsTimeout("/bin/bash",
-            [blockingReadScriptPath, commandPath],
-            //[commandPath],
-           1);
+        _process = host.performTaskWithPathArgumentsTimeout(timeoutScriptPath,
+            [readPipeScriptPath, commandPath],
+           10);
 
     } catch (e) {
-        Log.output("Timeout on read command...");
+        Log.output("Timeout on read command..." + e);
         continue;
     }
     if (_process.exitCode != 0) {
         if (_process.exitCode != 15) {
-            Log.output("unable to execute: " + blockingReadScriptPath + " " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr + _process.stdout);
+            Log.output("unable to execute: " + timeoutScriptPath + " " +readPipeScriptPath + " " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr + _process.stdout);
         }
     }
     else {
@@ -302,7 +304,7 @@ while (true) {
                 _actualIndex = parseInt(_input.substring(0, _index), 10);
                 if (!isNaN(_actualIndex) && _actualIndex >= _expectedIndex) {
                     _exp = _input.substring(_index + 1, _input.length);
-                    Log.output("Execute: "+_exp);
+                    Log.output(_actualIndex);
                     _result = eval(_exp);
                 }
                 else {//likely old command is lingering...
@@ -315,7 +317,7 @@ while (true) {
 
         }
         catch (err) {
-            Log.result("error", err.toString() + "  " + (err.stack ? err.stack.toString() : ""));
+            Log.result("error", "Input: " + (_exp ? _exp.toString() : "null") + ". Error: " + err.toString() + "  " + (err.stack ? err.stack.toString() : ""));
             _expectedIndex++;
             continue;
         }

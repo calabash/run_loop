@@ -2,6 +2,8 @@ $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'run_loop'
 require 'awesome_print'
 require 'resources'
+require 'stub_env'
+require 'pry'
 
 # monkey patch for AwesomePrint + objects that implement '=='
 module AwesomePrint
@@ -138,4 +140,7 @@ RSpec.configure do |config|
     # a real object. This is generally recommended.
     mocks.verify_partial_doubles = true
   end
+
+  # stub_env('key', 'value')
+  config.include StubEnv::Helpers
 end

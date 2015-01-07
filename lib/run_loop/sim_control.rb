@@ -157,7 +157,7 @@ module RunLoop
               out = stdout.read.strip
               err = stderr.read.strip
               next if out.to_s.empty? and err.to_s.empty?
-              puts "kill process '#{pid}' => stdout: '#{out}' | stderr: '#{err}'"
+              puts "Terminate all simulators: kill process '#{process_name}: #{pid}' => stdout: '#{out}' | stderr: '#{err}'"
             end
           end
         end

@@ -11,6 +11,9 @@ module RunLoop
   class TimeoutError < RuntimeError
   end
 
+  class WriteFailedError < RuntimeError
+  end
+
   module Core
 
     START_DELIMITER = "OUTPUT_JSON:\n"
@@ -20,11 +23,13 @@ module RunLoop
     SCRIPTS = {
         :dismiss => 'run_dismiss_location.js',
         :run_loop_fast_uia => 'run_loop_fast_uia.js',
+        :run_loop_shared_element => 'run_loop_shared_element.js',
         :run_loop_host => 'run_loop_host.js',
         :run_loop_basic => 'run_loop_basic.js'
     }
 
     READ_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'read-cmd.sh')
+    TIMEOUT_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'timeout3')
 
     def self.scripts_path
       SCRIPTS_PATH
@@ -82,6 +87,48 @@ module RunLoop
       nil
     end
 
+    # Raise an error if the application binary is not compatible with the
+    # target simulator.
+    #
+    # @note This method is implemented for CoreSimulator environments only;
+    #  for Xcode < 6.0 this method does nothing.
+    #
+    # @param [Hash] launch_options These options need to contain the app bundle
+    #   path and a udid that corresponds to a simulator name or simulator udid.
+    #   In practical terms:  call this after merging the original launch
+    #   options with those options that are discovered.
+    #
+    # @param [RunLoop::SimControl] sim_control A simulator control object.
+    # @raise [RuntimeError] Raises an error if the `launch_options[:udid]`
+    #  cannot be used to find a simulator.
+    # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
+    #  application binary is not compatible with the target simulator.
+    def self.expect_compatible_simulator_architecture(launch_options, sim_control)
+      if sim_control.xcode_version_gte_6?
+        sim_identifier = launch_options[:udid]
+        simulator = sim_control.simulators.find do |simulator|
+          [simulator.instruments_identifier(sim_control.xctools),
+           simulator.udid].include?(sim_identifier)
+        end
+
+        if simulator.nil?
+          raise "Could not find simulator with identifier '#{sim_identifier}'"
+        end
+
+        lipo = RunLoop::Lipo.new(launch_options[:bundle_dir_or_bundle_id])
+        lipo.expect_compatible_arch(simulator)
+        if ENV['DEBUG'] == '1'
+          puts "Simulator instruction set '#{simulator.instruction_set}' is compatible with #{lipo.info}"
+        end
+        true
+      else
+        if ENV['DEBUG'] == '1'
+          puts "Xcode #{sim_control.xctools.xcode_version} detected; skipping simulator architecture check."
+        end
+        false
+      end
+    end
+
     def self.run_with_options(options)
       before = Time.now
 
@@ -89,11 +136,6 @@ module RunLoop
       xctools ||= options[:xctools] || sim_control.xctools
 
       RunLoop::Instruments.new.kill_instruments(xctools)
-
-      if self.simulator_target?(options, sim_control)
-        # @todo only enable accessibility on the targeted simulator
-        sim_control.enable_accessibility_on_sims({:verbose => false})
-      end
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
@@ -119,6 +161,7 @@ module RunLoop
       code = File.read(options[:script])
       code = code.gsub(/\$PATH/, results_dir)
       code = code.gsub(/\$READ_SCRIPT_PATH/, READ_SCRIPT_PATH)
+      code = code.gsub(/\$TIMEOUT_SCRIPT_PATH/, TIMEOUT_SCRIPT_PATH)
       code = code.gsub(/\$MODE/, 'FLUSH') unless options[:no_flush]
 
       repl_path = File.join(results_dir, 'repl-cmd.pipe')
@@ -149,7 +192,7 @@ module RunLoop
       log_file ||= File.join(results_dir, 'run_loop.out')
 
       after = Time.now
-      if ENV['DEBUG']=='1'
+      if ENV['DEBUG'] == '1'
         puts "Preparation took #{after-before} seconds"
       end
 
@@ -164,6 +207,12 @@ module RunLoop
                   :args => args
             }
       merged_options = options.merge(discovered_options)
+
+      if self.simulator_target?(merged_options, sim_control)
+        # @todo only enable accessibility on the targeted simulator
+        sim_control.enable_accessibility_on_sims({:verbose => false})
+        self.expect_compatible_simulator_architecture(merged_options, sim_control)
+      end
 
       self.log_run_loop_options(merged_options, xctools)
 
@@ -206,7 +255,8 @@ module RunLoop
         if options[:validate_channel]
           options[:validate_channel].call(run_loop, 0, uia_timeout)
         else
-          File.open(repl_path, 'w') { |file| file.puts "0:UIALogger.logMessage('Listening for run loop commands');" }
+          cmd = "UIALogger.logMessage('Listening for run loop commands')"
+          File.open(repl_path, 'w') { |file| file.puts "0:#{cmd}" }
           Timeout::timeout(timeout, TimeoutError) do
             read_response(run_loop, 0, uia_timeout)
           end
@@ -358,7 +408,9 @@ module RunLoop
     # @param [RunLoop::XCTools] xcode_tools Used to detect the current xcode
     #  version.
     def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
-      if xcode_tools.xcode_version_gte_61?
+      if xcode_tools.xcode_version_gte_62?
+        'iPhone 5 (8.2 Simulator)'
+      elsif xcode_tools.xcode_version_gte_61?
         'iPhone 5 (8.1 Simulator)'
       elsif xcode_tools.xcode_version_gte_6?
         'iPhone 5 (8.0 Simulator)'
@@ -441,16 +493,47 @@ module RunLoop
       RUBY_PLATFORM == 'java'
     end
 
-    def self.write_request(run_loop, cmd)
+    def self.write_request(run_loop, cmd, logger=nil)
       repl_path = run_loop[:repl_path]
       index = run_loop[:index]
-      File.open(repl_path, 'w') { |f| f.puts("#{index}:#{cmd}") }
+      cmd_str = "#{index}:#{escape_host_command(cmd)}"
+      should_log = (ENV['DEBUG'] == '1')
+      RunLoop.log_info(logger, cmd_str) if should_log
+      write_succeeded = false
+      2.times do |i|
+        RunLoop.log_info(logger, "Trying write of command #{cmd_str} at index #{index}") if should_log
+        File.open(repl_path, 'w') { |f| f.puts(cmd_str) }
+        write_succeeded = validate_index_written(run_loop, index, logger)
+        break if write_succeeded
+      end
+      unless write_succeeded
+        RunLoop.log_info(logger, 'Failing...Raising RunLoop::WriteFailedError') if should_log
+        raise RunLoop::WriteFailedError.new("Trying write of command #{cmd_str} at index #{index}")
+      end
       run_loop[:index] = index + 1
 
       index
     end
 
-    def self.read_response(run_loop, expected_index, empty_file_timeout=10)
+    def self.validate_index_written(run_loop, index, logger)
+      begin
+        Timeout::timeout(10, TimeoutError) do
+          Core.read_response(run_loop, index, 10, 'last_index')
+        end
+        RunLoop.log_info(logger, "validate index written for index #{index} ok")
+        return true
+      rescue TimeoutError => _
+        RunLoop.log_info(logger, "validate index written for index #{index} failed. Retrying.")
+        return false
+      end
+    end
+
+    def self.escape_host_command(cmd)
+      backquote = "\\"
+      cmd.gsub(backquote,backquote*4)
+    end
+
+    def self.read_response(run_loop, expected_index, empty_file_timeout=10, search_for_property='index')
 
       log_file = run_loop[:log_file]
       initial_offset = run_loop[:initial_offset] || 0
@@ -512,7 +595,7 @@ module RunLoop
           if ENV['DEBUG_READ']=='1'
             p parsed_result
           end
-          json_index_if_present = parsed_result['index']
+          json_index_if_present = parsed_result[search_for_property]
           if json_index_if_present && json_index_if_present == expected_index
             result = parsed_result
             break
@@ -576,13 +659,29 @@ module RunLoop
 
     def self.default_tracetemplate(xctools=RunLoop::XCTools.new)
       templates = xctools.instruments :templates
-      if xctools.xcode_version_gte_6?
-        templates.select { |name| name == 'Automation' }.first
-      else
-        templates.select do |path|
-          path =~ /\/Automation.tracetemplate/ and path =~ /Xcode/
-        end.first.tr("\"", '').strip
-      end
+
+      # xcrun instruments -s templates
+      # Xcode >= 6 will return known, Apple defined tracetemplates as names
+      #  e.g.  Automation, Zombies, Allocations
+      #
+      # Xcode < 6 will return known, Apple defined tracetemplates as paths.
+      #
+      # Xcode 6 Beta versions also return paths, but revert to 'normal'
+      # behavior when GM is released.
+      res = templates.select { |name| name == 'Automation' }.first
+      return res if res
+
+      res = templates.select do |path|
+        path =~ /\/Automation.tracetemplate/ and path =~ /Xcode/
+      end.first.tr("\"", '').strip
+      return res if res
+
+      msgs = ['Expected instruments to report an Automation tracetemplate.',
+              'Please report this as bug:  https://github.com/calabash/run_loop/issues',
+              "In the bug report, include the output of:\n",
+              '$ xcrun xcodebuild -version',
+              "$ xcrun instruments -s templates\n"]
+      raise msgs.join("\n")
     end
 
     def self.log(message)
@@ -636,6 +735,8 @@ module RunLoop
         Core.script_for_key(:run_loop_fast_uia)
       when :host
         Core.script_for_key(:run_loop_host)
+      when :shared_element
+        Core.script_for_key(:run_loop_shared_element)
       else
         Core.script_for_key(:run_loop_basic)
     end
@@ -678,6 +779,8 @@ module RunLoop
         uia_strategy = :host
       elsif desired_script == :run_loop_fast_uia
         uia_strategy = :preferences
+      elsif desired_script == :run_loop_shared_element
+        uia_strategy = :shared_element
       else
         raise "Inconsistent state: desired script #{desired_script} has not uia_strategy"
       end
@@ -690,21 +793,60 @@ module RunLoop
     Core.run_with_options(options)
   end
 
-  def self.send_command(run_loop, cmd, timeout=60)
+  def self.send_command(run_loop, cmd, options={timeout: 60}, num_retries=0, last_error=nil)
+    if num_retries > 3
+      if last_error
+        raise last_error
+      else
+        raise "Max retries exceeded #{num_retries} > 3. No error recorded."
+      end
+    end
+
+    if options.is_a?(Numeric)
+      options = {timeout: options}
+    end
 
     if not cmd.is_a?(String)
       raise "Illegal command #{cmd} (must be a string)"
     end
 
+    if not options.is_a?(Hash)
+      raise "Illegal options #{options} (must be a Hash (or number for compatibility))"
+    end
 
-    expected_index = Core.write_request(run_loop, cmd)
+    timeout = options[:timeout] || 60
+    logger = options[:logger]
+    interrupt_retry_timeout = options[:interrupt_retry_timeout] || 25
+
+    expected_index = run_loop[:index]
     result = nil
+    begin
+      expected_index = Core.write_request(run_loop, cmd, logger)
+    rescue RunLoop::WriteFailedError, Errno::EINTR => write_error
+      # Attempt recover from interrupt by attempting to read result (assuming write went OK)
+      # or retry if attempted read result fails
+      run_loop[:index] = expected_index # restore expected index in case it changed
+      log_info(logger, "Core.write_request failed: #{write_error}. Attempting recovery...")
+      log_info(logger, "Attempting read in case the request was received... Please wait (#{interrupt_retry_timeout})...")
+      begin
+        Timeout::timeout(interrupt_retry_timeout, TimeoutError) do
+          result = Core.read_response(run_loop, expected_index)
+        end
+        # Update run_loop expected index since we succeeded in reading the index
+        run_loop[:index] = expected_index + 1
+        log_info(logger, "Did read response for interrupted request of index #{expected_index}... Proceeding.")
+        return result
+      rescue TimeoutError => _
+        log_info(logger, "Read did not result in a response for index #{expected_index}... Retrying send_command...")
+        return send_command(run_loop, cmd, options, num_retries+1, write_error)
+      end
+    end
+
 
     begin
       Timeout::timeout(timeout, TimeoutError) do
         result = Core.read_response(run_loop, expected_index)
       end
-
     rescue TimeoutError => _
       raise TimeoutError, "Time out waiting for UIAutomation run-loop for command #{cmd}. Waiting for index:#{expected_index}"
     end
@@ -745,4 +887,12 @@ module RunLoop
     script
   end
 
+  def self.log_info(logger, message)
+    msg = "#{Time.now}: #{message}"
+    if logger && logger.respond_to?(:info)
+      logger.info(msg)
+    else
+      puts msg if ENV['DEBUG'] == '1'
+    end
+  end
 end

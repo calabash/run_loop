@@ -15,10 +15,18 @@ module RunLoop
   # @todo Refactor instruments related code to instruments class.
   class XCTools
 
-    # Returns a version instance for `Xcode 6.0`; used to check for the
+    # Returns a version instance for `Xcode 6.2`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
-    # @return [RunLoop::Version] 6.0
+    # @return [RunLoop::Version] 6.2
+    def v62
+      @xc62 ||= RunLoop::Version.new('6.2')
+    end
+
+    # Returns a version instance for `Xcode 6.1`; used to check for the
+    # availability of features and paths to various items on the filesystem.
+    #
+    # @return [RunLoop::Version] 6.1
     def v61
       @xc61 ||= RunLoop::Version.new('6.1')
     end
@@ -45,6 +53,13 @@ module RunLoop
     # @return [RunLoop::Version] 5.0
     def v50
       @xc50 ||= RunLoop::Version.new('5.0')
+    end
+
+    # Are we running Xcode 6.2 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 6.2
+    def xcode_version_gte_62?
+      @xcode_gte_62 ||= xcode_version >= v62
     end
 
     # Are we running Xcode 6.1 or above?
@@ -100,6 +115,16 @@ module RunLoop
               # fall back to xcode-select
               `xcode-select --print-path`.chomp
             end
+    end
+
+    # Is this a beta version of Xcode?
+    #
+    # @note Relies on Xcode beta versions having and app bundle named Xcode-Beta.app
+    # @return [Boolean] True if the Xcode version is beta.
+    def xcode_is_beta?
+      @xcode_is_beta ||= lambda {
+        (xcode_developer_dir =~ /Xcode-Beta.app/) != nil
+      }.call
     end
 
     # Method for interacting with instruments.

@@ -1,13 +1,12 @@
 describe RunLoop::XCTools do
 
-  before(:each) { ENV.delete('DEVELOPER_DIR') }
-
   subject(:xctools) { RunLoop::XCTools.new }
 
   describe '#xcode_developer_dir' do
     it 'respects the DEVELOPER_DIR env var' do
-      ENV['DEVELOPER_DIR'] = '/foo/bar'
-      expect(xctools.xcode_developer_dir).to be == ENV['DEVELOPER_DIR']
+      Resources.shared.with_developer_dir('/foo/bar') do
+        expect(xctools.xcode_developer_dir).to be == ENV['DEVELOPER_DIR']
+      end
     end
 
     it 'or it returns the value of xcode-select' do
@@ -54,12 +53,13 @@ describe RunLoop::XCTools do
           else
             xcode_installs.each do |developer_dir|
               it "#{developer_dir}" do
-                ENV['DEVELOPER_DIR'] = developer_dir
-                templates = xctools.instruments :templates
-                expect(templates).to be_a Array
-                expect(templates.empty?).to be false
-                unless xctools.xcode_version_gte_6?
-                  expect(templates.all? { |path| File.exists? path }).to be == true
+                Resources.shared.with_developer_dir(developer_dir) do
+                  templates = xctools.instruments :templates
+                  expect(templates).to be_a Array
+                  expect(templates.empty?).to be false
+                  unless xctools.xcode_version_gte_6?
+                    expect(templates.all? { |path| File.exists? path }).to be == true
+                  end
                 end
               end
             end
@@ -83,6 +83,10 @@ describe RunLoop::XCTools do
     it { expect(xctools.instruments_supports_hyphen_s? '5.1' ).to be == true }
     it { expect(xctools.instruments_supports_hyphen_s? '5.0.2').to be == false }
     it { expect(xctools.instruments_supports_hyphen_s? '4.6.3').to be == false }
+  end
+
+  describe '#xc62' do
+    it { expect(xctools.v62).to be == RunLoop::Version.new('6.2') }
   end
 
   describe '#xc61' do
@@ -115,11 +119,24 @@ describe RunLoop::XCTools do
       else
         xcode_installs.each do |developer_dir|
           it "#{developer_dir}" do
-            ENV['DEVELOPER_DIR'] = developer_dir
-            expect(RunLoop::XCTools.new.xcode_version).to be_a RunLoop::Version
+            Resources.shared.with_developer_dir(developer_dir) do
+              expect(RunLoop::XCTools.new.xcode_version).to be_a RunLoop::Version
+            end
           end
         end
       end
+    end
+  end
+
+  describe '#xcode_version_gte_62?' do
+    it 'returns true for Xcode >= 6.2' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('6.2'))
+      expect(xctools.xcode_version_gte_62?).to be == true
+    end
+
+    it 'returns false for Xcode < 6.2' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('6.1'))
+      expect(xctools.xcode_version_gte_62?).to be == false
     end
   end
 
@@ -159,4 +176,15 @@ describe RunLoop::XCTools do
     end
   end
 
+  describe '#xcode_is_beta?' do
+    it 'returns true if the bundle name is Xcode-Beta.app' do
+      stub_env('DEVELOPER_DIR', '/Xcode/6.2/Xcode-Beta.app/Contents/Developer')
+      expect(RunLoop::XCTools.new.xcode_is_beta?).to be == true
+    end
+
+    it 'returns false if the bundle name is not Xcode-Beta.app' do
+      stub_env('DEVELOPER_DIR', '/Xcode/6.2/Xcode.app/Contents/Developer')
+      expect(RunLoop::XCTools.new.xcode_is_beta?).to be == false
+    end
+  end
 end
