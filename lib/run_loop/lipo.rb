@@ -1,4 +1,5 @@
 require 'open3'
+require 'shellwords'
 
 module RunLoop
 
@@ -81,13 +82,14 @@ module RunLoop
     # @return [Array<String>] A list of architecture.
     # @raise [RuntimeError] If the output of lipo cannot be parsed.
     def info
-      execute_lipo("-info #{binary_path}") do |stdout, stderr, wait_thr|
+      escaped_binary_path = Shellwords.escape(binary_path)
+      execute_lipo("-info #{escaped_binary_path}") do |stdout, stderr, wait_thr|
         output = stdout.read.strip
         begin
           output.split(':')[-1].strip.split
         rescue Exception => e
           msg = ['Expected to be able to parse the output of lipo.',
-                 "cmd:    'lipo -info #{binary_path}'",
+                 "cmd:    'lipo -info #{escaped_binary_path}'",
                  "stdout: '#{output}'",
                  "stderr: '#{stderr.read.strip}'",
                  "exit code: '#{wait_thr.value}'",
