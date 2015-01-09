@@ -33,12 +33,12 @@ describe RunLoop::Lipo do
 
     it 'raises an error if lipo output cannot be parsed' do
       stream = lambda { |string|  StringIO.new(string, 'r') }
-      class RunLoop::Lipo::RSpec::ProcessStatus
+      class RunLoop::Lipo::ProcessStatus
         def value() 1 end
       end
       expect(lipo).to receive(:execute_lipo).and_yield(stream.call(''),
                                                        stream.call('stderr output'),
-                                                       RunLoop::Lipo::RSpec::ProcessStatus.new)
+                                                       RunLoop::Lipo::ProcessStatus.new)
       expect { lipo.info }.to raise_error
     end
   end
