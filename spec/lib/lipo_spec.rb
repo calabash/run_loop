@@ -47,7 +47,9 @@ describe RunLoop::Lipo do
 
     context 'bundle path has spaces' do
       let(:app_bundle_path) {
-        working_dir = File.join(Dir.tmpdir, 'a path with spaces')
+        tmpdir = Dir.mktmpdir
+        working_dir = File.join(tmpdir, 'a path with spaces')
+        FileUtils.mkdir_p(working_dir)
         original = Resources.shared.app_bundle_path_i386
         FileUtils.cp_r(original, working_dir)
         File.join(working_dir, File.basename(original))
