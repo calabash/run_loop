@@ -1,5 +1,9 @@
 ## Change Log
 
+### 1.2.1
+
+* #101 Escape binary path in argument to lipo. @gredman
+
 ### 1.2.0
 
 * Improved :host strategy.
