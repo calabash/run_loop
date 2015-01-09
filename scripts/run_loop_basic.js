@@ -1,3 +1,6 @@
+#import "./detect_externally_generated_alerts.js";
+#import "./logger.js";
+
 if (typeof JSON !== 'object') {
     JSON = {};
 }
