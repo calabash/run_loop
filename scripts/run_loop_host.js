@@ -169,35 +169,6 @@ var _expectedIndex = 0,//expected index of next command
     _input,//command
     _process;//host command process
 
-var Log = (function () {
-    var forceFlush = [],
-        N = "$MODE" == "FLUSH" ? 16384 : 0,
-        i = N;
-    while (i--) {
-        forceFlush[i] = "*";
-    }
-    forceFlush = forceFlush.join('');
-
-    function log_json(object)
-    {
-        UIALogger.logMessage("OUTPUT_JSON:\n"+JSON.stringify(object)+"\nEND_OUTPUT");
-    }
-
-    return {
-        result: function (status, data) {
-            log_json({"status": status, "value": data, "index":_actualIndex})
-            if (forceFlush.length > 0) {
-                UIALogger.logMessage(forceFlush);
-            }
-        },
-        output: function (msg) {
-            log_json({"output": msg,"last_index":_actualIndex});
-            if (forceFlush.length > 0) {
-                UIALogger.logMessage(forceFlush);
-            }
-        }
-    };
-})();
 
 
 function findAlertViewText(alert) {
