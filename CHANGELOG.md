@@ -1,5 +1,9 @@
 ## Change Log
 
+### 1.2.2
+
+* #105 update awesome print to 1.6
+
 ### 1.2.1
 
 * #101 Escape binary path in argument to lipo. @gredman
