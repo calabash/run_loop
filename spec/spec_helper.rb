@@ -4,6 +4,8 @@ require 'awesome_print'
 require 'resources'
 require 'stub_env'
 require 'pry'
+require 'tmpdir'
+require 'fileutils'
 
 # monkey patch for AwesomePrint + objects that implement '=='
 module AwesomePrint
