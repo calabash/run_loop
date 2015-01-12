@@ -409,11 +409,11 @@ module RunLoop
     #  version.
     def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
       if xcode_tools.xcode_version_gte_62?
-        'iPhone 5 (8.2 Simulator)'
+        'iPhone 5s (8.2 Simulator)'
       elsif xcode_tools.xcode_version_gte_61?
-        'iPhone 5 (8.1 Simulator)'
+        'iPhone 5s (8.1 Simulator)'
       elsif xcode_tools.xcode_version_gte_6?
-        'iPhone 5 (8.0 Simulator)'
+        'iPhone 5s (8.0 Simulator)'
       else
         'iPhone Retina (4-inch) - Simulator - iOS 7.1'
       end
