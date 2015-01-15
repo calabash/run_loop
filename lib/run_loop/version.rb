@@ -148,11 +148,14 @@ module RunLoop
         return a.patch.to_i > b.patch.to_i ? 1 : -1
       end
 
-      return 1 if a.pre and (not b.pre)
-      return -1 if (not a.pre) and b.pre
+      return -1 if a.pre and (not a.pre_version) and b.pre_version
+      return 1 if a.pre_version and b.pre and (not b.pre_version)
 
-      return 1 if a.pre_version and (not b.pre_version)
-      return -1 if (not a.pre_version) and b.pre_version
+      return -1 if a.pre and (not b.pre)
+      return 1 if (not a.pre) and b.pre
+
+      return -1 if a.pre_version and (not b.pre_version)
+      return 1 if (not a.pre_version) and b.pre_version
 
       if a.pre_version != b.pre_version
         return a.pre_version.to_i > b.pre_version.to_i ? 1 : -1
