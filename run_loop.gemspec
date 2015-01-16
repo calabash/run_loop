@@ -11,14 +11,12 @@ Gem::Specification.new do |s|
   s.homepage    = "http://calaba.sh"
   s.summary     = %q{Tools related to running Calabash iOS tests}
   s.description = %q{calabash-cucumber drives tests for native iOS apps. RunLoop provides a number of tools associated with running Calabash tests.}
-  s.files         = Dir.glob('{bin,lib}/**/*') + Dir.glob('scripts/*.js') + ['scripts/udidetect', 'scripts/calabash.lldb.erb', 'scripts/read-cmd.sh', 'scripts/timeout3', 'LICENSE']
-  s.executables   = "run-loop"
+  s.files         = Dir.glob('{lib}/**/*') + Dir.glob('scripts/*.js') + ['scripts/udidetect', 'scripts/calabash.lldb.erb', 'scripts/read-cmd.sh', 'scripts/timeout3', 'LICENSE']
   s.require_paths = ["lib"]
   s.licenses    = ['MIT']
 
   s.required_ruby_version = '>= 1.9'
 
-  s.add_dependency('thor', '>= 0.18')
   s.add_dependency('json', '~> 1.8')
   # Matches XTC requirement; would like to use ~> 1.4.0.
   s.add_dependency 'retriable', '~> 1.3.3.1'
