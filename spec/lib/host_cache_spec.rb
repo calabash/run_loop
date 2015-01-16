@@ -1,6 +1,7 @@
 describe RunLoop::HostCache do
 
   let(:directory) { Dir.mktmpdir }
+  let(:cache_filename) { '2780e6479cc2bfcd0a007bd08bdf36de11b397bd' }
 
   describe '.new' do
 
@@ -8,13 +9,13 @@ describe RunLoop::HostCache do
 
     it 'when directory exists' do
       cache = RunLoop::HostCache.new(directory)
-      expect(cache.path).to be == File.join(directory, 'host_run_loop.hash')
+      expect(cache.path).to be == File.join(directory, cache_filename)
     end
 
     it 'when directory does not exist' do
       new_dir = File.join(directory, '.calabash')
       cache = RunLoop::HostCache.new(new_dir)
-      expect(cache.path).to be == File.join(new_dir, 'host_run_loop.hash')
+      expect(cache.path).to be == File.join(new_dir, cache_filename)
       expect(Dir.exist?(new_dir))
     end
 

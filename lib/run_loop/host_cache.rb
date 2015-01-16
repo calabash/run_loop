@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'digest/sha1'
 
 module RunLoop
 
@@ -38,7 +39,8 @@ module RunLoop
     # @option [Boolean] clear (false) If true, the current cache will be cleared.
     # @return [RunLoop::HostCache] A cache that is ready for IO.
     def initialize(directory, options = {})
-      default_opts = {:filename => 'host_run_loop.hash',
+      sha1 = Digest::SHA1.hexdigest 'host_run_loop.hash'
+      default_opts = {:filename => sha1,
                       :clear => false}
       merged_opts = default_opts.merge(options)
 
