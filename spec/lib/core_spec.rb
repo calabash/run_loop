@@ -111,29 +111,29 @@ describe RunLoop::Core do
       expect(actual).to be == expected
     end
 
-    it "when Xcode 6.0* it returns 'iPhone 5 (8.0 Simulator)'" do
+    it "when Xcode 6.0* it returns 'iPhone 5s (8.0 Simulator)'" do
       version = RunLoop::Version.new('6.0')
       xctools = RunLoop::XCTools.new
       expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-      expected = 'iPhone 5 (8.0 Simulator)'
+      expected = 'iPhone 5s (8.0 Simulator)'
       actual = RunLoop::Core.default_simulator(xctools)
       expect(actual).to be == expected
     end
 
-    it "when Xcode 6.1* it returns 'iPhone 5 (8.1 Simulator)'" do
+    it "when Xcode 6.1* it returns 'iPhone 5s (8.1 Simulator)'" do
       version = RunLoop::Version.new('6.1')
       xctools = RunLoop::XCTools.new
       expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-      expected = 'iPhone 5 (8.1 Simulator)'
+      expected = 'iPhone 5s (8.1 Simulator)'
       actual = RunLoop::Core.default_simulator(xctools)
       expect(actual).to be == expected
     end
 
-    it "when Xcode 6.2* it returns 'iPhone 5 (8.2 Simulator)'" do
+    it "when Xcode 6.2* it returns 'iPhone 5s (8.2 Simulator)'" do
       version = RunLoop::Version.new('6.2')
       xctools = RunLoop::XCTools.new
       expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-      expected = 'iPhone 5 (8.2 Simulator)'
+      expected = 'iPhone 5s (8.2 Simulator)'
       actual = RunLoop::Core.default_simulator(xctools)
       expect(actual).to be == expected
     end
@@ -164,11 +164,11 @@ describe RunLoop::Core do
       valid_versions = ['6.0', '6.0.1'].map { |elm| RunLoop::Version.new(elm) }
       valid_targets.each do |target|
         valid_versions.each do |version|
-          it "returns 'iPhone 5 (8.0 Simulator)' for Xcode '#{version}' if simulator = '#{target.nil? ? 'nil' : target }'" do
+          it "returns 'iPhone 5s (8.0 Simulator)' for Xcode '#{version}' if simulator = '#{target.nil? ? 'nil' : target }'" do
             xctools = RunLoop::XCTools.new
             expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
             udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, xctools)
-            expect(udid).to be == 'iPhone 5 (8.0 Simulator)'
+            expect(udid).to be == 'iPhone 5s (8.0 Simulator)'
             expect(apb).to be == options[:app]
           end
         end
@@ -181,11 +181,11 @@ describe RunLoop::Core do
       valid_versions = ['6.1'].map { |elm| RunLoop::Version.new(elm) }
       valid_targets.each do |target|
         valid_versions.each do |version|
-          it "returns 'iPhone 5 (8.1 Simulator)' for Xcode '#{version}' if simulator = '#{target.nil? ? 'nil' : target }'" do
+          it "returns 'iPhone 5s (8.1 Simulator)' for Xcode '#{version}' if simulator = '#{target.nil? ? 'nil' : target }'" do
             xctools = RunLoop::XCTools.new
             expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
             udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, xctools)
-            expect(udid).to be == 'iPhone 5 (8.1 Simulator)'
+            expect(udid).to be == 'iPhone 5s (8.1 Simulator)'
             expect(apb).to be == options[:app]
           end
         end

@@ -1,5 +1,11 @@
 ## Change Log
 
+### 1.2.3
+
+* #111 stable and pre-release comparison @spedepekka
+* #109 Change Xcode 6 default simulator to iPhone 5s
+* #107 enable host strategy caching for console attach
+
 ### 1.2.2
 
 * #105 update awesome print to 1.6

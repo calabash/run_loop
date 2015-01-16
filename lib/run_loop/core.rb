@@ -170,6 +170,7 @@ module RunLoop
       uia_strategy = options[:uia_strategy]
       if uia_strategy == :host
         create_uia_pipe(repl_path)
+        RunLoop::HostCache.default.clear
       end
 
       cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
@@ -409,11 +410,11 @@ module RunLoop
     #  version.
     def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
       if xcode_tools.xcode_version_gte_62?
-        'iPhone 5 (8.2 Simulator)'
+        'iPhone 5s (8.2 Simulator)'
       elsif xcode_tools.xcode_version_gte_61?
-        'iPhone 5 (8.1 Simulator)'
+        'iPhone 5s (8.1 Simulator)'
       elsif xcode_tools.xcode_version_gte_6?
-        'iPhone 5 (8.0 Simulator)'
+        'iPhone 5s (8.0 Simulator)'
       else
         'iPhone Retina (4-inch) - Simulator - iOS 7.1'
       end
@@ -511,7 +512,7 @@ module RunLoop
         raise RunLoop::WriteFailedError.new("Trying write of command #{cmd_str} at index #{index}")
       end
       run_loop[:index] = index + 1
-
+      RunLoop::HostCache.default.write(run_loop)
       index
     end
 
@@ -534,7 +535,6 @@ module RunLoop
     end
 
     def self.read_response(run_loop, expected_index, empty_file_timeout=10, search_for_property='index')
-
       log_file = run_loop[:log_file]
       initial_offset = run_loop[:initial_offset] || 0
       offset = initial_offset
@@ -606,9 +606,8 @@ module RunLoop
       end
 
       run_loop[:initial_offset] = offset
-
+      RunLoop::HostCache.default.write(run_loop)
       result
-
     end
 
     # @deprecated 1.0.5
