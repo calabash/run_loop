@@ -170,6 +170,7 @@ module RunLoop
       uia_strategy = options[:uia_strategy]
       if uia_strategy == :host
         create_uia_pipe(repl_path)
+        RunLoop::HostCache.default.clear
       end
 
       cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
@@ -511,7 +512,7 @@ module RunLoop
         raise RunLoop::WriteFailedError.new("Trying write of command #{cmd_str} at index #{index}")
       end
       run_loop[:index] = index + 1
-
+      RunLoop::HostCache.default.write(run_loop)
       index
     end
 
@@ -534,7 +535,6 @@ module RunLoop
     end
 
     def self.read_response(run_loop, expected_index, empty_file_timeout=10, search_for_property='index')
-
       log_file = run_loop[:log_file]
       initial_offset = run_loop[:initial_offset] || 0
       offset = initial_offset
@@ -606,9 +606,8 @@ module RunLoop
       end
 
       run_loop[:initial_offset] = offset
-
+      RunLoop::HostCache.default.write(run_loop)
       result
-
     end
 
     # @deprecated 1.0.5

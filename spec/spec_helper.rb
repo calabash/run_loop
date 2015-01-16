@@ -4,6 +4,8 @@ require 'awesome_print'
 require 'resources'
 require 'stub_env'
 require 'pry'
+require 'tmpdir'
+require 'fileutils'
 
 module Kernel
   def capture_stdout
