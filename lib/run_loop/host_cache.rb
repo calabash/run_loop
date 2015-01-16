@@ -21,7 +21,7 @@ module RunLoop
     # The directory where the cache is stored.
     # @return [String] Expanded path to the default cache directory.
     def self.default_directory
-      File.expand_path('./.calabash')
+      File.expand_path('/tmp/run-loop-host-cache')
     end
 
     # The default cache.

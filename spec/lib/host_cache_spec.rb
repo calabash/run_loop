@@ -36,7 +36,7 @@ describe RunLoop::HostCache do
 
   context '.default_directory' do
     subject { RunLoop::HostCache.default_directory }
-    it { is_expected.to be == File.expand_path('./.calabash') }
+    it { is_expected.to be == File.expand_path('/tmp/run-loop-host-cache') }
   end
 
   context '.default' do
