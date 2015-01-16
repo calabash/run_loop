@@ -3,6 +3,7 @@ require 'digest/sha1'
 
 module RunLoop
 
+  # @!visibility private
   # A class for managing an on-disk hash table that represents the current
   # state of the :host strategy run-loop.  It is used by Calabash iOS
   # `console_attach` method.
