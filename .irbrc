@@ -1,6 +1,6 @@
 require 'irb/completion'
 require 'irb/ext/save-history'
-require 'awesome_print'
+require 'run_loop'
 
 AwesomePrint.irb!
 
@@ -13,12 +13,6 @@ IRB.conf[:SAVE_HISTORY] = 50
 
 # Store results in home directory with specified file name
 IRB.conf[:HISTORY_FILE] = '.irb-history'
-
-Dir.glob('./lib/run_loop/**/*.rb').each { |file|
-  print "require '#{file}'..."
-  require file
-  puts 'done!'
-}
 
 spec_resources = './spec/resources.rb'
 print "require '#{spec_resources}'..."
