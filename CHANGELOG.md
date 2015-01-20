@@ -1,5 +1,8 @@
 ## Change Log
 
+### 1.2.4
+* Fix performance regression on :host strategy (https://github.com/calabash/calabash-ios/issues/670)
+
 ### 1.2.3
 
 * #111 stable and pre-release comparison @spedepekka
