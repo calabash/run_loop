@@ -1,7 +1,12 @@
 ## Change Log
 
+### 1.2.5
+
+* #118 rollback awesome print dependency to match android
+
 ### 1.2.4
-* Fix performance regression on :host strategy (https://github.com/calabash/calabash-ios/issues/670)
+
+* Fix performance regression on :host strategy [calabash #670](https://github.com/calabash/calabash-ios/issues/670)
 
 ### 1.2.3
 
