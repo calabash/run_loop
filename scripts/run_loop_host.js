@@ -324,5 +324,6 @@ while (true) {
 
         _expectedIndex = Math.max(_actualIndex+1, _expectedIndex+1);
         Log.result("success", _result);
+        target.delay(0.1);
     }
 }
