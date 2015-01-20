@@ -1,6 +1,6 @@
 ## Change Log
 
-### 1.2.5
+### 1.2.6
 
 * #118 rollback awesome print dependency to match android
 
