@@ -145,6 +145,42 @@ describe RunLoop::Instruments do
     end
   end
 
+  describe '#spawn_arguments' do
+    it 'parses options argument to create an array' do
+      automation_template = 'Automation'
+      script = 'run_loop.js'
+      trace = 'trace'
+      bundle = 'MyApp.app'
+      result_dir = 'result'
+      args = ['-NSDoubleLocalizedStrings', 'YES']
+      udid = 'iPhone 5s (8.1 Simulator)'
+      launch_options =
+            {
+                  :app => "/Users/moody/git/run-loop/spec/resources/chou-cal.app",
+                  :script => script,
+                  :udid => udid,
+                  :results_dir_trace => trace,
+                  :bundle_dir_or_bundle_id => bundle,
+                  :results_dir => result_dir,
+                  :args => args
+            }
+      actual = instruments.send(:spawn_arguments, automation_template, launch_options)
+      expected =
+            [
+                  'instruments',
+                  '-w', udid,
+                  '-D', trace,
+                  '-t', automation_template,
+                  bundle,
+                  '-e', 'UIARESULTSPATH', result_dir,
+                  '-e', 'UIASCRIPT', script,
+                  args[0],
+                  args[1]
+            ]
+      expect(actual).to be == expected
+    end
+  end
+
   describe '#wait_for_process_to_terminate' do
     describe 'raises an error if' do
       it 'the process is still alive and :raise_on_no_terminate => true' do

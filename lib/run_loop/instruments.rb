@@ -81,6 +81,36 @@ module RunLoop
     private
 
     # @!visibility private
+    # Parses the run-loop options hash into an array of arguments that can be
+    # passed to `Process.spawn` to launch instruments.
+    def spawn_arguments(automation_template, options)
+      array = ['instruments']
+      array << '-w'
+      array << options[:udid]
+
+      trace = options[:results_dir_trace]
+      if trace
+        array << '-D'
+        array << trace
+      end
+
+      array << '-t'
+      array << automation_template
+
+      array << options[:bundle_dir_or_bundle_id]
+
+      {
+            'UIARESULTSPATH' => options[:results_dir],
+            'UIASCRIPT' => options[:script]
+      }.each do |key, value|
+        array << '-e'
+        array << key
+        array << value
+      end
+      array + options.fetch(:args, [])
+    end
+
+    # @!visibility private
     #
     # ```
     # $ ps x -o pid,command | grep -v grep | grep instruments
