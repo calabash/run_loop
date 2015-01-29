@@ -213,5 +213,22 @@ describe RunLoop::Instruments do
         }.not_to raise_error
       end
     end
+
+    it 'returns true if process exited' do
+      Resources.shared.fork_fake_instruments_process
+      pid = Resources.shared.fake_instruments_pids.first
+      sleep 1.0
+      Resources.shared.kill_fake_instruments_process
+      actual = instruments.send(:wait_for_process_to_terminate, pid)
+      expect(actual).to be == true
+    end
+
+    it 'returns false if the process has not exited' do
+      Resources.shared.fork_fake_instruments_process
+      pid = Resources.shared.fake_instruments_pids.first
+      options = {:timeout => 0.2}
+      actual = instruments.send(:wait_for_process_to_terminate, pid, options)
+      expect(actual).to be == false
+    end
   end
 end

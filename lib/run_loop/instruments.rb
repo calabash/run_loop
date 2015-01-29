@@ -213,12 +213,23 @@ module RunLoop
                       :raise_on_no_terminate => false}
       merged_opts = default_opts.merge(options)
 
-      cmd = "ps #{pid} -o pid | grep #{pid}"
-      poll_until = Time.now + merged_opts[:timeout]
+      process_alive = lambda {
+        begin
+          Process.kill(0, pid.to_i)
+          true
+        rescue Errno::ESRCH
+          false
+        rescue Errno::EPERM
+          true
+        end
+      }
+
+      now = Time.now
+      poll_until = now + merged_opts[:timeout]
       delay = merged_opts[:interval]
       has_terminated = false
       while Time.now < poll_until
-        has_terminated = `#{cmd}`.strip == ''
+        has_terminated = !process_alive.call
         break if has_terminated
         sleep delay
       end
@@ -227,6 +238,7 @@ module RunLoop
         details = `ps -p #{pid} -o pid,comm | grep #{pid}`.strip
         raise RuntimeError, "Waited #{merged_opts[:timeout]} s for process '#{details}' to terminate"
       end
+      has_terminated
     end
   end
 end
