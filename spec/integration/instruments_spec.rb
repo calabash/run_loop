@@ -10,6 +10,42 @@ describe RunLoop::Instruments do
     Resources.shared.kill_fake_instruments_process
   }
 
+  describe '#kill_instruments_process' do
+    it 'returns true if the process does not exist' do
+      ENV['DEBUG'] == '1'
+      pid = Resources.shared.fork_fake_instruments_process
+      sleep(0.5)
+      Resources.shared.kill_fake_instruments_process
+      instruments.send(:wait_for_process_to_terminate, pid, {:raise_on_no_terminate => true})
+      actual = instruments.send(:kill_instruments_process, pid, 'TERM')
+      expect(actual).to be == true
+      # Unexpected clean up.
+      Resources.shared.fake_instruments_pids.delete(pid)
+    end
+
+    it 'returns true if the process has been killed' do
+      ENV['DEBUG'] == '1'
+      pid = Resources.shared.fork_fake_instruments_process
+      sleep(0.5)
+      actual = instruments.send(:kill_instruments_process, pid, 'TERM')
+      expect(actual).to be == true
+      # Unexpected clean up.
+      Resources.shared.fake_instruments_pids.delete(pid)
+    end
+
+    it 'returns false if the process is not owned by parent' do
+      pid = Resources.shared.fork_fake_instruments_process
+      expect(Process).to receive(:kill).once.with('TERM', pid).and_raise(Errno::EPERM)
+      expect(Process).to receive(:kill).at_least(:once).with(0, pid).and_raise(Errno::EPERM)
+      sleep(0.5)
+      actual = instruments.send(:kill_instruments_process, pid, 'TERM')
+      # Unexpected clean up.
+      Resources.shared.fake_instruments_pids.delete(pid)
+      allow(Process).to receive(:kill).and_call_original
+      expect(actual).to be == false
+    end
+  end
+
   describe '#kill_instruments' do
     describe 'running against simulators' do
       it 'the current Xcode version' do

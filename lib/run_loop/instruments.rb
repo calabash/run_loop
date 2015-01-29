@@ -110,6 +110,40 @@ module RunLoop
       array + options.fetch(:args, [])
     end
 
+    # Send `kill_signal` to instruments process with `pid`.
+    #
+    # @param [Integer] pid The process id of the instruments process.
+    # @param [String] kill_signal The kill signal to send.
+    # @return [Boolean] If the process was terminated, return true.
+    def kill_instruments_process(pid, kill_signal)
+      begin
+        if ENV['DEBUG'] == '1'
+          puts "Sending '#{kill_signal}' to instruments process '#{pid}'"
+        end
+        Process.kill(kill_signal, pid.to_i)
+        # Don't wait.
+        # We might not own this process and a WNOHANG would be a nop.
+        # Process.wait(pid, Process::WNOHANG)
+      rescue Errno::ESRCH
+        if ENV['DEBUG'] == '1'
+          puts "Process with pid '#{pid}' does not exist; nothing to do."
+        end
+        # Return early; there is no need to wait if the process does not exist.
+        return true
+      rescue Errno::EPERM
+        if ENV['DEBUG'] == '1'
+          puts "Cannot kill process '#{pid}' with '#{kill_signal}'; not a child of this process"
+        end
+      rescue SignalException => e
+        raise e.message
+      end
+
+      if ENV['DEBUG'] == '1'
+        puts "Waiting for instruments '#{pid}' to terminate"
+      end
+      wait_for_process_to_terminate(pid, {:timeout => 2.0})
+    end
+
     # @!visibility private
     #
     # ```
