@@ -262,6 +262,7 @@ class Resources
       @fake_instruments_pids << pid
       Process.detach(pid)
     end
+    pid.to_i
   end
 
   def kill_fake_instruments_process
