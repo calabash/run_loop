@@ -12,7 +12,6 @@ describe RunLoop::Instruments do
 
   describe '#kill_instruments_process' do
     it 'returns true if the process does not exist' do
-      ENV['DEBUG'] == '1'
       pid = Resources.shared.fork_fake_instruments_process
       sleep(0.5)
       Resources.shared.kill_fake_instruments_process
@@ -24,7 +23,6 @@ describe RunLoop::Instruments do
     end
 
     it 'returns true if the process has been killed' do
-      ENV['DEBUG'] == '1'
       pid = Resources.shared.fork_fake_instruments_process
       sleep(0.5)
       actual = instruments.send(:kill_instruments_process, pid, 'TERM')
