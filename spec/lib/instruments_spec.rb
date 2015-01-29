@@ -187,9 +187,9 @@ describe RunLoop::Instruments do
         Resources.shared.fork_fake_instruments_process
         pid = Resources.shared.fake_instruments_pids.first
         options = {:raise_on_no_terminate => true}
-        expect { instruments.instance_eval {
-          wait_for_process_to_terminate(pid, options)
-        }}.to raise_error
+        expect {
+          instruments.send(:wait_for_process_to_terminate, pid, options)
+        }.to raise_error
       end
     end
 
@@ -199,17 +199,18 @@ describe RunLoop::Instruments do
         pid = Resources.shared.fake_instruments_pids.first
         sleep 1.0
         Resources.shared.kill_fake_instruments_process
-        expect { instruments.instance_eval {
-          wait_for_process_to_terminate(pid, { :raise_on_no_terminate => true})
-        }}.not_to raise_error
+        options = { :raise_on_no_terminate => true}
+        expect {
+          instruments.send(:wait_for_process_to_terminate, pid, options)
+        }.not_to raise_error
       end
 
       it 'by default if the process is still alive' do
         Resources.shared.fork_fake_instruments_process
         pid = Resources.shared.fake_instruments_pids.first
-        expect { instruments.instance_eval {
-          wait_for_process_to_terminate pid
-        }}.not_to raise_error
+        expect {
+          instruments.send(:wait_for_process_to_terminate, pid)
+        }.not_to raise_error
       end
     end
   end
