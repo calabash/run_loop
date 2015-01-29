@@ -234,6 +234,10 @@ module RunLoop
         sleep delay
       end
 
+      if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
+        puts "Waited for #{Time.now - now} seconds for instruments with '#{pid}' to terminate"
+      end
+
       if merged_opts[:raise_on_no_terminate] and not has_terminated
         details = `ps -p #{pid} -o pid,comm | grep #{pid}`.strip
         raise RuntimeError, "Waited #{merged_opts[:timeout]} s for process '#{details}' to terminate"
