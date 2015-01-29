@@ -240,7 +240,7 @@ module RunLoop
 
       if merged_opts[:raise_on_no_terminate] and not has_terminated
         details = `ps -p #{pid} -o pid,comm | grep #{pid}`.strip
-        raise RuntimeError, "Waited #{merged_opts[:timeout]} s for process '#{details}' to terminate"
+        raise RuntimeError, "Waited #{merged_opts[:timeout]} seconds for process '#{details}' to terminate"
       end
       has_terminated
     end
