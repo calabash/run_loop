@@ -605,40 +605,6 @@ module RunLoop
       RunLoop::Instruments.new.instruments_pids(&block)
     end
 
-    def self.instruments_command_prefix(udid, results_dir_trace)
-      instruments_path = 'xcrun instruments'
-      if udid
-        instruments_path = "#{instruments_path} -w \"#{udid}\""
-      end
-      instruments_path << " -D \"#{results_dir_trace}\"" if results_dir_trace
-      instruments_path
-    end
-
-
-    def self.instruments_command(options, xctools=RunLoop::XCTools.new)
-      udid = options[:udid]
-      results_dir_trace = options[:results_dir_trace]
-      bundle_dir_or_bundle_id = options[:bundle_dir_or_bundle_id]
-      results_dir = options[:results_dir]
-      script = options[:script]
-      log_file = options[:log_file]
-      args= options[:args] || []
-
-      instruments_prefix = instruments_command_prefix(udid, results_dir_trace)
-      cmd = [
-          instruments_prefix,
-          '-t', "\"#{automation_template(xctools)}\"",
-          "\"#{bundle_dir_or_bundle_id}\"",
-          '-e', 'UIARESULTSPATH', results_dir,
-          '-e', 'UIASCRIPT', script,
-          args.join(' ')
-      ]
-      if log_file
-        cmd << "&> #{log_file}"
-      end
-      cmd
-    end
-
     def self.automation_template(xctools, candidate = ENV['TRACE_TEMPLATE'])
       unless candidate && File.exist?(candidate)
         candidate = default_tracetemplate xctools
