@@ -56,6 +56,27 @@ module RunLoop
       end
     end
 
+    # Spawn a new instruments process in the context of `xcrun` and detach.
+    #
+    # @param [String] automation_template The template instruments will use when
+    #  launching the application.
+    # @param [Hash] options The launch options.
+    # @param [String] log_file The file to log to.
+    # @return [Integer] Returns the process id of the instruments process.
+    # @todo Do I need to enumerate the launch options in the docs?
+    # @todo Should this raise errors?
+    # @todo Is this jruby compatible?
+    def spawn(automation_template, options, log_file)
+      splat_args = spawn_arguments(automation_template, options)
+      if ENV['DEBUG'] == '1'
+        puts  "#{Time.now} xcrun #{splat_args.join(' ')} >& #{log_file}"
+        $stdout.flush
+      end
+      pid = Process.spawn('xcrun', *splat_args, {:out => log_file, :err => log_file})
+      Process.detach(pid)
+      pid.to_i
+    end
+
     private
 
     # @!visibility private

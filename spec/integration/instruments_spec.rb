@@ -10,6 +10,82 @@ describe RunLoop::Instruments do
     Resources.shared.kill_fake_instruments_process
   }
 
+  describe '#spawn' do
+    it 'spawns an instruments process that launches an app' do
+
+      # Try to kill any instruments processes.
+      instruments.kill_instruments
+
+      udid = RunLoop::Core.default_simulator
+      results_dir = Dir.mktmpdir('run_loop')
+      trace_dir = File.join(results_dir, 'trace')
+      FileUtils.mkdir_p(trace_dir)
+
+      script = File.join(results_dir, '_run_loop.js')
+      FileUtils.cp(Resources.shared.infinite_run_loop_script, script)
+
+      log_file = File.join(results_dir, 'run_loop.out')
+
+      app = Resources.shared.cal_app_bundle_path
+      options =
+            {
+                  :udid => udid,
+                  :results_dir_trace => trace_dir,
+                  :bundle_dir_or_bundle_id => app,
+                  :script => script,
+                  :results_dir => results_dir,
+                  :args => ['-NSDoubleLocalizedStrings', 'YES']
+            }
+
+      automation_template = RunLoop::Core.default_tracetemplate
+
+      # Enable Accessibility on the specific simulator.
+      sim_control = RunLoop::SimControl.new
+      simulators = sim_control.send(:sim_details, :launch_name)
+      directories = sim_control.send(:existing_sim_sdk_or_device_data_dirs)
+      my_simulator = simulators[udid]
+      my_directory = directories.select do |path|
+        path =~ /#{my_simulator[:udid]}/
+      end.first
+      simulators = sim_control.send(:sim_details, :udid)
+      sim_control.send(:enable_accessibility_in_sim_data_dir, my_directory, simulators)
+
+      launch_timeout = Resources.shared.travis_ci? ? 20 : 10
+
+      curl_for_server = lambda do
+        begin
+          Timeout.timeout(launch_timeout) do
+            loop do
+              # Server responds with '405 Method Not Allowed'.  Surprise!
+              http_code = `xcrun curl -s -o /dev/null -I -w "%{http_code}" http://localhost:37265/version`
+              break if http_code != '000'
+              sleep 0.5
+            end
+          end
+        rescue Timeout::Error
+          raise RuntimeError, 'Calabash server did not respond to ping; application did not launch'
+        end
+      end
+
+      # Kill instruments and quit the simulator on a retry.
+      on_retry = Proc.new do |_, _, _, _|
+        instruments.kill_instruments
+        RunLoop::SimControl.terminate_all_sims
+      end
+
+      pid = nil
+      Retriable.retriable({:tries => Resources.shared.launch_retries,
+                           :interval => launch_timeout + 10,
+                           :on_retry => on_retry}) do
+        pid = instruments.spawn(automation_template, options, log_file)
+        curl_for_server.call
+      end
+      expect(pid).to_not be == nil
+      expect(pid).to be_a(Integer)
+      expect(instruments.instruments_running?).to be == true
+    end
+  end
+
   describe '#kill_instruments_process' do
     it 'returns true if the process does not exist' do
       pid = Resources.shared.fork_fake_instruments_process
