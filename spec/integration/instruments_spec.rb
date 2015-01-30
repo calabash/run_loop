@@ -86,6 +86,57 @@ describe RunLoop::Instruments do
     end
   end
 
+  describe '#wait_for_process_to_terminate' do
+    describe 'raises an error if' do
+      it 'the process is still alive and :raise_on_no_terminate => true' do
+        Resources.shared.fork_fake_instruments_process
+        pid = Resources.shared.fake_instruments_pids.first
+        options = {:raise_on_no_terminate => true}
+        expect {
+          instruments.send(:wait_for_process_to_terminate, pid, options)
+        }.to raise_error
+      end
+    end
+
+    describe 'does not raise an error' do
+      it 'if process is terminated' do
+        Resources.shared.fork_fake_instruments_process
+        pid = Resources.shared.fake_instruments_pids.first
+        sleep 1.0
+        Resources.shared.kill_fake_instruments_process
+        options = { :raise_on_no_terminate => true}
+        expect {
+          instruments.send(:wait_for_process_to_terminate, pid, options)
+        }.not_to raise_error
+      end
+
+      it 'by default if the process is still alive' do
+        Resources.shared.fork_fake_instruments_process
+        pid = Resources.shared.fake_instruments_pids.first
+        expect {
+          instruments.send(:wait_for_process_to_terminate, pid)
+        }.not_to raise_error
+      end
+    end
+
+    it 'returns true if process exited' do
+      Resources.shared.fork_fake_instruments_process
+      pid = Resources.shared.fake_instruments_pids.first
+      sleep 1.0
+      Resources.shared.kill_fake_instruments_process
+      actual = instruments.send(:wait_for_process_to_terminate, pid)
+      expect(actual).to be == true
+    end
+
+    it 'returns false if the process has not exited' do
+      Resources.shared.fork_fake_instruments_process
+      pid = Resources.shared.fake_instruments_pids.first
+      options = {:timeout => 0.2}
+      actual = instruments.send(:wait_for_process_to_terminate, pid, options)
+      expect(actual).to be == false
+    end
+  end
+
   describe '#kill_instruments_process' do
     it 'returns true if the process does not exist' do
       pid = Resources.shared.fork_fake_instruments_process
