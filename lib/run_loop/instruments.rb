@@ -3,8 +3,6 @@ module RunLoop
   # A class for interacting with the instruments command-line tool
   #
   # @note All instruments commands are run in the context of `xcrun`.
-  #
-  # @todo Detect Instruments.app is running and pop an alert.
   class Instruments
 
     # Returns an Array of instruments process ids.
