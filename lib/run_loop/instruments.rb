@@ -178,8 +178,7 @@ module RunLoop
     # @return [Boolean] True if the details describe an instruments process.
     def is_instruments_process?(ps_details)
       return false if ps_details.nil?
-      (ps_details[/\/usr\/bin\/instruments/, 0] or
-            ps_details[/sh -c xcrun instruments/, 0]) != nil
+      ps_details[/\/usr\/bin\/instruments/, 0] != nil
     end
 
     # @!visibility private

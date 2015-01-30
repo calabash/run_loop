@@ -44,16 +44,16 @@ describe RunLoop::Instruments do
           is_instruments_process?('instruments')
         }).to be == false
       end
-    end
 
-    describe 'returns true when process description' do
       it "starts with 'sh -c xcrun instruments'" do
         description = "sh -c xcrun instruments -w \"43be3f89d9587e9468c24672777ff6241bd91124\" < args >"
         expect( instruments.instance_eval {
-          is_instruments_process?(description)
-        }).to be == true
+                  is_instruments_process?(description)
+                }).to be == false
       end
+    end
 
+    describe 'returns true when process description' do
       it "contains '/usr/bin/instruments'" do
         description = "/Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w \"43be3f89d9587e9468c24672777ff6241bd91124\" < args >"
         expect( instruments.instance_eval {
@@ -72,10 +72,15 @@ describe RunLoop::Instruments do
     end
 
     it 'can parse pids from typical ps output' do
-      ps_output = ["98081 sh -c xcrun instruments -w \"43be3f89d9587e9468c24672777ff6241bd91124\" < args >",
-                   "98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >"].join("\n")
+      ps_output =
+            [
+                  '98081 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >',
+                  '98082 /Applications/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >',
+                  '98083 /Applications/Xcode-Beta.app/Contents/Developer/usr/bin/instruments -w < args >'
+            ].join("\n")
+
       expect(instruments).to receive(:ps_for_instruments).and_return(ps_output)
-      expected = [98081, 98082]
+      expected = [98081, 98082, 98083]
       actual = []
       instruments.instance_eval { actual = pids_from_ps_output }
       expect(actual).to match_array expected
