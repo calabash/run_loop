@@ -23,7 +23,8 @@ module RunLoop
     # The directory where the cache is stored.
     # @return [String] Expanded path to the default cache directory.
     def self.default_directory
-      File.expand_path('/tmp/run-loop-host-cache')
+      uid = RunLoop::Environment.uid
+      File.expand_path("/tmp/com.xamarin.calabash.run-loop/host-cache/#{uid}")
     end
 
     # The default cache.
