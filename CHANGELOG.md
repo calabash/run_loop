@@ -1,5 +1,9 @@
 ## Change Log
 
+### 1.2.7
+
+* #121 In multi-user environments, `/tmp/run_loop_host_cache` causes permissions issues @onfoot
+
 ### 1.2.6
 
 * #118 rollback awesome print dependency to match android
