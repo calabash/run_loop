@@ -44,16 +44,16 @@ describe RunLoop::Instruments do
           is_instruments_process?('instruments')
         }).to be == false
       end
-    end
 
-    describe 'returns true when process description' do
       it "starts with 'sh -c xcrun instruments'" do
         description = "sh -c xcrun instruments -w \"43be3f89d9587e9468c24672777ff6241bd91124\" < args >"
         expect( instruments.instance_eval {
-          is_instruments_process?(description)
-        }).to be == true
+                  is_instruments_process?(description)
+                }).to be == false
       end
+    end
 
+    describe 'returns true when process description' do
       it "contains '/usr/bin/instruments'" do
         description = "/Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w \"43be3f89d9587e9468c24672777ff6241bd91124\" < args >"
         expect( instruments.instance_eval {
@@ -72,10 +72,15 @@ describe RunLoop::Instruments do
     end
 
     it 'can parse pids from typical ps output' do
-      ps_output = ["98081 sh -c xcrun instruments -w \"43be3f89d9587e9468c24672777ff6241bd91124\" < args >",
-                   "98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >"].join("\n")
+      ps_output =
+            [
+                  '98081 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >',
+                  '98082 /Applications/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >',
+                  '98083 /Applications/Xcode-Beta.app/Contents/Developer/usr/bin/instruments -w < args >'
+            ].join("\n")
+
       expect(instruments).to receive(:ps_for_instruments).and_return(ps_output)
-      expected = [98081, 98082]
+      expected = [98081, 98082, 98083]
       actual = []
       instruments.instance_eval { actual = pids_from_ps_output }
       expect(actual).to match_array expected
@@ -145,36 +150,39 @@ describe RunLoop::Instruments do
     end
   end
 
-  describe '#wait_for_process_to_terminate' do
-    describe 'raises an error if' do
-      it 'the process is still alive and :raise_on_no_terminate => true' do
-        Resources.shared.fork_fake_instruments_process
-        pid = Resources.shared.fake_instruments_pids.first
-        options = {:raise_on_no_terminate => true}
-        expect { instruments.instance_eval {
-          wait_for_process_to_terminate(pid, options)
-        }}.to raise_error
-      end
-    end
-
-    describe 'does not raise an error' do
-      it 'if process is terminated' do
-        Resources.shared.fork_fake_instruments_process
-        pid = Resources.shared.fake_instruments_pids.first
-        sleep 1.0
-        Resources.shared.kill_fake_instruments_process
-        expect { instruments.instance_eval {
-          wait_for_process_to_terminate(pid, { :raise_on_no_terminate => true})
-        }}.not_to raise_error
-      end
-
-      it 'by default if the process is still alive' do
-        Resources.shared.fork_fake_instruments_process
-        pid = Resources.shared.fake_instruments_pids.first
-        expect { instruments.instance_eval {
-          wait_for_process_to_terminate pid
-        }}.not_to raise_error
-      end
+  describe '#spawn_arguments' do
+    it 'parses options argument to create an array' do
+      automation_template = 'Automation'
+      script = 'run_loop.js'
+      trace = 'trace'
+      bundle = 'MyApp.app'
+      result_dir = 'result'
+      args = ['-NSDoubleLocalizedStrings', 'YES']
+      udid = 'iPhone 5s (8.1 Simulator)'
+      launch_options =
+            {
+                  :app => "/Users/moody/git/run-loop/spec/resources/chou-cal.app",
+                  :script => script,
+                  :udid => udid,
+                  :results_dir_trace => trace,
+                  :bundle_dir_or_bundle_id => bundle,
+                  :results_dir => result_dir,
+                  :args => args
+            }
+      actual = instruments.send(:spawn_arguments, automation_template, launch_options)
+      expected =
+            [
+                  'instruments',
+                  '-w', udid,
+                  '-D', trace,
+                  '-t', automation_template,
+                  bundle,
+                  '-e', 'UIARESULTSPATH', result_dir,
+                  '-e', 'UIASCRIPT', script,
+                  args[0],
+                  args[1]
+            ]
+      expect(actual).to be == expected
     end
   end
 end

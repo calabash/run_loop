@@ -25,6 +25,10 @@ class Resources
     @resources_dir = File.expand_path(File.join(File.dirname(__FILE__),  'resources'))
   end
 
+  def infinite_run_loop_script
+    @infinite_run_loop_script = File.expand_path(File.join(resources_dir, 'infinite_run_loop.js'))
+  end
+
   def cal_app_bundle_path
     @cal_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.app'))
   end
@@ -262,6 +266,7 @@ class Resources
       @fake_instruments_pids << pid
       Process.detach(pid)
     end
+    pid.to_i
   end
 
   def kill_fake_instruments_process

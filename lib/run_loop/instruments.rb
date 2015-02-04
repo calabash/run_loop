@@ -36,31 +36,9 @@ module RunLoop
     #  what version of Xcode is active.
     def kill_instruments(xcode_tools = RunLoop::XCTools.new)
       kill_signal = kill_signal xcode_tools
-      # It is difficult to test using a block.
       instruments_pids.each do |pid|
-        begin
-          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
-            puts "Sending '#{kill_signal}' to instruments process '#{pid}'"
-          end
-          Process.kill(kill_signal, pid.to_i)
-          Process.wait(pid, Process::WNOHANG)
-        rescue Exception => e
-          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX'] == '1'
-            puts "Could not kill and wait for process '#{pid.to_i}' - ignoring exception '#{e}'"
-          end
-        end
-
-        # Process.wait or `wait` here is pointless.  The pid may or may not be
-        # a child of this Process.
-        begin
-          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
-            puts "Waiting for instruments '#{pid}' to terminate"
-          end
-          wait_for_process_to_terminate(pid, {:timeout => 2.0})
-        rescue Exception => e
-          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
-            puts "Ignoring #{e.message}"
-          end
+        unless kill_instruments_process(pid, kill_signal)
+          kill_instruments_process(pid, 'KILL')
         end
       end
     end
@@ -78,7 +56,92 @@ module RunLoop
       end
     end
 
+    # Spawn a new instruments process in the context of `xcrun` and detach.
+    #
+    # @param [String] automation_template The template instruments will use when
+    #  launching the application.
+    # @param [Hash] options The launch options.
+    # @param [String] log_file The file to log to.
+    # @return [Integer] Returns the process id of the instruments process.
+    # @todo Do I need to enumerate the launch options in the docs?
+    # @todo Should this raise errors?
+    # @todo Is this jruby compatible?
+    def spawn(automation_template, options, log_file)
+      splat_args = spawn_arguments(automation_template, options)
+      if ENV['DEBUG'] == '1'
+        puts  "#{Time.now} xcrun #{splat_args.join(' ')} >& #{log_file}"
+        $stdout.flush
+      end
+      pid = Process.spawn('xcrun', *splat_args, {:out => log_file, :err => log_file})
+      Process.detach(pid)
+      pid.to_i
+    end
+
     private
+
+    # @!visibility private
+    # Parses the run-loop options hash into an array of arguments that can be
+    # passed to `Process.spawn` to launch instruments.
+    def spawn_arguments(automation_template, options)
+      array = ['instruments']
+      array << '-w'
+      array << options[:udid]
+
+      trace = options[:results_dir_trace]
+      if trace
+        array << '-D'
+        array << trace
+      end
+
+      array << '-t'
+      array << automation_template
+
+      array << options[:bundle_dir_or_bundle_id]
+
+      {
+            'UIARESULTSPATH' => options[:results_dir],
+            'UIASCRIPT' => options[:script]
+      }.each do |key, value|
+        array << '-e'
+        array << key
+        array << value
+      end
+      array + options.fetch(:args, [])
+    end
+
+    # Send `kill_signal` to instruments process with `pid`.
+    #
+    # @param [Integer] pid The process id of the instruments process.
+    # @param [String] kill_signal The kill signal to send.
+    # @return [Boolean] If the process was terminated, return true.
+    def kill_instruments_process(pid, kill_signal)
+      begin
+        if ENV['DEBUG'] == '1'
+          puts "Sending '#{kill_signal}' to instruments process '#{pid}'"
+        end
+        Process.kill(kill_signal, pid.to_i)
+        # Don't wait.
+        # We might not own this process and a WNOHANG would be a nop.
+        # Process.wait(pid, Process::WNOHANG)
+      rescue Errno::ESRCH
+        if ENV['DEBUG'] == '1'
+          puts "Process with pid '#{pid}' does not exist; nothing to do."
+        end
+        # Return early; there is no need to wait if the process does not exist.
+        return true
+      rescue Errno::EPERM
+        if ENV['DEBUG'] == '1'
+          puts "Cannot kill process '#{pid}' with '#{kill_signal}'; not a child of this process"
+        end
+      rescue SignalException => e
+        raise e.message
+      end
+
+      if ENV['DEBUG'] == '1'
+        puts "Waiting for instruments '#{pid}' to terminate"
+      end
+      wait_for_process_to_terminate(pid, {:timeout => 2.0})
+    end
 
     # @!visibility private
     #
@@ -115,8 +178,7 @@ module RunLoop
     # @return [Boolean] True if the details describe an instruments process.
     def is_instruments_process?(ps_details)
       return false if ps_details.nil?
-      (ps_details[/\/usr\/bin\/instruments/, 0] or
-            ps_details[/sh -c xcrun instruments/, 0]) != nil
+      ps_details[/\/usr\/bin\/instruments/, 0] != nil
     end
 
     # @!visibility private
@@ -183,20 +245,36 @@ module RunLoop
                       :raise_on_no_terminate => false}
       merged_opts = default_opts.merge(options)
 
-      cmd = "ps #{pid} -o pid | grep #{pid}"
-      poll_until = Time.now + merged_opts[:timeout]
+      process_alive = lambda {
+        begin
+          Process.kill(0, pid.to_i)
+          true
+        rescue Errno::ESRCH
+          false
+        rescue Errno::EPERM
+          true
+        end
+      }
+
+      now = Time.now
+      poll_until = now + merged_opts[:timeout]
       delay = merged_opts[:interval]
       has_terminated = false
       while Time.now < poll_until
-        has_terminated = `#{cmd}`.strip == ''
+        has_terminated = !process_alive.call
         break if has_terminated
         sleep delay
       end
 
+      if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
+        puts "Waited for #{Time.now - now} seconds for instruments with '#{pid}' to terminate"
+      end
+
       if merged_opts[:raise_on_no_terminate] and not has_terminated
         details = `ps -p #{pid} -o pid,comm | grep #{pid}`.strip
-        raise RuntimeError, "Waited #{merged_opts[:timeout]} s for process '#{details}' to terminate"
+        raise RuntimeError, "Waited #{merged_opts[:timeout]} seconds for process '#{details}' to terminate"
       end
+      has_terminated
     end
   end
 end

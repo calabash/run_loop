@@ -135,7 +135,8 @@ module RunLoop
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
       xctools ||= options[:xctools] || sim_control.xctools
 
-      RunLoop::Instruments.new.kill_instruments(xctools)
+      instruments = RunLoop::Instruments.new
+      instruments.kill_instruments
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
@@ -217,22 +218,11 @@ module RunLoop
 
       self.log_run_loop_options(merged_options, xctools)
 
-      cmd = instruments_command(merged_options, xctools)
+      automation_template = automation_template(xctools)
 
       log_header("Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
-      cmd_str = cmd.join(' ')
 
-      log(cmd_str) if ENV['DEBUG'] == '1'
-
-      if !jruby? && RUBY_VERSION && RUBY_VERSION.start_with?('1.8')
-        pid = fork do
-          exec(cmd_str)
-        end
-      else
-        pid = spawn(cmd_str)
-      end
-
-      Process.detach(pid)
+      pid = instruments.spawn(automation_template, merged_options, log_file)
 
       File.open(File.join(results_dir, 'run_loop.pid'), 'w') do |f|
         f.write pid
@@ -613,40 +603,6 @@ module RunLoop
     # @deprecated 1.0.5
     def self.pids_for_run_loop(run_loop, &block)
       RunLoop::Instruments.new.instruments_pids(&block)
-    end
-
-    def self.instruments_command_prefix(udid, results_dir_trace)
-      instruments_path = 'xcrun instruments'
-      if udid
-        instruments_path = "#{instruments_path} -w \"#{udid}\""
-      end
-      instruments_path << " -D \"#{results_dir_trace}\"" if results_dir_trace
-      instruments_path
-    end
-
-
-    def self.instruments_command(options, xctools=RunLoop::XCTools.new)
-      udid = options[:udid]
-      results_dir_trace = options[:results_dir_trace]
-      bundle_dir_or_bundle_id = options[:bundle_dir_or_bundle_id]
-      results_dir = options[:results_dir]
-      script = options[:script]
-      log_file = options[:log_file]
-      args= options[:args] || []
-
-      instruments_prefix = instruments_command_prefix(udid, results_dir_trace)
-      cmd = [
-          instruments_prefix,
-          '-t', "\"#{automation_template(xctools)}\"",
-          "\"#{bundle_dir_or_bundle_id}\"",
-          '-e', 'UIARESULTSPATH', results_dir,
-          '-e', 'UIASCRIPT', script,
-          args.join(' ')
-      ]
-      if log_file
-        cmd << "&> #{log_file}"
-      end
-      cmd
     end
 
     def self.automation_template(xctools, candidate = ENV['TRACE_TEMPLATE'])
