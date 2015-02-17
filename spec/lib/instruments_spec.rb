@@ -4,6 +4,7 @@ describe RunLoop::Instruments do
 
   before(:each) {
     RunLoop::SimControl.terminate_all_sims
+    Resources.shared.kill_fake_instruments_process
   }
 
   after(:each) {
