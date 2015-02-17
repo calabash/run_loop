@@ -336,7 +336,7 @@ class Resources
       process_description = tokens[1..-1].join(' ')
       if process_description[/Instruments\.app/, 0]
         Process.kill('TERM', pid.to_i)
-        instruments_obj.instance_eval {  wait_for_process_to_terminate pid.to_i }
+        RunLoop::ProcessTerminator.new(pid, 'TERM', 'Instruments.app').kill_process
       end
     end
   end
