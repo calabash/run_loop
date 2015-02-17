@@ -37,8 +37,10 @@ module RunLoop
     def kill_instruments(xcode_tools = RunLoop::XCTools.new)
       kill_signal = kill_signal xcode_tools
       instruments_pids.each do |pid|
-        unless kill_instruments_process(pid, kill_signal)
-          kill_instruments_process(pid, 'KILL')
+        terminator = RunLoop::ProcessTerminator.new(pid, kill_signal, 'instruments')
+        unless terminator.kill_process
+          terminator = RunLoop::ProcessTerminator.new(pid, 'KILL', 'instruments')
+          terminator.kill_process
         end
       end
     end
@@ -107,40 +109,6 @@ module RunLoop
         array << value
       end
       array + options.fetch(:args, [])
-    end
-
-    # Send `kill_signal` to instruments process with `pid`.
-    #
-    # @param [Integer] pid The process id of the instruments process.
-    # @param [String] kill_signal The kill signal to send.
-    # @return [Boolean] If the process was terminated, return true.
-    def kill_instruments_process(pid, kill_signal)
-      begin
-        if ENV['DEBUG'] == '1'
-          puts "Sending '#{kill_signal}' to instruments process '#{pid}'"
-        end
-        Process.kill(kill_signal, pid.to_i)
-        # Don't wait.
-        # We might not own this process and a WNOHANG would be a nop.
-        # Process.wait(pid, Process::WNOHANG)
-      rescue Errno::ESRCH
-        if ENV['DEBUG'] == '1'
-          puts "Process with pid '#{pid}' does not exist; nothing to do."
-        end
-        # Return early; there is no need to wait if the process does not exist.
-        return true
-      rescue Errno::EPERM
-        if ENV['DEBUG'] == '1'
-          puts "Cannot kill process '#{pid}' with '#{kill_signal}'; not a child of this process"
-        end
-      rescue SignalException => e
-        raise e.message
-      end
-
-      if ENV['DEBUG'] == '1'
-        puts "Waiting for instruments '#{pid}' to terminate"
-      end
-      wait_for_process_to_terminate(pid, {:timeout => 2.0})
     end
 
     # @!visibility private
@@ -225,56 +193,6 @@ module RunLoop
     #  version.
     def kill_signal(xcode_tools = RunLoop::XCTools.new)
       xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
-    end
-
-    # @!visibility private
-    # Wait for Unix process with id `pid` to terminate.
-    #
-    # @param [Integer] pid The id of the process we are waiting on.
-    # @param [Hash] options Values to control the behavior of this method.
-    # @option options [Float] :timeout (2.0) How long to wait for the process to
-    #  terminate.
-    # @option options [Float] :interval (0.1) The polling interval.
-    # @option options [Boolean] :raise_on_no_terminate (false) Should an error
-    #  be raised if process does not terminate.
-    # @raise [RuntimeError] If process does not terminate and
-    #  options[:raise_on_no_terminate] is truthy.
-    def wait_for_process_to_terminate(pid, options={})
-      default_opts = {:timeout => 2.0,
-                      :interval => 0.1,
-                      :raise_on_no_terminate => false}
-      merged_opts = default_opts.merge(options)
-
-      process_alive = lambda {
-        begin
-          Process.kill(0, pid.to_i)
-          true
-        rescue Errno::ESRCH
-          false
-        rescue Errno::EPERM
-          true
-        end
-      }
-
-      now = Time.now
-      poll_until = now + merged_opts[:timeout]
-      delay = merged_opts[:interval]
-      has_terminated = false
-      while Time.now < poll_until
-        has_terminated = !process_alive.call
-        break if has_terminated
-        sleep delay
-      end
-
-      if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
-        puts "Waited for #{Time.now - now} seconds for instruments with '#{pid}' to terminate"
-      end
-
-      if merged_opts[:raise_on_no_terminate] and not has_terminated
-        details = `ps -p #{pid} -o pid,comm | grep #{pid}`.strip
-        raise RuntimeError, "Waited #{merged_opts[:timeout]} seconds for process '#{details}' to terminate"
-      end
-      has_terminated
     end
   end
 end
