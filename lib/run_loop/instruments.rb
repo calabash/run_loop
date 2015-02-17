@@ -125,7 +125,7 @@ module RunLoop
     # $ ps x -o pid,command | grep -v grep | grep instruments
     # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
     # ```
-    FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
+    INSTRUMENTS_FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
     #
@@ -135,7 +135,7 @@ module RunLoop
     #  processes.
     # @return [String] A ps-style list of process details.  The details returned
     #  are controlled by the `ps_cmd`.
-    def ps_for_instruments(ps_cmd=FIND_PIDS_CMD)
+    def ps_for_instruments(ps_cmd=INSTRUMENTS_FIND_PIDS_CMD)
       `#{ps_cmd}`.strip
     end
 
@@ -157,7 +157,7 @@ module RunLoop
     #  processes.
     # @return [Array<Integer>] An array of integer pids for instruments
     #  processes.  Returns an empty list if no instruments process are found.
-    def pids_from_ps_output(ps_cmd=FIND_PIDS_CMD)
+    def pids_from_ps_output(ps_cmd=INSTRUMENTS_FIND_PIDS_CMD)
       ps_output = ps_for_instruments(ps_cmd)
       lines = ps_output.lines("\n").map { |line| line.strip }
       lines.map do |line|
