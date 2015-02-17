@@ -7,5 +7,9 @@ module RunLoop
       `id -u`.strip.to_i
     end
 
+    # Returns true if debugging is enabled.
+    def self.debug?
+      ENV['DEBUG'] == '1'
+    end
   end
 end
