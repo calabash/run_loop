@@ -4,17 +4,18 @@ module RunLoop
     attr_reader :name
     attr_reader :version
     attr_reader :udid
+    attr_reader :state
 
-    def initialize(name, version, udid)
+    def initialize(name, version, udid, state)
       @name = name
+      @udid = udid
+      @state = state
 
       if version.is_a? String
         @version = RunLoop::Version.new version
       else
         @version = version
       end
-
-      @udid = udid
     end
 
     # Returns and instruments-ready device identifier that is a suitable value
