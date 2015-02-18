@@ -1,5 +1,6 @@
 require 'run_loop/environment'
 require 'run_loop/process_terminator'
+require 'run_loop/process_waiter'
 require 'run_loop/core'
 require 'run_loop/version'
 require 'run_loop/xctools'
