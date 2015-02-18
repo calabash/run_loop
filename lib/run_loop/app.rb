@@ -45,6 +45,18 @@ module RunLoop
       identifier
     end
 
+    # Inspects the app's Info.plist for the executable name.
+    # @return [String] The value of CFBundleIdentifier.
+    # @raise [RuntimeError] If the plist cannot be read or the
+    #   CFBundleExecutable is empty or does not exist.
+    def executable_name
+      identifier = plist_buddy.plist_read('CFBundleExecutable', info_plist_path)
+      unless identifier
+        raise "Expected key 'CFBundleExecutable' in '#{info_plist_path}'"
+      end
+      identifier
+    end
+
     private
 
     def plist_buddy

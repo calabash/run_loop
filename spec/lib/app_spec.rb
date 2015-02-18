@@ -58,4 +58,20 @@ describe RunLoop::App do
       end
     end
   end
+
+  context '#exectuable_name' do
+    subject { RunLoop::App.new(Resources.shared.app_bundle_path).executable_name }
+    it { is_expected.to be == 'chou' }
+
+    context 'raises an error when' do
+      let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
+      it 'there is no CFExecutableName' do
+        app = RunLoop::App.new(path)
+        file = RunLoop::PlistBuddy.new.create_plist(File.join(path, 'Info.plist'))
+        expect(File.exist?(file)).to be_truthy
+        expect { app.executable_name }.to raise_error
+      end
+    end
+  end
+
 end
