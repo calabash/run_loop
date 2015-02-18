@@ -6,7 +6,18 @@ module RunLoop
     attr_reader :udid
     attr_reader :state
 
-    def initialize(name, version, udid, state)
+    # Create a new device.
+    #
+    # @param [String] name The name of the device.  For sims this should be
+    #  'iPhone 5s' and for physical devices it will be the name the user gave
+    #  to the device.
+    # @param [String, RunLoop::Version] version The iOS version that is running
+    #  on the device.  Can be a string or a Version instance.
+    # @param [String] udid The device identifier.
+    # @param [String] state (nil) This a simulator only value.  It refers to
+    #  the Booted/Shutdown/Creating state of the simulator.  For pre-Xcode 6
+    #  simulators, this value should be nil.
+    def initialize(name, version, udid, state=nil)
       @name = name
       @udid = udid
       @state = state

@@ -324,7 +324,7 @@ module RunLoop
         sims = []
         hash.each_pair do |sdk, list|
           list.each do |details|
-            sims << RunLoop::Device.new(details[:name], sdk, details[:udid])
+            sims << RunLoop::Device.new(details[:name], sdk, details[:udid], details[:state])
           end
         end
         sims
