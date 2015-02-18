@@ -340,4 +340,42 @@ class Resources
       end
     end
   end
+
+  def infinite_lldb_script
+    @infinite_lldb_script ||= File.expand_path(File.join(resources_dir, 'infinite.lldb'))
+  end
+
+  def spawn_lldb_process
+    pid = Process.fork
+    if pid.nil?
+      args = ['lldb', '--no-lldbinit', '--source', infinite_lldb_script]
+      redirect_io = {:out => '/dev/null', :err => '/dev/null'}
+      exec('xcrun', *args, redirect_io)
+    else
+      @lldb_process_pids ||= []
+      @lldb_process_pids << pid
+      Process.detach(pid)
+    end
+    pid.to_i
+  end
+
+  def kill_owned_lldb_processes
+    return if @lldb_process_pids.nil?
+    @lldb_process_pids.each do |pid|
+      Process.kill('TERM', pid)
+      begin
+        Process.wait(pid)
+      rescue Errno::ECHILD => e
+        # ignore this
+      end
+    end
+    @lldb_process_pids = []
+  end
+
+  def kill_lldb_processes
+    kill_owned_lldb_processes
+    Open3.popen3('xcrun killall -9 lldb') do |_, _, _, _|
+    end
+  end
+
 end
