@@ -55,8 +55,9 @@ module RunLoop
     def kill_process
       return true unless process_alive?
 
+      debug_logging = RunLoop::Environment.debug?
       begin
-        if ENV['DEBUG'] == '1'
+        if debug_logging
           puts "Sending '#{kill_signal}' to #{display_name} process '#{pid}'"
         end
         Process.kill(kill_signal, pid.to_i)
@@ -64,20 +65,20 @@ module RunLoop
         # We might not own this process and a WNOHANG would be a nop.
         # Process.wait(pid, Process::WNOHANG)
       rescue Errno::ESRCH
-        if ENV['DEBUG'] == '1'
+        if debug_logging
           puts "Process with pid '#{pid}' does not exist; nothing to do."
         end
         # Return early; there is no need to wait if the process does not exist.
         return true
       rescue Errno::EPERM
-        if ENV['DEBUG'] == '1'
+        if debug_logging
           puts "Cannot kill process '#{pid}' with '#{kill_signal}'; not a child of this process"
         end
       rescue SignalException => e
         raise e.message
       end
 
-      if ENV['DEBUG'] == '1'
+      if debug_logging
         puts "Waiting for #{display_name} '#{pid}' to terminate"
       end
       wait_for_process_to_terminate
@@ -126,7 +127,7 @@ module RunLoop
         sleep delay
       end
 
-      if ENV['DEBUG'] == '1'
+      if RunLoop::Environment.debug?
         puts "Waited for #{Time.now - now} seconds for #{display_name} with '#{pid}' to terminate"
       end
 
