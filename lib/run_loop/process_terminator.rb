@@ -131,7 +131,7 @@ module RunLoop
         puts "Waited for #{Time.now - now} seconds for #{display_name} with '#{pid}' to terminate"
       end
 
-      if @options[:raise_on_no_terminate] and not has_terminated
+      if @options[:raise_on_no_terminate] and !has_terminated
         raise "Waited #{options[:timeout]} seconds for #{display_name} (#{ps_details}) to terminate"
       end
       has_terminated
