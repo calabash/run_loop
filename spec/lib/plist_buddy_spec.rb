@@ -10,6 +10,13 @@ describe RunLoop::PlistBuddy do
     end
   end
 
+  it '#create_plist' do
+    path = File.join(Dir.mktmpdir, 'foo.plist')
+    pbuddy.create_plist(path)
+    expect(File.exist?(path)).to be_truthy
+    expect(File.open(path).read).not_to be == ''
+  end
+
   describe '#build_plist_cmd' do
 
     before(:each) do

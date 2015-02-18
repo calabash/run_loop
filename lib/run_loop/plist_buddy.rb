@@ -68,6 +68,23 @@ module RunLoop
       res == ''
     end
 
+    # Creates an new empty plist at `path`.
+    #
+    # Is not responsible for creating directories or ensuring write permissions.
+    #
+    # @param [String] path Where to create the new plist.
+    def create_plist(path)
+      File.open(path, 'w') do |file|
+        file.puts "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        file.puts "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
+        file.puts "<plist version=\"1.0\">"
+        file.puts '<dict>'
+        file.puts '</dict>'
+        file.puts '</plist>'
+      end
+      path
+    end
+
     private
 
     # returns the path to the PlistBuddy executable
@@ -168,6 +185,5 @@ module RunLoop
 
       "#{plist_buddy} -c #{cmd_part} \"#{file}\""
     end
-
   end
 end
