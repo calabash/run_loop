@@ -904,8 +904,8 @@ module RunLoop
       sim_details = sim_details(:udid)
 
       simctl_erase = lambda { |udid|
-        cmd = "xcrun simctl erase #{udid}"
-        Open3.popen3(cmd) do  |_, stdout,  stderr, wait_thr|
+        args = "simctl erase #{udid}".split(' ')
+        Open3.popen3('xcrun', *args) do  |_, stdout,  stderr, wait_thr|
           out = stdout.read.strip
           err = stderr.read.strip
           if ENV['DEBUG_UNIX_CALLS'] == '1'
