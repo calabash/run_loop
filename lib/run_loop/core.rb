@@ -329,15 +329,6 @@ module RunLoop
       dylib_path
     end
 
-    def self.find_cf_bundle_executable(bundle_dir_or_bundle_id)
-      unless File.directory?(bundle_dir_or_bundle_id)
-        raise "Injecting dylibs currently only works with simulator and app bundles"
-      end
-      info_plist = Dir[File.join(bundle_dir_or_bundle_id, 'Info.plist')].first
-      raise "Unable to find Info.plist in #{bundle_dir_or_bundle_id}" if info_plist.nil?
-      `/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "#{info_plist}"`.strip
-    end
-
     # Returns the a default simulator to target.  This default needs to be one
     # that installed by default in the current Xcode version.
     #
