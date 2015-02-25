@@ -371,20 +371,25 @@ class Resources
 
   def kill_owned_lldb_processes
     return if @lldb_process_pids.nil?
-    @lldb_process_pids.each do |pid|
-      Process.kill('TERM', pid)
-      begin
-        Process.wait(pid)
-      rescue Errno::ECHILD => e
-        # ignore this
+    begin
+      @lldb_process_pids.each do |pid|
+        Process.kill('TERM', pid)
+        begin
+          Process.wait(pid)
+        rescue Errno::ESRCH => _
+          # ignore this
+        rescue Errno::ECHILD => _
+          # ignore this
+        end
       end
+    ensure
+      @lldb_process_pids = []
     end
-    @lldb_process_pids = []
   end
 
   def kill_lldb_processes
     kill_owned_lldb_processes
-    Open3.popen3('xcrun killall -9 lldb') do |_, _, _, _|
+    Open3.popen3('xcrun', *['killall', '-9', 'lldb']) do |_, _, _, _|
     end
   end
 
