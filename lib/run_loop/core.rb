@@ -158,7 +158,6 @@ module RunLoop
 
       script = File.join(results_dir, '_run_loop.js')
 
-
       code = File.read(options[:script])
       code = code.gsub(/\$PATH/, results_dir)
       code = code.gsub(/\$READ_SCRIPT_PATH/, READ_SCRIPT_PATH)
@@ -186,10 +185,6 @@ module RunLoop
       udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options, xctools)
 
       args = options.fetch(:args, [])
-
-      inject_dylib = self.dylib_path_from_options options
-      # WIP This is brute-force call against all lldb processes.
-      self.ensure_lldb_not_running if inject_dylib
 
       log_file ||= File.join(results_dir, 'run_loop.out')
 
@@ -239,7 +234,6 @@ module RunLoop
 
       uia_timeout = options[:uia_timeout] || (ENV['UIA_TIMEOUT'] && ENV['UIA_TIMEOUT'].to_f) || 10
 
-      raw_lldb_output = nil
       before = Time.now
       begin
 
@@ -252,63 +246,25 @@ module RunLoop
             read_response(run_loop, 0, uia_timeout)
           end
         end
-
-        # inject_dylib will be nil or a path to a dylib
-        if inject_dylib
-          lldb_template_file = File.join(scripts_path, 'calabash.lldb.erb')
-          lldb_template = ::ERB.new(File.read(lldb_template_file))
-          lldb_template.filename = lldb_template_file
-
-          # Special!
-          # These are required by the ERB in calabash.lldb.erb
-          # noinspection RubyUnusedLocalVariable
-          cf_bundle_executable = find_cf_bundle_executable(bundle_dir_or_bundle_id)
-          # noinspection RubyUnusedLocalVariable
-          dylib_path_for_target = inject_dylib
-
-          lldb_cmd = lldb_template.result(binding)
-
-          tmpdir = Dir.mktmpdir('lldb_cmd')
-          lldb_script = File.join(tmpdir, 'lldb')
-
-          File.open(lldb_script, 'w') { |f| f.puts(lldb_cmd) }
-
-          if ENV['DEBUG'] == '1'
-            puts "lldb script #{lldb_script}"
-            puts "=== lldb script ==="
-            counter = 0
-            File.open(lldb_script, 'r').readlines.each { |line|
-              puts "#{counter} #{line}"
-              counter = counter + 1
-            }
-            puts "=== lldb script ==="
-          end
-
-          # Forcing a timeout.  Do not retry here.  If lldb is hanging,
-          # RunLoop::Core.run* needs to be called again.  Put another way,
-          # instruments and lldb must be terminated.
-          Retriable.retriable({:tries => 1, :timeout => 12, :interval => 1}) do
-            raw_lldb_output = `xcrun lldb -s #{lldb_script}`
-            if ENV['DEBUG'] == '1'
-              puts raw_lldb_output
-            end
-          end
-        end
       rescue TimeoutError => e
         if ENV['DEBUG'] == '1'
           puts "Failed to launch."
           puts "#{e}: #{e && e.message}"
-          if raw_lldb_output
-            puts "LLDB OUTPUT: #{raw_lldb_output}"
-          end
         end
         raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
 
-      after = Time.now()
-
       if ENV['DEBUG']=='1'
-        puts "Launching took #{after-before} seconds"
+        puts "Launching took #{Time.now-before} seconds"
+      end
+
+      dylib_path = self.dylib_path_from_options(merged_options)
+
+      if dylib_path
+        RunLoop::LLDB.kill_lldb_processes
+        app = RunLoop::App.new(options[:app])
+        lldb = RunLoop::DylibInjector.new(app.executable_name, dylib_path)
+        lldb.retriable_inject_dylib
       end
 
       run_loop
@@ -380,15 +336,6 @@ module RunLoop
         raise "Cannot load dylib.  The file '#{dylib_path}' does not exist."
       end
       dylib_path
-    end
-
-    def self.find_cf_bundle_executable(bundle_dir_or_bundle_id)
-      unless File.directory?(bundle_dir_or_bundle_id)
-        raise "Injecting dylibs currently only works with simulator and app bundles"
-      end
-      info_plist = Dir[File.join(bundle_dir_or_bundle_id, 'Info.plist')].first
-      raise "Unable to find Info.plist in #{bundle_dir_or_bundle_id}" if info_plist.nil?
-      `/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "#{info_plist}"`.strip
     end
 
     # Returns the a default simulator to target.  This default needs to be one
@@ -667,22 +614,6 @@ module RunLoop
     # @deprecated 1.0.5
     def self.instruments_pids
       RunLoop::Instruments.new.instruments_pids
-    end
-
-    # @todo This is a WIP
-    # @todo Needs rspec test
-    def self.ensure_lldb_not_running
-      descripts = `xcrun ps x -o pid,command | grep "lldb" | grep -v grep`.strip.split("\n")
-      descripts.each do |process_desc|
-        pid = process_desc.split(' ').first
-        Open3.popen3("xcrun kill -9 #{pid} && xcrun wait #{pid}") do |_, stdout, stderr, _|
-          out = stdout.read.strip
-          err = stderr.read.strip
-          next if out.to_s.empty? and err.to_s.empty?
-          # there lots of 'ownership' problems trying to kill the lldb process
-          #puts "kill process '#{pid}' => stdout: '#{out}' | stderr: '#{err}'"
-        end
-      end
     end
   end
 

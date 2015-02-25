@@ -17,6 +17,16 @@ class Resources
     travis_ci? ? 8 : 2
   end
 
+  def with_debugging(&block)
+    original_value = ENV['DEBUG']
+    ENV['DEBUG'] = '1'
+    begin
+      block.call
+    ensure
+      ENV['DEBUG'] = original_value
+    end
+  end
+
   def current_xcode_version
     @current_xcode_version ||= RunLoop::XCTools.new.xcode_version
   end
@@ -340,4 +350,47 @@ class Resources
       end
     end
   end
+
+  def infinite_lldb_script
+    @infinite_lldb_script ||= File.expand_path(File.join(resources_dir, 'infinite.lldb'))
+  end
+
+  def spawn_lldb_process
+    pid = Process.fork
+    if pid.nil?
+      args = ['lldb', '--no-lldbinit', '--source', infinite_lldb_script]
+      redirect_io = {:out => '/dev/null', :err => '/dev/null'}
+      exec('xcrun', *args, redirect_io)
+    else
+      @lldb_process_pids ||= []
+      @lldb_process_pids << pid
+      Process.detach(pid)
+    end
+    pid.to_i
+  end
+
+  def kill_owned_lldb_processes
+    return if @lldb_process_pids.nil?
+    begin
+      @lldb_process_pids.each do |pid|
+        Process.kill('TERM', pid)
+        begin
+          Process.wait(pid)
+        rescue Errno::ESRCH => _
+          # ignore this
+        rescue Errno::ECHILD => _
+          # ignore this
+        end
+      end
+    ensure
+      @lldb_process_pids = []
+    end
+  end
+
+  def kill_lldb_processes
+    kill_owned_lldb_processes
+    Open3.popen3('xcrun', *['killall', '-9', 'lldb']) do |_, _, _, _|
+    end
+  end
+
 end
