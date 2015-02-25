@@ -264,7 +264,7 @@ module RunLoop
         RunLoop::LLDB.kill_lldb_processes
         app = RunLoop::App.new(options[:app])
         lldb = RunLoop::DylibInjector.new(app.executable_name, dylib_path)
-        lldb.inject_dylib
+        lldb.retriable_inject_dylib
       end
 
       run_loop
