@@ -2,7 +2,11 @@
 
 ### 1.2.7
 
-* #121 In multi-user environments, `/tmp/run_loop_host_cache` causes permissions issues @onfoot
+* Support raw JavaScript calls to UIPickerView classes #134
+* Install and launch an app with simctl #132
+* Xcode 6.3 beta support #127
+* Better instruments process spawn/termination #123, #128, #129
+* In multi-user environments, `/tmp/run_loop_host_cache` causes permissions issues #121 @onfoot
 
 ### 1.2.6
 
