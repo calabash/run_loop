@@ -5,8 +5,8 @@
 ### Supported Xcode Versions
 
 * Xcode >= 5.1.1
-* Xcode 6.0, 6.0.1
-* Xcode 6.1
+* Xcode 6.0.1, 6.1.1
+* Xcode 6.2b5, 6.3b1 # experimental
 
 ### License
 
@@ -33,25 +33,8 @@ At this time, there is no reason to update.
 
 - [1] https://github.com/vaskas/udidetect/pull/3
 
-### new Xcode 6 programs
-
-* simctl
-* sim
-* projectInfo
 
 ### Tests
-
-###### Failing Tests
-
-```
-1) RunLoop regression: injecting a dylib targeting the simulator with Xcode 6.0
-```
-
-###### Unstable Tests
-
-```
-2) RunLoop regression: running on physical devices Xcode 6.0
-```
 
 #### CI
 
@@ -76,7 +59,8 @@ Take a break because these test launch and quit the simulator multiple times whi
 
 #### Device Testing
 
-Each connected device running iOS 6.0 <= iOS < 8.0 is targeted with one test.
+* Requires ideviceinstaller
+* Each connected device running iOS 6.0 <= iOS < 8.* is targeted with one test.
 
 ##### Regression vs. Xcode version
 
@@ -85,17 +69,19 @@ If you have alternative Xcode installs that look like this:
 ```
 /Xcode/5.1/Xcode.app
 /Xcode/5.1.1/Xcode.app
-/Xcode/6b6/Xcode6-Beta6.app
+/Xcode/6.1.1/Xcode.app
+/Xcode/6.2/Xcode-Beta.app
+/Xcode/6.3/Xcode-Beta.app
 ```
 
-The rspec tests will do regression testing against each version.
+the rspec tests will do regression testing against each version.
 
 ##### Guard
 
 Requires MacOS Growl - available in the AppStore.
 
 ```
-$ bundle exec guard  start --no-interactions
+$ bundle exec guard start
 ```
 
 Most of the tests that involve launching the simulator are not run in Guard.
