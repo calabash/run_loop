@@ -17,6 +17,16 @@ class Resources
     travis_ci? ? 8 : 2
   end
 
+  def with_debugging(&block)
+    original_value = ENV['DEBUG']
+    ENV['DEBUG'] = '1'
+    begin
+      block.call
+    ensure
+      ENV['DEBUG'] = original_value
+    end
+  end
+
   def current_xcode_version
     @current_xcode_version ||= RunLoop::XCTools.new.xcode_version
   end
