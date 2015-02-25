@@ -17,12 +17,26 @@ class Resources
     travis_ci? ? 8 : 2
   end
 
+  def with_debugging(&block)
+    original_value = ENV['DEBUG']
+    ENV['DEBUG'] = '1'
+    begin
+      block.call
+    ensure
+      ENV['DEBUG'] = original_value
+    end
+  end
+
   def current_xcode_version
     @current_xcode_version ||= RunLoop::XCTools.new.xcode_version
   end
 
   def resources_dir
     @resources_dir = File.expand_path(File.join(File.dirname(__FILE__),  'resources'))
+  end
+
+  def infinite_run_loop_script
+    @infinite_run_loop_script = File.expand_path(File.join(resources_dir, 'infinite_run_loop.js'))
   end
 
   def cal_app_bundle_path
@@ -262,6 +276,7 @@ class Resources
       @fake_instruments_pids << pid
       Process.detach(pid)
     end
+    pid.to_i
   end
 
   def kill_fake_instruments_process
@@ -274,7 +289,9 @@ class Resources
 
   def incompatible_xcode_ios_version(device_version, xcode_version)
     [(device_version >= RunLoop::Version.new('8.0') and xcode_version < RunLoop::Version.new('6.0')),
-     (device_version >= RunLoop::Version.new('8.1') and xcode_version < RunLoop::Version.new('6.1'))].any?
+     (device_version >= RunLoop::Version.new('8.1') and xcode_version < RunLoop::Version.new('6.1')),
+     (device_version >= RunLoop::Version.new('8.2') and xcode_version < RunLoop::Version.new('6.2')),
+     (device_version >= RunLoop::Version.new('8.3') and xcode_version < RunLoop::Version.new('6.3'))].any?
   end
 
   def idevice_id_bin_path
@@ -329,8 +346,51 @@ class Resources
       process_description = tokens[1..-1].join(' ')
       if process_description[/Instruments\.app/, 0]
         Process.kill('TERM', pid.to_i)
-        instruments_obj.instance_eval {  wait_for_process_to_terminate pid.to_i }
+        RunLoop::ProcessTerminator.new(pid, 'TERM', 'Instruments.app').kill_process
       end
     end
   end
+
+  def infinite_lldb_script
+    @infinite_lldb_script ||= File.expand_path(File.join(resources_dir, 'infinite.lldb'))
+  end
+
+  def spawn_lldb_process
+    pid = Process.fork
+    if pid.nil?
+      args = ['lldb', '--no-lldbinit', '--source', infinite_lldb_script]
+      redirect_io = {:out => '/dev/null', :err => '/dev/null'}
+      exec('xcrun', *args, redirect_io)
+    else
+      @lldb_process_pids ||= []
+      @lldb_process_pids << pid
+      Process.detach(pid)
+    end
+    pid.to_i
+  end
+
+  def kill_owned_lldb_processes
+    return if @lldb_process_pids.nil?
+    begin
+      @lldb_process_pids.each do |pid|
+        Process.kill('TERM', pid)
+        begin
+          Process.wait(pid)
+        rescue Errno::ESRCH => _
+          # ignore this
+        rescue Errno::ECHILD => _
+          # ignore this
+        end
+      end
+    ensure
+      @lldb_process_pids = []
+    end
+  end
+
+  def kill_lldb_processes
+    kill_owned_lldb_processes
+    Open3.popen3('xcrun', *['killall', '-9', 'lldb']) do |_, _, _, _|
+    end
+  end
+
 end

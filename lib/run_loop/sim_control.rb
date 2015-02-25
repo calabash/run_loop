@@ -324,7 +324,7 @@ module RunLoop
         sims = []
         hash.each_pair do |sdk, list|
           list.each do |details|
-            sims << RunLoop::Device.new(details[:name], sdk, details[:udid])
+            sims << RunLoop::Device.new(details[:name], sdk, details[:udid], details[:state])
           end
         end
         sims
@@ -733,7 +733,7 @@ module RunLoop
           end
         end
         success
-        end
+      end
       res.all?
     end
 
@@ -904,8 +904,8 @@ module RunLoop
       sim_details = sim_details(:udid)
 
       simctl_erase = lambda { |udid|
-        cmd = "xcrun simctl erase #{udid}"
-        Open3.popen3(cmd) do  |_, stdout,  stderr, wait_thr|
+        args = "simctl erase #{udid}".split(' ')
+        Open3.popen3('xcrun', *args) do  |_, stdout,  stderr, wait_thr|
           out = stdout.read.strip
           err = stderr.read.strip
           if ENV['DEBUG_UNIX_CALLS'] == '1'

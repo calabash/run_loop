@@ -269,8 +269,8 @@ describe RunLoop::SimControl do
 
     if RunLoop::XCTools.new.xcode_version_gte_6?
       it 'resets the _all_ simulators when sim_udid is nil' do
-        expect( sim_control.instance_eval { simctl_reset }).to be == true
-        sim_details = sim_control.instance_eval { sim_details(:udid) }
+        expect(sim_control.send(:simctl_reset)).to be == true
+        sim_details = sim_control.send(:sim_details, :udid)
         sim_details.each_key { |udid|
           containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
           expect(File.exist? containers_dir).to be == false

@@ -1,5 +1,13 @@
 ## Change Log
 
+### 1.2.7
+
+* Support raw JavaScript calls to UIPickerView classes #134
+* Install and launch an app with simctl #132
+* Xcode 6.3 beta support #127
+* Better instruments process spawn/termination #123, #128, #129
+* In multi-user environments, `/tmp/run_loop_host_cache` causes permissions issues #121 @onfoot
+
 ### 1.2.6
 
 * #118 rollback awesome print dependency to match android

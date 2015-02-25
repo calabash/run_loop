@@ -3,8 +3,6 @@ module RunLoop
   # A class for interacting with the instruments command-line tool
   #
   # @note All instruments commands are run in the context of `xcrun`.
-  #
-  # @todo Detect Instruments.app is running and pop an alert.
   class Instruments
 
     # Returns an Array of instruments process ids.
@@ -38,31 +36,11 @@ module RunLoop
     #  what version of Xcode is active.
     def kill_instruments(xcode_tools = RunLoop::XCTools.new)
       kill_signal = kill_signal xcode_tools
-      # It is difficult to test using a block.
       instruments_pids.each do |pid|
-        begin
-          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
-            puts "Sending '#{kill_signal}' to instruments process '#{pid}'"
-          end
-          Process.kill(kill_signal, pid.to_i)
-          Process.wait(pid, Process::WNOHANG)
-        rescue Exception => e
-          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX'] == '1'
-            puts "Could not kill and wait for process '#{pid.to_i}' - ignoring exception '#{e}'"
-          end
-        end
-
-        # Process.wait or `wait` here is pointless.  The pid may or may not be
-        # a child of this Process.
-        begin
-          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
-            puts "Waiting for instruments '#{pid}' to terminate"
-          end
-          wait_for_process_to_terminate(pid, {:timeout => 2.0})
-        rescue Exception => e
-          if ENV['DEBUG'] == '1' or ENV['DEBUG_UNIX_CALLS'] == '1'
-            puts "Ignoring #{e.message}"
-          end
+        terminator = RunLoop::ProcessTerminator.new(pid, kill_signal, 'instruments')
+        unless terminator.kill_process
+          terminator = RunLoop::ProcessTerminator.new(pid, 'KILL', 'instruments')
+          terminator.kill_process
         end
       end
     end
@@ -80,7 +58,58 @@ module RunLoop
       end
     end
 
+    # Spawn a new instruments process in the context of `xcrun` and detach.
+    #
+    # @param [String] automation_template The template instruments will use when
+    #  launching the application.
+    # @param [Hash] options The launch options.
+    # @param [String] log_file The file to log to.
+    # @return [Integer] Returns the process id of the instruments process.
+    # @todo Do I need to enumerate the launch options in the docs?
+    # @todo Should this raise errors?
+    # @todo Is this jruby compatible?
+    def spawn(automation_template, options, log_file)
+      splat_args = spawn_arguments(automation_template, options)
+      if ENV['DEBUG'] == '1'
+        puts  "#{Time.now} xcrun #{splat_args.join(' ')} >& #{log_file}"
+        $stdout.flush
+      end
+      pid = Process.spawn('xcrun', *splat_args, {:out => log_file, :err => log_file})
+      Process.detach(pid)
+      pid.to_i
+    end
+
     private
+
+    # @!visibility private
+    # Parses the run-loop options hash into an array of arguments that can be
+    # passed to `Process.spawn` to launch instruments.
+    def spawn_arguments(automation_template, options)
+      array = ['instruments']
+      array << '-w'
+      array << options[:udid]
+
+      trace = options[:results_dir_trace]
+      if trace
+        array << '-D'
+        array << trace
+      end
+
+      array << '-t'
+      array << automation_template
+
+      array << options[:bundle_dir_or_bundle_id]
+
+      {
+            'UIARESULTSPATH' => options[:results_dir],
+            'UIASCRIPT' => options[:script]
+      }.each do |key, value|
+        array << '-e'
+        array << key
+        array << value
+      end
+      array + options.fetch(:args, [])
+    end
 
     # @!visibility private
     #
@@ -96,7 +125,7 @@ module RunLoop
     # $ ps x -o pid,command | grep -v grep | grep instruments
     # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
     # ```
-    FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
+    INSTRUMENTS_FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
     #
@@ -106,7 +135,7 @@ module RunLoop
     #  processes.
     # @return [String] A ps-style list of process details.  The details returned
     #  are controlled by the `ps_cmd`.
-    def ps_for_instruments(ps_cmd=FIND_PIDS_CMD)
+    def ps_for_instruments(ps_cmd=INSTRUMENTS_FIND_PIDS_CMD)
       `#{ps_cmd}`.strip
     end
 
@@ -117,8 +146,7 @@ module RunLoop
     # @return [Boolean] True if the details describe an instruments process.
     def is_instruments_process?(ps_details)
       return false if ps_details.nil?
-      (ps_details[/\/usr\/bin\/instruments/, 0] or
-            ps_details[/sh -c xcrun instruments/, 0]) != nil
+      ps_details[/\/usr\/bin\/instruments/, 0] != nil
     end
 
     # @!visibility private
@@ -129,7 +157,7 @@ module RunLoop
     #  processes.
     # @return [Array<Integer>] An array of integer pids for instruments
     #  processes.  Returns an empty list if no instruments process are found.
-    def pids_from_ps_output(ps_cmd=FIND_PIDS_CMD)
+    def pids_from_ps_output(ps_cmd=INSTRUMENTS_FIND_PIDS_CMD)
       ps_output = ps_for_instruments(ps_cmd)
       lines = ps_output.lines("\n").map { |line| line.strip }
       lines.map do |line|
@@ -165,40 +193,6 @@ module RunLoop
     #  version.
     def kill_signal(xcode_tools = RunLoop::XCTools.new)
       xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
-    end
-
-    # @!visibility private
-    # Wait for Unix process with id `pid` to terminate.
-    #
-    # @param [Integer] pid The id of the process we are waiting on.
-    # @param [Hash] options Values to control the behavior of this method.
-    # @option options [Float] :timeout (2.0) How long to wait for the process to
-    #  terminate.
-    # @option options [Float] :interval (0.1) The polling interval.
-    # @option options [Boolean] :raise_on_no_terminate (false) Should an error
-    #  be raised if process does not terminate.
-    # @raise [RuntimeError] If process does not terminate and
-    #  options[:raise_on_no_terminate] is truthy.
-    def wait_for_process_to_terminate(pid, options={})
-      default_opts = {:timeout => 2.0,
-                      :interval => 0.1,
-                      :raise_on_no_terminate => false}
-      merged_opts = default_opts.merge(options)
-
-      cmd = "ps #{pid} -o pid | grep #{pid}"
-      poll_until = Time.now + merged_opts[:timeout]
-      delay = merged_opts[:interval]
-      has_terminated = false
-      while Time.now < poll_until
-        has_terminated = `#{cmd}`.strip == ''
-        break if has_terminated
-        sleep delay
-      end
-
-      if merged_opts[:raise_on_no_terminate] and not has_terminated
-        details = `ps -p #{pid} -o pid,comm | grep #{pid}`.strip
-        raise RuntimeError, "Waited #{merged_opts[:timeout]} s for process '#{details}' to terminate"
-      end
     end
   end
 end
