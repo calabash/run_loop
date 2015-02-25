@@ -31,6 +31,7 @@ describe RunLoop::LLDB do
 
     it 'returns array of integers when there are lldb processes' do
       Resources.shared.spawn_lldb_process
+      RunLoop::ProcessWaiter.new('lldb').wait_for_any
       expect(RunLoop::LLDB.lldb_pids.length).to be == 1
     end
   end
