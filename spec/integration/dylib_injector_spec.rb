@@ -1,3 +1,4 @@
+unless Resources.shared.travis_ci?
 describe RunLoop::DylibInjector do
 
   def select_random_shutdown_sim
@@ -65,4 +66,5 @@ describe RunLoop::DylibInjector do
       end
     end
   end
+end
 end
