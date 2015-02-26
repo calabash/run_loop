@@ -4,6 +4,12 @@ describe RunLoop::XCTools do
 
   describe '#instruments' do
     describe 'when argument is' do
+
+      it ':version it returns cli version' do
+        version = xctools.instruments(:version)
+        expect(version >= RunLoop::Version.new('5.1')).to be true
+      end
+
       it ':sims it returns list of installed simulators' do
         expect(xctools.instruments :sims).to be_a Array
       end
