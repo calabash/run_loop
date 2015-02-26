@@ -47,49 +47,6 @@ describe RunLoop::Core do
       expect(xctools).to receive(:instruments).with(:templates).and_return(templates)
       expect { RunLoop::Core.default_tracetemplate(xctools) }.to raise_error
     end
-
-    describe 'returns a template for' do
-      it "Xcode #{Resources.shared.current_xcode_version}" do
-        xctools = RunLoop::XCTools.new
-        default_template = RunLoop::Core.default_tracetemplate(xctools)
-        if xctools.xcode_version_gte_6?
-          if xctools.xcode_is_beta?
-            expect(File.exist?(default_template)).to be true
-          else
-            expect(default_template).to be == 'Automation'
-          end
-        else
-          expect(File.exist?(default_template)).to be true
-        end
-      end
-
-      describe 'regression' do
-        xcode_installs = Resources.shared.alt_xcode_details_hash
-        if xcode_installs.empty?
-          it 'no alternative versions of Xcode found' do
-            expect(true).to be == true
-          end
-        else
-          xcode_installs.each do |xcode_details|
-            it "#{xcode_details[:path]} - #{xcode_details[:version]}" do
-              Resources.shared.with_developer_dir(xcode_details[:path]) {
-                xctools = RunLoop::XCTools.new
-                default_template = RunLoop::Core.default_tracetemplate(xctools)
-                if xctools.xcode_version_gte_6?
-                  if xctools.xcode_is_beta?
-                    expect(File.exist?(default_template)).to be true
-                  else
-                    expect(default_template).to be == 'Automation'
-                  end
-                else
-                  expect(File.exist?(default_template)).to be true
-                end
-              }
-            end
-          end
-        end
-      end
-    end
   end
 
   describe '.default_simulator' do
