@@ -34,9 +34,7 @@ module RunLoop
     def self.kill_lldb_processes
       self.lldb_pids.each do |pid|
         unless self.kill_with_signal(pid, 'TERM')
-          unless self.kill_with_signal(pid, 'QUIT')
-            self.kill_with_signal(pid, 'KILL')
-          end
+          self.kill_with_signal(pid, 'KILL')
         end
       end
     end
