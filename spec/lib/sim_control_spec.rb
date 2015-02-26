@@ -198,22 +198,6 @@ describe RunLoop::SimControl do
         end
       end
     end
-
-    if RunLoop::XCTools.new.xcode_version_gte_6?
-      describe 'returns a hash with the primary key' do
-        it ':udid' do
-          actual = sim_control.instance_eval { sim_details :udid }
-          expect(actual).to be_a Hash
-          expect(actual.count).to be > 1
-        end
-
-        it ':launch_name' do
-          actual = sim_control.instance_eval { sim_details :launch_name }
-          expect(actual).to be_a Hash
-          expect(actual.count).to be > 1
-        end
-      end
-    end
   end
 
   describe '#simctl_list' do

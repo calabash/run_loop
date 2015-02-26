@@ -169,20 +169,6 @@ describe RunLoop::SimControl do
   end
 
   describe '#sims_details' do
-    describe 'raises an error when called' do
-      it 'on XCode < 6' do
-        local_sim_control = RunLoop::SimControl.new
-        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-        expect { local_sim_control.instance_eval { sim_details(:any_arg) } }.to raise_error RuntimeError
-      end
-
-      if RunLoop::XCTools.new.xcode_version_gte_6?
-        it 'is passed an invalid argument' do
-          expect { sim_control.instance_eval { sim_details(:invalid_arg) } }.to raise_error ArgumentError
-        end
-      end
-    end
-
     if RunLoop::XCTools.new.xcode_version_gte_6?
       describe 'returns a hash with the primary key' do
         it ':udid' do
