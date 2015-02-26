@@ -308,40 +308,40 @@ describe RunLoop::Core do
         expect { RunLoop::Core.simulator_target?([]) }.to raise_error TypeError
         expect { RunLoop::Core.simulator_target?(nil) }.to raise_error NoMethodError
       end
+    end
 
-      describe 'returns true when' do
-        it 'there is no :device_target key' do
-          expect(RunLoop::Core.simulator_target?({})).to be == true
-        end
+    describe 'returns true when' do
+      it 'there is no :device_target key' do
+        expect(RunLoop::Core.simulator_target?({})).to be == true
+      end
 
-        it ":device_target => 'simulator'" do
-          options = { :device_target => 'simulator' }
+      it ":device_target => 'simulator'" do
+        options = { :device_target => 'simulator' }
+        expect(RunLoop::Core.simulator_target?(options)).to be == true
+      end
+
+      it ":device_target => ''" do
+        options = { :device_target => '' }
+        expect(RunLoop::Core.simulator_target?(options)).to be == true
+      end
+
+      describe ":device_target => contains the word 'simulator'" do
+        it 'Xcode >= 6.0' do
+          options = { :device_target => 'iPhone 5 (8.0 Simulator)' }
           expect(RunLoop::Core.simulator_target?(options)).to be == true
         end
 
-        it ":device_target => ''" do
-          options = { :device_target => '' }
+        it '5.1 <= Xcode <= 5.1.1' do
+          options = { :device_target => 'iPhone Retina (4-inch) - Simulator - iOS 7.1' }
           expect(RunLoop::Core.simulator_target?(options)).to be == true
         end
+      end
 
-        describe ":device_target => contains the word 'simulator'" do
-          it 'Xcode >= 6.0' do
-            options = { :device_target => 'iPhone 5 (8.0 Simulator)' }
+      if RunLoop::XCTools.new.xcode_version_gte_6?
+        describe 'Xcode 6 behaviors' do
+          it ":device_target => Xcode 6 simulator UDID" do
+            options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
             expect(RunLoop::Core.simulator_target?(options)).to be == true
-          end
-
-          it '5.1 <= Xcode <= 5.1.1' do
-            options = { :device_target => 'iPhone Retina (4-inch) - Simulator - iOS 7.1' }
-            expect(RunLoop::Core.simulator_target?(options)).to be == true
-          end
-        end
-
-        if RunLoop::XCTools.new.xcode_version_gte_6?
-          describe 'Xcode 6 behaviors' do
-            it ":device_target => Xcode 6 simulator UDID" do
-              options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
-              expect(RunLoop::Core.simulator_target?(options)).to be == true
-            end
           end
         end
       end
