@@ -2,6 +2,27 @@ require 'tmpdir'
 
 describe RunLoop::Core do
 
+  before(:each) { ENV.delete('TRACE_TEMPLATE') }
+
+  describe '.automation_template' do
+
+    after(:each) { ENV.delete('TRACE_TEMPLATE') }
+
+    it 'ignores the TRACE_TEMPLATE env var if the tracetemplate does not exist' do
+      tracetemplate = '/tmp/some.tracetemplate'
+      ENV['TRACE_TEMPLATE']=tracetemplate
+      xctools = RunLoop::XCTools.new
+      actual = RunLoop::Core.automation_template(xctools)
+      expect(actual).not_to be == nil
+      expect(actual).not_to be == tracetemplate
+      if xctools.xcode_version_gte_6?
+        expect(actual).to be == 'Automation'
+      else
+        expect(File.exist?(actual)).to be == true
+      end
+    end
+  end
+
   describe '.simulator_target?' do
     if RunLoop::XCTools.new.xcode_version_gte_6?
       describe "named simulator" do
