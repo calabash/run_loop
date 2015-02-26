@@ -36,7 +36,7 @@ module RunLoop
     end
 
     def self.log_run_loop_options(options, xctools)
-      return unless ENV['DEBUG'] == '1'
+      return unless RunLoop::Environment.debug?
       # Ignore :sim_control b/c it is a ruby object; printing is not useful.
       ignored_keys = [:sim_control]
       options_to_log = {}
@@ -117,12 +117,12 @@ module RunLoop
 
         lipo = RunLoop::Lipo.new(launch_options[:bundle_dir_or_bundle_id])
         lipo.expect_compatible_arch(simulator)
-        if ENV['DEBUG'] == '1'
+        if RunLoop::Environment.debug?
           puts "Simulator instruction set '#{simulator.instruction_set}' is compatible with #{lipo.info}"
         end
         true
       else
-        if ENV['DEBUG'] == '1'
+        if RunLoop::Environment.debug?
           puts "Xcode #{sim_control.xctools.xcode_version} detected; skipping simulator architecture check."
         end
         false
@@ -189,7 +189,7 @@ module RunLoop
       log_file ||= File.join(results_dir, 'run_loop.out')
 
       after = Time.now
-      if ENV['DEBUG'] == '1'
+      if RunLoop::Environment.debug?
         puts "Preparation took #{after-before} seconds"
       end
 
@@ -247,14 +247,14 @@ module RunLoop
           end
         end
       rescue TimeoutError => e
-        if ENV['DEBUG'] == '1'
+        if RunLoop::Environment.debug?
           puts "Failed to launch."
           puts "#{e}: #{e && e.message}"
         end
         raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
 
-      if ENV['DEBUG']=='1'
+      if RunLoop::Environment.debug?
         puts "Launching took #{Time.now-before} seconds"
       end
 
@@ -437,7 +437,7 @@ module RunLoop
       repl_path = run_loop[:repl_path]
       index = run_loop[:index]
       cmd_str = "#{index}:#{escape_host_command(cmd)}"
-      should_log = (ENV['DEBUG'] == '1')
+      should_log = RunLoop::Environment.debug?
       RunLoop.log_info(logger, cmd_str) if should_log
       write_succeeded = false
       2.times do |i|
@@ -589,14 +589,14 @@ module RunLoop
     end
 
     def self.log(message)
-      if ENV['DEBUG']=='1'
+      if RunLoop::Environment.debug?
         puts "#{Time.now } #{message}"
         $stdout.flush
       end
     end
 
     def self.log_header(message)
-      if ENV['DEBUG']=='1'
+      if RunLoop::Environment.debug?
         puts "\n\e[#{35}m### #{message} ###\e[0m"
         $stdout.flush
       end
@@ -780,7 +780,7 @@ module RunLoop
     if logger && logger.respond_to?(:info)
       logger.info(msg)
     else
-      puts msg if ENV['DEBUG'] == '1'
+      puts msg if RunLoop::Environment.debug?
     end
   end
 end

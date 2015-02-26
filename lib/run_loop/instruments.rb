@@ -70,7 +70,7 @@ module RunLoop
     # @todo Is this jruby compatible?
     def spawn(automation_template, options, log_file)
       splat_args = spawn_arguments(automation_template, options)
-      if ENV['DEBUG'] == '1'
+      if RunLoop::Environment.debug?
         puts  "#{Time.now} xcrun #{splat_args.join(' ')} >& #{log_file}"
         $stdout.flush
       end
