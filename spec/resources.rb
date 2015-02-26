@@ -373,14 +373,7 @@ class Resources
     return if @lldb_process_pids.nil?
     begin
       @lldb_process_pids.each do |pid|
-        Process.kill('TERM', pid)
-        begin
-          Process.wait(pid)
-        rescue Errno::ESRCH => _
-          # ignore this
-        rescue Errno::ECHILD => _
-          # ignore this
-        end
+        RunLoop::ProcessTerminator.new(pid, 'KILL', 'lldb').kill_process
       end
     ensure
       @lldb_process_pids = []

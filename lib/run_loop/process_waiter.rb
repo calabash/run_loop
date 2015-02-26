@@ -23,6 +23,44 @@ module RunLoop
       !pids.empty?
     end
 
+    # Wait for a number of process to start.
+    # @param [Integer] n The number of processes to wait for.
+    # @raise [ArgumentError] If n < 0
+    # @raise [ArgumentError] If n is not an Integer
+    def wait_for_n(n)
+      unless n.is_a?(Integer)
+        raise ArgumentError, "Expected #{n.class} to be #{1.class}"
+      end
+
+      unless n > 0
+        raise ArgumentError, "Expected #{n} to be > 0"
+      end
+
+      return true if pids.count == n
+
+      now = Time.now
+      poll_until = now + @options[:timeout]
+      delay = @options[:interval]
+      there_are_n = false
+      while Time.now < poll_until
+        there_are_n = pids.count == n
+        break if there_are_n
+        sleep delay
+      end
+
+      if RunLoop::Environment.debug?
+        plural = n > 1 ? "es" : ''
+        puts "Waited for #{Time.now - now} seconds for #{n} '#{process_name}' process#{plural} to start."
+      end
+
+      if @options[:raise_on_timeout] and !there_are_n
+        plural = n > 1 ? "es" : ''
+        raise "Waited #{@options[:timeout]} seconds for #{n} '#{process_name}' process#{plural} to start."
+      end
+      there_are_n
+    end
+
+
     # Wait for `process_name` to start.
     def wait_for_any
       return true if running_process?
