@@ -265,13 +265,11 @@ describe RunLoop::Core do
             :uia_strategy => :preferences,
       }
     }
+
     let(:xctools) { RunLoop::XCTools.new }
 
-    before(:each) { ENV.delete('DEBUG') }
-    after(:each) { ENV.delete('DEBUG') }
-
     it "when DEBUG != '1' it logs nothing" do
-      ENV['DEBUG'] = '0'
+      stub_env('DEBUG', '0')
       out = capture_stdout do
         RunLoop::Core.log_run_loop_options(options, xctools)
       end
@@ -279,7 +277,7 @@ describe RunLoop::Core do
     end
 
     describe "when DEBUG == '1'" do
-      before(:each) { ENV['DEBUG'] = '1' }
+      before(:each) { stub_env('DEBUG', '1') }
       it 'does some logging' do
         out = capture_stdout do
           RunLoop::Core.log_run_loop_options(options, xctools)
