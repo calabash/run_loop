@@ -2,9 +2,7 @@ require 'tmpdir'
 
 describe RunLoop::Core do
 
-  before(:each) {
-    ENV.delete('TRACE_TEMPLATE')
-  }
+  before(:each) { ENV.delete('TRACE_TEMPLATE')  }
 
   describe '.automation_template' do
 
@@ -17,20 +15,6 @@ describe RunLoop::Core do
       ENV['TRACE_TEMPLATE']=tracetemplate
       xctools = RunLoop::XCTools.new
       expect(RunLoop::Core.automation_template xctools).to be == tracetemplate
-    end
-
-    it 'ignores the TRACE_TEMPLATE env var if the tracetemplate does not exist' do
-      tracetemplate = '/tmp/some.tracetemplate'
-      ENV['TRACE_TEMPLATE']=tracetemplate
-      xctools = RunLoop::XCTools.new
-      actual = RunLoop::Core.automation_template(xctools)
-      expect(actual).not_to be == nil
-      expect(actual).not_to be == tracetemplate
-      if xctools.xcode_version_gte_6?
-        expect(actual).to be == 'Automation'
-      else
-        expect(File.exist?(actual)).to be == true
-      end
     end
   end
 
@@ -46,49 +30,6 @@ describe RunLoop::Core do
             ]
       expect(xctools).to receive(:instruments).with(:templates).and_return(templates)
       expect { RunLoop::Core.default_tracetemplate(xctools) }.to raise_error
-    end
-
-    describe 'returns a template for' do
-      it "Xcode #{Resources.shared.current_xcode_version}" do
-        xctools = RunLoop::XCTools.new
-        default_template = RunLoop::Core.default_tracetemplate(xctools)
-        if xctools.xcode_version_gte_6?
-          if xctools.xcode_is_beta?
-            expect(File.exist?(default_template)).to be true
-          else
-            expect(default_template).to be == 'Automation'
-          end
-        else
-          expect(File.exist?(default_template)).to be true
-        end
-      end
-
-      describe 'regression' do
-        xcode_installs = Resources.shared.alt_xcode_details_hash
-        if xcode_installs.empty?
-          it 'no alternative versions of Xcode found' do
-            expect(true).to be == true
-          end
-        else
-          xcode_installs.each do |xcode_details|
-            it "#{xcode_details[:path]} - #{xcode_details[:version]}" do
-              Resources.shared.with_developer_dir(xcode_details[:path]) {
-                xctools = RunLoop::XCTools.new
-                default_template = RunLoop::Core.default_tracetemplate(xctools)
-                if xctools.xcode_version_gte_6?
-                  if xctools.xcode_is_beta?
-                    expect(File.exist?(default_template)).to be true
-                  else
-                    expect(default_template).to be == 'Automation'
-                  end
-                else
-                  expect(File.exist?(default_template)).to be true
-                end
-              }
-            end
-          end
-        end
-      end
     end
   end
 
@@ -308,76 +249,40 @@ describe RunLoop::Core do
         expect { RunLoop::Core.simulator_target?([]) }.to raise_error TypeError
         expect { RunLoop::Core.simulator_target?(nil) }.to raise_error NoMethodError
       end
+    end
 
-      describe 'returns true when' do
-        it 'there is no :device_target key' do
-          expect(RunLoop::Core.simulator_target?({})).to be == true
-        end
+    describe 'returns true when' do
+      it 'there is no :device_target key' do
+        expect(RunLoop::Core.simulator_target?({})).to be == true
+      end
 
-        it ":device_target => 'simulator'" do
-          options = { :device_target => 'simulator' }
+      it ":device_target => 'simulator'" do
+        options = { :device_target => 'simulator' }
+        expect(RunLoop::Core.simulator_target?(options)).to be == true
+      end
+
+      it ":device_target => ''" do
+        options = { :device_target => '' }
+        expect(RunLoop::Core.simulator_target?(options)).to be == true
+      end
+
+      describe ":device_target => contains the word 'simulator'" do
+        it 'Xcode >= 6.0' do
+          options = { :device_target => 'iPhone 5 (8.0 Simulator)' }
           expect(RunLoop::Core.simulator_target?(options)).to be == true
         end
 
-        it ":device_target => ''" do
-          options = { :device_target => '' }
+        it '5.1 <= Xcode <= 5.1.1' do
+          options = { :device_target => 'iPhone Retina (4-inch) - Simulator - iOS 7.1' }
           expect(RunLoop::Core.simulator_target?(options)).to be == true
         end
+      end
 
-        describe ":device_target => contains the word 'simulator'" do
-          it 'Xcode >= 6.0' do
-            options = { :device_target => 'iPhone 5 (8.0 Simulator)' }
+      if RunLoop::XCTools.new.xcode_version_gte_6?
+        describe 'Xcode 6 behaviors' do
+          it ":device_target => Xcode 6 simulator UDID" do
+            options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
             expect(RunLoop::Core.simulator_target?(options)).to be == true
-          end
-
-          it '5.1 <= Xcode <= 5.1.1' do
-            options = { :device_target => 'iPhone Retina (4-inch) - Simulator - iOS 7.1' }
-            expect(RunLoop::Core.simulator_target?(options)).to be == true
-          end
-        end
-
-        if RunLoop::XCTools.new.xcode_version_gte_6?
-          describe 'Xcode 6 behaviors' do
-            it ":device_target => Xcode 6 simulator UDID" do
-              options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
-              expect(RunLoop::Core.simulator_target?(options)).to be == true
-            end
-          end
-
-          describe "named simulator" do
-
-            after(:each) do
-              pid = fork do
-                local_sim_control = RunLoop::SimControl.new
-                simulators = local_sim_control.simulators
-                simulators.each do |device|
-                  if device.name == 'rspec-test-device'
-                    udid = device.udid
-                    `xcrun simctl delete #{udid}`
-                    exit!
-                  end
-                end
-              end
-              sleep(1)
-              Process.kill('QUIT', pid)
-            end
-
-            it ":device_target => 'rspec-test-device'" do
-              device_type_id = 'iPhone 5s'
-              if RunLoop::XCTools.new.xcode_version_gte_61?
-                runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-1'
-              else
-                runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
-              end
-              cmd = "xcrun simctl create rspec-test-device \"#{device_type_id}\" \"#{runtime_id}\""
-              udid = `#{cmd}`.strip
-              sleep 2
-              exit_code = $?.exitstatus
-              expect(udid).to_not be == nil
-              expect(exit_code).to be == 0
-              options = { :device_target => 'rspec-test-device' }
-              expect(RunLoop::Core.simulator_target?(options)).to be == true
-            end
           end
         end
       end
