@@ -183,7 +183,7 @@ module RunLoop
       log_file ||= File.join(results_dir, 'run_loop.out')
 
       after = Time.now
-      RunLoop::Logger.log_debug(logger, "Preparation took #{after-before} seconds")
+      RunLoop::Logging.log_debug(logger, "Preparation took #{after-before} seconds")
 
       discovered_options =
             {
@@ -244,7 +244,7 @@ module RunLoop
       end
 
       RunLoop::Logging.log_debug(logger, "Launching took #{Time.now-before} seconds")
-      
+
       dylib_path = self.dylib_path_from_options(merged_options)
 
       if dylib_path
