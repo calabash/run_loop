@@ -236,7 +236,8 @@ module RunLoop
         else
           cmd = "UIALogger.logMessage('Listening for run loop commands')"
           begin
-            RunLoop::Fifo.write(repl_path, "0:#{cmd}")
+            fifo_timeout = options[:fifo_timeout] || 30
+            RunLoop::Fifo.write(repl_path, "0:#{cmd}", timeout: fifo_timeout)
           rescue RunLoop::Fifo::NoReaderConfiguredError,
               RunLoop::Fifo::WriteTimedOut => e
             RunLoop::Logging.log_debug(logger, "Error while writing to fifo. #{e}")
