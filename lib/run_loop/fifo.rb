@@ -10,6 +10,7 @@ module RunLoop
     end
 
     def self.write(pipe, msg, options={})
+      msg = "#{msg}\n"
       timeout = options[:timeout] || 10
       begin_at = Time.now
       begin
