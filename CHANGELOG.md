@@ -1,5 +1,9 @@
 ## Change Log
 
+### 1.2.8
+* Support for providing a logger in the options parameter to most methods
+* Non-blocking writes prevent occasional hang in run app
+
 ### 1.2.7
 
 * Support raw JavaScript calls to UIPickerView classes #134
