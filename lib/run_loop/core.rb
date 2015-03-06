@@ -474,6 +474,8 @@ module RunLoop
     end
 
     def self.read_response(run_loop, expected_index, empty_file_timeout=10, search_for_property='index')
+      debug_read = RunLoop::Environment.debug_read?
+
       log_file = run_loop[:log_file]
       initial_offset = run_loop[:initial_offset] || 0
       offset = initial_offset
@@ -499,7 +501,7 @@ module RunLoop
           raise RunLoop::TimeoutError.new('Exception while running script')
         end
         index_if_found = output.index(START_DELIMITER)
-        if ENV['DEBUG_READ']=='1'
+        if debug_read
           puts output.gsub('*', '')
           puts "Size #{size}"
           puts "offset #{offset}"
@@ -521,7 +523,7 @@ module RunLoop
           json = rest[0..index_of_json]
 
 
-          if ENV['DEBUG_READ']=='1'
+          if debug_read
             puts "Index #{index_if_found}, Size: #{size} Offset #{offset}"
 
             puts ("parse #{json}")
@@ -529,7 +531,7 @@ module RunLoop
 
           offset = offset + json.size
           parsed_result = JSON.parse(json)
-          if ENV['DEBUG_READ']=='1'
+          if debug_read
             p parsed_result
           end
           json_index_if_present = parsed_result[search_for_property]

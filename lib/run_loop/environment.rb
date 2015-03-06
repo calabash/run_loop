@@ -12,6 +12,12 @@ module RunLoop
       ENV['DEBUG'] == '1'
     end
 
+    # Returns true if read debugging is enabled.
+    def self.debug_read?
+      ENV['DEBUG_READ'] == '1'
+    end
+
+    # Returns true if we are running on the XTC
     def self.xtc?
       ENV['XAMARIN_TEST_CLOUD'] == '1'
     end

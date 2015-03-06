@@ -22,6 +22,18 @@ describe RunLoop::Environment do
     end
   end
 
+  describe '.debug_read?' do
+    it "returns true when DEBUG_READ == '1'" do
+      stub_env('DEBUG_READ', '1')
+      expect(RunLoop::Environment.debug_read?).to be == true
+    end
+
+    it "returns false when DEBUG_READ != '1'" do
+      stub_env('DEBUG_READ', 1)
+      expect(RunLoop::Environment.debug_read?).to be == false
+    end
+  end
+
   describe '.xtc?' do
     it "returns true when XAMARIN_TEST_CLOUD == '1'" do
       stub_env('XAMARIN_TEST_CLOUD', '1')
