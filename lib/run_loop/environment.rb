@@ -15,5 +15,9 @@ module RunLoop
     def self.xtc?
       ENV['XAMARIN_TEST_CLOUD'] == '1'
     end
+
+    def self.trace_template
+      ENV['TRACE_TEMPLATE']
+    end
   end
 end

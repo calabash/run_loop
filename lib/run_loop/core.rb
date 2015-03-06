@@ -552,7 +552,7 @@ module RunLoop
       RunLoop::Instruments.new.instruments_pids(&block)
     end
 
-    def self.automation_template(xctools, candidate = ENV['TRACE_TEMPLATE'])
+    def self.automation_template(xctools, candidate = RunLoop::Environment.trace_template)
       unless candidate && File.exist?(candidate)
         candidate = default_tracetemplate xctools
       end

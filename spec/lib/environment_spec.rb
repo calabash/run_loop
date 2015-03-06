@@ -33,4 +33,9 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment.xtc?).to be == false
     end
   end
+
+  it '.trace_template' do
+    stub_env('TRACE_TEMPLATE', '/my/tracetemplate')
+    expect(RunLoop::Environment.trace_template).to be == '/my/tracetemplate'
+  end
 end
