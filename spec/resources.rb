@@ -13,6 +13,10 @@ class Resources
     @travis_ci ||= ENV['TRAVIS'].to_s == 'true'
   end
 
+  def whoami
+    @whoami ||= ENV['USER'].strip
+  end
+
   def launch_retries
     travis_ci? ? 8 : 2
   end
