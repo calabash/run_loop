@@ -594,7 +594,6 @@ module RunLoop
     #   updated.
     # @raise [RuntimeError] If called when Xcode 6 is the active Xcode version.
     def enable_accessibility_in_sdk_dir(app_support_sdk_dir, opts={})
-      logger = opts[:logger]
 
       if xcode_version_gte_6?
         raise RuntimeError, 'it is illegal to call this method when Xcode >= 6 is the current Xcode version'
@@ -622,7 +621,7 @@ module RunLoop
                 value = settings[:value]
               end
               msgs << "could not set #{hash_key} => '#{settings[:key]}' to #{value}"
-              RunLoop::Logging.log_info(logger,"WARN: #{msgs.join("\n")}")
+              puts "WARN: #{msgs.join("\n")}"
             end
           end
           success
@@ -678,7 +677,6 @@ module RunLoop
     #   updated or if the directory was skipped (see code comments).
     # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
     def enable_accessibility_in_sim_data_dir(sim_data_dir, sim_details_keyed_with_udid, opts={})
-      logger = opts[:logger]
       unless xcode_version_gte_6?
         raise RuntimeError, 'it is illegal to call this method when the Xcode < 6 is the current Xcode version'
       end
@@ -696,9 +694,8 @@ module RunLoop
       if simulator_details.nil?
         if verbose
           xcode_version = xctools.xcode_version
-          msg = ["INFO: Skipping '#{target_udid}' directory because",
-                 "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
-          RunLoop::Logging.log_info(logger, msg)
+          puts ["INFO: Skipping '#{target_udid}' directory because",
+                "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
         end
         return true
       end
@@ -732,7 +729,7 @@ module RunLoop
               value = settings[:value]
             end
             msgs << "could not set #{hash_key} => '#{settings[:key]}' to #{value}"
-            RunLoop::Logging.log_info(logger, "WARN: #{msgs.join("\n")}")
+            puts "WARN: #{msgs.join("\n")}"
           end
         end
         success
@@ -765,7 +762,7 @@ module RunLoop
     #  updated or if the directory was skipped (see code comments).
     # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
     def enable_keyboard_in_sim_data_dir(sim_data_dir, sim_details_keyed_with_udid, opts={})
-      logger = opts[:logger]
+
       unless xcode_version_gte_6?
         raise RuntimeError, 'it is illegal to call this method when the Xcode < 6 is the current Xcode version'
       end
@@ -787,9 +784,8 @@ module RunLoop
       if simulator_details.nil?
         if verbose
           xcode_version = xctools.xcode_version
-          msg = ["INFO: Skipping '#{target_udid}' directory because",
+          puts ["INFO: Skipping '#{target_udid}' directory because",
                 "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
-          RunLoop::Logging.log_info(logger, msg)
         end
         return true
       end
@@ -811,7 +807,7 @@ module RunLoop
       unless success
         if verbose
           msgs << "could not set #{hash[:key]} => '#{hash[:key]}' to #{hash[:value]}"
-          RunLoop::Logging.log_info(logger, "WARN: #{msgs.join("\n")}")
+          puts "WARN: #{msgs.join("\n")}"
         end
       end
 
