@@ -243,7 +243,6 @@ module RunLoop
             RunLoop::Logging.log_debug(logger, "Error while writing to fifo. #{e}")
             raise RunLoop::TimeoutError.new("Error while writing to fifo. #{e}")
           end
-          File.open(repl_path, 'w') { |file| file.puts  }
           Timeout::timeout(timeout, RunLoop::TimeoutError) do
             read_response(run_loop, 0, uia_timeout)
           end
