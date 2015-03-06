@@ -226,7 +226,7 @@ module RunLoop
                   :log_file => log_file,
                   :results_dir => results_dir}
 
-      uia_timeout = options[:uia_timeout] || (ENV['UIA_TIMEOUT'] && ENV['UIA_TIMEOUT'].to_f) || 10
+      uia_timeout = options[:uia_timeout] || RunLoop::Environment.uia_timeout || 10
 
       before = Time.now
       begin

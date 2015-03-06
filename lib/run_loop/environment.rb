@@ -22,8 +22,19 @@ module RunLoop
       ENV['XAMARIN_TEST_CLOUD'] == '1'
     end
 
+    # Returns the value of TRACE_TEMPLATE; the Instruments template to use
+    # during testing.
     def self.trace_template
       ENV['TRACE_TEMPLATE']
+    end
+
+    # Returns the value of UIA_TIMEOUT.  Use this control how long to wait
+    # for instruments to launch and attach to your application.
+    #
+    # Non-empty values are converted to a float.
+    def self.uia_timeout
+      timeout = ENV['UIA_TIMEOUT']
+      timeout ? timeout.to_f : nil
     end
   end
 end

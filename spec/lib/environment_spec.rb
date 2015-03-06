@@ -50,4 +50,19 @@ describe RunLoop::Environment do
     stub_env('TRACE_TEMPLATE', '/my/tracetemplate')
     expect(RunLoop::Environment.trace_template).to be == '/my/tracetemplate'
   end
+
+  describe '.uia_timeout' do
+    it 'returns the value of UIA_TIMEOUT' do
+      stub_env('UIA_TIMEOUT', 10.0)
+      expect(RunLoop::Environment.uia_timeout).to be == 10.0
+    end
+
+    it 'converts non-floats to floats' do
+      stub_env('UIA_TIMEOUT', '10.0')
+      expect(RunLoop::Environment.uia_timeout).to be == 10.0
+
+      stub_env('UIA_TIMEOUT', 10)
+      expect(RunLoop::Environment.uia_timeout).to be == 10.0
+    end
+  end
 end
