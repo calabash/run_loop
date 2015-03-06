@@ -762,6 +762,7 @@ module RunLoop
     #  updated or if the directory was skipped (see code comments).
     # @raise [RuntimeError] If called when Xcode 6 is _not_ the active Xcode version.
     def enable_keyboard_in_sim_data_dir(sim_data_dir, sim_details_keyed_with_udid, opts={})
+
       unless xcode_version_gte_6?
         raise RuntimeError, 'it is illegal to call this method when the Xcode < 6 is the current Xcode version'
       end

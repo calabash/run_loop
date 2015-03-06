@@ -11,5 +11,9 @@ module RunLoop
     def self.debug?
       ENV['DEBUG'] == '1'
     end
+
+    def self.xtc?
+      ENV['XAMARIN_TEST_CLOUD'] == '1'
+    end
   end
 end
