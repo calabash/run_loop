@@ -96,4 +96,10 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment.path_to_app_bundle).to be == abp
     end
   end
+
+  it '.developer_dir' do
+    stub_env('DEVELOPER_DIR', '/some/xcode/path')
+    expect(RunLoop::Environment.developer_dir).to be == '/some/xcode/path'
+  end
+
 end

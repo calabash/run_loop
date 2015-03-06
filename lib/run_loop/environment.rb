@@ -50,5 +50,13 @@ module RunLoop
     def self.path_to_app_bundle
       ENV['APP_BUNDLE_PATH'] || ENV['APP']
     end
+
+    # Returns the value of DEVELOPER_DIR
+    #
+    # @note Never call this directly.  Always create an XCTool instance
+    #   and allow it to derive the path to the Xcode toolchain.
+    def self.developer_dir
+      ENV['DEVELOPER_DIR']
+    end
   end
 end

@@ -125,8 +125,8 @@ module RunLoop
     # @return [String] path to current developer directory
     def xcode_developer_dir
       @xcode_developer_dir ||=
-            if ENV['DEVELOPER_DIR']
-              ENV['DEVELOPER_DIR']
+            if RunLoop::Environment.developer_dir
+              RunLoop::Environment.developer_dir
             else
               # fall back to xcode-select
               `xcode-select --print-path`.chomp
