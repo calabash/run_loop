@@ -41,5 +41,14 @@ module RunLoop
     def self.bundle_id
       ENV['BUNDLE_ID']
     end
+
+    # Returns to the path to the app bundle (simulator builds).
+    #
+    # Both APP_BUNDLE_PATH and APP are checked and in that order.
+    #
+    # Use of APP_BUNDLE_PATH is deprecated and will be removed.
+    def self.path_to_app_bundle
+      ENV['APP_BUNDLE_PATH'] || ENV['APP']
+    end
   end
 end

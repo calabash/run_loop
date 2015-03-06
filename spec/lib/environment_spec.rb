@@ -71,4 +71,29 @@ describe RunLoop::Environment do
     expect(RunLoop::Environment.bundle_id).to be == 'com.example.Foo'
   end
 
+  describe '.path_to_app_bundle' do
+    let (:abp) { '/my/app/bundle/path.app' }
+    describe 'only one is defined' do
+      it 'APP_BUNDLE_PATH' do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return(abp)
+        allow(ENV).to receive(:[]).with('APP').and_return(nil)
+        expect(RunLoop::Environment.path_to_app_bundle).to be == abp
+      end
+
+      it 'APP' do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return(nil)
+        allow(ENV).to receive(:[]).with('APP').and_return(abp)
+        expect(RunLoop::Environment.path_to_app_bundle).to be == abp
+      end
+    end
+
+    it 'when both APP_BUNDLE_PATH and APP are defined, the first takes precedence' do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return(abp)
+      allow(ENV).to receive(:[]).with('APP').and_return('/some/other/path.app')
+      expect(RunLoop::Environment.path_to_app_bundle).to be == abp
+    end
+  end
 end
