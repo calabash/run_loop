@@ -356,7 +356,7 @@ module RunLoop
     end
 
     def self.udid_and_bundle_for_launcher(device_target, options, xctools=RunLoop::XCTools.new)
-      bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
+      bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || ENV['APP_BUNDLE_PATH'] || ENV['APP']
 
       unless bundle_dir_or_bundle_id
         raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'

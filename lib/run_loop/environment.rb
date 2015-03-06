@@ -36,5 +36,10 @@ module RunLoop
       timeout = ENV['UIA_TIMEOUT']
       timeout ? timeout.to_f : nil
     end
+
+    # Returns the value of BUNDLE_ID
+    def self.bundle_id
+      ENV['BUNDLE_ID']
+    end
   end
 end

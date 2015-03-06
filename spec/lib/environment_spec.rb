@@ -65,4 +65,10 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment.uia_timeout).to be == 10.0
     end
   end
+
+  it '.bundle_id' do
+    stub_env('BUNDLE_ID', 'com.example.Foo')
+    expect(RunLoop::Environment.bundle_id).to be == 'com.example.Foo'
+  end
+
 end
