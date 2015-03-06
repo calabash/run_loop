@@ -1,4 +1,4 @@
-unless Resources.shared.travis_ci?
+if !Resources.shared.travis_ci? && Resources.shared.whoami == 'moody'
 describe RunLoop::DylibInjector do
 
   def select_random_shutdown_sim

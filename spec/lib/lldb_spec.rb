@@ -1,7 +1,5 @@
 describe RunLoop::LLDB do
 
-  before (:each) { Resources.shared.kill_lldb_processes }
-
   context '.is_lldb_process?' do
     it 'return true when passed an invocation of lldb' do
       ps_details = '/Xcode/6.1.1/Xcode.app/Contents/Developer/usr/bin/lldb'
@@ -21,18 +19,14 @@ describe RunLoop::LLDB do
         expect(RunLoop::LLDB.is_lldb_process?(ps_details)).to be_falsey
       end
     end
-
   end
 
-  describe '.lldb_pids' do
-    it 'returns empty list when there are no lldb processes' do
-      expect(RunLoop::LLDB.lldb_pids).to be == []
-    end
-
-    it 'returns array of integers when there are lldb processes' do
-      Resources.shared.spawn_lldb_process
-      RunLoop::ProcessWaiter.new('lldb').wait_for_any
-      expect(RunLoop::LLDB.lldb_pids.length).to be == 1
-    end
+  it '.kill_lldb_processes' do
+    expect(RunLoop::LLDB).to receive(:lldb_pids).and_return([1, 2])
+    expect(RunLoop::LLDB).to receive(:kill_with_signal).with(1, 'TERM').exactly(1).times.and_return(false)
+    expect(RunLoop::LLDB).to receive(:kill_with_signal).with(1, 'KILL').exactly(1).times.and_return(true)
+    expect(RunLoop::LLDB).to receive(:kill_with_signal).with(2, 'TERM').exactly(1).times.and_return(false)
+    expect(RunLoop::LLDB).to receive(:kill_with_signal).with(2, 'KILL').exactly(1).times.and_return(true)
+    expect(RunLoop::LLDB.kill_lldb_processes).to be_truthy
   end
 end

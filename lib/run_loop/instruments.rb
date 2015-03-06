@@ -70,10 +70,8 @@ module RunLoop
     # @todo Is this jruby compatible?
     def spawn(automation_template, options, log_file)
       splat_args = spawn_arguments(automation_template, options)
-      if ENV['DEBUG'] == '1'
-        puts  "#{Time.now} xcrun #{splat_args.join(' ')} >& #{log_file}"
-        $stdout.flush
-      end
+      logger = options[:logger]
+      RunLoop::Logging.log_debug(logger, "xcrun #{splat_args.join(' ')} >& #{log_file}")
       pid = Process.spawn('xcrun', *splat_args, {:out => log_file, :err => log_file})
       Process.detach(pid)
       pid.to_i
