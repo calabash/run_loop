@@ -74,10 +74,10 @@ module RunLoop
 
     def self.detect_connected_device
       begin
-        Timeout::timeout(1, TimeoutError) do
+        Timeout::timeout(1, RunLoop::TimeoutError) do
           return `#{File.join(scripts_path, 'udidetect')}`.chomp
         end
-      rescue TimeoutError => _
+      rescue RunLoop::TimeoutError => _
         `killall udidetect &> /dev/null`
       end
       nil
@@ -165,6 +165,8 @@ module RunLoop
       if uia_strategy == :host
         create_uia_pipe(repl_path)
         RunLoop::HostCache.default.clear unless RunLoop::Environment.xtc?
+      else
+        FileUtils.touch repl_path
       end
 
       cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
@@ -233,14 +235,22 @@ module RunLoop
           options[:validate_channel].call(run_loop, 0, uia_timeout)
         else
           cmd = "UIALogger.logMessage('Listening for run loop commands')"
-          File.open(repl_path, 'w') { |file| file.puts "0:#{cmd}" }
-          Timeout::timeout(timeout, TimeoutError) do
+          begin
+            fifo_timeout = options[:fifo_timeout] || 30
+            RunLoop::Fifo.write(repl_path, "0:#{cmd}", timeout: fifo_timeout)
+          rescue RunLoop::Fifo::NoReaderConfiguredError,
+              RunLoop::Fifo::WriteTimedOut => e
+            RunLoop::Logging.log_debug(logger, "Error while writing to fifo. #{e}")
+            raise RunLoop::TimeoutError.new("Error while writing to fifo. #{e}")
+          end
+          File.open(repl_path, 'w') { |file| file.puts  }
+          Timeout::timeout(timeout, RunLoop::TimeoutError) do
             read_response(run_loop, 0, uia_timeout)
           end
         end
-      rescue TimeoutError => e
+      rescue RunLoop::TimeoutError => e
         RunLoop::Logging.log_debug(logger, "Failed to launch. #{e}: #{e && e.message}")
-        raise TimeoutError, "Time out waiting for UIAutomation run-loop to Start. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
+        raise RunLoop::TimeoutError, "Time out waiting for UIAutomation run-loop #{e}. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
 
       RunLoop::Logging.log_debug(logger, "Launching took #{Time.now-before} seconds")
@@ -400,7 +410,7 @@ module RunLoop
 
     def self.create_uia_pipe(repl_path)
       begin
-        Timeout::timeout(5, TimeoutError) do
+        Timeout::timeout(5, RunLoop::TimeoutError) do
           loop do
             begin
               FileUtils.rm_f(repl_path)
@@ -411,8 +421,8 @@ module RunLoop
             end
           end
         end
-      rescue TimeoutError => _
-        raise TimeoutError, 'Unable to create pipe (mkfifo failed)'
+      rescue RunLoop::TimeoutError => _
+        raise RunLoop::TimeoutError, 'Unable to create pipe (mkfifo failed)'
       end
     end
 
@@ -428,8 +438,13 @@ module RunLoop
       write_succeeded = false
       2.times do |i|
         RunLoop::Logging.log_debug(logger, "Trying write of command #{cmd_str} at index #{index}")
-        File.open(repl_path, 'w') { |f| f.puts(cmd_str) }
-        write_succeeded = validate_index_written(run_loop, index, logger)
+        begin
+          RunLoop::Fifo.write(repl_path, cmd_str)
+          write_succeeded = validate_index_written(run_loop, index, logger)
+        rescue RunLoop::Fifo::NoReaderConfiguredError,
+               RunLoop::Fifo::WriteTimedOut => e
+          RunLoop::Logging.log_debug(logger, "Error while writing command (retry count #{i}). #{e}")
+        end
         break if write_succeeded
       end
       unless write_succeeded
@@ -443,12 +458,12 @@ module RunLoop
 
     def self.validate_index_written(run_loop, index, logger)
       begin
-        Timeout::timeout(10, TimeoutError) do
+        Timeout::timeout(10, RunLoop::TimeoutError) do
           Core.read_response(run_loop, index, 10, 'last_index')
         end
         RunLoop::Logging.log_debug(logger, "validate index written for index #{index} ok")
         return true
-      rescue TimeoutError => _
+      rescue RunLoop::TimeoutError => _
         RunLoop::Logging.log_debug(logger, "validate index written for index #{index} failed. Retrying.")
         return false
       end
@@ -479,10 +494,10 @@ module RunLoop
             $stderr.puts "\n\n****** Accessibility is not enabled on device/simulator, please enable it *** \n\n"
             $stderr.flush
           end
-          raise TimeoutError.new('AXError: Could not auto-register for pid status change')
+          raise RunLoop::TimeoutError.new('AXError: Could not auto-register for pid status change')
         end
         if /Automation Instrument ran into an exception/.match(output)
-          raise TimeoutError.new('Exception while running script')
+          raise RunLoop::TimeoutError.new('Exception while running script')
         end
         index_if_found = output.index(START_DELIMITER)
         if ENV['DEBUG_READ']=='1'
