@@ -910,6 +910,7 @@ module RunLoop
           out = stdout.read.strip
           err = stderr.read.strip
           if ENV['DEBUG_UNIX_CALLS'] == '1'
+            cmd = "xcrun simctl erase #{udid}"
             puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
           end
           wait_thr.value.success?
