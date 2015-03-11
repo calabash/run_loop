@@ -998,6 +998,7 @@ module RunLoop
         current_sdk = nil
         res = {}
         out.split("\n").each do |line|
+
           possible_sdk = line[/(\d\.\d(\.\d)?)/,0]
           if possible_sdk
             current_sdk = possible_sdk
@@ -1005,11 +1006,19 @@ module RunLoop
             next
           end
 
+          unavailable_skd = line[/Unavailable/, 0]
+          if unavailable_skd
+            current_sdk = nil
+            next
+          end
+
           if current_sdk
-            name = line.split('(').first.strip
-            udid = line[XCODE_6_SIM_UDID_REGEX,0]
-            state = line[/(Booted|Shutdown)/,0]
-            res[current_sdk] << {:name => name, :udid => udid, :state => state}
+            unless line[/unavailable/,0]
+              name = line.split('(').first.strip
+              udid = line[XCODE_6_SIM_UDID_REGEX,0]
+              state = line[/(Booted|Shutdown)/,0]
+              res[current_sdk] << {:name => name, :udid => udid, :state => state}
+            end
           end
         end
         res
