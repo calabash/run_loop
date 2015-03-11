@@ -987,11 +987,12 @@ module RunLoop
     #  base sdk version.
     # @see #simctl_list
     def simctl_list_devices
-      cmd = 'xcrun simctl list devices'
-      Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+      args = 'simctl list devices'.split(' ')
+      Open3.popen3('xcrun', *args) do  |_, stdout,  stderr, _|
         out = stdout.read.strip
         err = stderr.read.strip
         if ENV['DEBUG_UNIX_CALLS'] == '1'
+          cmd = "xcrun #{args.join(' ')}"
           puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
         end
 
