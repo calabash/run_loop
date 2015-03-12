@@ -372,7 +372,7 @@ module RunLoop
         end
         udid = device_target
 
-        unless /simulator/i.match(device_target)
+        unless self.simulator_target?(options, sim_control)
           bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
         end
       else
