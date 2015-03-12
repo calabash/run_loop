@@ -49,4 +49,26 @@ describe RunLoop do
       end
     end
   end
+
+  if Resources.shared.current_xcode_version >= RunLoop::Version.new('6.0')
+    it 'launching on a sim with CoreSimulator UDID' do
+      sim_control = RunLoop::SimControl.new
+      sim_control.reset_sim_content_and_settings
+      simulator = sim_control.simulators.sample(1).first
+      udid = simulator.udid
+
+      options =
+            {
+                  :app => Resources.shared.cal_app_bundle_path,
+                  :device_target => udid,
+                  :sim_control => sim_control
+            }
+
+      hash = nil
+      Retriable.retriable({:tries => Resources.shared.launch_retries}) do
+        hash = RunLoop.run(options)
+      end
+      expect(hash).not_to be nil
+    end
+  end
 end
