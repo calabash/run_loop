@@ -129,11 +129,14 @@ describe RunLoop::SimControl do
           end
           break if sdk8_udid and sdk7_udid
         end
-        it 'and sdk < 8.0' do
-          sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{sdk7_udid}/data"))
-          plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
-          expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
-          expect(File.exist?(plist_path)).to be == true
+
+        unless Resources.shared.travis_ci?
+          it 'and sdk < 8.0' do
+            sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{sdk7_udid}/data"))
+            plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+            expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+            expect(File.exist?(plist_path)).to be == true
+          end
         end
 
         it 'and sdk >= 8.0' do
