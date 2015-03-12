@@ -1049,11 +1049,12 @@ module RunLoop
     def simctl_list_runtimes
       # The 'com.apple.CoreSimulator.SimRuntime.iOS-7-0' is the runtime-id,
       # which can be used to create devices.
-      cmd = 'xcrun simctl list runtimes'
-      Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+      args = 'simctl list runtimes'.split(' ')
+      Open3.popen3('xcrun', *args) do  |_, stdout,  stderr, _|
         out = stdout.read.strip
         err = stderr.read.strip
         if ENV['DEBUG_UNIX_CALLS'] == '1'
+          cmd = "xcrun #{args.join(' ')}"
           puts "#{cmd}  => stdout: '#{out}' | stderr: '#{err}'"
         end
         # Ex.
