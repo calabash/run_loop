@@ -2,17 +2,13 @@ require 'tmpdir'
 
 describe RunLoop::Core do
 
-  before(:each) { ENV.delete('TRACE_TEMPLATE')  }
-
   describe '.automation_template' do
-
-    after(:each) { ENV.delete('TRACE_TEMPLATE') }
 
     it 'respects the TRACE_TEMPLATE env var if the tracetemplate exists' do
       dir = Dir.mktmpdir('tracetemplate')
       tracetemplate = File.expand_path(File.join(dir, 'some.tracetemplate'))
       FileUtils.touch tracetemplate
-      ENV['TRACE_TEMPLATE']=tracetemplate
+      expect(RunLoop::Environment).to receive(:trace_template).and_return(tracetemplate)
       xctools = RunLoop::XCTools.new
       expect(RunLoop::Core.automation_template xctools).to be == tracetemplate
     end
