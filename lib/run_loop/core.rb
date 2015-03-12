@@ -178,7 +178,7 @@ module RunLoop
       end
 
       # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
-      udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options, xctools)
+      udid, bundle_dir_or_bundle_id = self.udid_and_bundle_for_launcher(device_target, options, sim_control)
 
       args = options.fetch(:args, [])
 
@@ -355,7 +355,9 @@ module RunLoop
       end
     end
 
-    def self.udid_and_bundle_for_launcher(device_target, options, xctools=RunLoop::XCTools.new)
+    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
+      xctools = sim_control.xctools
+
       bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
 
       unless bundle_dir_or_bundle_id
