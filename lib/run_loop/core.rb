@@ -184,9 +184,6 @@ module RunLoop
 
       log_file ||= File.join(results_dir, 'run_loop.out')
 
-      after = Time.now
-      RunLoop::Logging.log_debug(logger, "Preparation took #{after-before} seconds")
-
       discovered_options =
             {
                   :udid => udid,
@@ -227,6 +224,9 @@ module RunLoop
                   :results_dir => results_dir}
 
       uia_timeout = options[:uia_timeout] || RunLoop::Environment.uia_timeout || 10
+
+      after = Time.now
+      RunLoop::Logging.log_debug(logger, "Preparation took #{after-before} seconds")
 
       before = Time.now
       begin
