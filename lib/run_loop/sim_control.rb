@@ -910,6 +910,7 @@ module RunLoop
           out = stdout.read.strip
           err = stderr.read.strip
           if ENV['DEBUG_UNIX_CALLS'] == '1'
+            cmd = "xcrun simctl erase #{udid}"
             puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
           end
           wait_thr.value.success?
@@ -986,17 +987,19 @@ module RunLoop
     #  base sdk version.
     # @see #simctl_list
     def simctl_list_devices
-      cmd = 'xcrun simctl list devices'
-      Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+      args = 'simctl list devices'.split(' ')
+      Open3.popen3('xcrun', *args) do  |_, stdout,  stderr, _|
         out = stdout.read.strip
         err = stderr.read.strip
         if ENV['DEBUG_UNIX_CALLS'] == '1'
+          cmd = "xcrun #{args.join(' ')}"
           puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
         end
 
         current_sdk = nil
         res = {}
         out.split("\n").each do |line|
+
           possible_sdk = line[/(\d\.\d(\.\d)?)/,0]
           if possible_sdk
             current_sdk = possible_sdk
@@ -1004,11 +1007,19 @@ module RunLoop
             next
           end
 
+          unavailable_skd = line[/Unavailable/, 0]
+          if unavailable_skd
+            current_sdk = nil
+            next
+          end
+
           if current_sdk
-            name = line.split('(').first.strip
-            udid = line[XCODE_6_SIM_UDID_REGEX,0]
-            state = line[/(Booted|Shutdown)/,0]
-            res[current_sdk] << {:name => name, :udid => udid, :state => state}
+            unless line[/unavailable/,0]
+              name = line.split('(').first.strip
+              udid = line[XCODE_6_SIM_UDID_REGEX,0]
+              state = line[/(Booted|Shutdown)/,0]
+              res[current_sdk] << {:name => name, :udid => udid, :state => state}
+            end
           end
         end
         res
@@ -1038,11 +1049,12 @@ module RunLoop
     def simctl_list_runtimes
       # The 'com.apple.CoreSimulator.SimRuntime.iOS-7-0' is the runtime-id,
       # which can be used to create devices.
-      cmd = 'xcrun simctl list runtimes'
-      Open3.popen3(cmd) do  |_, stdout,  stderr, _|
+      args = 'simctl list runtimes'.split(' ')
+      Open3.popen3('xcrun', *args) do  |_, stdout,  stderr, _|
         out = stdout.read.strip
         err = stderr.read.strip
         if ENV['DEBUG_UNIX_CALLS'] == '1'
+          cmd = "xcrun #{args.join(' ')}"
           puts "#{cmd}  => stdout: '#{out}' | stderr: '#{err}'"
         end
         # Ex.

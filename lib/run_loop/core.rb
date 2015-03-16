@@ -178,14 +178,11 @@ module RunLoop
       end
 
       # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
-      udid, bundle_dir_or_bundle_id = udid_and_bundle_for_launcher(device_target, options, xctools)
+      udid, bundle_dir_or_bundle_id = self.udid_and_bundle_for_launcher(device_target, options, sim_control)
 
       args = options.fetch(:args, [])
 
       log_file ||= File.join(results_dir, 'run_loop.out')
-
-      after = Time.now
-      RunLoop::Logging.log_debug(logger, "Preparation took #{after-before} seconds")
 
       discovered_options =
             {
@@ -226,7 +223,10 @@ module RunLoop
                   :log_file => log_file,
                   :results_dir => results_dir}
 
-      uia_timeout = options[:uia_timeout] || (ENV['UIA_TIMEOUT'] && ENV['UIA_TIMEOUT'].to_f) || 10
+      uia_timeout = options[:uia_timeout] || RunLoop::Environment.uia_timeout || 10
+
+      after = Time.now
+      RunLoop::Logging.log_debug(logger, "Preparation took #{after-before} seconds")
 
       before = Time.now
       begin
@@ -355,8 +355,10 @@ module RunLoop
       end
     end
 
-    def self.udid_and_bundle_for_launcher(device_target, options, xctools=RunLoop::XCTools.new)
-      bundle_dir_or_bundle_id = options[:app] || ENV['BUNDLE_ID']|| ENV['APP_BUNDLE_PATH'] || ENV['APP']
+    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
+      xctools = sim_control.xctools
+
+      bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
 
       unless bundle_dir_or_bundle_id
         raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
@@ -370,7 +372,7 @@ module RunLoop
         end
         udid = device_target
 
-        unless /simulator/i.match(device_target)
+        unless self.simulator_target?(options, sim_control)
           bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
         end
       else
@@ -474,6 +476,8 @@ module RunLoop
     end
 
     def self.read_response(run_loop, expected_index, empty_file_timeout=10, search_for_property='index')
+      debug_read = RunLoop::Environment.debug_read?
+
       log_file = run_loop[:log_file]
       initial_offset = run_loop[:initial_offset] || 0
       offset = initial_offset
@@ -499,7 +503,7 @@ module RunLoop
           raise RunLoop::TimeoutError.new('Exception while running script')
         end
         index_if_found = output.index(START_DELIMITER)
-        if ENV['DEBUG_READ']=='1'
+        if debug_read
           puts output.gsub('*', '')
           puts "Size #{size}"
           puts "offset #{offset}"
@@ -521,7 +525,7 @@ module RunLoop
           json = rest[0..index_of_json]
 
 
-          if ENV['DEBUG_READ']=='1'
+          if debug_read
             puts "Index #{index_if_found}, Size: #{size} Offset #{offset}"
 
             puts ("parse #{json}")
@@ -529,7 +533,7 @@ module RunLoop
 
           offset = offset + json.size
           parsed_result = JSON.parse(json)
-          if ENV['DEBUG_READ']=='1'
+          if debug_read
             p parsed_result
           end
           json_index_if_present = parsed_result[search_for_property]
@@ -552,7 +556,7 @@ module RunLoop
       RunLoop::Instruments.new.instruments_pids(&block)
     end
 
-    def self.automation_template(xctools, candidate = ENV['TRACE_TEMPLATE'])
+    def self.automation_template(xctools, candidate = RunLoop::Environment.trace_template)
       unless candidate && File.exist?(candidate)
         candidate = default_tracetemplate xctools
       end

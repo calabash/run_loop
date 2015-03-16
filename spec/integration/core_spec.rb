@@ -2,15 +2,11 @@ require 'tmpdir'
 
 describe RunLoop::Core do
 
-  before(:each) { ENV.delete('TRACE_TEMPLATE') }
-
   describe '.automation_template' do
-
-    after(:each) { ENV.delete('TRACE_TEMPLATE') }
 
     it 'ignores the TRACE_TEMPLATE env var if the tracetemplate does not exist' do
       tracetemplate = '/tmp/some.tracetemplate'
-      ENV['TRACE_TEMPLATE']=tracetemplate
+      expect(RunLoop::Environment).to receive(:trace_template).and_return(tracetemplate)
       xctools = RunLoop::XCTools.new
       actual = RunLoop::Core.automation_template(xctools)
       expect(actual).not_to be == nil
