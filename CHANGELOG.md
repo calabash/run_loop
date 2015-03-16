@@ -1,6 +1,12 @@
 ## Change Log
 
+### 1.2.9
+
+* Can use simulator UDID for DEVICE_TARGET #150
+* SimControl should filter unavailable devices #148
+
 ### 1.2.8
+
 * Support for providing a logger in the options parameter to most methods
 * Non-blocking writes prevent occasional hang in run app
 
