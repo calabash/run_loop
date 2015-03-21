@@ -1,5 +1,9 @@
 ## Change Log
 
+### 1.2.10
+
+* Detect Xcode-beta.app (new in Xcode 6.3 beta 3) #153
+
 ### 1.2.9
 
 * Can use simulator UDID for DEVICE_TARGET #150
