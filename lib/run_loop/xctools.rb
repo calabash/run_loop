@@ -139,7 +139,7 @@ module RunLoop
     # @return [Boolean] True if the Xcode version is beta.
     def xcode_is_beta?
       @xcode_is_beta ||= lambda {
-        (xcode_developer_dir =~ /Xcode-Beta.app/) != nil
+        (xcode_developer_dir =~ /Xcode-[Bb]eta.app/) != nil
       }.call
     end
 
