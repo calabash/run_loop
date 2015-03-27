@@ -4,7 +4,7 @@ require "run_loop/version"
 
 ruby_files = Dir.glob('{lib}/**/*')
 java_scripts = Dir.glob('scripts/*.js')
-bash_scripts = ['scripts/udidetect', 'scripts/calabash.lldb.erb', 'scripts/read-cmd.sh', 'scripts/timeout3']
+bash_scripts = ['scripts/udidetect', 'scripts/read-cmd.sh', 'scripts/timeout3']
 
 Gem::Specification.new do |s|
   s.name        = "run_loop"
