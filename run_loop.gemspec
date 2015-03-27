@@ -2,6 +2,10 @@
 $:.push File.expand_path("../lib", __FILE__)
 require "run_loop/version"
 
+ruby_files = Dir.glob('{lib}/**/*')
+java_scripts = Dir.glob('scripts/*.js')
+bash_scripts = ['scripts/udidetect', 'scripts/calabash.lldb.erb', 'scripts/read-cmd.sh', 'scripts/timeout3']
+
 Gem::Specification.new do |s|
   s.name        = "run_loop"
   s.version     = RunLoop::VERSION
@@ -9,9 +13,9 @@ Gem::Specification.new do |s|
   s.authors     = ["Karl Krukow"]
   s.email       = ['karl.krukow@xamarin.com']
   s.homepage    = "http://calaba.sh"
-  s.files         = Dir.glob('{lib}/**/*') + Dir.glob('scripts/*.js') + ['scripts/udidetect', 'scripts/calabash.lldb.erb', 'scripts/read-cmd.sh', 'scripts/timeout3', 'LICENSE']
   s.summary     = %q{The bridge between Calabash iOS and Xcode command-line
 tools like instruments and simctl.}
+  s.files         = ruby_files + java_scripts + bash_scripts + ['LICENSE']
   s.require_paths = ["lib"]
   s.licenses    = ['MIT']
 
