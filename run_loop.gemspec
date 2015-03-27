@@ -9,9 +9,9 @@ Gem::Specification.new do |s|
   s.authors     = ["Karl Krukow"]
   s.email       = ['karl.krukow@xamarin.com']
   s.homepage    = "http://calaba.sh"
-  s.summary     = %q{Tools related to running Calabash iOS tests}
-  s.description = %q{calabash-cucumber drives tests for native iOS apps. RunLoop provides a number of tools associated with running Calabash tests.}
   s.files         = Dir.glob('{lib}/**/*') + Dir.glob('scripts/*.js') + ['scripts/udidetect', 'scripts/calabash.lldb.erb', 'scripts/read-cmd.sh', 'scripts/timeout3', 'LICENSE']
+  s.summary     = %q{The bridge between Calabash iOS and Xcode command-line
+tools like instruments and simctl.}
   s.require_paths = ["lib"]
   s.licenses    = ['MIT']
 
