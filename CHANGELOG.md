@@ -1,12 +1,16 @@
 ## Change Log
 
+### 1.3.0
+
+* Support 1.3.3.1 <= Retriable < 2.1
+
 ### 1.2.10
 
 * Detect Xcode-beta.app (new in Xcode 6.3 beta 3) #153
 
 ### 1.2.9
 
-* Can use simulator UDID for DEVICE_TARGET #150
+* Can use simulator UDID for DEVICE\_TARGET #150
 * SimControl should filter unavailable devices #148
 
 ### 1.2.8

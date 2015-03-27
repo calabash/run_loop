@@ -74,9 +74,10 @@ describe RunLoop::Instruments do
       end
 
       pid = nil
-      Retriable.retriable({:tries => Resources.shared.launch_retries,
-                           :interval => launch_timeout + 10,
-                           :on_retry => on_retry}) do
+      retry_opts = RunLoop::RetryOpts.tries_and_interval(Resources.shared.launch_retries,
+                                                         launch_timeout + 10,
+                                                         {:on_retry => on_retry})
+      Retriable.retriable(retry_opts) do
         pid = instruments.spawn(automation_template, options, log_file)
         curl_for_server.call
       end
