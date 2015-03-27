@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+require 'run_loop/cli/cli'
+require 'run_loop/environment'
+
+begin
+  RunLoop::CLI.start
+  exit 0
+rescue RunLoop::ValidationError, Thor::RequiredArgumentMissingError, Thor::UndefinedCommandError => e
+  puts e.message
+  exit 64
+rescue Thor::Error => e
+  puts e.message
+  if RunLoop::Environment.debug?
+    puts e.backtrace.join("\n") if e.backtrace
+    p e.class
+  end
+  exit 70
+end

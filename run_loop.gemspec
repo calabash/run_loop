@@ -25,6 +25,7 @@ tools like instruments and simctl.}
   s.add_dependency 'retriable', '>= 1.3.3.1', '< 2.1'
   s.add_dependency('awesome_print', '~> 1.2')
   s.add_dependency('CFPropertyList','~> 2.2')
+  s.add_dependency('thor', '>= 0.18.1', '< 1.0')
 
   s.add_development_dependency('bundler', '~> 1.6')
   s.add_development_dependency('travis', '~> 1.7')
