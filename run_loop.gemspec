@@ -22,7 +22,6 @@ tools like instruments and simctl.}
   s.required_ruby_version = '>= 1.9'
 
   s.add_dependency('json', '~> 1.8')
-  # Matches XTC requirement; would like to use ~> 1.4
   s.add_dependency 'retriable', '>= 1.3.3.1', '< 2.1'
   s.add_dependency('awesome_print', '~> 1.2')
   s.add_dependency('CFPropertyList','~> 2.2')
