@@ -96,30 +96,16 @@ module RunLoop
         RunLoop::ProcessWaiter.new('lldb').wait_for_none
       end
 
-      # For some reason, :timeout does not work here - the lldb process can
-      # hang indefinitely.  Seems to work when
-      Retriable.retriable({:tries => merged_options[:retries],
-                           # Retriable 2.0
-                           :interval => merged_options[:interval],
-                           :base_interval => merged_options[:interval],
-                           :on_retry => on_retry}) do
-        #unless inject_dylib_with_timeout merged_options[:timeout]
+      retry_opts = RunLoop::RetryOpts.tries_and_interval(3, 10, {:on_retry => on_retry})
+
+      # For some reason, :timeout does not work here;
+      # the lldb process can hang indefinitely.
+      Retriable.retriable(retry_opts) do
         unless inject_dylib_with_timeout merged_options[:timeout]
           raise RuntimeError, "Could not inject dylib"
         end
       end
       true
     end
-
-    private
-
-    RETRIABLE_OPTIONS =
-          {
-                :retries => 3,
-                :timeout => 10,
-                # Retriable 2.0 replaces :interval with :base_interval
-                :interval => 2,
-                :base_interval => 2
-          }
   end
 end
