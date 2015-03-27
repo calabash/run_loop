@@ -70,7 +70,6 @@ module RunLoop
       @xcode_gte_63 ||= xcode_version >= v63
     end
 
-
     # Are we running Xcode 6.2 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.2
