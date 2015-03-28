@@ -25,7 +25,16 @@ module RunLoop
 
 
       def quit
-
+        signal = options[:signal]
+        ENV['DEBUG'] = '1' if options[:debug]
+        instruments = RunLoop::Instruments.new
+        instruments.instruments_pids.each do |pid|
+          terminator = RunLoop::ProcessTerminator.new(pid, signal, 'instruments')
+          unless terminator.kill_process
+            terminator = RunLoop::ProcessTerminator.new(pid, 'KILL', 'instruments')
+            terminator.kill_process
+          end
+        end
       end
 
 
