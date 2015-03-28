@@ -65,7 +65,7 @@ describe RunLoop do
             it 'works with SDK < 8.0' do
               udid = random_udid_sdk_7_sim(sim_control)
               if udid.nil?
-                rspec_warn_log('No simulators with SDK < 8.0 found; skipping test')
+                Luffa.log_warn('No simulators with SDK < 8.0 found; skipping test')
               else
                 options[:device_target] = udid
                 expect(launch(options)).to be_truthy
@@ -84,7 +84,7 @@ describe RunLoop do
           it 'does not works with SDK < 8.0' do
             udid = random_udid_sdk_7_sim(sim_control)
             if udid.nil?
-              rspec_warn_log('No simulators with SDK < 8.0 found; skipping test')
+              Luffa.log_warn('No simulators with SDK < 8.0 found; skipping test')
             else
               options[:device_target] = udid
               expect { launch(options, 1) }.to raise_error(RunLoop::TimeoutError)
