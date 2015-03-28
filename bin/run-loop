@@ -3,7 +3,7 @@ require 'run_loop/cli/cli'
 require 'run_loop/environment'
 
 begin
-  RunLoop::CLI.start
+  RunLoop::CLI::Tool.start
   exit 0
 rescue RunLoop::ValidationError, Thor::RequiredArgumentMissingError, Thor::UndefinedCommandError => e
   puts e.message
