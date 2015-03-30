@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby
 require 'run_loop/cli/cli'
+require 'run_loop/cli/errors'
 require 'run_loop/environment'
 
 begin
   RunLoop::CLI::Tool.start
   exit 0
-rescue RunLoop::ValidationError, Thor::RequiredArgumentMissingError, Thor::UndefinedCommandError => e
+rescue RunLoop::CLI::ValidationError, Thor::RequiredArgumentMissingError, Thor::UndefinedCommandError => e
   puts e.message
   exit 64
 rescue Thor::Error => e

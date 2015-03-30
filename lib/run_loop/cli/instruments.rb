@@ -1,5 +1,6 @@
 require 'thor'
 require 'run_loop'
+require 'run_loop/cli/errors'
 
 module RunLoop
   module CLI

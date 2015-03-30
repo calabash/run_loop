@@ -1,5 +1,6 @@
 require 'thor'
 require 'run_loop'
+require 'run_loop/cli/errors'
 require 'run_loop/cli/instruments'
 
 trap 'SIGINT' do
@@ -8,8 +9,6 @@ trap 'SIGINT' do
 end
 
 module RunLoop
-  class ValidationError < Thor::InvocationError
-  end
 
   module CLI
 
