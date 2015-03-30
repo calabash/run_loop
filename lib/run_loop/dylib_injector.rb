@@ -79,7 +79,9 @@ module RunLoop
     end
 
     def retriable_inject_dylib(options={})
-      merged_options = RETRIABLE_OPTIONS.merge(options)
+      default_options = {:tries => 3,
+                         :interval => 10}
+      merged_options = default_options.merge(options)
 
       debug_logging = RunLoop::Environment.debug?
 
@@ -89,14 +91,16 @@ module RunLoop
           if elapsed_time && next_interval
             puts "LLDB: attempt #{try} failed in '#{elapsed_time}'; will retry in '#{next_interval}'"
           else
-            puts "LLDB: attempt #{try} failed; will retry in '#{merged_options[:interval]}'"
+            puts "LLDB: attempt #{try} failed; will retry in #{merged_options[:interval]}"
           end
         end
         RunLoop::LLDB.kill_lldb_processes
         RunLoop::ProcessWaiter.new('lldb').wait_for_none
       end
 
-      retry_opts = RunLoop::RetryOpts.tries_and_interval(3, 10, {:on_retry => on_retry})
+      tries = merged_options[:tries]
+      interval = merged_options[:interval]
+      retry_opts = RunLoop::RetryOpts.tries_and_interval(tries, interval, {:on_retry => on_retry})
 
       # For some reason, :timeout does not work here;
       # the lldb process can hang indefinitely.
