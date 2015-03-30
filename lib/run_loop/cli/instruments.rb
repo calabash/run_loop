@@ -97,19 +97,48 @@ module RunLoop
 
       end
 
-      no_commands{
-        def validate_launch_args(options)
-
+      no_commands do
+        def parse_app_launch_args(options)
+          args = options[:args]
+          if args.nil?
+            []
+          else
+            args.split(',')
+          end
         end
 
-        def validate_app_ipa_or_bundle_id(options)
+        def detect_bundle_id_or_bundle_path(options)
+          app = options[:app]
+          ipa = options[:ipa]
+          bundle_id = options[:bundle_id]
 
+          if app && ipa
+            raise RunLoop::CLI::ValidationError,
+                  "--app #{app} and --ipa #{ipa} are mutually exclusive arguments.  Pass one or the other, not both."
+          end
+
+          if app && bundle_id
+            raise RunLoop::CLI::ValidationError,
+                  "--app #{app} and --bundle-id #{bundle_id} are mutually exclusive arguments. Pass one or the other, not both."
+          end
+
+          if ipa && bundle_id
+            raise RunLoop::CLI::ValidationError,
+                  "--ipa #{ipa} and --bundle-id #{bundle_id} are mutually exclusive arguments. Pass one or the other, not both."
+          end
+          app || bundle_id
         end
 
-        def validate_args(options)
-
+        def detect_device_udid_from_options(options)
+          device = options[:device]
+          app = options[:app]
+          if app && !device
+            RunLoop::Core.default_simulator
+          else
+            device
+          end
         end
-      }
+      end
     end
   end
 end
