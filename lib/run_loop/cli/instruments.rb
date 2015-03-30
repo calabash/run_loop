@@ -64,19 +64,13 @@ module RunLoop
                     :type => :string
 
       method_option 'app',
-                    :desc => 'Path to a .app bundle.',
+                    :desc => 'Path to a .app bundle to launch on simulator.',
                     :aliases => '-a',
                     :required => false,
                     :type => :string
 
-      method_option 'ipa',
-                    :desc => 'Path to an .ipa bundle.',
-                    :aliases => '-i',
-                    :required => false,
-                    :type => :string
-
       method_option 'bundle-id',
-                    :desc => 'Path to an .ipa bundle.',
+                    :desc => 'Bundle id of app to launch on device.',
                     :aliases => '-b',
                     :required => false,
                     :type => :string
