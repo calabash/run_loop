@@ -94,7 +94,12 @@ module RunLoop
                     :type => :boolean
 
       def launch
-
+        launch_options = {
+              :args => parse_app_launch_args(options),
+              :udid => detect_device_udid_from_options(options),
+              :bundle_dir_or_bundle_id => detect_bundle_id_or_bundle_path(options)
+        }
+        RunLoop.run(launch_options)
       end
 
       no_commands do
