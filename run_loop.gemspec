@@ -27,7 +27,7 @@ tools like instruments and simctl.}
   s.add_dependency('CFPropertyList','~> 2.2')
   s.add_dependency('thor', '>= 0.18.1', '< 1.0')
 
-  s.add_development_dependency('luffa', '~> 1.0', '>= 1.0.3')
+  s.add_development_dependency('luffa', '~> 1.0', '>= 1.0.4')
   s.add_development_dependency('bundler', '~> 1.6')
   s.add_development_dependency('travis', '~> 1.7')
   s.add_development_dependency('rspec', '~> 3.0')
