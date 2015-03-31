@@ -39,7 +39,7 @@ describe RunLoop::HostCache do
     it 'returns a user-specific directory when possible' do
       uid = 501
       expect(RunLoop::Environment).to receive(:uid).and_return(uid)
-      expected = File.expand_path("/tmp/com.xamarin.calabash.run-loop/host-cache/#{uid}")
+      expected = File.expand_path("/tmp/com.xamarin.calabash.run-loop_host-cache_#{uid}")
       expect(RunLoop::HostCache.default_directory).to be == expected
     end
   end
