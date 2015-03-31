@@ -24,13 +24,6 @@ describe RunLoop::CLI::Instruments do
 
     describe '#detect_bundle_id_or_bundle_path' do
       describe 'raises an error when' do
-        it 'app is used with ipa key' do
-          options = {:app => 'path/to/app',
-                     :ipa => 'path/to/ipa'}
-          expect {
-            subject.detect_bundle_id_or_bundle_path(options)
-          }.to raise_error RunLoop::CLI::ValidationError
-        end
 
         it 'app is used with bundle id key' do
           options = {:app => 'path/to/app',
