@@ -44,15 +44,15 @@ class Resources
   end
 
   def cal_app_bundle_path
-    @cal_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.app'))
+    @cal_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke-cal.app'))
   end
 
   def app_bundle_path
-    @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou.app'))
+    @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke.app'))
   end
 
   def ipa_path
-    @ipa_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.ipa'))
+    @ipa_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke-cal.ipa'))
   end
 
   def sim_dylib_path
@@ -72,7 +72,7 @@ class Resources
   end
 
   def bundle_id
-    @bundle_id = 'com.xamarin.chou-cal'
+    @bundle_id = 'com.xamarin.CalSmoke-cal'
   end
 
   def core_simulator_home_dir
