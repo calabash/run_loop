@@ -102,11 +102,29 @@ describe RunLoop::Environment do
       allow(ENV).to receive(:[]).with('APP').and_return('/some/other/path.app')
       expect(RunLoop::Environment.path_to_app_bundle).to be == abp
     end
-  end
 
-  it '.developer_dir' do
-    stub_env('DEVELOPER_DIR', '/some/xcode/path')
-    expect(RunLoop::Environment.developer_dir).to be == '/some/xcode/path'
+    describe 'empty strings should be interpreted as nil' do
+      it 'APP_BUNDLE_PATH' do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return('')
+        allow(ENV).to receive(:[]).with('APP').and_return(nil)
+        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
+      end
+
+      it 'APP' do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return(nil)
+        allow(ENV).to receive(:[]).with('APP').and_return('')
+        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
+      end
+
+      it 'both' do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return('')
+        allow(ENV).to receive(:[]).with('APP').and_return('')
+        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
+      end
+    end
   end
 
 end

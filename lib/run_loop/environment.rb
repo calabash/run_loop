@@ -53,7 +53,12 @@ module RunLoop
     #
     # Use of APP_BUNDLE_PATH is deprecated and will be removed.
     def self.path_to_app_bundle
-      ENV['APP_BUNDLE_PATH'] || ENV['APP']
+      value = ENV['APP_BUNDLE_PATH'] || ENV['APP']
+      if !value || value == ''
+        nil
+      else
+        value
+      end
     end
 
     # Returns the value of DEVELOPER_DIR
