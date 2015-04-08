@@ -66,9 +66,16 @@ describe RunLoop::Environment do
     end
   end
 
-  it '.bundle_id' do
-    stub_env('BUNDLE_ID', 'com.example.Foo')
-    expect(RunLoop::Environment.bundle_id).to be == 'com.example.Foo'
+  describe '.bundle_id' do
+    it 'correctly returns bundle id env var' do
+      stub_env('BUNDLE_ID', 'com.example.Foo')
+      expect(RunLoop::Environment.bundle_id).to be == 'com.example.Foo'
+    end
+
+    it 'returns nil when bundle id is the empty string' do
+      stub_env('BUNDLE_ID', '')
+      expect(RunLoop::Environment.bundle_id).to be == nil
+    end
   end
 
   describe '.path_to_app_bundle' do

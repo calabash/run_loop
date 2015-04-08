@@ -39,7 +39,12 @@ module RunLoop
 
     # Returns the value of BUNDLE_ID
     def self.bundle_id
-      ENV['BUNDLE_ID']
+      value = ENV['BUNDLE_ID']
+      if !value || value == ''
+        nil
+      else
+        value
+      end
     end
 
     # Returns to the path to the app bundle (simulator builds).
