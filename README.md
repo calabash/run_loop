@@ -7,8 +7,8 @@
 ### Supported Xcode Versions
 
 * Xcode >= 5.1.1
-* Xcode 6.0.1, 6.1.1
-* Xcode 6.2b5, 6.3b1 # experimental
+* Xcode 6.0.1, 6.1.1, 6.2
+* Xcode 6.3b* # experimental
 
 ### License
 
