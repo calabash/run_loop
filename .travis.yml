@@ -15,8 +15,13 @@ rvm:
   - 2.1.2
 
 notifications:
-  notifications:
-      email: false
+  email:
+    recipients:
+      - joshuajmoody@gmail.com
+      - karl.krukow@xamarin.com
+    on_success: change
+    on_failure: always
+
   # Posts to the Slack calabash channel.
   # Turning off because they should be posted in some other
   # yet to be determined channel.
