@@ -177,8 +177,13 @@ module RunLoop
         file.puts code
       end
 
-      # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
-      udid, bundle_dir_or_bundle_id = self.udid_and_bundle_for_launcher(device_target, options, sim_control)
+      udid = options[:udid]
+      bundle_dir_or_bundle_id = options[:bundle_dir_or_bundle_id]
+
+      if !(udid && bundle_dir_or_bundle_id)
+        # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
+        udid, bundle_dir_or_bundle_id = self.udid_and_bundle_for_launcher(device_target, options, sim_control)
+      end
 
       args = options.fetch(:args, [])
 

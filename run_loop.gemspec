@@ -18,6 +18,7 @@ tools like instruments and simctl.}
   s.files         = ruby_files + java_scripts + bash_scripts + ['LICENSE']
   s.require_paths = ["lib"]
   s.licenses    = ['MIT']
+  s.executables = 'run-loop'
 
   s.required_ruby_version = '>= 1.9'
 
@@ -25,7 +26,9 @@ tools like instruments and simctl.}
   s.add_dependency 'retriable', '>= 1.3.3.1', '< 2.1'
   s.add_dependency('awesome_print', '~> 1.2')
   s.add_dependency('CFPropertyList','~> 2.2')
+  s.add_dependency('thor', '>= 0.18.1', '< 1.0')
 
+  s.add_development_dependency('luffa', '~> 1.0', '>= 1.0.4')
   s.add_development_dependency('bundler', '~> 1.6')
   s.add_development_dependency('travis', '~> 1.7')
   s.add_development_dependency('rspec', '~> 3.0')

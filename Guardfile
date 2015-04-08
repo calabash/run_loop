@@ -13,6 +13,7 @@ end
 guard :rspec, cmd: 'bundle exec rspec', spec_paths: ['spec/lib'] do
   watch(%r{^spec/.+_spec\.rb$})
   watch(%r{^lib/run_loop/(.+)\.rb$})     { |m| "spec/lib/#{m[1]}_spec.rb" }
+  watch(%r{^lib/run_loop/bin/(.+)\.rb$})     { |m| "spec/lib/bin/#{m[1]}_spec.rb" }
   watch('lib/run_loop.rb')  { 'spec/lib' }
   watch('spec/spec_helper.rb')  { 'spec/lib' }
   watch('spec/resources.rb')  { 'spec/lib' }
