@@ -99,7 +99,8 @@ module RunLoop
               :udid => detect_device_udid_from_options(options),
               :bundle_dir_or_bundle_id => detect_bundle_id_or_bundle_path(options)
         }
-        RunLoop.run(launch_options)
+        run_loop = RunLoop.run(launch_options)
+        puts JSON.generate(run_loop)
       end
 
       no_commands do
