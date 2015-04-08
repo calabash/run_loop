@@ -18,6 +18,7 @@ tools like instruments and simctl.}
   s.files         = ruby_files + java_scripts + bash_scripts + ['LICENSE']
   s.require_paths = ["lib"]
   s.licenses    = ['MIT']
+  s.executables = 'run-loop'
 
   s.required_ruby_version = '>= 1.9'
 
