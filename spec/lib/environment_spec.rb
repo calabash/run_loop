@@ -127,4 +127,15 @@ describe RunLoop::Environment do
     end
   end
 
+  describe '.developer_dir' do
+    it 'return value' do
+      stub_env('DEVELOPER_DIR', '/some/xcode/path')
+      expect(RunLoop::Environment.developer_dir).to be == '/some/xcode/path'
+    end
+
+    it 'returns nil if value is the empty string' do
+      stub_env('DEVELOPER_DIR', '')
+      expect(RunLoop::Environment.developer_dir).to be == nil
+    end
+  end
 end

@@ -66,7 +66,12 @@ module RunLoop
     # @note Never call this directly.  Always create an XCTool instance
     #   and allow it to derive the path to the Xcode toolchain.
     def self.developer_dir
-      ENV['DEVELOPER_DIR']
+      value = ENV['DEVELOPER_DIR']
+      if !value || value == ''
+        nil
+      else
+        value
+      end
     end
   end
 end
