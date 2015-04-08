@@ -39,7 +39,12 @@ module RunLoop
 
     # Returns the value of BUNDLE_ID
     def self.bundle_id
-      ENV['BUNDLE_ID']
+      value = ENV['BUNDLE_ID']
+      if !value || value == ''
+        nil
+      else
+        value
+      end
     end
 
     # Returns to the path to the app bundle (simulator builds).
@@ -48,7 +53,12 @@ module RunLoop
     #
     # Use of APP_BUNDLE_PATH is deprecated and will be removed.
     def self.path_to_app_bundle
-      ENV['APP_BUNDLE_PATH'] || ENV['APP']
+      value = ENV['APP_BUNDLE_PATH'] || ENV['APP']
+      if !value || value == ''
+        nil
+      else
+        value
+      end
     end
 
     # Returns the value of DEVELOPER_DIR
@@ -56,7 +66,12 @@ module RunLoop
     # @note Never call this directly.  Always create an XCTool instance
     #   and allow it to derive the path to the Xcode toolchain.
     def self.developer_dir
-      ENV['DEVELOPER_DIR']
+      value = ENV['DEVELOPER_DIR']
+      if !value || value == ''
+        nil
+      else
+        value
+      end
     end
   end
 end
