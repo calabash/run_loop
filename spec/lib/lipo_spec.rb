@@ -8,17 +8,17 @@ describe RunLoop::Lipo do
 
   describe '#bundle_path' do
     subject { lipo.bundle_path }
-    it { is_expected.to match(/spec\/resources\/chou.app/) }
+    it { is_expected.to match(/spec\/resources\/CalSmoke.app/) }
   end
 
   describe '#plist_path' do
     subject{ lipo.send(:plist_path) }
-    it { is_expected.to match(/spec\/resources\/chou.app\/Info.plist/) }
+    it { is_expected.to match(/spec\/resources\/CalSmoke.app\/Info.plist/) }
   end
 
   describe '#binary_path' do
     subject{ lipo.send(:binary_path) }
-    it { is_expected.to match(/spec\/resources\/chou.app\/chou/) }
+    it { is_expected.to match(/spec\/resources\/CalSmoke.app\/CalSmoke/) }
   end
 
   describe '#info' do

@@ -14,22 +14,6 @@ describe RunLoop::DylibInjector do
     RunLoop::SimControl.new.reset_sim_content_and_settings
   }
 
-  describe '#inject_dylib' do
-    it 'targeting the simulator' do
-      Resources.shared.with_debugging do
-        device = select_random_shutdown_sim
-        abp = Resources.shared.app_bundle_path
-        bridge = RunLoop::Simctl::Bridge.new(device, abp)
-        expect(bridge.launch).to be == true
-
-        app = RunLoop::App.new(abp)
-        dylib = Resources.shared.sim_dylib_path
-        injector = RunLoop::DylibInjector.new(app.executable_name, dylib)
-        expect(injector.inject_dylib).to be == true
-      end
-    end
-  end
-
   describe '#inject_dylib_with_timeout' do
     it 'targeting the simulator' do
       Resources.shared.with_debugging do

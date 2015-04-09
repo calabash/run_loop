@@ -1,8 +1,15 @@
 ## Change Log
 
+### 1.3.0
+
+* Add command-line tool #157
+* Avoid permission collision of parent temp folder when running multiple instances from different user accounts on the same machine #156 @benshan
+* Support 1.3.3.1 <= Retriable < 2.1 #154
+* Detect Xcode-beta.app (new in Xcode 6.3 beta 3) #153
+
 ### 1.2.9
 
-* Can use simulator UDID for DEVICE_TARGET #150
+* Can use simulator UDID for DEVICE\_TARGET #150
 * SimControl should filter unavailable devices #148
 
 ### 1.2.8

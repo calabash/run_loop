@@ -15,7 +15,15 @@ rvm:
   - 2.1.2
 
 notifications:
-  notifications:
-      email: false
-  slack:
-    secure: gWmLS+smElUJwiCF0PYPPkFVDEowNhaD6yD9T3QxRAOamUahVq20NQg8qy1Gj2niiFDlbqYKpZZlZEwLyrcEbwWsBgyYYdNRphEqxBySzbWXZ9ebxwT7tp4bv8NMoVBe0WODx0L3kt48IUcUoSHU/aOBYmPRzf0rTFCZcwqd0W4=#calabash
+  email:
+    recipients:
+      - joshuajmoody@gmail.com
+      - karl.krukow@xamarin.com
+    on_success: change
+    on_failure: always
+
+  # Posts to the Slack calabash channel.
+  # Turning off because they should be posted in some other
+  # yet to be determined channel.
+  # slack:
+  #  secure: gWmLS+smElUJwiCF0PYPPkFVDEowNhaD6yD9T3QxRAOamUahVq20NQg8qy1Gj2niiFDlbqYKpZZlZEwLyrcEbwWsBgyYYdNRphEqxBySzbWXZ9ebxwT7tp4bv8NMoVBe0WODx0L3kt48IUcUoSHU/aOBYmPRzf0rTFCZcwqd0W4=#calabash

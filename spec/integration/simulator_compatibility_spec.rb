@@ -1,16 +1,14 @@
 describe 'Simulator/Binary Compatibility Check' do
 
-  let(:sim_control) {
-    obj = RunLoop::SimControl.new
-    obj.reset_sim_content_and_settings
-    obj
-  }
-
   describe 'can launch if library is FAT' do
-    it 'can launch if libraries are compatible' do
-      sim_control = RunLoop::SimControl.new
-      sim_control.reset_sim_content_and_settings
 
+    let(:sim_control) {
+      obj = RunLoop::SimControl.new
+      obj.reset_sim_content_and_settings
+      obj
+    }
+
+    it 'can launch if libraries are compatible' do
       options =
             {
                   :app => Resources.shared.cal_app_bundle_path,
@@ -18,11 +16,9 @@ describe 'Simulator/Binary Compatibility Check' do
                   :sim_control => sim_control
             }
 
-      hash = nil
-      Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-        hash = RunLoop.run(options)
+      Resources.shared.launch_sim_with_options(options) do |hash|
+        expect(hash).not_to be nil
       end
-      expect(hash).not_to be nil
     end
 
     it 'targeting x86_64 simulator with binary that contains only a i386 slice' do
@@ -39,15 +35,16 @@ describe 'Simulator/Binary Compatibility Check' do
                   :sim_control => sim_control
             }
 
-      hash = nil
-      Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-        hash = RunLoop.run(options)
+      Resources.shared.launch_sim_with_options(options) do |hash|
+        expect(hash).not_to be nil
       end
-      expect(hash).not_to be nil
     end
   end
 
   describe 'raises an error if libraries are not compatible' do
+
+    let(:sim_control) { RunLoop::SimControl.new }
+
     it 'target only has arm slices' do
       options =
             {

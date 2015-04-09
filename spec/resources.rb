@@ -44,15 +44,15 @@ class Resources
   end
 
   def cal_app_bundle_path
-    @cal_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.app'))
+    @cal_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke-cal.app'))
   end
 
   def app_bundle_path
-    @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou.app'))
+    @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke.app'))
   end
 
   def ipa_path
-    @ipa_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.ipa'))
+    @ipa_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke-cal.ipa'))
   end
 
   def sim_dylib_path
@@ -60,19 +60,40 @@ class Resources
   end
 
   def app_bundle_path_arm_FAT
-    @app_bundle_path_arm_FAT ||= File.expand_path(File.join(resources_dir, 'lipo', 'arm-FAT', 'Payload', 'chou-cal.app'))
+    @app_bundle_path_arm_FAT ||= File.expand_path(File.join(resources_dir, 'lipo', 'arm-FAT', 'Payload', 'CalSmoke-cal.app'))
   end
 
   def app_bundle_path_i386
-    @app_bundle_path_i386 ||= File.expand_path(File.join(resources_dir, 'lipo', 'i386', 'chou.app'))
+    @app_bundle_path_i386 ||= File.expand_path(File.join(resources_dir, 'lipo', 'i386', 'CalSmoke.app'))
   end
 
   def app_bundle_path_x86_64
-    @app_bundle_path_x86_64 ||= File.expand_path(File.join(resources_dir, 'lipo', 'x86_64', 'chou.app'))
+    @app_bundle_path_x86_64 ||= File.expand_path(File.join(resources_dir, 'lipo', 'x86_64', 'CalSmoke.app'))
   end
 
   def bundle_id
-    @bundle_id = 'com.xamarin.chou-cal'
+    @bundle_id = 'com.xamarin.CalSmoke-cal'
+  end
+
+  def launch_sim_with_options(options, tries=self.launch_retries, &block)
+    hash = nil
+    Retriable.retriable({:tries => tries}) do
+      hash = RunLoop.run(options)
+    end
+
+    begin
+      if block_given?
+        block.call(hash)
+      end
+    ensure
+      # An attempt to suppress "assetsd crashes on Xcode 6.3", did not work.
+      # Crash occurs after the app has launched.  Possibly the result of
+      # resetting the simulator.
+      # Terminate the app.
+      # Open3.popen3('curl', *['http://localhost:37265/exit']) {}
+      # sleep(1)
+    end
+    hash
   end
 
   def core_simulator_home_dir
@@ -316,7 +337,9 @@ class Resources
       devices = xcode_tools.instruments(:devices)
       if idevice_id_available?
         white_list = `#{idevice_id_bin_path} -l`.strip.split("\n")
-        devices.select { | device | white_list.include?(device.udid) }
+        devices.select do | device |
+          white_list.include?(device.udid) && white_list.count(device.udid) == 1
+        end
       else
         devices
       end

@@ -66,9 +66,16 @@ describe RunLoop::Environment do
     end
   end
 
-  it '.bundle_id' do
-    stub_env('BUNDLE_ID', 'com.example.Foo')
-    expect(RunLoop::Environment.bundle_id).to be == 'com.example.Foo'
+  describe '.bundle_id' do
+    it 'correctly returns bundle id env var' do
+      stub_env('BUNDLE_ID', 'com.example.Foo')
+      expect(RunLoop::Environment.bundle_id).to be == 'com.example.Foo'
+    end
+
+    it 'returns nil when bundle id is the empty string' do
+      stub_env('BUNDLE_ID', '')
+      expect(RunLoop::Environment.bundle_id).to be == nil
+    end
   end
 
   describe '.path_to_app_bundle' do
@@ -95,11 +102,40 @@ describe RunLoop::Environment do
       allow(ENV).to receive(:[]).with('APP').and_return('/some/other/path.app')
       expect(RunLoop::Environment.path_to_app_bundle).to be == abp
     end
+
+    describe 'empty strings should be interpreted as nil' do
+      it 'APP_BUNDLE_PATH' do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return('')
+        allow(ENV).to receive(:[]).with('APP').and_return(nil)
+        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
+      end
+
+      it 'APP' do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return(nil)
+        allow(ENV).to receive(:[]).with('APP').and_return('')
+        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
+      end
+
+      it 'both' do
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return('')
+        allow(ENV).to receive(:[]).with('APP').and_return('')
+        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
+      end
+    end
   end
 
-  it '.developer_dir' do
-    stub_env('DEVELOPER_DIR', '/some/xcode/path')
-    expect(RunLoop::Environment.developer_dir).to be == '/some/xcode/path'
-  end
+  describe '.developer_dir' do
+    it 'return value' do
+      stub_env('DEVELOPER_DIR', '/some/xcode/path')
+      expect(RunLoop::Environment.developer_dir).to be == '/some/xcode/path'
+    end
 
+    it 'returns nil if value is the empty string' do
+      stub_env('DEVELOPER_DIR', '')
+      expect(RunLoop::Environment.developer_dir).to be == nil
+    end
+  end
 end
