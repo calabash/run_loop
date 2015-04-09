@@ -75,6 +75,27 @@ class Resources
     @bundle_id = 'com.xamarin.CalSmoke-cal'
   end
 
+  def launch_sim_with_options(options, tries=self.launch_retries, &block)
+    hash = nil
+    Retriable.retriable({:tries => tries}) do
+      hash = RunLoop.run(options)
+    end
+
+    begin
+      if block_given?
+        block.call(hash)
+      end
+    ensure
+      # An attempt to suppress "assetsd crashes on Xcode 6.3", did not work.
+      # Crash occurs after the app has launched.  Possibly the result of
+      # resetting the simulator.
+      # Terminate the app.
+      # Open3.popen3('curl', *['http://localhost:37265/exit']) {}
+      # sleep(1)
+    end
+    hash
+  end
+
   def core_simulator_home_dir
     @core_simulator_home_dir = File.expand_path('~/Library/Developer/CoreSimulator')
   end
