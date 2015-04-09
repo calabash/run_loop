@@ -16,11 +16,9 @@ describe RunLoop do
                   :sim_control => sim_control
             }
 
-      hash = nil
-      Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-        hash = RunLoop.run(options)
+      Resources.shared.launch_sim_with_options(options) do |hash|
+        expect(hash).not_to be nil
       end
-      expect(hash).not_to be nil
     end
 
     xcode_installs = Resources.shared.alt_xcode_install_paths
@@ -38,11 +36,10 @@ describe RunLoop do
                           :sim_control => sim_control
                     }
 
-              hash = nil
-              Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-                hash = RunLoop.run(options)
+              Resources.shared.launch_sim_with_options(options) do |hash|
+                expect(hash).not_to be nil
               end
-              expect(hash).not_to be nil
+
             end
           end
         end
