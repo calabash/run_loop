@@ -80,7 +80,8 @@ module RunLoop
 
     def retriable_inject_dylib(options={})
       default_options = {:tries => 3,
-                         :interval => 10}
+                         :interval => 10,
+                         :timeout => 10}
       merged_options = default_options.merge(options)
 
       debug_logging = RunLoop::Environment.debug?
