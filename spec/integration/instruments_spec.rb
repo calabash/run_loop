@@ -23,14 +23,12 @@ describe RunLoop::Instruments do
                     :sim_control => sim_control
               }
 
-        hash = nil
-        Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-          hash = RunLoop.run(options)
+        Resources.shared.launch_sim_with_options(options) do |hash|
+          expect(hash).not_to be nil
+          expect(instruments.instruments_running?).to be == true
+          instruments.kill_instruments(sim_control.xctools)
+          expect(instruments.instruments_running?).to be == false
         end
-        expect(hash).not_to be nil
-        expect(instruments.instruments_running?).to be == true
-        instruments.kill_instruments(sim_control.xctools)
-        expect(instruments.instruments_running?).to be == false
       end
 
       describe 'regression' do
@@ -53,13 +51,12 @@ describe RunLoop::Instruments do
                       }
 
                 hash = nil
-                Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-                  hash = RunLoop.run(options)
+                Resources.shared.launch_sim_with_options(options) do |hash|
+                  expect(hash).not_to be nil
+                  expect(instruments.instruments_running?).to be == true
+                  instruments.kill_instruments(sim_control.xctools)
+                  expect(instruments.instruments_running?).to be == false
                 end
-                expect(hash).not_to be nil
-                expect(instruments.instruments_running?).to be == true
-                instruments.kill_instruments(sim_control.xctools)
-                expect(instruments.instruments_running?).to be == false
               end
             end
           end
@@ -97,14 +94,12 @@ describe RunLoop::Instruments do
                       }
                 expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
 
-                hash = nil
-                Retriable.retriable({:tries => 2}) do
-                  hash = RunLoop.run(options)
+                Resources.shared.launch_sim_with_options(options) do |hash|
+                  expect(hash).not_to be nil
+                  expect(instruments.instruments_running?).to be == true
+                  instruments.kill_instruments(xctools)
+                  expect(instruments.instruments_running?).to be == false
                 end
-                expect(hash).not_to be nil
-                expect(instruments.instruments_running?).to be == true
-                instruments.kill_instruments(xctools)
-                expect(instruments.instruments_running?).to be == false
               end
             end
           end
@@ -137,14 +132,13 @@ describe RunLoop::Instruments do
 
                           }
                     expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
-                    hash = nil
-                    Retriable.retriable({:tries => 2}) do
-                      hash = RunLoop.run(options)
+
+                    Resources.shared.launch_sim_with_options(options) do |hash|
+                      expect(hash).not_to be nil
+                      expect(instruments.instruments_running?).to be == true
+                      instruments.kill_instruments(xctools)
+                      expect(instruments.instruments_running?).to be == false
                     end
-                    expect(hash).not_to be nil
-                    expect(instruments.instruments_running?).to be == true
-                    instruments.kill_instruments(xctools)
-                    expect(instruments.instruments_running?).to be == false
                   end
                 end
               end
@@ -183,14 +177,12 @@ describe RunLoop::Instruments do
                   :sim_control => sim_control
             }
 
-      hash = nil
-      Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-        hash = RunLoop.run(options)
+      Resources.shared.launch_sim_with_options(options) do |hash|
+        expect(hash).not_to be nil
+        expect(instruments.instance_eval {
+                 pids_from_ps_output.count
+               }).to be == 1
       end
-      expect(hash).not_to be nil
-      expect(instruments.instance_eval {
-               pids_from_ps_output.count
-             }).to be == 1
     end
   end
 end
