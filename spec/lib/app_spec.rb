@@ -46,7 +46,7 @@ describe RunLoop::App do
 
   context '#bundle_identifier' do
     subject { RunLoop::App.new(Resources.shared.app_bundle_path).bundle_identifier }
-    it { is_expected.to be == 'com.xamarin.chou' }
+    it { is_expected.to be == 'com.xamarin.CalSmoke' }
 
     context 'raises an error when' do
       let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
@@ -61,7 +61,7 @@ describe RunLoop::App do
 
   context '#exectuable_name' do
     subject { RunLoop::App.new(Resources.shared.app_bundle_path).executable_name }
-    it { is_expected.to be == 'chou' }
+    it { is_expected.to be == 'CalSmoke' }
 
     context 'raises an error when' do
       let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }

@@ -44,15 +44,15 @@ class Resources
   end
 
   def cal_app_bundle_path
-    @cal_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.app'))
+    @cal_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke-cal.app'))
   end
 
   def app_bundle_path
-    @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'chou.app'))
+    @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke.app'))
   end
 
   def ipa_path
-    @ipa_path ||= File.expand_path(File.join(resources_dir, 'chou-cal.ipa'))
+    @ipa_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke-cal.ipa'))
   end
 
   def sim_dylib_path
@@ -60,19 +60,19 @@ class Resources
   end
 
   def app_bundle_path_arm_FAT
-    @app_bundle_path_arm_FAT ||= File.expand_path(File.join(resources_dir, 'lipo', 'arm-FAT', 'Payload', 'chou-cal.app'))
+    @app_bundle_path_arm_FAT ||= File.expand_path(File.join(resources_dir, 'lipo', 'arm-FAT', 'Payload', 'CalSmoke-cal.app'))
   end
 
   def app_bundle_path_i386
-    @app_bundle_path_i386 ||= File.expand_path(File.join(resources_dir, 'lipo', 'i386', 'chou.app'))
+    @app_bundle_path_i386 ||= File.expand_path(File.join(resources_dir, 'lipo', 'i386', 'CalSmoke.app'))
   end
 
   def app_bundle_path_x86_64
-    @app_bundle_path_x86_64 ||= File.expand_path(File.join(resources_dir, 'lipo', 'x86_64', 'chou.app'))
+    @app_bundle_path_x86_64 ||= File.expand_path(File.join(resources_dir, 'lipo', 'x86_64', 'CalSmoke.app'))
   end
 
   def bundle_id
-    @bundle_id = 'com.xamarin.chou-cal'
+    @bundle_id = 'com.xamarin.CalSmoke-cal'
   end
 
   def core_simulator_home_dir
