@@ -333,6 +333,26 @@ module RunLoop
       end
     end
 
+    def accessibility_enabled?(device)
+      plist = device.simulator_accessibility_plist_path
+      return false unless File.exist?(plist)
+
+      if device.version >= RunLoop::Version.new('8.0')
+        plist_hash = SDK_80_ACCESSIBILITY_PROPERTIES_HASH
+      else
+        plist_hash = SDK_LT_80_ACCESSIBILITY_PROPERTIES_HASH
+      end
+
+      plist_hash.each do |_, details|
+        key = details[:key]
+        value = details[:value]
+
+        unless pbuddy.plist_read(key, plist) == "#{value}"
+          return false
+        end
+      end
+      true
+    end
     private
 
 
