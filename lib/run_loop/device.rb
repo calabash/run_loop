@@ -6,7 +6,8 @@ module RunLoop
     attr_reader :udid
     attr_reader :state
     attr_reader :simulator_root_dir
-    attr_reader :simulator_preferences_path
+    attr_reader :simulator_accessibility_plist_path
+    attr_reader :simulator_preferences_plist_path
 
     # Create a new device.
     #
@@ -100,6 +101,13 @@ module RunLoop
       @simulator_accessibility_plist_path ||= lambda {
         return nil if physical_device?
         File.join(simulator_root_dir, 'data/Library/Preferences/com.apple.Accessibility.plist')
+      }.call
+    end
+
+    def simulator_preferences_plist_path
+      @simulator_preferences_plist_path ||= lambda {
+        return nil if physical_device?
+        File.join(simulator_root_dir, 'data/Library/Preferences/com.apple.Preferences.plist')
       }.call
     end
 

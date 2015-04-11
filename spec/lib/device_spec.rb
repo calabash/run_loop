@@ -130,12 +130,23 @@ describe RunLoop::Device do
 
     describe '#simulator_accessibility_plist_path' do
       it 'is nil if physical device' do
-        expect(physical.simulator_root_dir).to be_falsey
+        expect(physical.simulator_accessibility_plist_path).to be_falsey
       end
 
       it 'is non nil if a simulator' do
         expect(simulator.simulator_accessibility_plist_path[/#{simulator.udid}/,0]).to be_truthy
         expect(simulator.simulator_accessibility_plist_path[/com.apple.Accessibility.plist/,0]).to be_truthy
+      end
+    end
+
+    describe '#simulator_preferences_plist_path' do
+      it 'is nil if physical device' do
+        expect(physical.simulator_preferences_plist_path).to be_falsey
+      end
+
+      it 'is non nil if a simulator' do
+        expect(simulator.simulator_preferences_plist_path[/#{simulator.udid}/,0]).to be_truthy
+        expect(simulator.simulator_preferences_plist_path[/com.apple.Preferences.plist/,0]).to be_truthy
       end
     end
   end
