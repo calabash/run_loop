@@ -32,6 +32,11 @@ module RunLoop::Simctl
 
       @device = device
 
+      # It may seem weird to do this in the initialize, but you cannot make
+      # simctl calls successfully unless the simulator is:
+      # 1. closed
+      # 2. the device you are trying to operate on is Shutdown
+      # 3. the CoreSimulator processes are terminated
       RunLoop::SimControl.terminate_all_sims
       shutdown
       terminate_core_simulator_processes
@@ -257,7 +262,11 @@ module RunLoop::Simctl
       args = ['open', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', device.udid]
       pid = spawn('xcrun', *args)
       Process.detach(pid)
-      sleep(5)
+      RunLoop::ProcessWaiter.new('CoreSimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+      RunLoop::ProcessWaiter.new('iOS Simulator', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+      RunLoop::ProcessWaiter.new('SimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+      wait_for_device_state 'Booted'
+      sleep(SIM_POST_LAUNCH_WAIT)
     end
 
     def launch
@@ -303,6 +312,8 @@ module RunLoop::Simctl
                 :tries => 100,
                 :interval => 0.1
           }
+
+    SIM_POST_LAUNCH_WAIT = RunLoop::Environment.sim_post_launch_wait || 1.0
 
     # @!visibility private
     def fetch_matching_device

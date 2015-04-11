@@ -13,7 +13,7 @@ module RunLoop
     # Collect a list of Integer pids.
     # @return [Array<Integer>] An array of integer pids for the `process_name`
     def pids
-      process_info = `ps x -o pid,comm | grep -v grep | grep #{process_name}`
+      process_info = `ps x -o pid,comm | grep -v grep | grep '#{process_name}'`
       process_array = process_info.split("\n")
       process_array.map { |process| process.split(' ').first.strip.to_i }
     end

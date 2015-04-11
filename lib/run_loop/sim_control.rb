@@ -82,7 +82,7 @@ module RunLoop
     # @todo Consider migrating apple script call to xctools.
     def launch_sim(opts={})
       unless sim_is_running?
-        default_opts = {:post_launch_wait => 2.0,
+        default_opts = {:post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0,
                         :hide_after => false}
         merged_opts = default_opts.merge(opts)
         `xcrun open -a "#{sim_app_path}"`
@@ -107,7 +107,7 @@ module RunLoop
     #  tired of your editor losing focus. :)
     def relaunch_sim(opts={})
       default_opts = {:post_quit_wait => 1.0,
-                      :post_launch_wait => 2.0,
+                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0,
                       :hide_after => false}
       merged_opts = default_opts.merge(opts)
       quit_sim(merged_opts)
@@ -199,7 +199,7 @@ module RunLoop
     #  **NOTE:** This option is ignored in Xcode < 6.
     def reset_sim_content_and_settings(opts={})
       default_opts = {:post_quit_wait => 1.0,
-                      :post_launch_wait => 3.0,
+                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 3.0,
                       :hide_after => false,
                       :sim_udid => nil}
       merged_opts = default_opts.merge(opts)
