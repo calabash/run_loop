@@ -545,11 +545,6 @@ module RunLoop
       result
     end
 
-    # @deprecated 1.0.5
-    def self.pids_for_run_loop(run_loop, &block)
-      RunLoop::Instruments.new.instruments_pids(&block)
-    end
-
     def self.automation_template(xctools, candidate = RunLoop::Environment.trace_template)
       unless candidate && File.exist?(candidate)
         candidate = default_tracetemplate xctools
@@ -619,6 +614,10 @@ module RunLoop
       end
       target >= xcode
     end
-  end
 
+    # @deprecated 1.0.5
+    def self.pids_for_run_loop(run_loop, &block)
+      RunLoop::Instruments.new.instruments_pids(&block)
+    end
+  end
 end
