@@ -105,6 +105,18 @@ module RunLoop
       end
     end
 
+    # Prepares the simulator for running.
+    #
+    # 1. enabling accessibility and software keyboard
+    # 2. installing / uninstalling apps
+    # 3. NYI resetting the app sandbox
+    #
+    # @todo only enable accessibility on the targeted simulator and only if necessary
+    def self.prepare_simulator(merged_options, sim_control)
+      # Surprise!  This also enables software keyboard in CoreSimulator environments.
+      sim_control.enable_accessibility_on_sims({:verbose => false})
+    end
+
     def self.run_with_options(options)
       before = Time.now
 
@@ -185,9 +197,8 @@ module RunLoop
       merged_options = options.merge(discovered_options)
 
       if self.simulator_target?(merged_options, sim_control)
-        # @todo only enable accessibility on the targeted simulator
-        sim_control.enable_accessibility_on_sims({:verbose => false})
         self.expect_compatible_simulator_architecture(merged_options, sim_control)
+        self.prepare_simulator(merged_options, sim_control)
       end
 
       self.log_run_loop_options(merged_options, xctools)
