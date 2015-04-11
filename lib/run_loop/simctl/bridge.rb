@@ -7,9 +7,7 @@ module RunLoop::Simctl
   # @!visibility private
   # This is not a public API.  You have been warned.
   #
-  # TODO Rename this class.
   # TODO Some code is duplicated from sim_control.rb
-  # TODO Uninstall
   # TODO Reinstall if checksum does not match.
   # TODO Analyze terminate_core_simulator_processes
   class Bridge
