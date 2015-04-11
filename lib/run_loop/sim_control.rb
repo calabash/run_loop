@@ -353,6 +353,16 @@ module RunLoop
       end
       true
     end
+
+    def ensure_accessibility(device)
+      return true if accessibility_enabled?(device)
+      enable_accessibility(device)
+    end
+
+    def enable_accessibility(device)
+      raise NoMethodError, 'NYI'
+    end
+
     private
 
 

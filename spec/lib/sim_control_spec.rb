@@ -306,5 +306,18 @@ describe RunLoop::SimControl do
         end
       end
     end
+
+    describe '#ensure_accessibility' do
+      it 'returns true when accessibility is enabled' do
+        expect(sim_control).to receive(:accessibility_enabled?).with(device).and_return(true)
+        expect(sim_control.ensure_accessibility(device)).to be_truthy
+      end
+
+      it 'returns true if it enabled accessibility' do
+        expect(sim_control).to receive(:accessibility_enabled?).with(device).and_return(false)
+        expect(sim_control).to receive(:enable_accessibility).with(device).and_return(true)
+        expect(sim_control.ensure_accessibility(device)).to be_truthy
+      end
+    end
   end
 end
