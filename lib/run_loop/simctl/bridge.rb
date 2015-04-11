@@ -7,69 +7,53 @@ module RunLoop::Simctl
   # @!visibility private
   # This is not a public API.  You have been warned.
   #
-  # Proof of concept for using simctl to install and launch an app on a device.
-  #
-  # Do not use this in production code.
-  #
-  # TODO Rename this class.
   # TODO Some code is duplicated from sim_control.rb
-  # TODO Uninstall
   # TODO Reinstall if checksum does not match.
   # TODO Analyze terminate_core_simulator_processes
   class Bridge
 
     attr_reader :device
-    attr_reader :app_bundle_path
     attr_reader :app
+    attr_reader :sim_control
 
     def initialize(device, app_bundle_path)
-      @device = device
+
       @sim_control = RunLoop::SimControl.new
-      @simulator_app_path ||= lambda {
+      @path_to_ios_sim_app_bundle = lambda {
         dev_dir = @sim_control.xctools.xcode_developer_dir
         "#{dev_dir}/Applications/iOS Simulator.app"
       }.call
 
-      @app_bundle_path = app_bundle_path
       @app = RunLoop::App.new(app_bundle_path)
+
+      unless @app.valid?
+        raise "Could not recreate a valid app from '#{app_bundle_path}'"
+      end
+
+      @device = device
+
       RunLoop::SimControl.terminate_all_sims
       shutdown
       terminate_core_simulator_processes
-    end
-
-    def udid
-      @udid ||= device.udid
-    end
-
-    def fullname
-      @fullname ||= device.instruments_identifier
-    end
-
-    def bundle_identifier
-      app.bundle_identifier
-    end
-
-    def executable_name
-      app.executable_name
     end
 
     def simulator_app_dir
       @simulator_app_dir ||= lambda {
         device_dir = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
         if device.version < RunLoop::Version.new('8.0')
-          File.join(device_dir, udid, 'data', 'Applications')
+          File.join(device_dir, device.udid, 'data', 'Applications')
         else
-          File.join(device_dir, udid, 'data', 'Containers', 'Bundle', 'Application')
+          File.join(device_dir, device.udid, 'data', 'Containers', 'Bundle', 'Application')
         end
       }.call
     end
 
-    def update_device_state
-
+    def update_device_state(options={})
+      merged_options = UPDATE_DEVICE_STATE_OPTS.merge(options)
       debug_logging = RunLoop::Environment.debug?
 
-      interval = UPDATE_DEVICE_STATE_OPTS[:interval]
-      tries = UPDATE_DEVICE_STATE_OPTS[:tries]
+      interval = merged_options[:interval]
+      tries = merged_options[:tries]
 
       on_retry = Proc.new do |_, try, elapsed_time, next_interval|
         if debug_logging
@@ -86,23 +70,22 @@ module RunLoop::Simctl
                                                          {:on_retry => on_retry,
                                                           :on => [SimctlError]
                                                          })
-      current = nil
+      matching_device = nil
 
       Retriable.retriable(retry_opts) do
-        current = @sim_control.simulators.detect do |sim|
-          sim.udid == udid
+        matching_device = fetch_matching_device
+
+        unless matching_device
+          raise "simctl could not find device with '#{device.udid}'"
         end
 
-        unless current
-          raise "simctl could not find device with '#{udid}'"
-        end
-
-        if current.state == nil || current.state == ''
-          raise SimctlError, "Could not find the state of the device with #{udid}"
+        if matching_device.state == nil || matching_device.state == ''
+          raise SimctlError, "Could not find the state of the device with #{device.udid}"
         end
       end
 
-      @device = current
+      # Device#state is immutable
+      @device = matching_device
       @device.state
     end
 
@@ -120,7 +103,6 @@ module RunLoop::Simctl
         end
       end
     end
-
 
     def wait_for_device_state(target_state)
       return true if update_device_state == target_state
@@ -147,7 +129,7 @@ module RunLoop::Simctl
       sim_app_dir = simulator_app_dir
       return false if !File.exist?(sim_app_dir)
       app_path = Dir.glob("#{sim_app_dir}/**/*.app").detect do |path|
-        RunLoop::App.new(path).bundle_identifier == bundle_identifier
+        RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
       end
 
       !app_path.nil?
@@ -167,10 +149,10 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for '#{bundle_identifier}' to install."
+      puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to install."
 
       unless is_installed
-        raise "Expected app to be installed on #{fullname}"
+        raise "Expected app to be installed on #{device.instruments_identifier}"
       end
 
       true
@@ -190,10 +172,10 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for '#{bundle_identifier}' to uninstall."
+      puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to uninstall."
 
       unless not_installed
-        raise "Expected app to be installed on #{fullname}"
+        raise "Expected app to be installed on #{device.instruments_identifier}"
       end
 
       true
@@ -203,15 +185,15 @@ module RunLoop::Simctl
       return true if update_device_state == 'Shutdown'
 
       if device.state != 'Booted'
-        raise "Cannot handle state '#{device.state}' for #{fullname}"
+        raise "Cannot handle state '#{device.state}' for #{device.instruments_identifier}"
       end
 
-      args = "simctl shutdown #{udid}".split(' ')
+      args = "simctl shutdown #{device.udid}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, status|
         err = stderr.read.strip
         exit_status = status.value.exitstatus
         if exit_status != 0
-          raise "Could not shutdown #{fullname}: #{exit_status} => '#{err}'"
+          raise "Could not shutdown #{device.instruments_identifier}: #{exit_status} => '#{err}'"
         end
       end
       wait_for_device_state('Shutdown')
@@ -221,15 +203,15 @@ module RunLoop::Simctl
       return true if update_device_state == 'Booted'
 
       if device.state != 'Shutdown'
-        raise "Cannot handle state '#{device.state}' for #{fullname}"
+        raise "Cannot handle state '#{device.state}' for #{device.instruments_identifier}"
       end
 
-      args = "simctl boot #{udid}".split(' ')
+      args = "simctl boot #{device.udid}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, status|
         err = stderr.read.strip
         exit_status = status.value.exitstatus
         if exit_status != 0
-          raise "Could not boot #{fullname}: #{exit_status} => '#{err}'"
+          raise "Could not boot #{device.instruments_identifier}: #{exit_status} => '#{err}'"
         end
       end
       wait_for_device_state('Booted')
@@ -240,12 +222,12 @@ module RunLoop::Simctl
 
       boot
 
-      args = "simctl install #{udid} #{app.path}".split(' ')
+      args = "simctl install #{device.udid} #{app.path}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, process_status|
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
         if exit_status != 0
-          raise "Could not install '#{bundle_identifier}': #{exit_status} => '#{err}'."
+          raise "Could not install '#{app.bundle_identifier}': #{exit_status} => '#{err}'."
         end
       end
 
@@ -258,12 +240,12 @@ module RunLoop::Simctl
 
       boot
 
-      args = "simctl uninstall #{udid} #{app.bundle_identifier}".split(' ')
+      args = "simctl uninstall #{device.udid} #{app.bundle_identifier}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, process_status|
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
         if exit_status != 0
-          raise "Could not uninstall '#{bundle_identifier}': #{exit_status} => '#{err}'."
+          raise "Could not uninstall '#{app.bundle_identifier}': #{exit_status} => '#{err}'."
         end
       end
 
@@ -272,7 +254,7 @@ module RunLoop::Simctl
     end
 
     def launch_simulator
-      args = ['open', '-a', @simulator_app_path, '--args', '-CurrentDeviceUDID', udid]
+      args = ['open', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', device.udid]
       pid = spawn('xcrun', *args)
       Process.detach(pid)
       sleep(5)
@@ -283,16 +265,16 @@ module RunLoop::Simctl
       install
       launch_simulator
 
-      args = "simctl launch #{udid} #{bundle_identifier}".split(' ')
+      args = "simctl launch #{device.udid} #{app.bundle_identifier}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, process_status|
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
         unless exit_status == 0
-          raise "Could not simctl launch '#{bundle_identifier}' on '#{fullname}': #{exit_status} => '#{err}'"
+          raise "Could not simctl launch '#{app.bundle_identifier}' on '#{device.instruments_identifier}': #{exit_status} => '#{err}'"
         end
       end
 
-      RunLoop::ProcessWaiter.new(executable_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+      RunLoop::ProcessWaiter.new(app.executable_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       true
     end
 
@@ -321,5 +303,12 @@ module RunLoop::Simctl
                 :tries => 100,
                 :interval => 0.1
           }
+
+    # @!visibility private
+    def fetch_matching_device
+      sim_control.simulators.detect do |sim|
+        sim.udid == device.udid
+      end
+    end
   end
 end
