@@ -469,6 +469,11 @@ module RunLoop
       cmd.gsub(backquote,backquote*4)
     end
 
+    def self.log_instruments_error(msg)
+      $stderr.puts "\033[31m\n\n*** #{msg} ***\n\n\033[0m"
+      $stderr.flush
+    end
+
     def self.read_response(run_loop, expected_index, empty_file_timeout=10, search_for_property='index')
       debug_read = RunLoop::Environment.debug_read?
 
@@ -493,9 +498,27 @@ module RunLoop
           end
           raise RunLoop::TimeoutError.new('AXError: Could not auto-register for pid status change')
         end
+
         if /Automation Instrument ran into an exception/.match(output)
           raise RunLoop::TimeoutError.new('Exception while running script')
         end
+
+        if /FBSOpenApplicationErrorDomain error/.match(output)
+          msg = "Instrument failed to launch app: 'FBSOpenApplicationErrorDomain error 8"
+          if RunLoop::Environment.debug?
+            self.log_instruments_error(msg)
+          end
+          raise RunLoop::TimeoutError.new(msg)
+        end
+
+        if /Error: Script threw an uncaught JavaScript error: unknown JavaScript exception/.match(output)
+          msg = "Instrument failed to launch: because of an unknown JavaScript exception"
+          if RunLoop::Environment.debug?
+            self.log_instruments_error(msg)
+          end
+          raise RunLoop::TimeoutError.new(msg)
+        end
+
         index_if_found = output.index(START_DELIMITER)
         if debug_read
           puts output.gsub('*', '')
