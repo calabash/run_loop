@@ -48,23 +48,6 @@ module RunLoop
       RunLoop::Logging.log_debug(logger, "\n" + message)
     end
 
-    # @deprecated since 1.0.0
-    # still used extensively in calabash-ios launcher
-    def self.above_or_eql_version?(target_version, xcode_version)
-      if target_version.is_a?(RunLoop::Version)
-        target = target_version
-      else
-        target = RunLoop::Version.new(target_version)
-      end
-
-      if xcode_version.is_a?(RunLoop::Version)
-        xcode = xcode_version
-      else
-        xcode = RunLoop::Version.new(xcode_version)
-      end
-      target >= xcode
-    end
-
     def self.script_for_key(key)
       if SCRIPTS[key].nil?
         return nil
@@ -607,6 +590,23 @@ module RunLoop
     # @deprecated 1.0.0 replaced with Xctools#version
     def self.xcode_version(xctools=RunLoop::XCTools.new)
       xctools.xcode_version.to_s
+    end
+
+    # @deprecated since 1.0.0
+    # still used extensively in calabash-ios launcher
+    def self.above_or_eql_version?(target_version, xcode_version)
+      if target_version.is_a?(RunLoop::Version)
+        target = target_version
+      else
+        target = RunLoop::Version.new(target_version)
+      end
+
+      if xcode_version.is_a?(RunLoop::Version)
+        xcode = xcode_version
+      else
+        xcode = RunLoop::Version.new(xcode_version)
+      end
+      target >= xcode
     end
   end
 
