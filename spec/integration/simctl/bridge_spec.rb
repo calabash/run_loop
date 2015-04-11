@@ -9,11 +9,28 @@ describe RunLoop::Simctl::Bridge do
     end
   end
 
-  it 'can install an app and launch the simulator' do
+  it 'can launch a specific simulator' do
+    device = select_random_shutdown_sim
+    abp = Resources.shared.app_bundle_path
+    bridge = RunLoop::Simctl::Bridge.new(device, abp)
+    bridge.launch_simulator
+  end
+
+  it 'can install an app on a simulator and launch it' do
     device = select_random_shutdown_sim
     abp = Resources.shared.app_bundle_path
     bridge = RunLoop::Simctl::Bridge.new(device, abp)
     expect(bridge.launch).to be == true
+  end
+
+  it 'can install an app, launch it, and uninstall it' do
+    device = select_random_shutdown_sim
+    abp = Resources.shared.app_bundle_path
+    bridge = RunLoop::Simctl::Bridge.new(device, abp)
+    expect(bridge.launch).to be == true
+
+    bridge = RunLoop::Simctl::Bridge.new(device, abp)
+    expect(bridge.uninstall).to be == true
   end
 
 end

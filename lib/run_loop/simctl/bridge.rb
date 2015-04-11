@@ -1,5 +1,9 @@
 module RunLoop::Simctl
 
+  class SimctlError < StandardError
+
+  end
+
   # @!visibility private
   # This is not a public API.  You have been warned.
   #
@@ -61,12 +65,43 @@ module RunLoop::Simctl
     end
 
     def update_device_state
-      current = @sim_control.simulators.detect do |sim|
-        sim.udid == udid
+
+      debug_logging = RunLoop::Environment.debug?
+
+      interval = UPDATE_DEVICE_STATE_OPTS[:interval]
+      tries = UPDATE_DEVICE_STATE_OPTS[:tries]
+
+      on_retry = Proc.new do |_, try, elapsed_time, next_interval|
+        if debug_logging
+          # Retriable 2.0
+          if elapsed_time && next_interval
+            puts "Updating device state attempt #{try} failed in '#{elapsed_time}'; will retry in '#{next_interval}'"
+          else
+            puts "Updating device state attempt #{try} failed; will retry in #{interval}"
+          end
+        end
       end
-      unless current
-        raise "simctl could not find device with '#{udid}'"
+
+      retry_opts = RunLoop::RetryOpts.tries_and_interval(tries, interval,
+                                                         {:on_retry => on_retry,
+                                                          :on => [SimctlError]
+                                                         })
+      current = nil
+
+      Retriable.retriable(retry_opts) do
+        current = @sim_control.simulators.detect do |sim|
+          sim.udid == udid
+        end
+
+        unless current
+          raise "simctl could not find device with '#{udid}'"
+        end
+
+        if current.state == nil || current.state == ''
+          raise SimctlError, "Could not find the state of the device with #{udid}"
+        end
       end
+
       @device = current
       @device.state
     end
@@ -141,6 +176,29 @@ module RunLoop::Simctl
       true
     end
 
+    def wait_for_app_uninstall
+      return true unless app_is_installed?
+
+      now = Time.now
+      timeout = WAIT_FOR_APP_INSTALL_OPTS[:timeout]
+      poll_until = now + timeout
+      delay = WAIT_FOR_APP_INSTALL_OPTS[:interval]
+      not_installed = false
+      while Time.now < poll_until
+        not_installed = !app_is_installed?
+        break if not_installed
+        sleep delay
+      end
+
+      puts "Waited for #{timeout} seconds for '#{bundle_identifier}' to uninstall."
+
+      unless not_installed
+        raise "Expected app to be installed on #{fullname}"
+      end
+
+      true
+    end
+
     def shutdown
       return true if update_device_state == 'Shutdown'
 
@@ -195,8 +253,28 @@ module RunLoop::Simctl
       shutdown
     end
 
+    def uninstall
+      return true unless app_is_installed?
+
+      boot
+
+      args = "simctl uninstall #{udid} #{app.bundle_identifier}".split(' ')
+      Open3.popen3('xcrun', *args) do |_, _, stderr, process_status|
+        err = stderr.read.strip
+        exit_status = process_status.value.exitstatus
+        if exit_status != 0
+          raise "Could not uninstall '#{bundle_identifier}': #{exit_status} => '#{err}'."
+        end
+      end
+
+      wait_for_app_uninstall
+      shutdown
+    end
+
     def launch_simulator
-      `xcrun open -a "#{@simulator_app_path}" --args -CurrentDeviceUDID #{udid}`
+      args = ['open', '-a', @simulator_app_path, '--args', '-CurrentDeviceUDID', udid]
+      pid = spawn('xcrun', *args)
+      Process.detach(pid)
       sleep(5)
     end
 
@@ -238,5 +316,10 @@ module RunLoop::Simctl
                 raise_on_timeout: true
           }
 
+    UPDATE_DEVICE_STATE_OPTS =
+          {
+                :tries => 100,
+                :interval => 0.1
+          }
   end
 end
