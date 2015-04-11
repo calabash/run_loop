@@ -493,8 +493,7 @@ module RunLoop
 
         if /AXError: Could not auto-register for pid status change/.match(output)
           if /kAXErrorServerNotFound/.match(output)
-            $stderr.puts "\n\n****** Accessibility is not enabled on device/simulator, please enable it *** \n\n"
-            $stderr.flush
+            self.log_instruments_error('Accessibility is not enabled on device/simulator, please enable it.')
           end
           raise RunLoop::TimeoutError.new('AXError: Could not auto-register for pid status change')
         end
