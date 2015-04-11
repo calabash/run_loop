@@ -15,19 +15,25 @@ module RunLoop::Simctl
   class Bridge
 
     attr_reader :device
-    attr_reader :app_bundle_path
     attr_reader :app
+    attr_reader :sim_control
 
     def initialize(device, app_bundle_path)
-      @device = device
+
       @sim_control = RunLoop::SimControl.new
-      @simulator_app_path ||= lambda {
+      @path_to_ios_sim_app_bundle = lambda {
         dev_dir = @sim_control.xctools.xcode_developer_dir
         "#{dev_dir}/Applications/iOS Simulator.app"
       }.call
 
-      @app_bundle_path = app_bundle_path
       @app = RunLoop::App.new(app_bundle_path)
+
+      unless @app.valid?
+        raise "Could not recreate a valid app from '#{app_bundle_path}'"
+      end
+
+      @device = device
+
       RunLoop::SimControl.terminate_all_sims
       shutdown
       terminate_core_simulator_processes
@@ -85,7 +91,7 @@ module RunLoop::Simctl
       current = nil
 
       Retriable.retriable(retry_opts) do
-        current = @sim_control.simulators.detect do |sim|
+        current = sim_control.simulators.detect do |sim|
           sim.udid == udid
         end
 
@@ -268,7 +274,7 @@ module RunLoop::Simctl
     end
 
     def launch_simulator
-      args = ['open', '-a', @simulator_app_path, '--args', '-CurrentDeviceUDID', udid]
+      args = ['open', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', udid]
       pid = spawn('xcrun', *args)
       Process.detach(pid)
       sleep(5)
