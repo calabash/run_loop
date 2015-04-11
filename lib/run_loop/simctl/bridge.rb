@@ -237,7 +237,9 @@ module RunLoop::Simctl
     end
 
     def launch_simulator
-      `xcrun open -a "#{@simulator_app_path}" --args -CurrentDeviceUDID #{udid}`
+      args = ['open', '-a', @simulator_app_path, '--args', '-CurrentDeviceUDID', udid]
+      pid = spawn('xcrun', *args)
+      Process.detach(pid)
       sleep(5)
     end
 
