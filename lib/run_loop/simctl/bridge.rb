@@ -39,10 +39,6 @@ module RunLoop::Simctl
       terminate_core_simulator_processes
     end
 
-    def udid
-      @udid ||= device.udid
-    end
-
     def fullname
       @fullname ||= device.instruments_identifier
     end
@@ -59,9 +55,9 @@ module RunLoop::Simctl
       @simulator_app_dir ||= lambda {
         device_dir = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
         if device.version < RunLoop::Version.new('8.0')
-          File.join(device_dir, udid, 'data', 'Applications')
+          File.join(device_dir, device.udid, 'data', 'Applications')
         else
-          File.join(device_dir, udid, 'data', 'Containers', 'Bundle', 'Application')
+          File.join(device_dir, device.udid, 'data', 'Containers', 'Bundle', 'Application')
         end
       }.call
     end
@@ -92,15 +88,15 @@ module RunLoop::Simctl
 
       Retriable.retriable(retry_opts) do
         current = sim_control.simulators.detect do |sim|
-          sim.udid == udid
+          sim.udid == device.udid
         end
 
         unless current
-          raise "simctl could not find device with '#{udid}'"
+          raise "simctl could not find device with '#{device.udid}'"
         end
 
         if current.state == nil || current.state == ''
-          raise SimctlError, "Could not find the state of the device with #{udid}"
+          raise SimctlError, "Could not find the state of the device with #{device.udid}"
         end
       end
 
@@ -122,7 +118,6 @@ module RunLoop::Simctl
         end
       end
     end
-
 
     def wait_for_device_state(target_state)
       return true if update_device_state == target_state
@@ -208,7 +203,7 @@ module RunLoop::Simctl
         raise "Cannot handle state '#{device.state}' for #{fullname}"
       end
 
-      args = "simctl shutdown #{udid}".split(' ')
+      args = "simctl shutdown #{device.udid}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, status|
         err = stderr.read.strip
         exit_status = status.value.exitstatus
@@ -226,7 +221,7 @@ module RunLoop::Simctl
         raise "Cannot handle state '#{device.state}' for #{fullname}"
       end
 
-      args = "simctl boot #{udid}".split(' ')
+      args = "simctl boot #{device.udid}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, status|
         err = stderr.read.strip
         exit_status = status.value.exitstatus
@@ -242,7 +237,7 @@ module RunLoop::Simctl
 
       boot
 
-      args = "simctl install #{udid} #{app.path}".split(' ')
+      args = "simctl install #{device.udid} #{app.path}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, process_status|
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
@@ -260,7 +255,7 @@ module RunLoop::Simctl
 
       boot
 
-      args = "simctl uninstall #{udid} #{app.bundle_identifier}".split(' ')
+      args = "simctl uninstall #{device.udid} #{app.bundle_identifier}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, process_status|
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
@@ -274,7 +269,7 @@ module RunLoop::Simctl
     end
 
     def launch_simulator
-      args = ['open', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', udid]
+      args = ['open', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', device.udid]
       pid = spawn('xcrun', *args)
       Process.detach(pid)
       sleep(5)
@@ -285,7 +280,7 @@ module RunLoop::Simctl
       install
       launch_simulator
 
-      args = "simctl launch #{udid} #{bundle_identifier}".split(' ')
+      args = "simctl launch #{device.udid} #{bundle_identifier}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, process_status|
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
