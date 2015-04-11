@@ -30,10 +30,11 @@ describe RunLoop::Simctl::Bridge do
 
   describe '#update_device_state' do
     it 'when no valid device state can be found' do
+      options = {:tries => 5, :interval => 0.1}
       expect(bridge).to receive(:fetch_matching_device).at_least(:once).and_return(bridge.device)
-      expect(bridge.device).to receive(:state).at_least(100).times.and_return(nil)
+      expect(bridge.device).to receive(:state).at_least(5).times.and_return(nil)
       expect {
-        bridge.update_device_state
+        bridge.update_device_state(options)
       }.to raise_error(RunLoop::Simctl::SimctlError)
     end
   end

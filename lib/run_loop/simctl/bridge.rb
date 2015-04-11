@@ -50,12 +50,12 @@ module RunLoop::Simctl
       }.call
     end
 
-    def update_device_state
-
+    def update_device_state(options={})
+      merged_options = UPDATE_DEVICE_STATE_OPTS.merge(options)
       debug_logging = RunLoop::Environment.debug?
 
-      interval = UPDATE_DEVICE_STATE_OPTS[:interval]
-      tries = UPDATE_DEVICE_STATE_OPTS[:tries]
+      interval = merged_options[:interval]
+      tries = merged_options[:tries]
 
       on_retry = Proc.new do |_, try, elapsed_time, next_interval|
         if debug_logging
