@@ -110,4 +110,33 @@ describe RunLoop::Device do
       end
     end
   end
+
+  describe 'simulator files' do
+    let (:physical) {  RunLoop::Device.new('name',
+                                           '7.1.2',
+                                           '30c4b52a41d0f6c64a44bd01ff2966f03105de1e') }
+    let (:simulator) { RunLoop::Device.new('iPhone 5s',
+                                           '7.1.2',
+                                           '77DA3AC3-EB3E-4B24-B899-4A20E315C318', 'Shutdown') }
+    describe '#simulator_root_dir' do
+      it 'is nil if physical device' do
+        expect(physical.simulator_root_dir).to be_falsey
+      end
+
+      it 'is non nil if a simulator' do
+        expect(simulator.simulator_root_dir[/#{simulator.udid}/,0]).to be_truthy
+      end
+    end
+
+    describe '#simulator_accessibility_plist_path' do
+      it 'is nil if physical device' do
+        expect(physical.simulator_root_dir).to be_falsey
+      end
+
+      it 'is non nil if a simulator' do
+        expect(simulator.simulator_accessibility_plist_path[/#{simulator.udid}/,0]).to be_truthy
+        expect(simulator.simulator_accessibility_plist_path[/com.apple.Accessibility.plist/,0]).to be_truthy
+      end
+    end
+  end
 end
