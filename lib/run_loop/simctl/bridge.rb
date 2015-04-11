@@ -7,10 +7,6 @@ module RunLoop::Simctl
   # @!visibility private
   # This is not a public API.  You have been warned.
   #
-  # Proof of concept for using simctl to install and launch an app on a device.
-  #
-  # Do not use this in production code.
-  #
   # TODO Rename this class.
   # TODO Some code is duplicated from sim_control.rb
   # TODO Uninstall
