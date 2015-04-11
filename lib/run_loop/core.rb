@@ -503,7 +503,7 @@ module RunLoop
         end
 
         if /FBSOpenApplicationErrorDomain error/.match(output)
-          msg = "Instrument failed to launch app: 'FBSOpenApplicationErrorDomain error 8"
+          msg = "Instruments failed to launch app: 'FBSOpenApplicationErrorDomain error 8"
           if RunLoop::Environment.debug?
             self.log_instruments_error(msg)
           end
@@ -511,7 +511,7 @@ module RunLoop
         end
 
         if /Error: Script threw an uncaught JavaScript error: unknown JavaScript exception/.match(output)
-          msg = "Instrument failed to launch: because of an unknown JavaScript exception"
+          msg = "Instruments failed to launch: because of an unknown JavaScript exception"
           if RunLoop::Environment.debug?
             self.log_instruments_error(msg)
           end
