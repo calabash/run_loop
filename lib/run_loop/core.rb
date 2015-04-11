@@ -109,12 +109,39 @@ module RunLoop
     #
     # 1. enabling accessibility and software keyboard
     # 2. installing / uninstalling apps
-    # 3. NYI resetting the app sandbox
+    # 3. @todo resetting the app sandbox
+    #
+    # `Bridge#launch_simulator` launches the targeted iOS Simulator.  The
+    # simulator itself has several async tasks that must be completed before
+    # we start interacting with it.  If your simulator ends up in a bad state,
+    # you can increase the post-launch wait time by setting the
+    # `CAL_SIM_POST_LAUNCH_WAIT` environment variable.  The default wait time
+    # is 2.0.  This was arrived at through testing.
     #
     # @todo only enable accessibility on the targeted simulator and only if necessary
     def self.prepare_simulator(merged_options, sim_control)
       # Surprise!  This also enables software keyboard in CoreSimulator environments.
       sim_control.enable_accessibility_on_sims({:verbose => false})
+
+      # Xcode 6.3 instruments cannot launch an app that is already installed on
+      # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
+      udid = merged_options[:udid]
+      if sim_control.xctools.xcode_version_gte_63?
+        device = sim_control.simulators.detect do |sim|
+          sim.udid == udid || sim.instruments_identifier == udid
+        end
+
+        if device.nil?
+          raise "Could not find simulator with name or UDID that matches: '#{udid}'"
+        end
+
+        app_bundle_path = merged_options[:bundle_dir_or_bundle_id]
+        bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
+
+        if bridge.app_is_installed? && !sim_control.sim_is_running?
+          bridge.launch_simulator
+        end
+      end
     end
 
     def self.run_with_options(options)
