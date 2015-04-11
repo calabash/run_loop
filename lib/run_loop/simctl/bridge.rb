@@ -72,23 +72,22 @@ module RunLoop::Simctl
                                                          {:on_retry => on_retry,
                                                           :on => [SimctlError]
                                                          })
-      current = nil
+      matching_device = nil
 
       Retriable.retriable(retry_opts) do
-        current = sim_control.simulators.detect do |sim|
-          sim.udid == device.udid
-        end
+        matching_device = fetch_matching_device
 
-        unless current
+        unless matching_device
           raise "simctl could not find device with '#{device.udid}'"
         end
 
-        if current.state == nil || current.state == ''
+        if matching_device.state == nil || matching_device.state == ''
           raise SimctlError, "Could not find the state of the device with #{device.udid}"
         end
       end
 
-      @device = current
+      # Device#state is immutable
+      @device = matching_device
       @device.state
     end
 
@@ -306,5 +305,12 @@ module RunLoop::Simctl
                 :tries => 100,
                 :interval => 0.1
           }
+
+    # @!visibility private
+    def fetch_matching_device
+      sim_control.simulators.detect do |sim|
+        sim.udid == device.udid
+      end
+    end
   end
 end

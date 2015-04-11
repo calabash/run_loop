@@ -50,4 +50,20 @@ describe RunLoop::Simctl::Bridge do
       expect(path[/Bundle/,0]).to be_truthy
     end
   end
+
+  describe '#update_device_state' do
+    it 'raises error when no matching device can be found' do
+      expect(bridge).to receive(:fetch_matching_device).and_return(nil)
+      expect {
+        bridge.update_device_state
+      }.to raise_error(RuntimeError)
+    end
+
+    it 'returns valid device state' do
+      expect(bridge).to receive(:fetch_matching_device).and_return(device)
+      expect(device).to receive(:state).at_least(:once).and_return('Anything but nil or empty string')
+      expect(bridge.update_device_state).to be == 'Anything but nil or empty string'
+      expect(bridge.device).to be == device
+    end
+  end
 end

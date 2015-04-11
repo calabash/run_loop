@@ -27,4 +27,14 @@ describe RunLoop::Simctl::Bridge do
     expect(new_bridge.uninstall).to be == true
     expect(new_bridge.app_is_installed?).to be_falsey
   end
+
+  describe '#update_device_state' do
+    it 'when no valid device state can be found' do
+      expect(bridge).to receive(:fetch_matching_device).at_least(:once).and_return(bridge.device)
+      expect(bridge.device).to receive(:state).at_least(100).times.and_return(nil)
+      expect {
+        bridge.update_device_state
+      }.to raise_error(RunLoop::Simctl::SimctlError)
+    end
+  end
 end
