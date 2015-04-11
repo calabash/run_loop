@@ -141,6 +141,29 @@ module RunLoop::Simctl
       true
     end
 
+    def wait_for_app_uninstall
+      return true unless app_is_installed?
+
+      now = Time.now
+      timeout = WAIT_FOR_APP_INSTALL_OPTS[:timeout]
+      poll_until = now + timeout
+      delay = WAIT_FOR_APP_INSTALL_OPTS[:interval]
+      not_installed = false
+      while Time.now < poll_until
+        not_installed = !app_is_installed?
+        break if not_installed
+        sleep delay
+      end
+
+      puts "Waited for #{timeout} seconds for '#{bundle_identifier}' to uninstall."
+
+      unless not_installed
+        raise "Expected app to be installed on #{fullname}"
+      end
+
+      true
+    end
+
     def shutdown
       return true if update_device_state == 'Shutdown'
 
@@ -192,6 +215,24 @@ module RunLoop::Simctl
       end
 
       wait_for_app_install
+      shutdown
+    end
+
+    def uninstall
+      return true unless app_is_installed?
+
+      boot
+
+      args = "simctl uninstall #{udid} #{app.bundle_identifier}".split(' ')
+      Open3.popen3('xcrun', *args) do |_, _, stderr, process_status|
+        err = stderr.read.strip
+        exit_status = process_status.value.exitstatus
+        if exit_status != 0
+          raise "Could not uninstall '#{bundle_identifier}': #{exit_status} => '#{err}'."
+        end
+      end
+
+      wait_for_app_uninstall
       shutdown
     end
 
