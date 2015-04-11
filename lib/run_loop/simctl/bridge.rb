@@ -1,5 +1,9 @@
 module RunLoop::Simctl
 
+  class SimctlError < StandardError
+
+  end
+
   # @!visibility private
   # This is not a public API.  You have been warned.
   #
@@ -61,12 +65,43 @@ module RunLoop::Simctl
     end
 
     def update_device_state
-      current = @sim_control.simulators.detect do |sim|
-        sim.udid == udid
+
+      debug_logging = RunLoop::Environment.debug?
+
+      interval = UPDATE_DEVICE_STATE_OPTS[:interval]
+      tries = UPDATE_DEVICE_STATE_OPTS[:tries]
+
+      on_retry = Proc.new do |_, try, elapsed_time, next_interval|
+        if debug_logging
+          # Retriable 2.0
+          if elapsed_time && next_interval
+            puts "Updating device state attempt #{try} failed in '#{elapsed_time}'; will retry in '#{next_interval}'"
+          else
+            puts "Updating device state attempt #{try} failed; will retry in #{interval}"
+          end
+        end
       end
-      unless current
-        raise "simctl could not find device with '#{udid}'"
+
+      retry_opts = RunLoop::RetryOpts.tries_and_interval(tries, interval,
+                                                         {:on_retry => on_retry,
+                                                          :on => [SimctlError]
+                                                         })
+      current = nil
+
+      Retriable.retriable(retry_opts) do
+        current = @sim_control.simulators.detect do |sim|
+          sim.udid == udid
+        end
+
+        unless current
+          raise "simctl could not find device with '#{udid}'"
+        end
+
+        if current.state == nil || current.state == ''
+          raise SimctlError, "Could not find the state of the device with #{udid}"
+        end
       end
+
       @device = current
       @device.state
     end
@@ -281,5 +316,10 @@ module RunLoop::Simctl
                 raise_on_timeout: true
           }
 
+    UPDATE_DEVICE_STATE_OPTS =
+          {
+                :tries => 100,
+                :interval => 0.1
+          }
   end
 end
