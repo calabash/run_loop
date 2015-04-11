@@ -78,7 +78,7 @@ module RunLoop
     #
     # Controls how long to wait _after_ the simulator is opened.
     #
-    # Defaults to 1.0
+    # The default wait time is 1.0.  This was arrived at through testing.
     #
     # In CoreSimulator environments, the iOS Simulator starts many async
     # processes that must be allowed to finish before we start operating on the
