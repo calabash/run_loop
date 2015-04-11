@@ -32,6 +32,11 @@ module RunLoop::Simctl
 
       @device = device
 
+      # It may seem weird to do this in the initialize, but you cannot make
+      # simctl calls successfully unless the simulator is:
+      # 1. closed
+      # 2. the device you are trying to operate on is Shutdown
+      # 3. the CoreSimulator processes are terminated
       RunLoop::SimControl.terminate_all_sims
       shutdown
       terminate_core_simulator_processes
