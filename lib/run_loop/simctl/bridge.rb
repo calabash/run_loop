@@ -39,10 +39,6 @@ module RunLoop::Simctl
       terminate_core_simulator_processes
     end
 
-    def fullname
-      @fullname ||= device.instruments_identifier
-    end
-
     def bundle_identifier
       app.bundle_identifier
     end
@@ -167,7 +163,7 @@ module RunLoop::Simctl
       puts "Waited for #{timeout} seconds for '#{bundle_identifier}' to install."
 
       unless is_installed
-        raise "Expected app to be installed on #{fullname}"
+        raise "Expected app to be installed on #{device.instruments_identifier}"
       end
 
       true
@@ -190,7 +186,7 @@ module RunLoop::Simctl
       puts "Waited for #{timeout} seconds for '#{bundle_identifier}' to uninstall."
 
       unless not_installed
-        raise "Expected app to be installed on #{fullname}"
+        raise "Expected app to be installed on #{device.instruments_identifier}"
       end
 
       true
@@ -200,7 +196,7 @@ module RunLoop::Simctl
       return true if update_device_state == 'Shutdown'
 
       if device.state != 'Booted'
-        raise "Cannot handle state '#{device.state}' for #{fullname}"
+        raise "Cannot handle state '#{device.state}' for #{device.instruments_identifier}"
       end
 
       args = "simctl shutdown #{device.udid}".split(' ')
@@ -208,7 +204,7 @@ module RunLoop::Simctl
         err = stderr.read.strip
         exit_status = status.value.exitstatus
         if exit_status != 0
-          raise "Could not shutdown #{fullname}: #{exit_status} => '#{err}'"
+          raise "Could not shutdown #{device.instruments_identifier}: #{exit_status} => '#{err}'"
         end
       end
       wait_for_device_state('Shutdown')
@@ -218,7 +214,7 @@ module RunLoop::Simctl
       return true if update_device_state == 'Booted'
 
       if device.state != 'Shutdown'
-        raise "Cannot handle state '#{device.state}' for #{fullname}"
+        raise "Cannot handle state '#{device.state}' for #{device.instruments_identifier}"
       end
 
       args = "simctl boot #{device.udid}".split(' ')
@@ -226,7 +222,7 @@ module RunLoop::Simctl
         err = stderr.read.strip
         exit_status = status.value.exitstatus
         if exit_status != 0
-          raise "Could not boot #{fullname}: #{exit_status} => '#{err}'"
+          raise "Could not boot #{device.instruments_identifier}: #{exit_status} => '#{err}'"
         end
       end
       wait_for_device_state('Booted')
@@ -285,7 +281,7 @@ module RunLoop::Simctl
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
         unless exit_status == 0
-          raise "Could not simctl launch '#{bundle_identifier}' on '#{fullname}': #{exit_status} => '#{err}'"
+          raise "Could not simctl launch '#{bundle_identifier}' on '#{device.instruments_identifier}': #{exit_status} => '#{err}'"
         end
       end
 
