@@ -409,11 +409,6 @@ module RunLoop
       return udid, bundle_dir_or_bundle_id
     end
 
-    # @deprecated 1.0.0 replaced with Xctools#version
-    def self.xcode_version(xctools=RunLoop::XCTools.new)
-      xctools.xcode_version.to_s
-    end
-
     def self.create_uia_pipe(repl_path)
       begin
         Timeout::timeout(5, RunLoop::TimeoutError) do
@@ -607,6 +602,11 @@ module RunLoop
     # @deprecated 1.0.5
     def self.instruments_pids
       RunLoop::Instruments.new.instruments_pids
+    end
+
+    # @deprecated 1.0.0 replaced with Xctools#version
+    def self.xcode_version(xctools=RunLoop::XCTools.new)
+      xctools.xcode_version.to_s
     end
   end
 
