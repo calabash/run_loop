@@ -10,8 +10,9 @@ describe RunLoop::Simctl::Bridge do
     end
   }
 
+  let(:bridge) { RunLoop::Simctl::Bridge.new(device, abp) }
+
   describe '.new' do
-    let(:bridge) { RunLoop::Simctl::Bridge.new(device, abp) }
     it 'populates its attributes' do
       expect(bridge.sim_control).to be_a_kind_of(RunLoop::SimControl)
       expect(bridge.app).to be_a_kind_of(RunLoop::App)
@@ -33,6 +34,20 @@ describe RunLoop::Simctl::Bridge do
       expect {
         RunLoop::Simctl::Bridge.new(device, abp)
       }.to raise_error
+    end
+  end
+
+  describe '#simulator_app_dir' do
+    it 'device version < 8.0' do
+      expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('7.1'))
+      path = bridge.simulator_app_dir
+      expect(path[/Bundle/,0]).to be_falsey
+    end
+
+    it 'device version >= 8.0' do
+      expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('8.0'))
+      path = bridge.simulator_app_dir
+      expect(path[/Bundle/,0]).to be_truthy
     end
   end
 end
