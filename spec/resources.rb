@@ -207,6 +207,17 @@ class Resources
     end
   end
 
+  def simulator_with_sdk_test(sdk_test, sim_control)
+    sim_control.simulators.shuffle.detect do |device|
+      [
+            device.state == 'Shutdown',
+            device.name != 'rspec-0test-device',
+            !device.name[/Resizable/,0],
+            sdk_test.call(device)
+      ].all?
+    end
+  end
+
   def ideviceinstaller_bin_path
     @ideviceinstaller_bin_path ||= `which ideviceinstaller`.chomp!
   end

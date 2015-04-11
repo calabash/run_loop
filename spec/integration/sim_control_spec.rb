@@ -185,4 +185,30 @@ describe RunLoop::SimControl do
       end
     end
   end
+
+  describe 'device based accessibility' do
+    let (:sim_control) { RunLoop::SimControl.new }
+
+    let (:sdk8_device) {
+      test = lambda { |device|
+        device.version >= RunLoop::Version.new('8.0')
+      }
+      Resources.shared.simulator_with_sdk_test(test, sim_control)
+    }
+
+    let (:sdk7_device) {
+      test = lambda { |device|
+        device.version < RunLoop::Version.new('8.0')
+      }
+      Resources.shared.simulator_with_sdk_test(test, sim_control)
+    }
+
+    it 'can enable accessibility for SDK < 8.0' do
+      expect(sim_control.enable_accessibility(sdk7_device)).to be_truthy
+    end
+
+    it 'can enable accessibility for SDK >= 8.0' do
+      expect(sim_control.enable_accessibility(sdk8_device)).to be_truthy
+    end
+  end
 end

@@ -360,7 +360,49 @@ module RunLoop
     end
 
     def enable_accessibility(device)
-      raise NoMethodError, 'NYI'
+      debug_logging = RunLoop::Environment.debug?
+
+      quit_sim
+
+      plist = device.simulator_accessibility_plist_path
+
+      if device.version >= RunLoop::Version.new('8.0')
+        plist_hash = SDK_80_ACCESSIBILITY_PROPERTIES_HASH
+      else
+        plist_hash = SDK_LT_80_ACCESSIBILITY_PROPERTIES_HASH
+      end
+
+      unless File.exist? plist
+        preferences_dir = File.join(device.simulator_root_dir, 'data/Library/Preferences')
+        FileUtils.mkdir_p(preferences_dir)
+        plist = CFPropertyList::List.new
+        data = {}
+        plist.value = CFPropertyList.guess(data)
+        plist.save(plist_path, CFPropertyList::List::FORMAT_BINARY)
+      end
+
+      msgs = []
+
+      successes = plist_hash.map do |hash_key, settings|
+        success = pbuddy.plist_set(settings[:key], settings[:type], settings[:value], plist)
+        unless success
+          if debug_logging
+            if settings[:type] == 'bool'
+              value = settings[:value] ? 'YES' : 'NO'
+            else
+              value = settings[:value]
+            end
+            msgs << "could not set #{hash_key} => '#{settings[:key]}' to #{value}"
+          end
+        end
+        success
+      end
+
+      if successes.all?
+        true
+      else
+        return false, msgs
+      end
     end
 
     private
