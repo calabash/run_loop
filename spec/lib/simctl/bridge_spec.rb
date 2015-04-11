@@ -63,6 +63,9 @@ describe RunLoop::Simctl::Bridge do
       expect(bridge).to receive(:fetch_matching_device).and_return(device)
       expect(device).to receive(:state).at_least(:once).and_return('Anything but nil or empty string')
       expect(bridge.update_device_state).to be == 'Anything but nil or empty string'
+
+      # Unexpected.  Device#state is immutable, so we replace Simctl @device
+      # when this method is called.
       expect(bridge.device).to be == device
     end
   end
