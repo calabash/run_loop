@@ -39,10 +39,6 @@ module RunLoop::Simctl
       terminate_core_simulator_processes
     end
 
-    def bundle_identifier
-      app.bundle_identifier
-    end
-
     def executable_name
       app.executable_name
     end
@@ -140,7 +136,7 @@ module RunLoop::Simctl
       sim_app_dir = simulator_app_dir
       return false if !File.exist?(sim_app_dir)
       app_path = Dir.glob("#{sim_app_dir}/**/*.app").detect do |path|
-        RunLoop::App.new(path).bundle_identifier == bundle_identifier
+        RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
       end
 
       !app_path.nil?
@@ -160,7 +156,7 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for '#{bundle_identifier}' to install."
+      puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to install."
 
       unless is_installed
         raise "Expected app to be installed on #{device.instruments_identifier}"
@@ -183,7 +179,7 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for '#{bundle_identifier}' to uninstall."
+      puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to uninstall."
 
       unless not_installed
         raise "Expected app to be installed on #{device.instruments_identifier}"
@@ -238,7 +234,7 @@ module RunLoop::Simctl
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
         if exit_status != 0
-          raise "Could not install '#{bundle_identifier}': #{exit_status} => '#{err}'."
+          raise "Could not install '#{app.bundle_identifier}': #{exit_status} => '#{err}'."
         end
       end
 
@@ -256,7 +252,7 @@ module RunLoop::Simctl
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
         if exit_status != 0
-          raise "Could not uninstall '#{bundle_identifier}': #{exit_status} => '#{err}'."
+          raise "Could not uninstall '#{app.bundle_identifier}': #{exit_status} => '#{err}'."
         end
       end
 
@@ -276,12 +272,12 @@ module RunLoop::Simctl
       install
       launch_simulator
 
-      args = "simctl launch #{device.udid} #{bundle_identifier}".split(' ')
+      args = "simctl launch #{device.udid} #{app.bundle_identifier}".split(' ')
       Open3.popen3('xcrun', *args) do |_, _, stderr, process_status|
         err = stderr.read.strip
         exit_status = process_status.value.exitstatus
         unless exit_status == 0
-          raise "Could not simctl launch '#{bundle_identifier}' on '#{device.instruments_identifier}': #{exit_status} => '#{err}'"
+          raise "Could not simctl launch '#{app.bundle_identifier}' on '#{device.instruments_identifier}': #{exit_status} => '#{err}'"
         end
       end
 
