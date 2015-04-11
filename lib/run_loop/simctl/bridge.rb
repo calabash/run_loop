@@ -39,10 +39,6 @@ module RunLoop::Simctl
       terminate_core_simulator_processes
     end
 
-    def executable_name
-      app.executable_name
-    end
-
     def simulator_app_dir
       @simulator_app_dir ||= lambda {
         device_dir = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
@@ -281,7 +277,7 @@ module RunLoop::Simctl
         end
       end
 
-      RunLoop::ProcessWaiter.new(executable_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+      RunLoop::ProcessWaiter.new(app.executable_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       true
     end
 
