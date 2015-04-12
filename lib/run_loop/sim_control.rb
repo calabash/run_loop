@@ -333,8 +333,149 @@ module RunLoop
       end
     end
 
-    private
+    def accessibility_enabled?(device)
+      plist = device.simulator_accessibility_plist_path
+      return false unless File.exist?(plist)
 
+      if device.version >= RunLoop::Version.new('8.0')
+        plist_hash = SDK_80_ACCESSIBILITY_PROPERTIES_HASH
+      else
+        plist_hash = SDK_LT_80_ACCESSIBILITY_PROPERTIES_HASH
+      end
+
+      plist_hash.each do |_, details|
+        key = details[:key]
+        value = details[:value]
+
+        unless pbuddy.plist_read(key, plist) == "#{value}"
+          return false
+        end
+      end
+      true
+    end
+
+    def ensure_accessibility(device)
+      if accessibility_enabled?(device)
+        true
+      else
+        enable_accessibility(device)
+      end
+    end
+
+    def enable_accessibility(device)
+      debug_logging = RunLoop::Environment.debug?
+
+      quit_sim
+
+      plist_path = device.simulator_accessibility_plist_path
+
+      if device.version >= RunLoop::Version.new('8.0')
+        plist_hash = SDK_80_ACCESSIBILITY_PROPERTIES_HASH
+      else
+        plist_hash = SDK_LT_80_ACCESSIBILITY_PROPERTIES_HASH
+      end
+
+      unless File.exist? plist_path
+        preferences_dir = File.join(device.simulator_root_dir, 'data/Library/Preferences')
+        FileUtils.mkdir_p(preferences_dir)
+        plist = CFPropertyList::List.new
+        data = {}
+        plist.value = CFPropertyList.guess(data)
+        plist.save(plist_path, CFPropertyList::List::FORMAT_BINARY)
+      end
+
+      msgs = []
+
+      successes = plist_hash.map do |hash_key, settings|
+        success = pbuddy.plist_set(settings[:key], settings[:type], settings[:value], plist_path)
+        unless success
+          if debug_logging
+            if settings[:type] == 'bool'
+              value = settings[:value] ? 'YES' : 'NO'
+            else
+              value = settings[:value]
+            end
+            msgs << "could not set #{hash_key} => '#{settings[:key]}' to #{value}"
+          end
+        end
+        success
+      end
+
+      if successes.all?
+        true
+      else
+        return false, msgs
+      end
+    end
+
+    def software_keyboard_enabled?(device)
+      unless xcode_version_gte_51?
+        raise RuntimeError, 'Keyboard enabling is only available on Xcode >= 6'
+      end
+
+      plist = device.simulator_preferences_plist_path
+      return false unless File.exist?(plist)
+
+      CORE_SIMULATOR_KEYBOARD_PROPERTIES_HASH.each do |_, details|
+        key = details[:key]
+        value = details[:value]
+
+        unless pbuddy.plist_read(key, plist) == "#{value}"
+          return false
+        end
+      end
+      true
+    end
+
+    def ensure_software_keyboard(device)
+      if software_keyboard_enabled?(device)
+        true
+      else
+        enable_software_keyboard(device)
+      end
+    end
+
+    def enable_software_keyboard(device)
+      debug_logging = RunLoop::Environment.debug?
+
+      quit_sim
+
+      plist_path = device.simulator_preferences_plist_path
+
+      unless File.exist? plist_path
+        preferences_dir = File.join(device.simulator_root_dir, 'data/Library/Preferences')
+        FileUtils.mkdir_p(preferences_dir)
+        plist = CFPropertyList::List.new
+        data = {}
+        plist.value = CFPropertyList.guess(data)
+        plist.save(plist_path, CFPropertyList::List::FORMAT_BINARY)
+      end
+
+      msgs = []
+
+      successes = CORE_SIMULATOR_KEYBOARD_PROPERTIES_HASH.map do |hash_key, settings|
+        success = pbuddy.plist_set(settings[:key], settings[:type], settings[:value], plist_path)
+        unless success
+          if debug_logging
+            if settings[:type] == 'bool'
+              value = settings[:value] ? 'YES' : 'NO'
+            else
+              value = settings[:value]
+            end
+            msgs << "could not set #{hash_key} => '#{settings[:key]}' to #{value}"
+          end
+        end
+        success
+      end
+
+      if successes.all?
+        true
+      else
+        return false, msgs
+      end
+    end
+
+    private
 
     # @!visibility private
     # The list of possible SDKs for 5.0 <= Xcode < 6.0
@@ -448,6 +589,15 @@ module RunLoop
     # A regex for finding directories under ~/Library/Developer/CoreSimulator/Devices
     # and parsing the output of `simctl list sessions`.
     XCODE_6_SIM_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
+
+    CORE_SIMULATOR_KEYBOARD_PROPERTIES_HASH =
+          {
+                :automatic_minimization => {
+                      :key => 'AutomaticMinimizationEnabled',
+                      :value => 0,
+                      :type => 'integer'
+                }
+          }
 
     # @!visibility private
     # Returns the current Simulator pid.

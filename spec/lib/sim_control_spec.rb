@@ -255,4 +255,110 @@ describe RunLoop::SimControl do
       end
     end
   end
+
+  describe 'device based accessibility' do
+    let(:device) {
+      RunLoop::Device.new('iPhone 5s',
+                          '7.1.2',
+                          '77DA3AC3-EB3E-4B24-B899-4A20E315C318', 'Shutdown')
+    }
+
+    let(:sdk71) { RunLoop::Version.new('7.1') }
+    let(:sdk80) { RunLoop::Version.new('8.1') }
+
+    let(:sdk71_enabled) { Resources.shared.access_plist_for_sdk(sdk71, true) }
+    let(:sdk71_not_enabled) { Resources.shared.access_plist_for_sdk(sdk71, false) }
+
+    let(:sdk80_enabled) { Resources.shared.access_plist_for_sdk(sdk80, true) }
+    let(:sdk80_not_enabled) { Resources.shared.access_plist_for_sdk(sdk80, false) }
+
+    describe '#accessibility_enabled' do
+      it 'returns false if plist does not exist' do
+        expect(device).to receive(:simulator_accessibility_plist_path).and_return('/path/to/file.plist')
+        expect(sim_control.accessibility_enabled?(device)).to be_falsey
+      end
+
+      describe 'SDK < 8.0' do
+        it 'returns true when accessibility is enabled' do
+          expect(device).to receive(:version).and_return sdk71
+          expect(device).to receive(:simulator_accessibility_plist_path).and_return(sdk71_enabled)
+          expect(sim_control.accessibility_enabled?(device)).to be_truthy
+        end
+
+        it 'returns false when accessibility is not enabled' do
+          expect(device).to receive(:version).and_return sdk71
+          expect(device).to receive(:simulator_accessibility_plist_path).and_return(sdk71_not_enabled)
+          expect(sim_control.accessibility_enabled?(device)).to be_falsey
+        end
+      end
+
+      describe 'SDK >= 8.0' do
+        it 'returns true when accessibility is enabled' do
+          expect(device).to receive(:version).and_return sdk80
+          expect(device).to receive(:simulator_accessibility_plist_path).and_return(sdk80_enabled)
+          expect(sim_control.accessibility_enabled?(device)).to be_truthy
+        end
+
+        it 'returns false when accessibility is not enabled' do
+          expect(device).to receive(:version).and_return sdk80
+          expect(device).to receive(:simulator_accessibility_plist_path).and_return(sdk80_not_enabled)
+          expect(sim_control.accessibility_enabled?(device)).to be_falsey
+        end
+      end
+    end
+
+    describe '#ensure_accessibility' do
+      it 'returns true when accessibility is enabled' do
+        expect(sim_control).to receive(:accessibility_enabled?).with(device).and_return(true)
+        expect(sim_control.ensure_accessibility(device)).to be_truthy
+      end
+
+      it 'returns true if it enabled accessibility' do
+        expect(sim_control).to receive(:accessibility_enabled?).with(device).and_return(false)
+        expect(sim_control).to receive(:enable_accessibility).with(device).and_return(true)
+        expect(sim_control.ensure_accessibility(device)).to be_truthy
+      end
+    end
+  end
+
+  describe 'device based software keyboard enable' do
+    let(:device) {
+      RunLoop::Device.new('iPhone 5s',
+                          '7.1.2',
+                          '77DA3AC3-EB3E-4B24-B899-4A20E315C318', 'Shutdown')
+    }
+
+    let(:keyboard_enabled) { Resources.shared.plist_with_software_keyboard(true) }
+    let(:keyboard_not_enabled) { Resources.shared.plist_with_software_keyboard(false) }
+
+    describe '#keyboard_enabled' do
+      it 'returns false if plist does not exist' do
+        expect(device).to receive(:simulator_preferences_plist_path).and_return('/path/to/file.plist')
+        expect(sim_control.software_keyboard_enabled?(device)).to be_falsey
+      end
+
+      it 'returns true when keyboard is enabled' do
+        expect(device).to receive(:simulator_preferences_plist_path).and_return(keyboard_enabled)
+        expect(sim_control.software_keyboard_enabled?(device)).to be_truthy
+      end
+
+      it 'returns false when keyboard is not enabled' do
+        expect(device).to receive(:simulator_preferences_plist_path).and_return(keyboard_not_enabled)
+        expect(sim_control.software_keyboard_enabled?(device)).to be_falsey
+      end
+    end
+
+    describe '#ensure_keyboard' do
+      it 'returns true when keyboard is enabled' do
+        expect(sim_control).to receive(:software_keyboard_enabled?).with(device).and_return(true)
+        expect(sim_control.ensure_software_keyboard(device)).to be_truthy
+      end
+
+      it 'returns true if it enabled the keyboard' do
+        expect(sim_control).to receive(:software_keyboard_enabled?).with(device).and_return(false)
+        expect(sim_control).to receive(:enable_software_keyboard).with(device).and_return(true)
+        expect(sim_control.ensure_software_keyboard(device)).to be_truthy
+      end
+    end
+  end
 end

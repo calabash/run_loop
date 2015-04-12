@@ -5,6 +5,9 @@ module RunLoop
     attr_reader :version
     attr_reader :udid
     attr_reader :state
+    attr_reader :simulator_root_dir
+    attr_reader :simulator_accessibility_plist_path
+    attr_reader :simulator_preferences_plist_path
 
     # Create a new device.
     #
@@ -86,5 +89,30 @@ module RunLoop
         raise 'Finding the instruction set of a device requires a third-party tool like ideviceinfo'
       end
     end
+
+    def simulator_root_dir
+      @simulator_root_dir ||= lambda {
+        return nil if physical_device?
+        File.join(CORE_SIMULATOR_DEVICE_DIR, udid)
+      }.call
+    end
+
+    def simulator_accessibility_plist_path
+      @simulator_accessibility_plist_path ||= lambda {
+        return nil if physical_device?
+        File.join(simulator_root_dir, 'data/Library/Preferences/com.apple.Accessibility.plist')
+      }.call
+    end
+
+    def simulator_preferences_plist_path
+      @simulator_preferences_plist_path ||= lambda {
+        return nil if physical_device?
+        File.join(simulator_root_dir, 'data/Library/Preferences/com.apple.Preferences.plist')
+      }.call
+    end
+
+    private
+
+    CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
   end
 end
