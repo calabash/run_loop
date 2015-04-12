@@ -1,5 +1,16 @@
 ## Change Log
 
+### 1.3.1
+
+This is a patch release for Xcode 6.3 + iOS 8.3 simulators.
+
+##### Xcode 6.3 instruments cannot launch installed app on iOS 8.3 Simulator [calabash/#744](https://github.com/calabash/calabash-ios/issues/744)
+
+* Refine accessibility and software keyboard enabling #168
+* Implement fix for Xcode 6.3 + iOS 8.3 simulators #165
+* Make simctl bridge production ready #164
+* simctl bridge can UIAninstall an app #163
+
 ### 1.3.0
 
 * Add command-line tool #157
