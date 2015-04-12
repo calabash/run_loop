@@ -190,6 +190,43 @@ class Resources
     @mocked_sim_support_dir ||= File.expand_path(File.join(resources_dir, 'enable-accessibility'))
   end
 
+  def access_plist_for_sdk(sdk, enabled)
+    base_dir = File.join(resources_dir, 'enable-accessibility', 'CoreSimulator')
+    if sdk < RunLoop::Version.new('8.0')
+      if enabled
+        File.join(base_dir, 'access-enabled-iOS7.plist')
+      else
+        File.join(base_dir, 'access-not-enabled-iOS7.plist')
+      end
+    else
+      if enabled
+        File.join(base_dir, 'access-enabled-iOS8.plist')
+      else
+        File.join(base_dir, 'access-not-enabled-iOS8.plist')
+      end
+    end
+  end
+
+  def simulator_with_sdk_test(sdk_test, sim_control)
+    sim_control.simulators.shuffle.detect do |device|
+      [
+            device.state == 'Shutdown',
+            device.name != 'rspec-0test-device',
+            !device.name[/Resizable/,0],
+            sdk_test.call(device)
+      ].all?
+    end
+  end
+
+  def plist_with_software_keyboard(enabled)
+    base_dir = File.join(resources_dir, 'keyboard', 'CoreSimulator')
+    if enabled
+      File.join(base_dir, 'software-keyboard-enabled.plist')
+    else
+      File.join(base_dir, 'software-keyboard-not-enabled.plist')
+    end
+  end
+
   def ideviceinstaller_bin_path
     @ideviceinstaller_bin_path ||= `which ideviceinstaller`.chomp!
   end

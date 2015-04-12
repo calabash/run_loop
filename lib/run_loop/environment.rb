@@ -73,5 +73,33 @@ module RunLoop
         value
       end
     end
+
+    # Returns the value of CAL_SIM_POST_LAUNCH_WAIT
+    #
+    # Controls how long to wait _after_ the simulator is opened.
+    #
+    # The default wait time is 1.0.  This was arrived at through testing.
+    #
+    # In CoreSimulator environments, the iOS Simulator starts many async
+    # processes that must be allowed to finish before we start operating on the
+    # simulator.  Until we find the right combination of processes to wait for,
+    # this variable will give us the opportunity to control how long we wait.
+    #
+    # Essential for managed envs like Travis + Jenkins and on slower machines.
+    def self.sim_post_launch_wait
+      value = ENV['CAL_SIM_POST_LAUNCH_WAIT']
+      float = nil
+      begin
+        float = value.to_f
+      rescue NoMethodError => _
+
+      end
+
+      if float.nil? || float == 0.0
+        nil
+      else
+        float
+      end
+    end
   end
 end

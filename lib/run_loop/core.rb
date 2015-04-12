@@ -48,23 +48,6 @@ module RunLoop
       RunLoop::Logging.log_debug(logger, "\n" + message)
     end
 
-    # @deprecated since 1.0.0
-    # still used extensively in calabash-ios launcher
-    def self.above_or_eql_version?(target_version, xcode_version)
-      if target_version.is_a?(RunLoop::Version)
-        target = target_version
-      else
-        target = RunLoop::Version.new(target_version)
-      end
-
-      if xcode_version.is_a?(RunLoop::Version)
-        xcode = xcode_version
-      else
-        xcode = RunLoop::Version.new(xcode_version)
-      end
-      target >= xcode
-    end
-
     def self.script_for_key(key)
       if SCRIPTS[key].nil?
         return nil
@@ -119,6 +102,68 @@ module RunLoop
       else
         RunLoop::Logging.log_debug(logger, "Xcode #{sim_control.xctools.xcode_version} detected; skipping simulator architecture check.")
         false
+      end
+    end
+
+    # Prepares the simulator for running.
+    #
+    # 1. enabling accessibility and software keyboard
+    # 2. installing / uninstalling apps
+    # 3. @todo resetting the app sandbox
+    #
+    # `Bridge#launch_simulator` launches the targeted iOS Simulator.  The
+    # simulator itself has several async tasks that must be completed before
+    # we start interacting with it.  If your simulator ends up in a bad state,
+    # you can increase the post-launch wait time by setting the
+    # `CAL_SIM_POST_LAUNCH_WAIT` environment variable.  The default wait time
+    # is 1.0.  This was arrived at through testing.
+    def self.prepare_simulator(launch_options, sim_control)
+
+      # Respect option passed from Calabash
+      if launch_options[:relaunch_simulator]
+        sim_control.quit_sim
+      end
+
+      if !sim_control.xctools.xcode_version_gte_6?
+        # Xcode 5.1.1
+
+        # Will quit the simulator!
+        sim_control.enable_accessibility_on_sims({:verbose => false})
+      else
+
+        # CoreSimulator
+
+        udid = launch_options[:udid]
+        device = sim_control.simulators.detect do |sim|
+          sim.udid == udid || sim.instruments_identifier == udid
+        end
+
+        if device.nil?
+          raise "Could not find simulator with name or UDID that matches: '#{udid}'"
+        end
+
+        # Will quit the simulator if it is running.
+        # @todo fix accessibility_enabled? so we don't have to quit the sim
+        # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
+        # https://github.com/calabash/run_loop/issues/167
+        sim_control.ensure_accessibility(device)
+
+        # Will quit the simulator if it is running.
+        # @todo fix software_keyboard_enabled? so we don't have to quit the sim
+        # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
+        # https://github.com/calabash/run_loop/issues/167
+        sim_control.ensure_software_keyboard(device)
+
+        # Xcode 6.3 instruments cannot launch an app that is already installed on
+        # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
+        if sim_control.xctools.xcode_version_gte_63?
+          app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
+          bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
+
+          if bridge.app_is_installed? && !sim_control.sim_is_running?
+            bridge.launch_simulator
+          end
+        end
       end
     end
 
@@ -202,9 +247,8 @@ module RunLoop
       merged_options = options.merge(discovered_options)
 
       if self.simulator_target?(merged_options, sim_control)
-        # @todo only enable accessibility on the targeted simulator
-        sim_control.enable_accessibility_on_sims({:verbose => false})
         self.expect_compatible_simulator_architecture(merged_options, sim_control)
+        self.prepare_simulator(merged_options, sim_control)
       end
 
       self.log_run_loop_options(merged_options, xctools)
@@ -409,11 +453,6 @@ module RunLoop
       return udid, bundle_dir_or_bundle_id
     end
 
-    # @deprecated 1.0.0 replaced with Xctools#version
-    def self.xcode_version(xctools=RunLoop::XCTools.new)
-      xctools.xcode_version.to_s
-    end
-
     def self.create_uia_pipe(repl_path)
       begin
         Timeout::timeout(5, RunLoop::TimeoutError) do
@@ -480,6 +519,11 @@ module RunLoop
       cmd.gsub(backquote,backquote*4)
     end
 
+    def self.log_instruments_error(msg)
+      $stderr.puts "\033[31m\n\n*** #{msg} ***\n\n\033[0m"
+      $stderr.flush
+    end
+
     def self.read_response(run_loop, expected_index, empty_file_timeout=10, search_for_property='index')
       debug_read = RunLoop::Environment.debug_read?
 
@@ -499,14 +543,31 @@ module RunLoop
 
         if /AXError: Could not auto-register for pid status change/.match(output)
           if /kAXErrorServerNotFound/.match(output)
-            $stderr.puts "\n\n****** Accessibility is not enabled on device/simulator, please enable it *** \n\n"
-            $stderr.flush
+            self.log_instruments_error('Accessibility is not enabled on device/simulator, please enable it.')
           end
           raise RunLoop::TimeoutError.new('AXError: Could not auto-register for pid status change')
         end
+
         if /Automation Instrument ran into an exception/.match(output)
           raise RunLoop::TimeoutError.new('Exception while running script')
         end
+
+        if /FBSOpenApplicationErrorDomain error/.match(output)
+          msg = "Instruments failed to launch app: 'FBSOpenApplicationErrorDomain error 8"
+          if RunLoop::Environment.debug?
+            self.log_instruments_error(msg)
+          end
+          raise RunLoop::TimeoutError.new(msg)
+        end
+
+        if /Error: Script threw an uncaught JavaScript error: unknown JavaScript exception/.match(output)
+          msg = "Instruments failed to launch: because of an unknown JavaScript exception"
+          if RunLoop::Environment.debug?
+            self.log_instruments_error(msg)
+          end
+          raise RunLoop::TimeoutError.new(msg)
+        end
+
         index_if_found = output.index(START_DELIMITER)
         if debug_read
           puts output.gsub('*', '')
@@ -556,11 +617,6 @@ module RunLoop
       result
     end
 
-    # @deprecated 1.0.5
-    def self.pids_for_run_loop(run_loop, &block)
-      RunLoop::Instruments.new.instruments_pids(&block)
-    end
-
     def self.automation_template(xctools, candidate = RunLoop::Environment.trace_template)
       unless candidate && File.exist?(candidate)
         candidate = default_tracetemplate xctools
@@ -608,6 +664,32 @@ module RunLoop
     def self.instruments_pids
       RunLoop::Instruments.new.instruments_pids
     end
-  end
 
+    # @deprecated 1.0.0 replaced with Xctools#version
+    def self.xcode_version(xctools=RunLoop::XCTools.new)
+      xctools.xcode_version.to_s
+    end
+
+    # @deprecated since 1.0.0
+    # still used extensively in calabash-ios launcher
+    def self.above_or_eql_version?(target_version, xcode_version)
+      if target_version.is_a?(RunLoop::Version)
+        target = target_version
+      else
+        target = RunLoop::Version.new(target_version)
+      end
+
+      if xcode_version.is_a?(RunLoop::Version)
+        xcode = xcode_version
+      else
+        xcode = RunLoop::Version.new(xcode_version)
+      end
+      target >= xcode
+    end
+
+    # @deprecated 1.0.5
+    def self.pids_for_run_loop(run_loop, &block)
+      RunLoop::Instruments.new.instruments_pids(&block)
+    end
+  end
 end
