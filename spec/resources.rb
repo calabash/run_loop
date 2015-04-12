@@ -218,6 +218,15 @@ class Resources
     end
   end
 
+  def plist_with_software_keyboard(enabled)
+    base_dir = File.join(resources_dir, 'keyboard', 'CoreSimulator')
+    if enabled
+      File.join(base_dir, 'software-keyboard-enabled.plist')
+    else
+      File.join(base_dir, 'software-keyboard-not-enabled.plist')
+    end
+  end
+
   def ideviceinstaller_bin_path
     @ideviceinstaller_bin_path ||= `which ideviceinstaller`.chomp!
   end

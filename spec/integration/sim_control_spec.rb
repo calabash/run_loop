@@ -186,7 +186,7 @@ describe RunLoop::SimControl do
     end
   end
 
-  describe 'device based accessibility' do
+  describe 'plist munging' do
     let (:sim_control) { RunLoop::SimControl.new }
 
     let (:sdk8_device) {
@@ -203,12 +203,19 @@ describe RunLoop::SimControl do
       Resources.shared.simulator_with_sdk_test(test, sim_control)
     }
 
-    it 'can enable accessibility for SDK < 8.0' do
-      expect(sim_control.enable_accessibility(sdk7_device)).to be_truthy
+    describe 'enable accessibility on a device' do
+
+      it 'SDK < 8.0' do
+        expect(sim_control.enable_accessibility(sdk7_device)).to be_truthy
+      end
+
+      it 'SDK >= 8.0' do
+        expect(sim_control.enable_accessibility(sdk8_device)).to be_truthy
+      end
     end
 
-    it 'can enable accessibility for SDK >= 8.0' do
-      expect(sim_control.enable_accessibility(sdk8_device)).to be_truthy
+    it 'enable software keyboard on device' do
+      expect(sim_control.enable_software_keyboard(sdk8_device)).to be_truthy
     end
   end
 end
