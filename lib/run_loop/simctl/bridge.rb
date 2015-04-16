@@ -139,13 +139,7 @@ module RunLoop::Simctl
     end
 
     def app_is_installed?
-      sim_app_dir = simulator_app_dir
-      return false if !File.exist?(sim_app_dir)
-      app_path = Dir.glob("#{sim_app_dir}/**/*.app").detect do |path|
-        RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
-      end
-
-      !app_path.nil?
+      !fetch_app_dir.nil?
     end
 
     def wait_for_app_install
@@ -331,5 +325,15 @@ module RunLoop::Simctl
         sim.udid == device.udid
       end
     end
+
+    # @!visibility private
+    def fetch_app_dir
+      sim_app_dir = device_applications_dir
+      return false if !File.exist?(sim_app_dir)
+      Dir.glob("#{sim_app_dir}/**/*.app").detect do |path|
+        RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
+      end
+    end
+
   end
 end
