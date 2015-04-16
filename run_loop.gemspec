@@ -5,6 +5,7 @@ require "run_loop/version"
 ruby_files = Dir.glob('{lib}/**/*')
 java_scripts = Dir.glob('scripts/*.js')
 bash_scripts = ['scripts/udidetect', 'scripts/read-cmd.sh', 'scripts/timeout3']
+plists = Dir.glob('plists/**/*.plist')
 
 Gem::Specification.new do |s|
   s.name        = "run_loop"
@@ -15,7 +16,7 @@ Gem::Specification.new do |s|
   s.homepage    = "http://calaba.sh"
   s.summary     = %q{The bridge between Calabash iOS and Xcode command-line
 tools like instruments and simctl.}
-  s.files         = ruby_files + java_scripts + bash_scripts + ['LICENSE']
+  s.files         = ruby_files + java_scripts + bash_scripts + plists + ['LICENSE']
   s.require_paths = ["lib"]
   s.licenses    = ['MIT']
   s.executables = 'run-loop'

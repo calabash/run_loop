@@ -18,6 +18,7 @@ require 'run_loop/host_cache'
 require 'run_loop/patches/awesome_print'
 require 'run_loop/patches/retriable'
 require 'run_loop/simctl/bridge'
+require 'run_loop/simctl/plists'
 
 module RunLoop
 
