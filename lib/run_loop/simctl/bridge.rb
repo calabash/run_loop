@@ -42,13 +42,16 @@ module RunLoop::Simctl
       terminate_core_simulator_processes
     end
 
+    # @!visibility private
+    def is_sdk_8?
+      @is_sdk_8 ||= device.version >= RunLoop::Version.new('8.0')
+    end
     def simulator_app_dir
       @simulator_app_dir ||= lambda {
-        device_dir = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
-        if device.version < RunLoop::Version.new('8.0')
-          File.join(device_dir, device.udid, 'data', 'Applications')
+        if is_sdk_8?
+          File.join(device_data_dir, 'Containers', 'Bundle', 'Application')
         else
-          File.join(device_dir, device.udid, 'data', 'Containers', 'Bundle', 'Application')
+          File.join(device_data_dir, 'Applications')
         end
       }.call
     end

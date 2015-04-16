@@ -69,4 +69,21 @@ describe RunLoop::Simctl::Bridge do
       expect(bridge.device).to be == device
     end
   end
+
+  describe '#is_sdk_8?' do
+    it 'returns true when sdk == 8.0' do
+      expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('8.0'))
+      expect(bridge.is_sdk_8?).to be_truthy
+    end
+
+    it 'returns true when sdk > 8.0' do
+      expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('8.1'))
+      expect(bridge.is_sdk_8?).to be_truthy
+    end
+
+    it 'returns false when sdk < 8.0' do
+      expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('7.1'))
+      expect(bridge.is_sdk_8?).to be_falsey
+    end
+  end
 end
