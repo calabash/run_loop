@@ -37,16 +37,16 @@ describe RunLoop::Simctl::Bridge do
     end
   end
 
-  describe '#simulator_app_dir' do
+  describe '#device_applications_dir' do
     it 'device version < 8.0' do
       expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('7.1'))
-      path = bridge.simulator_app_dir
+      path = bridge.device_applications_dir
       expect(path[/Bundle/,0]).to be_falsey
     end
 
     it 'device version >= 8.0' do
       expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('8.0'))
-      path = bridge.simulator_app_dir
+      path = bridge.device_applications_dir
       expect(path[/Bundle/,0]).to be_truthy
     end
   end

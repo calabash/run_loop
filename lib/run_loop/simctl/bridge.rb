@@ -51,7 +51,7 @@ module RunLoop::Simctl
       @device_data_dir ||= File.join(CORE_SIMULATOR_DEVICE_DIR, device.udid, 'data')
     end
 
-    def simulator_app_dir
+    def device_applications_dir
       @simulator_app_dir ||= lambda {
         if is_sdk_8?
           File.join(device_data_dir, 'Containers', 'Bundle', 'Application')
