@@ -46,6 +46,11 @@ module RunLoop::Simctl
     def is_sdk_8?
       @is_sdk_8 ||= device.version >= RunLoop::Version.new('8.0')
     end
+
+    def device_data_dir
+      @device_data_dir ||= File.join(CORE_SIMULATOR_DEVICE_DIR, device.udid, 'data')
+    end
+
     def simulator_app_dir
       @simulator_app_dir ||= lambda {
         if is_sdk_8?
@@ -317,6 +322,8 @@ module RunLoop::Simctl
           }
 
     SIM_POST_LAUNCH_WAIT = RunLoop::Environment.sim_post_launch_wait || 1.0
+
+    CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
 
     # @!visibility private
     def fetch_matching_device

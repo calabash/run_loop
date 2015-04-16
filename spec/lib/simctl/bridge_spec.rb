@@ -86,4 +86,8 @@ describe RunLoop::Simctl::Bridge do
       expect(bridge.is_sdk_8?).to be_falsey
     end
   end
+
+  it '#device_data_dir' do
+    expect(Dir.exist?(bridge.device_data_dir)).to be_truthy
+  end
 end
