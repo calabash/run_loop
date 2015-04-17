@@ -119,5 +119,53 @@ describe RunLoop::Simctl::Bridge do
       end
     end
 
+    describe '#app_library_dir' do
+      it 'returns valid file path when app is installed' do
+        expect(bridge).to receive(:app_data_dir).and_return('/some/path')
+        expect(bridge.app_library_dir.end_with? 'Library').to be_truthy
+      end
+
+      it 'returns nil otherwise' do
+        expect(bridge).to receive(:app_data_dir).and_return(nil)
+        expect(bridge.app_library_dir).to be == nil
+      end
+    end
+
+    describe '#app_library_preferences_dir' do
+      it 'returns valid file path when app is installed' do
+        expect(bridge).to receive(:app_library_dir).and_return('/some/path')
+        expect(bridge.app_library_preferences_dir.end_with? 'Preferences').to be_truthy
+      end
+
+      it 'returns nil otherwise' do
+        expect(bridge).to receive(:app_library_dir).and_return(nil)
+        expect(bridge.app_library_preferences_dir).to be == nil
+      end
+    end
+
+    describe '#app_documents_dir' do
+      it 'returns valid file path when app is installed' do
+        expect(bridge).to receive(:app_data_dir).and_return('/some/path')
+        expect(bridge.app_documents_dir.end_with? 'Documents').to be_truthy
+      end
+
+      it 'returns nil otherwise' do
+        expect(bridge).to receive(:app_data_dir).and_return(nil)
+        expect(bridge.app_documents_dir).to be == nil
+      end
+    end
+
+    describe '#app_tmp_dir' do
+      it 'returns valid file path when app is installed' do
+        expect(bridge).to receive(:app_data_dir).and_return('/some/path')
+        expect(bridge.app_tmp_dir.end_with? 'tmp').to be_truthy
+      end
+
+      it 'returns nil otherwise' do
+        expect(bridge).to receive(:app_data_dir).and_return(nil)
+        expect(bridge.app_tmp_dir).to be == nil
+      end
+    end
+
   end
 end

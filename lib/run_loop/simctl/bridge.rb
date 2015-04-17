@@ -83,6 +83,42 @@ module RunLoop::Simctl
       end
     end
 
+    def app_library_dir
+      base_dir = app_data_dir
+      if base_dir.nil?
+        nil
+      else
+        File.join(base_dir, 'Library')
+      end
+    end
+
+    def app_library_preferences_dir
+      base_dir = app_library_dir
+      if base_dir.nil?
+        nil
+      else
+        File.join(base_dir, 'Preferences')
+      end
+    end
+
+    def app_documents_dir
+      base_dir = app_data_dir
+      if base_dir.nil?
+        nil
+      else
+        File.join(base_dir, 'Documents')
+      end
+    end
+
+    def app_tmp_dir
+      base_dir = app_data_dir
+      if base_dir.nil?
+        nil
+      else
+        File.join(base_dir, 'tmp')
+      end
+    end
+
     def update_device_state(options={})
       merged_options = UPDATE_DEVICE_STATE_OPTS.merge(options)
       debug_logging = RunLoop::Environment.debug?
