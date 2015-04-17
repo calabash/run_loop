@@ -1,6 +1,6 @@
 describe RunLoop::Simctl::Bridge do
 
-  let (:abp) { Resources.shared.app_bundle_path }
+  let (:abp) { Resources.shared.cal_app_bundle_path }
   let (:sim_control) { RunLoop::SimControl.new }
   let (:device) {
     sim_control.simulators.shuffle.detect do |device|
@@ -17,6 +17,7 @@ describe RunLoop::Simctl::Bridge do
       expect(bridge.sim_control).to be_a_kind_of(RunLoop::SimControl)
       expect(bridge.app).to be_a_kind_of(RunLoop::App)
       expect(bridge.device).to be_a_kind_of(RunLoop::Device)
+      expect(bridge.pbuddy).to be_a_kind_of(RunLoop::PlistBuddy)
       path_to_sim_bundle = bridge.instance_variable_get(:@path_to_ios_sim_app_bundle)
       expect(Dir.exist?(path_to_sim_bundle)).to be_truthy
     end
@@ -89,5 +90,40 @@ describe RunLoop::Simctl::Bridge do
 
   it '#device_data_dir' do
     expect(Dir.exist?(bridge.device_data_dir)).to be_truthy
+  end
+
+  describe '#app_data_dir' do
+    it 'returns nil if app data dir cannot be found' do
+      expect(bridge).to receive(:fetch_app_dir).and_return(nil)
+      expect(bridge.app_data_dir).to be == nil
+    end
+
+    it 'the data dir and the install dir are the same for sdk < 8.0' do
+      expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('7.1'))
+      expect(bridge).to receive(:fetch_app_dir).and_return('/some/path')
+      expect(bridge.app_data_dir).to be == '/some/path'
+    end
+
+    describe 'sdk >= 8.0' do
+      it 'returns a valid path when app is installed' do
+        expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('8.0'))
+        expect(bridge).to receive(:fetch_app_dir).and_return('/some/path')
+        device_data_dir = Resources.shared.mock_core_simulator_device_data_dir(:sdk8)
+        expect(bridge).to receive(:device_data_dir).and_return(device_data_dir)
+        match = bridge.app_data_dir
+        expect(File.exist?(match)).to be_truthy
+        expect(File.directory?(match)).to be_truthy
+      end
+
+      it 'returns nil when app is not installed' do
+        expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('8.0'))
+        expect(bridge).to receive(:fetch_app_dir).and_return('/some/path')
+        device_data_dir = Resources.shared.mock_core_simulator_device_data_dir(:sdk8)
+        expect(bridge).to receive(:device_data_dir).and_return(device_data_dir)
+        expect(bridge.app).to receive(:bundle_identifier).at_least(:once).and_return('com.example.app')
+        expect(bridge.app_data_dir).to be == nil
+      end
+    end
+
   end
 end

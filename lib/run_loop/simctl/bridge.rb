@@ -15,8 +15,11 @@ module RunLoop::Simctl
     attr_reader :device
     attr_reader :app
     attr_reader :sim_control
+    attr_reader :pbuddy
 
     def initialize(device, app_bundle_path)
+
+      @pbuddy = RunLoop::PlistBuddy.new
 
       @sim_control = RunLoop::SimControl.new
       @path_to_ios_sim_app_bundle = lambda {
@@ -59,6 +62,25 @@ module RunLoop::Simctl
           File.join(device_data_dir, 'Applications')
         end
       }.call
+    end
+
+    def app_data_dir
+      app_install_dir = fetch_app_dir
+      return nil if app_install_dir.nil?
+      if is_sdk_8?
+        containers_data_dir = File.join(device_data_dir, 'Containers', 'Data', 'Application')
+        apps = Dir.glob("#{containers_data_dir}/**/#{METADATA_PLIST}")
+        match = apps.detect do |metadata_plist|
+          pbuddy.plist_read('MCMMetadataIdentifier', metadata_plist) == app.bundle_identifier
+        end
+        if match
+          File.dirname(match)
+        else
+          nil
+        end
+      else
+        app_install_dir
+      end
     end
 
     def update_device_state(options={})
@@ -317,6 +339,7 @@ module RunLoop::Simctl
 
     SIM_POST_LAUNCH_WAIT = RunLoop::Environment.sim_post_launch_wait || 1.0
 
+    METADATA_PLIST = '.com.apple.mobile_container_manager.metadata.plist'
     CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
 
     # @!visibility private

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AutoSubmitted</key>
+	<true/>
+	<key>bug_type</key>
+	<string>177</string>
+	<key>description</key>
+	<string>
+VerboseError on line 9223372036854775808 of source
+
+
+Date/Time:  2015-04-15-214802
+Device:  iPhone Simulator(iPhone Simulator:679f355a239e5557ab4dbda0175ed5cc00000000)
+OS/Build:  8.3(12F69)
+
+Backtrace:
+#0 () at [native code]
+#0 global code() at file:///Users/moody/git/cal-ios-webview-test-app/CalWebViewApp/DA457FD2-F713-4EBC-9732-E280B2431C74/_run_loop.js:25074
+
+Patience Timeout:  (null)
+</string>
+	<key>displayName</key>
+	<string>ScriptError</string>
+	<key>name</key>
+	<string>ScriptError</string>
+	<key>os_version</key>
+	<string>8.3(12F69)</string>
+	<key>version</key>
+	<string></string>
+</dict>
+</plist>
