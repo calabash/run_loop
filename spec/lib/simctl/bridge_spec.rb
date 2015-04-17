@@ -2,13 +2,7 @@ describe RunLoop::Simctl::Bridge do
 
   let (:abp) { Resources.shared.cal_app_bundle_path }
   let (:sim_control) { RunLoop::SimControl.new }
-  let (:device) {
-    sim_control.simulators.shuffle.detect do |device|
-      [device.state == 'Shutdown',
-       device.name != 'rspec-0test-device',
-       !device.name[/Resizable/,0]].all?
-    end
-  }
+  let (:device) { Resources.shared.random_simulator_device(sim_control) }
 
   let(:bridge) { RunLoop::Simctl::Bridge.new(device, abp) }
 
