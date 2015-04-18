@@ -167,7 +167,10 @@ class Resources
   end
 
   def plist_for_testing
-    @plist_for_testing ||= File.expand_path(File.join(resources_dir, 'plist-buddy/com.testing.plist'))
+    dir = Dir.mktmpdir
+    path = File.join(dir, 'com.testing.plist')
+    FileUtils.cp(plist_template, path)
+    path
   end
 
   def plist_buddy_verbose
