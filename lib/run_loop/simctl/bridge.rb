@@ -388,8 +388,8 @@ module RunLoop::Simctl
     # @!visibility private
     def fetch_app_dir
       sim_app_dir = device_applications_dir
-      return false if !File.exist?(sim_app_dir)
-      Dir.glob("#{sim_app_dir}/**/*.app").detect do |path|
+      return nil if !File.exist?(sim_app_dir)
+      Dir.glob("#{sim_app_dir}/**/*.app").detect(nil) do |path|
         RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
       end
     end
