@@ -49,6 +49,11 @@ unless Luffa::Environment.travis_ci?
         }.to raise_error(RunLoop::Simctl::SimctlError)
       end
     end
+
+    it '#reset_app_sandbox' do
+      bridge.launch
+      bridge.reset_app_sandbox
+    end
   end
 
 end

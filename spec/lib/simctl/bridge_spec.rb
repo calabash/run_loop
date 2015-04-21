@@ -167,5 +167,91 @@ describe RunLoop::Simctl::Bridge do
       end
     end
 
+    def create_sandbox_dirs(sub_dir_names)
+      base_dir = Dir.mktmpdir
+
+      sub_dir_names.each do |name|
+        sub_dir = File.join(base_dir, name)
+        FileUtils.mkdir_p(sub_dir)
+        FileUtils.touch(File.join(sub_dir, "a-#{name}-file.txt"))
+        FileUtils.mkdir_p(File.join(sub_dir, "a-#{name}-dir"))
+      end
+
+      base_dir
+    end
+
+    describe '#reset_app_sandbox_internal_shared' do
+      it 'erases Documents and tmp directories' do
+        before = ['Documents', 'tmp']
+        base_dir = create_sandbox_dirs(before)
+        expect(bridge).to receive(:app_data_dir).at_least(:once).and_return(base_dir)
+        bridge.send(:reset_app_sandbox_internal_shared)
+        after = Dir.glob("#{base_dir}/**/*").map { |elm| File.basename(elm) }
+        expect(after).to be == before
+      end
+    end
+
+    describe '#reset_app_sandbox_internal_sdk_gte_8' do
+      it 'erases all Library files, but preserves Preferences UIA plists' do
+        before = ['Caches', 'Cookies', 'WebKit', 'Preferences']
+        base_dir = create_sandbox_dirs(before)
+
+        uia_plists = ['com.apple.UIAutomation.plist', 'com.apple.UIAutomationPlugIn.plist']
+        uia_plists.each do |plist|
+          FileUtils.touch(File.join(base_dir, 'Preferences', plist))
+        end
+
+        expect(bridge).to receive(:app_library_dir).at_least(:once).and_return(base_dir)
+        bridge.send(:reset_app_sandbox_internal_sdk_gte_8)
+        after = Dir.glob("#{base_dir}/**/*").map { |elm| File.basename(elm) }
+        expect(after).to be == ['Preferences'] + uia_plists
+      end
+    end
+
+    describe '#reset_app_sandbox_internal_sdk_lt_8' do
+      it 'erases all Library files, preserves protected Preferences plists, but deletes device-app preferences' do
+        before = ['lib-prefs-SubDir0', 'lib-prefs-SubDir1']
+        base_dir = create_sandbox_dirs(before)
+
+        protected_plists = ['.GlobalPreferences.plist', 'com.apple.PeoplePicker.plist']
+        protected_plists.each do |plist|
+          FileUtils.touch("#{base_dir}/#{plist}")
+        end
+
+        expect(bridge).to receive(:app_library_preferences_dir).at_least(:once).and_return(base_dir)
+
+        device_lib_prefs_dir = Dir.mktmpdir
+        bundle_id = 'com.example.Foo'
+        lib_prefs_dir_path = File.join(device_lib_prefs_dir, 'Library', 'Preferences')
+        FileUtils.mkdir_p(lib_prefs_dir_path)
+        plist_path = File.join(lib_prefs_dir_path, "#{bundle_id}.plist")
+        FileUtils.touch(plist_path)
+
+        expect(bridge).to receive(:app_data_dir).at_least(:once).and_return(device_lib_prefs_dir)
+        expect(bridge.app).to receive(:bundle_identifier).at_least(:once).and_return(bundle_id)
+
+        bridge.send(:reset_app_sandbox_internal_sdk_lt_8)
+        after = Dir.glob("#{base_dir}/{**/.*,**/*}").map { |elm| File.basename(elm) }
+        expect(after).to be == protected_plists
+
+        expect(File.exist?(plist_path)).to be_falsey
+      end
+    end
+
+    describe '#reset_app_sandbox_internal' do
+      it 'SDK >= 8.0' do
+        expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('8.0'))
+        expect(bridge).to receive(:reset_app_sandbox_internal_shared)
+        expect(bridge).to receive(:reset_app_sandbox_internal_sdk_gte_8)
+        bridge.send(:reset_app_sandbox_internal)
+      end
+
+      it 'SDK < 8.0' do
+        expect(bridge.device).to receive(:version).and_return(RunLoop::Version.new('7.1'))
+        expect(bridge).to receive(:reset_app_sandbox_internal_shared).and_return nil
+        expect(bridge).to receive(:reset_app_sandbox_internal_sdk_lt_8)
+        bridge.send(:reset_app_sandbox_internal)
+      end
+    end
   end
 end
