@@ -121,10 +121,11 @@ module RunLoop::Simctl
 
     def update_device_state(options={})
       merged_options = UPDATE_DEVICE_STATE_OPTS.merge(options)
-      debug_logging = RunLoop::Environment.debug?
 
       interval = merged_options[:interval]
       tries = merged_options[:tries]
+
+      debug_logging = RunLoop::Environment.debug?
 
       on_retry = Proc.new do |_, try, elapsed_time, next_interval|
         if debug_logging
@@ -164,10 +165,14 @@ module RunLoop::Simctl
       ['SimulatorBridge', 'CoreSimulatorBridge', 'configd_sim', 'launchd_sim'].each do |name|
         pids = RunLoop::ProcessWaiter.new(name).pids
         pids.each do |pid|
-          puts "Sending 'TERM' to #{name} '#{pid}'"
+          if debug_logging
+            puts "Sending 'TERM' to #{name} '#{pid}'"
+          end
           term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
           unless term.kill_process
-            puts "Sending 'KILL' to #{name} '#{pid}'"
+            if debug_logging
+              puts "Sending 'KILL' to #{name} '#{pid}'"
+            end
             term = RunLoop::ProcessTerminator.new(pid, 'KILL', name)
             term.kill_process
           end
@@ -189,7 +194,10 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for device to have state: '#{target_state}'."
+      if RunLoop::Environment.debug?
+        puts "Waited for #{timeout} seconds for device to have state: '#{target_state}'."
+      end
+
       unless in_state
         raise "Expected '#{target_state} but found '#{device.state}' after waiting."
       end
@@ -214,7 +222,9 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to install."
+      if RunLoop::Environment.debug?
+        puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to install."
+      end
 
       unless is_installed
         raise "Expected app to be installed on #{device.instruments_identifier}"
@@ -237,7 +247,9 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to uninstall."
+      if RunLoop::Environment.debug?
+        puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to uninstall."
+      end
 
       unless not_installed
         raise "Expected app to be installed on #{device.instruments_identifier}"
