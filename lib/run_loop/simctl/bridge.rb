@@ -12,7 +12,8 @@ module RunLoop::Simctl
   #
   # TODO Some code is duplicated from sim_control.rb
   # TODO Reinstall if checksum does not match.
-  # TODO Analyze terminate_core_simulator_processes
+  # TODO Analyze terminate_core_simulator_processes.
+  # TODO Figure out when CoreSimulator appears and does not appear.
   class Bridge
 
     attr_reader :device
@@ -165,7 +166,20 @@ module RunLoop::Simctl
     end
 
     def terminate_core_simulator_processes
-      ['SimulatorBridge', 'CoreSimulatorBridge', 'configd_sim', 'launchd_sim'].each do |name|
+      debug_logging = RunLoop::Environment.debug?
+      [
+            # Probably no.
+            #'com.apple.CoreSimulator.CoreSimulatorService',
+            #'com.apple.CoreSimulator.SimVerificationService',
+
+            # Yes.
+            'SimulatorBridge',
+            'configd_sim',
+            'launchd_sim',
+
+            # Yes, but does not always appear.
+            'CoreSimulatorBridge'
+      ].each do |name|
         pids = RunLoop::ProcessWaiter.new(name).pids
         pids.each do |pid|
           if debug_logging
@@ -337,7 +351,9 @@ module RunLoop::Simctl
       args = ['open', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', device.udid]
       pid = spawn('xcrun', *args)
       Process.detach(pid)
-      RunLoop::ProcessWaiter.new('CoreSimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+
+      # @todo Does not always appear?
+      # RunLoop::ProcessWaiter.new('CoreSimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       RunLoop::ProcessWaiter.new('iOS Simulator', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       RunLoop::ProcessWaiter.new('SimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       wait_for_device_state 'Booted'
