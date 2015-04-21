@@ -1,3 +1,6 @@
+require 'fileutils'
+require 'open3'
+
 module RunLoop::Simctl
 
   class SimctlError < StandardError
