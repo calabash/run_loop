@@ -2,8 +2,14 @@ unless Luffa::Environment.travis_ci?
 
   describe RunLoop::Simctl::Bridge do
 
-    let (:abp) { Resources.shared.app_bundle_path }
-    let (:sim_control) { RunLoop::SimControl.new }
+    let (:abp) { Resources.shared.cal_app_bundle_path }
+
+    let (:sim_control) {
+      obj = RunLoop::SimControl.new
+      obj.reset_sim_content_and_settings
+      obj
+    }
+
     let (:device) {
       sim_control.simulators.shuffle.detect do |device|
         [device.state == 'Shutdown',
@@ -18,13 +24,16 @@ unless Luffa::Environment.travis_ci?
       bridge.launch_simulator
     end
 
+    it 'can install an app on a simulator' do
+      expect(bridge.install).to be == true
+    end
+
     it 'can install an app on a simulator and launch it' do
       expect(bridge.launch).to be == true
     end
 
     it 'can install an app, launch it, and uninstall it' do
       expect(bridge.launch).to be == true
-
       new_bridge = RunLoop::Simctl::Bridge.new(device, abp)
       expect(new_bridge.uninstall).to be == true
       expect(new_bridge.app_is_installed?).to be_falsey
