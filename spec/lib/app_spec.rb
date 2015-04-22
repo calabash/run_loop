@@ -73,5 +73,4 @@ describe RunLoop::App do
       end
     end
   end
-
 end
