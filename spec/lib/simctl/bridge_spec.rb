@@ -231,7 +231,7 @@ describe RunLoop::Simctl::Bridge do
         expect(bridge.app).to receive(:bundle_identifier).at_least(:once).and_return(bundle_id)
 
         bridge.send(:reset_app_sandbox_internal_sdk_lt_8)
-        after = Dir.glob("#{base_dir}/{**/.*,**/*}").map { |elm| File.basename(elm) }
+        after = RunLoop::Directory.recursive_glob_for_entries(base_dir).map { |elm| File.basename(elm) }
         expect(after).to be == protected_plists
 
         expect(File.exist?(plist_path)).to be_falsey

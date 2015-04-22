@@ -444,7 +444,7 @@ module RunLoop::Simctl
     # @!visibility private
     def reset_app_sandbox_internal_sdk_gte_8
       lib_dir = app_library_dir
-      Dir.glob("#{lib_dir}/{**/.*,**/*}").each do |entry|
+      RunLoop::Directory.recursive_glob_for_entries(lib_dir).each do |entry|
         if entry.include?('Preferences')
           # nop
         else
@@ -457,7 +457,7 @@ module RunLoop::Simctl
       prefs_dir = app_library_preferences_dir
       protected = ['com.apple.UIAutomation.plist',
                    'com.apple.UIAutomationPlugIn.plist']
-      Dir.glob("#{prefs_dir}/{**/.*,**/*}").each do |entry|
+      RunLoop::Directory.recursive_glob_for_entries(prefs_dir).each do |entry|
         unless protected.include?(File.basename(entry))
           if File.exist?(entry)
             FileUtils.rm_rf entry
@@ -469,7 +469,7 @@ module RunLoop::Simctl
     # @!visibility private
     def reset_app_sandbox_internal_sdk_lt_8
       prefs_dir = app_library_preferences_dir
-      Dir.glob("#{prefs_dir}/{**/.*,**/*}").each do |entry|
+      RunLoop::Directory.recursive_glob_for_entries(prefs_dir).each do |entry|
         if entry.end_with?('.GlobalPreferences.plist') ||
               entry.end_with?('com.apple.PeoplePicker.plist')
           # nop
