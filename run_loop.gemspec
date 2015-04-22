@@ -4,7 +4,9 @@
 # Search for LOAD_PATH
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'run_loop/version'
+
+# This should be sufficient to get the gem version.
+require File.join(File.dirname(__FILE__), 'lib', 'run_loop', 'version')
 
 ruby_files = Dir.glob('{lib}/**/*')
 java_scripts = Dir.glob('scripts/*.js')
