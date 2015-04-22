@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AutoSubmitted</key>
+	<true/>
+	<key>bug_type</key>
+	<string>177</string>
+	<key>description</key>
+	<string>
+VerboseError on line 9223372036854775808 of source
+
+
+Date/Time:  2015-04-16-214125
+Device:  iPhone Simulator(iPhone Simulator:679f355a239e5557ab4dbda0175ed5cc00000000)
+OS/Build:  8.2(12D508)
+
+Backtrace:
+#0 () at [native code]
+#0 global code() at file:///Users/moody/git/cal-ios-smoke-test-app/CalSmokeApp/40DC4068-8011-4402-8702-49100140CE54/_run_loop.js:25074
+
+Patience Timeout:  (null)
+</string>
+	<key>displayName</key>
+	<string>ScriptError</string>
+	<key>name</key>
+	<string>ScriptError</string>
+	<key>os_version</key>
+	<string>8.2(12D508)</string>
+	<key>version</key>
+	<string></string>
+</dict>
+</plist>

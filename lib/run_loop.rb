@@ -1,3 +1,4 @@
+require 'run_loop/directory'
 require 'run_loop/environment'
 require 'run_loop/logging'
 require 'run_loop/process_terminator'
@@ -18,6 +19,7 @@ require 'run_loop/host_cache'
 require 'run_loop/patches/awesome_print'
 require 'run_loop/patches/retriable'
 require 'run_loop/simctl/bridge'
+require 'run_loop/simctl/plists'
 
 module RunLoop
 

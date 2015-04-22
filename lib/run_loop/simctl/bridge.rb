@@ -1,3 +1,6 @@
+require 'fileutils'
+require 'open3'
+
 module RunLoop::Simctl
 
   class SimctlError < StandardError
@@ -9,14 +12,18 @@ module RunLoop::Simctl
   #
   # TODO Some code is duplicated from sim_control.rb
   # TODO Reinstall if checksum does not match.
-  # TODO Analyze terminate_core_simulator_processes
+  # TODO Analyze terminate_core_simulator_processes.
+  # TODO Figure out when CoreSimulator appears and does not appear.
   class Bridge
 
     attr_reader :device
     attr_reader :app
     attr_reader :sim_control
+    attr_reader :pbuddy
 
     def initialize(device, app_bundle_path)
+
+      @pbuddy = RunLoop::PlistBuddy.new
 
       @sim_control = RunLoop::SimControl.new
       @path_to_ios_sim_app_bundle = lambda {
@@ -42,23 +49,95 @@ module RunLoop::Simctl
       terminate_core_simulator_processes
     end
 
-    def simulator_app_dir
+    # @!visibility private
+    def is_sdk_8?
+      @is_sdk_8 ||= device.version >= RunLoop::Version.new('8.0')
+    end
+
+    def device_data_dir
+      @device_data_dir ||= File.join(CORE_SIMULATOR_DEVICE_DIR, device.udid, 'data')
+    end
+
+    def device_applications_dir
       @simulator_app_dir ||= lambda {
-        device_dir = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
-        if device.version < RunLoop::Version.new('8.0')
-          File.join(device_dir, device.udid, 'data', 'Applications')
+        if is_sdk_8?
+          File.join(device_data_dir, 'Containers', 'Bundle', 'Application')
         else
-          File.join(device_dir, device.udid, 'data', 'Containers', 'Bundle', 'Application')
+          File.join(device_data_dir, 'Applications')
         end
       }.call
     end
 
+    def app_data_dir
+      app_install_dir = fetch_app_dir
+      return nil if app_install_dir.nil?
+      if is_sdk_8?
+        containers_data_dir = File.join(device_data_dir, 'Containers', 'Data', 'Application')
+        apps = Dir.glob("#{containers_data_dir}/**/#{METADATA_PLIST}")
+        match = apps.detect do |metadata_plist|
+          pbuddy.plist_read('MCMMetadataIdentifier', metadata_plist) == app.bundle_identifier
+        end
+        if match
+          File.dirname(match)
+        else
+          nil
+        end
+      else
+        app_install_dir
+      end
+    end
+
+    def app_library_dir
+      base_dir = app_data_dir
+      if base_dir.nil?
+        nil
+      else
+        File.join(base_dir, 'Library')
+      end
+    end
+
+    def app_library_preferences_dir
+      base_dir = app_library_dir
+      if base_dir.nil?
+        nil
+      else
+        File.join(base_dir, 'Preferences')
+      end
+    end
+
+    def app_documents_dir
+      base_dir = app_data_dir
+      if base_dir.nil?
+        nil
+      else
+        File.join(base_dir, 'Documents')
+      end
+    end
+
+    def app_tmp_dir
+      base_dir = app_data_dir
+      if base_dir.nil?
+        nil
+      else
+        File.join(base_dir, 'tmp')
+      end
+    end
+
+    def reset_app_sandbox
+      return true if !app_is_installed?
+
+      shutdown
+
+      reset_app_sandbox_internal
+    end
+
     def update_device_state(options={})
       merged_options = UPDATE_DEVICE_STATE_OPTS.merge(options)
-      debug_logging = RunLoop::Environment.debug?
 
       interval = merged_options[:interval]
       tries = merged_options[:tries]
+
+      debug_logging = RunLoop::Environment.debug?
 
       on_retry = Proc.new do |_, try, elapsed_time, next_interval|
         if debug_logging
@@ -95,13 +174,30 @@ module RunLoop::Simctl
     end
 
     def terminate_core_simulator_processes
-      ['SimulatorBridge', 'CoreSimulatorBridge', 'configd_sim', 'launchd_sim'].each do |name|
+      debug_logging = RunLoop::Environment.debug?
+      [
+            # Probably no.
+            #'com.apple.CoreSimulator.CoreSimulatorService',
+            #'com.apple.CoreSimulator.SimVerificationService',
+
+            # Yes.
+            'SimulatorBridge',
+            'configd_sim',
+            'launchd_sim',
+
+            # Yes, but does not always appear.
+            'CoreSimulatorBridge'
+      ].each do |name|
         pids = RunLoop::ProcessWaiter.new(name).pids
         pids.each do |pid|
-          puts "Sending 'TERM' to #{name} '#{pid}'"
+          if debug_logging
+            puts "Sending 'TERM' to #{name} '#{pid}'"
+          end
           term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
           unless term.kill_process
-            puts "Sending 'KILL' to #{name} '#{pid}'"
+            if debug_logging
+              puts "Sending 'KILL' to #{name} '#{pid}'"
+            end
             term = RunLoop::ProcessTerminator.new(pid, 'KILL', name)
             term.kill_process
           end
@@ -123,7 +219,10 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for device to have state: '#{target_state}'."
+      if RunLoop::Environment.debug?
+        puts "Waited for #{timeout} seconds for device to have state: '#{target_state}'."
+      end
+
       unless in_state
         raise "Expected '#{target_state} but found '#{device.state}' after waiting."
       end
@@ -131,13 +230,7 @@ module RunLoop::Simctl
     end
 
     def app_is_installed?
-      sim_app_dir = simulator_app_dir
-      return false if !File.exist?(sim_app_dir)
-      app_path = Dir.glob("#{sim_app_dir}/**/*.app").detect do |path|
-        RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
-      end
-
-      !app_path.nil?
+      !fetch_app_dir.nil?
     end
 
     def wait_for_app_install
@@ -154,7 +247,9 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to install."
+      if RunLoop::Environment.debug?
+        puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to install."
+      end
 
       unless is_installed
         raise "Expected app to be installed on #{device.instruments_identifier}"
@@ -177,7 +272,9 @@ module RunLoop::Simctl
         sleep delay
       end
 
-      puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to uninstall."
+      if RunLoop::Environment.debug?
+        puts "Waited for #{timeout} seconds for '#{app.bundle_identifier}' to uninstall."
+      end
 
       unless not_installed
         raise "Expected app to be installed on #{device.instruments_identifier}"
@@ -262,7 +359,9 @@ module RunLoop::Simctl
       args = ['open', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', device.udid]
       pid = spawn('xcrun', *args)
       Process.detach(pid)
-      RunLoop::ProcessWaiter.new('CoreSimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+
+      # @todo Does not always appear?
+      # RunLoop::ProcessWaiter.new('CoreSimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       RunLoop::ProcessWaiter.new('iOS Simulator', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       RunLoop::ProcessWaiter.new('SimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       wait_for_device_state 'Booted'
@@ -315,10 +414,88 @@ module RunLoop::Simctl
 
     SIM_POST_LAUNCH_WAIT = RunLoop::Environment.sim_post_launch_wait || 1.0
 
+    METADATA_PLIST = '.com.apple.mobile_container_manager.metadata.plist'
+    CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
+
     # @!visibility private
     def fetch_matching_device
       sim_control.simulators.detect do |sim|
         sim.udid == device.udid
+      end
+    end
+
+    # @!visibility private
+    def fetch_app_dir
+      sim_app_dir = device_applications_dir
+      return nil if !File.exist?(sim_app_dir)
+      Dir.glob("#{sim_app_dir}/**/*.app").detect(nil) do |path|
+        RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
+      end
+    end
+
+    # @!visibility private
+    def reset_app_sandbox_internal_shared
+      [app_documents_dir, app_tmp_dir].each do |dir|
+        FileUtils.rm_rf dir
+        FileUtils.mkdir dir
+      end
+    end
+
+    # @!visibility private
+    def reset_app_sandbox_internal_sdk_gte_8
+      lib_dir = app_library_dir
+      RunLoop::Directory.recursive_glob_for_entries(lib_dir).each do |entry|
+        if entry.include?('Preferences')
+          # nop
+        else
+          if File.exist?(entry)
+            FileUtils.rm_rf(entry)
+          end
+        end
+      end
+
+      prefs_dir = app_library_preferences_dir
+      protected = ['com.apple.UIAutomation.plist',
+                   'com.apple.UIAutomationPlugIn.plist']
+      RunLoop::Directory.recursive_glob_for_entries(prefs_dir).each do |entry|
+        unless protected.include?(File.basename(entry))
+          if File.exist?(entry)
+            FileUtils.rm_rf entry
+          end
+        end
+      end
+    end
+
+    # @!visibility private
+    def reset_app_sandbox_internal_sdk_lt_8
+      prefs_dir = app_library_preferences_dir
+      RunLoop::Directory.recursive_glob_for_entries(prefs_dir).each do |entry|
+        if entry.end_with?('.GlobalPreferences.plist') ||
+              entry.end_with?('com.apple.PeoplePicker.plist')
+          # nop
+        else
+          if File.exist?(entry)
+            FileUtils.rm_rf entry
+          end
+        end
+      end
+
+      # app preferences lives in device Library/Preferences
+      device_prefs_dir = File.join(app_data_dir, 'Library', 'Preferences')
+      app_prefs_plist = File.join(device_prefs_dir, "#{app.bundle_identifier}.plist")
+      if File.exist?(app_prefs_plist)
+        FileUtils.rm_rf(app_prefs_plist)
+      end
+    end
+
+    # @!visibility private
+    def reset_app_sandbox_internal
+      reset_app_sandbox_internal_shared
+
+      if is_sdk_8?
+        reset_app_sandbox_internal_sdk_gte_8
+      else
+        reset_app_sandbox_internal_sdk_lt_8
       end
     end
   end
