@@ -1,3 +1,6 @@
+require 'digest'
+require 'openssl'
+
 module RunLoop
 
   # Class for performing operations on directories.
@@ -14,6 +17,35 @@ module RunLoop
       Dir.glob("#{base_dir}/{**/.*,**/*}").select do |entry|
         !(entry.end_with?('..') || entry.end_with?('.'))
       end
+    end
+
+    # Computes the digest of directory.
+    #
+    # @param path A path to a directory.
+    # @raise ArgumentError When `path` is not a directory or path does not exist.
+    def self.directory_digest(path)
+
+      unless File.exist?(path)
+        raise ArgumentError, "Expected '#{path}' to exist"
+      end
+
+      unless File.directory?(path)
+        raise ArgumentError, "Expected '#{path}' to be a directory"
+      end
+
+      entries = self.recursive_glob_for_entries(path)
+
+      if entries.empty?
+        raise ArgumentError, "Expected a non-empty dir at '#{path}' found '#{entries}'"
+      end
+
+      sha = OpenSSL::Digest::SHA256.new
+      self.recursive_glob_for_entries(path).each do |file|
+        unless File.directory?(file)
+          sha << File.read(file)
+        end
+      end
+      sha.hexdigest
     end
   end
 end
