@@ -32,6 +32,10 @@ module RunLoop
       end
     end
 
+    def to_s
+      "#{instruments_identifier} #{udid} #{instruction_set}"
+    end
+
     # Returns and instruments-ready device identifier that is a suitable value
     # for DEVICE_TARGET environment variable.
     #
