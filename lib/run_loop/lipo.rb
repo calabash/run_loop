@@ -85,7 +85,7 @@ module RunLoop
         output = stdout.read.strip
         begin
           output.split(':')[-1].strip.split
-        rescue Exception => e
+        rescue StandardError => e
           msg = ['Expected to be able to parse the output of lipo.',
                  "cmd:    'lipo -info #{escaped_binary_path}'",
                  "stdout: '#{output}'",
