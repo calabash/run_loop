@@ -13,6 +13,14 @@ module RunLoop
         tail_booted
       end
 
+      no_commands do
+        def tail_booted
+          device = booted_device
+          log_file = device.simulator_log_file_path
+          exec('tail', *['-F', log_file])
+        end
+      end
+
       desc 'booted', 'Prints details about the booted simulator'
       def booted
         device = booted_device
@@ -24,7 +32,6 @@ module RunLoop
       end
 
       no_commands do
-
         def sim_control
           @sim_control ||= RunLoop::SimControl.new
         end
@@ -33,12 +40,6 @@ module RunLoop
           sim_control.simulators.detect(nil) do |device|
             device.state == 'Booted'
           end
-        end
-
-        def tail_booted
-          device = booted_device
-          log_file = device.simulator_log_file_path
-          exec('tail', *['-F', log_file])
         end
       end
     end
