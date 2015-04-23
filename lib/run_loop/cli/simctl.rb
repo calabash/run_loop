@@ -15,7 +15,12 @@ module RunLoop
 
       desc 'booted', 'Prints details about the booted simulator'
       def booted
-        puts booted_device
+        device = booted_device
+        if device.nil?
+          puts 'No simulator is booted.'
+        else
+          puts device
+        end
       end
 
       no_commands do
@@ -25,10 +30,7 @@ module RunLoop
         end
 
         def booted_device
-          ifnone = lambda {
-            puts 'No simulators are booted'
-          }
-          sim_control.simulators.detect(ifnone) do |device|
+          sim_control.simulators.detect(nil) do |device|
             device.state == 'Booted'
           end
         end
