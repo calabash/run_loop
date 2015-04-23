@@ -71,7 +71,7 @@ module RunLoop
           raise RunLoop::IncompatibleArchitecture,
                 ['Binary at:',
                  binary_path,
-                 "does not contain a compatible architecture for target device.",
+                 'does not contain a compatible architecture for target device.',
                  "Expected '#{instruction_set}' but found #{arches}."].join("\n")
         end
       end
