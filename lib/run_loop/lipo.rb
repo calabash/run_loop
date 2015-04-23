@@ -102,6 +102,7 @@ module RunLoop
     # Caller is responsible for correctly escaping arguments.
     # For example, the caller must proper quote `"` paths to avoid errors
     # when dealing with paths that contain spaces.
+    # @todo #execute_lipo should take an [] of arguments
     def execute_lipo(argument)
       command = "xcrun lipo #{argument}"
       Open3.popen3(command) do |_, stdout, stderr, wait_thr|
