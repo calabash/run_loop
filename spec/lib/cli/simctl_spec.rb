@@ -61,4 +61,68 @@ describe RunLoop::CLI::Simctl do
       end
     end
   end
+
+  describe '#expect_app' do
+    let(:options) {
+      options = { :app => Resources.shared.cal_app_bundle_path }
+    }
+
+    it 'returns an app' do
+      expect(simctl.expect_app(options, device)).to be_a_kind_of(RunLoop::App)
+    end
+
+    describe 'raises error when' do
+      describe 'app bundle path' do
+        it 'does not exist' do
+          options = { :app => '/some/path/that/does/not/exist' }
+          expect {
+            simctl.expect_app(options, device)
+          }.to raise_error RunLoop::CLI::ValidationError
+        end
+
+        it 'is not a directory' do
+          options = {
+                :app => FileUtils.touch(File.join(Dir.mktmpdir(), 'foo.txt')).first }
+          expect {
+            simctl.expect_app(options, device)
+          }.to raise_error RunLoop::CLI::ValidationError
+        end
+
+        it 'does not have .app extension' do
+          options = {
+                :app => FileUtils.mkdir_p(File.join(Dir.mktmpdir(), 'foo.txt')).first }
+          expect {
+            simctl.expect_app(options, device)
+          }.to raise_error RunLoop::CLI::ValidationError
+        end
+      end
+
+      describe 'not a valid app' do
+        it 'cannot find the bundle identifier' do
+          expect_any_instance_of(RunLoop::App).to receive(:bundle_identifier).and_raise(RuntimeError)
+          expect {
+            simctl.expect_app(options, device)
+          }.to raise_error RunLoop::CLI::ValidationError
+        end
+
+        it 'cannot find the executable name' do
+          expect_any_instance_of(RunLoop::App).to receive(:executable_name).and_raise(RuntimeError)
+          expect {
+            simctl.expect_app(options, device)
+          }.to raise_error RunLoop::CLI::ValidationError
+        end
+
+        it 'app has incompatible arch' do
+          expect_any_instance_of(RunLoop::Lipo).to(
+                receive(
+                      :expect_compatible_arch
+                ).with(device).and_raise(RunLoop::IncompatibleArchitecture)
+          )
+          expect {
+            simctl.expect_app(options, device)
+          }.to raise_error RunLoop::CLI::ValidationError
+        end
+      end
+    end
+  end
 end

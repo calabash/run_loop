@@ -183,7 +183,12 @@ module RunLoop
           end
 
           lipo = RunLoop::Lipo.new(app.path)
-          lipo.expect_compatible_arch(device_obj)
+          begin
+            lipo.expect_compatible_arch(device_obj)
+          rescue RunLoop::IncompatibleArchitecture => e
+            raise RunLoop::CLI::ValidationError, e.message
+          end
+
           app
         end
       end
