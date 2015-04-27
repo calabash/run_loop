@@ -131,9 +131,8 @@ module RunLoop
 
       no_commands do
         def expect_device(options)
-          device = nil
           device_from_options = options[:device]
-          simulators = RunLoop::SimControl.new.simulators
+          simulators = sim_control.simulators
           if device_from_options.nil?
             default_name = RunLoop::Core.default_simulator
             device = simulators.detect do |sim|
@@ -145,7 +144,7 @@ module RunLoop
                     "Could not find a simulator with name that matches '#{device_from_options}'"
             end
           else
-            simulators.detect do |sim|
+            device = simulators.detect do |sim|
               sim.udid == device_from_options ||
                     sim.instruments_identifier == device_from_options
             end
