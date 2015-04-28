@@ -58,7 +58,7 @@ module RunLoop
                     :type => :string
 
       method_option 'force',
-                    :desc => 'Force a reinstall the existing app.',
+                    :desc => 'Force a re-install the existing app.',
                     :aliases => '-f',
                     :required => false,
                     :default => false,
@@ -93,8 +93,11 @@ module RunLoop
           if debug_logging
             puts "App with bundle id '#{app.bundle_identifier}' is already installed."
           end
+
           if force_reinstall
-            puts 'Will force a reinstall.'
+            if debug_logging
+              puts 'Will force a re-install.'
+            end
             bridge.uninstall
             bridge.install
           else
@@ -109,13 +112,13 @@ module RunLoop
             end
             if new_digest != old_digest
               if debug_logging
-                puts "Will reinstall '#{app.bundle_identifier} because the SHAs don't match."
+                puts "Will re-install '#{app.bundle_identifier}' because the SHAs don't match."
               end
               bridge.uninstall
               bridge.install
             else
               if debug_logging
-                puts "Will not reinstall '#{app.bundle_identifier} because the SHAs match."
+                puts "Will not re-install '#{app.bundle_identifier}' because the SHAs match."
               end
             end
           end
