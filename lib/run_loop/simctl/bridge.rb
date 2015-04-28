@@ -498,5 +498,20 @@ module RunLoop::Simctl
         reset_app_sandbox_internal_sdk_lt_8
       end
     end
+
+    # @!visibility private
+    def app_uia_crash_logs
+      base_dir = app_data_dir
+      if base_dir.nil?
+        nil
+      else
+        dir = File.join(base_dir, 'Library', 'CrashReporter', 'UIALogs')
+        if Dir.exist?(dir)
+          Dir.glob("#{dir}/*.plist")
+        else
+          nil
+        end
+      end
+    end
   end
 end
