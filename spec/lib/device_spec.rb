@@ -149,5 +149,16 @@ describe RunLoop::Device do
         expect(simulator.simulator_preferences_plist_path[/com.apple.Preferences.plist/,0]).to be_truthy
       end
     end
+
+    describe '#simulator_log_file_path' do
+      it 'is nil if physical device' do
+        expect(physical.simulator_log_file_path).to be_falsey
+      end
+
+      it 'is non nil if a simulator' do
+        expect(simulator.simulator_log_file_path[/#{simulator.udid}/,0]).to be_truthy
+        expect(simulator.simulator_log_file_path[/system.log/,0]).to be_truthy
+      end
+    end
   end
 end

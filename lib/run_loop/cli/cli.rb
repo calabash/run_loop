@@ -2,6 +2,7 @@ require 'thor'
 require 'run_loop'
 require 'run_loop/cli/errors'
 require 'run_loop/cli/instruments'
+require 'run_loop/cli/simctl'
 
 trap 'SIGINT' do
   puts 'Trapped SIGINT - exiting'
@@ -26,6 +27,9 @@ module RunLoop
 
       desc 'instruments', "Interact with Xcode's command-line instruments"
       subcommand 'instruments', RunLoop::CLI::Instruments
+
+      desc 'simctl', "Interact with Xcode's command-line simctl"
+      subcommand 'simctl', RunLoop::CLI::Simctl
 
     end
   end

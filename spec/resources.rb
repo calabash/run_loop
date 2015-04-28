@@ -237,7 +237,7 @@ class Resources
     sim_control.simulators.shuffle.detect do |device|
       [
             device.state == 'Shutdown',
-            device.name != 'rspec-0test-device',
+            device.name != 'rspec-test-device',
             !device.name[/Resizable/,0],
             sdk_test.call(device)
       ].all?
