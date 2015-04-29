@@ -8,6 +8,7 @@ module RunLoop
     attr_reader :simulator_root_dir
     attr_reader :simulator_accessibility_plist_path
     attr_reader :simulator_preferences_plist_path
+    attr_reader :simulator_log_file_path
 
     # Create a new device.
     #
@@ -30,6 +31,10 @@ module RunLoop
       else
         @version = version
       end
+    end
+
+    def to_s
+      "#{instruments_identifier} #{udid} #{instruction_set}"
     end
 
     # Returns and instruments-ready device identifier that is a suitable value
@@ -111,8 +116,16 @@ module RunLoop
       }.call
     end
 
+    def simulator_log_file_path
+      @simulator_log_file_path ||= lambda {
+        return nil if physical_device?
+        File.join(CORE_SIMULATOR_LOGS_DIR, udid, 'system.log')
+      }.call
+    end
+
     private
 
     CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
+    CORE_SIMULATOR_LOGS_DIR = File.expand_path('~/Library/Logs/CoreSimulator')
   end
 end

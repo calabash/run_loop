@@ -50,7 +50,6 @@ describe RunLoop::Instruments do
                             :sim_control => sim_control
                       }
 
-                hash = nil
                 Resources.shared.launch_sim_with_options(options) do |hash|
                   expect(hash).not_to be nil
                   expect(instruments.instruments_running?).to be == true

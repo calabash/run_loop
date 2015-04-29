@@ -71,7 +71,7 @@ module RunLoop
           raise RunLoop::IncompatibleArchitecture,
                 ['Binary at:',
                  binary_path,
-                 "does not contain a compatible architecture for target device.",
+                 'does not contain a compatible architecture for target device.',
                  "Expected '#{instruction_set}' but found #{arches}."].join("\n")
         end
       end
@@ -85,9 +85,9 @@ module RunLoop
         output = stdout.read.strip
         begin
           output.split(':')[-1].strip.split
-        rescue Exception => e
+        rescue StandardError => e
           msg = ['Expected to be able to parse the output of lipo.',
-                 "cmd:    'lipo -info #{escaped_binary_path}'",
+                 "cmd:    'lipo -info \"#{binary_path}\"'",
                  "stdout: '#{output}'",
                  "stderr: '#{stderr.read.strip}'",
                  "exit code: '#{wait_thr.value}'",
@@ -102,6 +102,7 @@ module RunLoop
     # Caller is responsible for correctly escaping arguments.
     # For example, the caller must proper quote `"` paths to avoid errors
     # when dealing with paths that contain spaces.
+    # @todo #execute_lipo should take an [] of arguments
     def execute_lipo(argument)
       command = "xcrun lipo #{argument}"
       Open3.popen3(command) do |_, stdout, stderr, wait_thr|

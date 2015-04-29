@@ -112,6 +112,29 @@ class Resources
     File.expand_path(File.join(core_simulator_device_dir(sim_udid), 'Containers'))
   end
 
+  def mock_core_simulator_device_data_dir(sdk)
+    case sdk
+      when :sdk8
+        @mock_core_simulator_data_dir_sdk8 ||= lambda {
+          File.expand_path(File.join(resources_dir, 'simctl', 'sdk8', 'data'))
+        }.call
+      when :sdk7
+        @mock_core_simulator_data_dir_sdk7 ||= lambda {
+          File.expand_path(File.join(resources_dir, 'simctl', 'sdk-less-than-8', 'data'))
+        }.call
+      else
+        raise "Expected sdk '#{sdk}' to be on of #{[:sdk8, :sdk7]}"
+    end
+  end
+
+  def random_simulator_device(sim_control)
+    @random_simulator_device ||= sim_control.simulators.shuffle.detect do |device|
+      [device.state == 'Shutdown',
+         device.name != 'rspec-0test-device',
+         !device.name[/Resizable/,0]].all?
+    end
+  end
+
   def with_developer_dir(developer_dir, &block)
     original_developer_dir = ENV['DEVELOPER_DIR']
     begin
@@ -167,7 +190,10 @@ class Resources
   end
 
   def plist_for_testing
-    @plist_for_testing ||= File.expand_path(File.join(resources_dir, 'plist-buddy/com.testing.plist'))
+    dir = Dir.mktmpdir
+    path = File.join(dir, 'com.testing.plist')
+    FileUtils.cp(plist_template, path)
+    path
   end
 
   def plist_buddy_verbose
@@ -211,7 +237,7 @@ class Resources
     sim_control.simulators.shuffle.detect do |device|
       [
             device.state == 'Shutdown',
-            device.name != 'rspec-0test-device',
+            device.name != 'rspec-test-device',
             !device.name[/Resizable/,0],
             sdk_test.call(device)
       ].all?

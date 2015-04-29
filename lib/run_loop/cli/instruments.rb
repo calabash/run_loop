@@ -8,7 +8,7 @@ module RunLoop
 
       attr_accessor :signal
 
-      desc 'instruments quit', 'Send a kill signal to all instruments processes.'
+      desc 'quit', 'Send a kill signal to all instruments processes.'
 
       method_option 'signal',
                     :desc => 'The kill signal to send.',
@@ -39,7 +39,7 @@ module RunLoop
       end
 
 
-      desc 'instruments launch [--app | [--ipa | --bundle-id]] [OPTIONS]', 'Launch an app with instruments.'
+      desc 'launch [--app | [--ipa | --bundle-id]] [OPTIONS]', 'Launch an app with instruments.'
 
 # This is the description we want, but Thor doesn't handle newlines well(?).
 # long_desc <<EOF
