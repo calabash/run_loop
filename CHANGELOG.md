@@ -1,5 +1,11 @@
 ## Change Log
 
+### 1.3.2
+
+* 'run-loop simctl install' command line interface #175
+* Retriable patch needs to retriable/version #173
+* Xcode 6.4b support #172
+
 ### 1.3.1
 
 This is a patch release for Xcode 6.3 + iOS 8.3 simulators.
