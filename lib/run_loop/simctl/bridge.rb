@@ -181,6 +181,11 @@ module RunLoop::Simctl
             #'com.apple.CoreSimulator.CoreSimulatorService',
             #'com.apple.CoreSimulator.SimVerificationService',
 
+            # Started by Xamarin Studio, this is the parent process of the
+            # processes launched by Xamarin's interaction with
+            # CoreSimulatorBridge
+            'csproxy',
+
             # Yes.
             'SimulatorBridge',
             'configd_sim',
