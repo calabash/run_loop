@@ -1,11 +1,5 @@
 # -*- encoding: utf-8 -*-
-# This should not be necessary according to the RubyGem docs
-# http://guides.rubygems.org/patterns/
-# Search for LOAD_PATH
-lib = File.expand_path('../lib', __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
-# This should be sufficient to get the gem version.
 require File.join(File.dirname(__FILE__), 'lib', 'run_loop', 'version')
 
 ruby_files = Dir.glob('{lib}/**/*')
