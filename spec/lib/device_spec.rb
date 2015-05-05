@@ -47,6 +47,60 @@ describe RunLoop::Device do
     end
   end
 
+  describe '.device_with_identifier' do
+    let(:sim_control) { RunLoop::SimControl.new }
+    it 'raises an error if no simulator or device with UDID or name is found' do
+      expect(sim_control).to receive(:simulators).and_return([])
+      expect(sim_control.xctools).to receive(:instruments).with(:devices).and_return([])
+      expect {
+        RunLoop::Device.device_with_identifier('a string or udid', sim_control)
+      }.to raise_error ArgumentError
+    end
+
+    describe 'physical devices' do
+      let(:device) { RunLoop::Device.new('denis',
+                                         '8.3',
+                                         '893688959205dc7eb48d603c558ede919ad8dd0c') }
+
+
+      it 'find by name' do
+        expect(sim_control).to receive(:simulators).and_return([])
+        expect(sim_control.xctools).to receive(:instruments).with(:devices).and_return([device])
+        actual = RunLoop::Device.device_with_identifier(device.name, sim_control)
+        expect(actual).to be_a_kind_of RunLoop::Device
+      end
+
+      it 'find by udid' do
+        expect(sim_control).to receive(:simulators).and_return([])
+        expect(sim_control.xctools).to receive(:instruments).with(:devices).and_return([device])
+        actual = RunLoop::Device.device_with_identifier(device.udid, sim_control)
+        expect(actual).to be_a_kind_of RunLoop::Device
+      end
+    end
+
+    describe 'simulators' do
+
+      let(:device) {
+        RunLoop::Device.new('iPhone 4s',
+                            '8.3',
+                            'CE5BA25E-9434-475A-8947-ECC3918E64E3 i386')
+      }
+
+      it 'find by name' do
+        expect(sim_control).to receive(:simulators).and_return([device])
+        actual = RunLoop::Device.device_with_identifier(device.instruments_identifier,
+                                                        sim_control)
+        expect(actual).to be_a_kind_of RunLoop::Device
+      end
+
+      it 'find by udid' do
+        expect(sim_control).to receive(:simulators).and_return([device])
+        actual = RunLoop::Device.device_with_identifier(device.udid, sim_control)
+        expect(actual).to be_a_kind_of RunLoop::Device
+      end
+    end
+  end
+
   context '#simulator?' do
     subject { device.simulator? }
     context 'is a simulator' do
