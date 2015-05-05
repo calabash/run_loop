@@ -31,6 +31,22 @@ describe RunLoop::Device do
     end
   end
 
+  describe '#to_str' do
+    it 'physical device' do
+      device = RunLoop::Device.new('denis',
+                                   '8.3',
+                                   '893688959205dc7eb48d603c558ede919ad8dd0c')
+      expect { device.to_s }.not_to raise_error
+    end
+
+    it 'simulator' do
+      device = RunLoop::Device.new('iPhone 4s',
+                                   '8.3',
+                                   'CE5BA25E-9434-475A-8947-ECC3918E64E3 i386')
+      expect { device.to_s }.not_to raise_error
+    end
+  end
+
   context '#simulator?' do
     subject { device.simulator? }
     context 'is a simulator' do

@@ -34,7 +34,11 @@ module RunLoop
     end
 
     def to_s
-      "#{instruments_identifier} #{udid} #{instruction_set}"
+      if simulator?
+        "Simulator: #{instruments_identifier} #{udid} #{instruction_set}"
+      else
+        "Device: #{name} #{udid}"
+      end
     end
 
     # Returns and instruments-ready device identifier that is a suitable value
