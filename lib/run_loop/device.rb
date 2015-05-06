@@ -33,8 +33,53 @@ module RunLoop
       end
     end
 
+    # Returns a device given a udid or name.  In the case of a physical device,
+    # the udid is the device identifier.  In the case of a simulator the name
+    # is the _instruments identifier_ as reported by
+    # `$ xcrun instruments -s devices` - this is the identifier that can be
+    # passed to instruments.
+    #
+    # @example
+    #  RunLoop::Device.device_with_identifier('iPhone 4s (8.3 Simulator')
+    #  RunLoop::Device.device_with_identifier('6E43E3CF-25F5-41CC-A833-588F043AE749')
+    #  RunLoop::Device.device_with_identifier('denis') # Simulator or device named 'denis'
+    #  RunLoop::Device.device_with_identifier('893688959205dc7eb48d603c558ede919ad8dd0c')
+    #
+    # Note that if you have a device and simulator with the same name, the
+    # simulator will always be selected.
+    #
+    # @param [String] udid_or_name A name or udid that identifies the device you
+    #  are looking for.
+    # @param [RunLoop::SimControl] sim_control An instance of SimControl that
+    #  can be used for looking of simulators and providing an XCTools instance.
+    #  Users should never need to provide this.
+    # @return [RunLoop::Device] A device that matches `udid_or_name`.
+    # @raise [ArgumentError] If no matching device can be found.
+    def self.device_with_identifier(udid_or_name, sim_control=RunLoop::SimControl.new)
+      simulator = sim_control.simulators.detect do |sim|
+        sim.instruments_identifier == udid_or_name ||
+              sim.udid == udid_or_name
+      end
+
+      return simulator if !simulator.nil?
+
+      physical_device = sim_control.xctools.instruments(:devices).detect do |device|
+        puts device
+        device.name == udid_or_name ||
+              device.udid == udid_or_name
+      end
+
+      return physical_device if !physical_device.nil?
+
+      raise ArgumentError, "Could not find a device with a UDID or name matching '#{udid_or_name}'"
+    end
+
     def to_s
-      "#{instruments_identifier} #{udid} #{instruction_set}"
+      if simulator?
+        "Simulator: #{instruments_identifier} #{udid} #{instruction_set}"
+      else
+        "Device: #{name} #{udid}"
+      end
     end
 
     # Returns and instruments-ready device identifier that is a suitable value

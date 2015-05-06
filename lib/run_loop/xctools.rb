@@ -168,6 +168,9 @@ module RunLoop
     # @example Getting list of known simulators.
     #  instruments(:sims) #=> < list of known simulators >
     #
+    # @example Getting list of physical devices.
+    #  instruments(:devices) #> < list of physical devices >
+    #
     # @param [Version] cmd controls the return value.  currently accepts `nil`,
     #   `:sims`, `:templates`, and `:version` as valid parameters
     # @return [String,Array,Version] based on the value of `cmd` version, a list known

@@ -1,5 +1,11 @@
 ## Change Log
 
+### 1.3.3
+
+* Add Device.device\_with\_identifer method #181
+* Simctl::Bridge should manage Xamarin's csproxy #180
+* Remove LOAD\_PATH shifting; it is unnecessary #179
+
 ### 1.3.2
 
 * 'run-loop simctl install' command line interface #175
