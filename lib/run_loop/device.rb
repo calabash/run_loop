@@ -64,7 +64,6 @@ module RunLoop
       return simulator if !simulator.nil?
 
       physical_device = sim_control.xctools.instruments(:devices).detect do |device|
-        puts device
         device.name == udid_or_name ||
               device.udid == udid_or_name
       end
