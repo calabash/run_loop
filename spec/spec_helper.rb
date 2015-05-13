@@ -85,6 +85,7 @@ RSpec.configure do |config|
     mocks.verify_partial_doubles = true
   end
 
-  # stub_env('key', 'value')
+  # stub_env('key', 'value')  <== typical usage
+  # stub_env({'key' => nil})  <== setting an env to nil
   config.include StubEnv::Helpers
 end
