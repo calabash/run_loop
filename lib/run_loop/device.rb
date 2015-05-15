@@ -75,9 +75,9 @@ module RunLoop
 
     def to_s
       if simulator?
-        "Simulator: #{instruments_identifier} #{udid} #{instruction_set}"
+        "#<Simulator: #{instruments_identifier} #{udid} #{instruction_set}>"
       else
-        "Device: #{name} #{udid}"
+        "#<Device: #{name} #{udid}>"
       end
     end
 
