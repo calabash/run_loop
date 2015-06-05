@@ -22,9 +22,15 @@ module RunLoop
 
     # The directory where the cache is stored.
     # @return [String] Expanded path to the default cache directory.
+    # @raise [RuntimeError] When the ~/.run_loop exists, but is not a directory.
     def self.default_directory
-      uid = RunLoop::Environment.uid
-      File.expand_path("/tmp/com.xamarin.calabash.run-loop_host-cache_#{uid}")
+      run_loop_dir = File.expand_path('~/.run-loop')
+      if !File.exist?(run_loop_dir)
+        FileUtils.mkdir(run_loop_dir)
+      elsif !File.directory?(run_loop_dir)
+        raise "Expected '#{run_loop_dir}' to be a directory.\nRunLoop requires this directory to cache files."
+      end
+      run_loop_dir
     end
 
     # The default cache.
