@@ -67,8 +67,8 @@ module RunLoop
     # Reads the current cache.
     # @return [Hash] A hash representation of the current state of the run-loop.
     def read
-      if File.exist? @path
-        File.open(@path) do |file|
+      if File.exist? path
+        File.open(path) do |file|
           Marshal.load(file)
         end
       else
@@ -97,7 +97,7 @@ module RunLoop
         raise ArgumentError, "Expected #{hash} to a Hash, but it is a #{hash.class}"
       end
 
-      File.open(@path, 'w+') do |file|
+      File.open(path, 'w+') do |file|
         Marshal.dump(hash, file)
       end
       true
