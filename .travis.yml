@@ -9,9 +9,9 @@ script:
   - scripts/ci/travis/rspec-ci.rb
 
 rvm:
-  - 1.9.3
-  - 2.0.0
-  - 2.2.1
+# - 1.9.3
+# - 2.0.0
+ - 2.2.1
 
 env: CAL_SIM_POST_LAUNCH_WAIT=4.0
 
