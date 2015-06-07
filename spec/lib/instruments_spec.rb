@@ -20,11 +20,12 @@ describe RunLoop::Instruments do
   describe '#ps_for_instruments' do
     it 'can find instruments processes' do
       cmd = 'ps x -o pid,command | grep -v grep | grep fake-instruments'
-      3.times { Resources.shared.fork_fake_instruments_process }
-      output = []
-      instruments.instance_eval {
-        output = ps_for_instruments(cmd).strip.split("\n")
-      }
+      3.times do
+        Resources.shared.fork_fake_instruments_process
+        sleep(0.1) if Luffa::Environment.travis_ci?
+      end
+
+      output = instruments.send(:ps_for_instruments, cmd).strip.split("\n")
       expect(output.count).to be == 3
     end
   end
