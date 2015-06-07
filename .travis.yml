@@ -6,8 +6,7 @@ before_script:
 
 script:
   - scripts/ci/travis/install-gem-ci.rb
-# - scripts/ci/travis/rspec-ci.rb
-  - bundle exec rake unit
+  - scripts/ci/travis/rspec-ci.rb
 
 rvm:
 # - 1.9.3
