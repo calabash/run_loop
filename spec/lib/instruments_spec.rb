@@ -33,34 +33,24 @@ describe RunLoop::Instruments do
   describe '#is_instruments_process?' do
     describe 'returns false when process description' do
       it 'is nil' do
-        expect(instruments.instance_eval {
-          is_instruments_process?(nil)
-        }).to be == false
+        expect(instruments.send(:is_instruments_process?, nil)).to be_falsey
       end
 
       it 'does not match instruments regex' do
-        expect( instruments.instance_eval {
-          is_instruments_process?('/usr/bin/foo')
-        }).to be == false
-        expect( instruments.instance_eval {
-          is_instruments_process?('instruments')
-        }).to be == false
+        expect(instruments.send(:is_instruments_process?, '/usr/bin/foo')).to be_falsey
+        expect(instruments.send(:is_instruments_process?, 'instruments')).to be_falsey
       end
 
       it "starts with 'sh -c xcrun instruments'" do
         description = "sh -c xcrun instruments -w \"43be3f89d9587e9468c24672777ff6241bd91124\" < args >"
-        expect( instruments.instance_eval {
-                  is_instruments_process?(description)
-                }).to be == false
+        expect(instruments.send(:is_instruments_process?, description)).to be_falsey
       end
     end
 
     describe 'returns true when process description' do
       it "contains '/usr/bin/instruments'" do
         description = "/Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w \"43be3f89d9587e9468c24672777ff6241bd91124\" < args >"
-        expect( instruments.instance_eval {
-          is_instruments_process?(description)
-        }).to be == true
+        expect(instruments.send(:is_instruments_process?, description)).to be_truthy
       end
     end
   end
@@ -68,9 +58,7 @@ describe RunLoop::Instruments do
   describe '#pids_from_ps_output' do
     it 'when no instruments process are running returns an empty array' do
       ps_cmd = 'ps x -o pid,command | grep -v grep | grep a-process-that-does-not-exist'
-      expect( instruments.instance_eval {
-        pids_from_ps_output(ps_cmd).count
-      }).to be == 0
+      expect(instruments.send(:pids_from_ps_output, ps_cmd).count).to be == 0
     end
 
     it 'can parse pids from typical ps output' do
@@ -83,8 +71,7 @@ describe RunLoop::Instruments do
 
       expect(instruments).to receive(:ps_for_instruments).and_return(ps_output)
       expected = [98081, 98082, 98083]
-      actual = []
-      instruments.instance_eval { actual = pids_from_ps_output }
+      actual = instruments.send(:pids_from_ps_output)
       expect(actual).to match_array expected
     end
   end
@@ -125,9 +112,7 @@ describe RunLoop::Instruments do
     it 'the current Xcode version' do
       xcode_tools = RunLoop::XCTools.new
       expected =  xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
-      expect(instruments.instance_eval {
-        kill_signal(xcode_tools)
-      }).to be == expected
+      expect(instruments.send(:kill_signal, xcode_tools)).to be == expected
     end
 
     describe 'regression' do
@@ -142,9 +127,7 @@ describe RunLoop::Instruments do
             Resources.shared.with_developer_dir(developer_dir) do
               xcode_tools = RunLoop::XCTools.new
               expected =  xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
-              expect(instruments.instance_eval {
-                       kill_signal(xcode_tools)
-                     }).to be == expected
+              expect(instruments.send(:kill_signal, xcode_tools)).to be == expected
             end
           end
         end
