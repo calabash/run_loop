@@ -75,7 +75,7 @@ describe RunLoop::HostCache do
   describe 'io' do
     let(:hash) { { :number => 1, :word => 'word', :symbol => :symbol } }
     describe '#read' do
-      it 'returns an empty array if cache file does not exist' do
+      it 'returns an empty Hash if cache file does not exist' do
         cache = RunLoop::HostCache.new(directory)
         result = cache.read
         expect(result).to be_a Hash
