@@ -10,7 +10,7 @@ describe RunLoop::SimControl do
       before(:each) { RunLoop::SimControl.terminate_all_sims }
 
       it "with Xcode #{Resources.shared.current_xcode_version}" do
-        sim_control.launch_sim({:hide_after => false})
+        sim_control.launch_sim
         expect(sim_control.sim_is_running?).to be == true
 
         sim_control.quit_sim
@@ -24,7 +24,7 @@ describe RunLoop::SimControl do
             it "#{developer_dir}" do
               Resources.shared.with_developer_dir(developer_dir) do
                 local_sim_control = RunLoop::SimControl.new
-                local_sim_control.launch_sim({:hide_after => true})
+                local_sim_control.launch_sim
                 expect(local_sim_control.sim_is_running?).to be == true
 
                 local_sim_control.quit_sim
@@ -42,7 +42,7 @@ describe RunLoop::SimControl do
     before(:each) { RunLoop::SimControl.terminate_all_sims }
 
     it "with Xcode #{Resources.shared.current_xcode_version}" do
-      sim_control.relaunch_sim({:hide_after => true})
+      sim_control.relaunch_sim
       expect(sim_control.sim_is_running?).to be == true
     end
 
@@ -53,7 +53,7 @@ describe RunLoop::SimControl do
           it "#{developer_dir}" do
             Resources.shared.with_developer_dir(developer_dir) do
               local_sim_control = RunLoop::SimControl.new
-              local_sim_control.relaunch_sim({:hide_after => true})
+              local_sim_control.relaunch_sim
               expect(local_sim_control.sim_is_running?).to be == true
             end
           end
@@ -65,7 +65,7 @@ describe RunLoop::SimControl do
   describe '#sim_app_support_dir' do
     before(:each) {  RunLoop::SimControl.terminate_all_sims }
     it "with Xcode #{Resources.shared.current_xcode_version} returns a path that exists" do
-      sim_control.relaunch_sim({:hide_after => true})
+      sim_control.relaunch_sim
       path = sim_control.instance_eval { sim_app_support_dir }
       expect(File.exist?(path)).to be == true
     end
@@ -82,7 +82,7 @@ describe RunLoop::SimControl do
             RunLoop::SimControl.terminate_all_sims
             Resources.shared.with_developer_dir(developer_dir) do
               local_sim_control = RunLoop::SimControl.new
-              local_sim_control.relaunch_sim({:hide_after => true})
+              local_sim_control.relaunch_sim
               path = local_sim_control.instance_eval { sim_app_support_dir }
               expect(File.exist?(path)).to be == true
             end
@@ -97,11 +97,10 @@ describe RunLoop::SimControl do
 
       before(:each) do
         RunLoop::SimControl.terminate_all_sims
-        @opts = {:hide_after => true}
       end
 
       it "with Xcode #{Resources.shared.current_xcode_version}" do
-        sim_control.reset_sim_content_and_settings(@opts)
+        sim_control.reset_sim_content_and_settings
         actual = sim_control.instance_eval { existing_sim_sdk_or_device_data_dirs }
         expect(actual).to be_a Array
         expect(actual.count).to be >= 1
@@ -112,7 +111,7 @@ describe RunLoop::SimControl do
         describe "with Xcode #{Resources.shared.current_xcode_version}" do
           it "can reset the content and settings on a single simulator" do
             udid = sim_control.instance_eval { sim_details :udid }.keys.sample
-            options = @opts.merge({:sim_udid => udid})
+            options = {:sim_udid => udid}
             sim_control.reset_sim_content_and_settings(options)
             containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
             expect(File.exist? containers_dir).to be == false
