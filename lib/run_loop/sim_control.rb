@@ -96,8 +96,7 @@ module RunLoop
     #  simulator has launched.
     def relaunch_sim(opts={})
       default_opts = {:post_quit_wait => 1.0,
-                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0,
-                      :hide_after => false}
+                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0}
       merged_opts = default_opts.merge(opts)
       quit_sim(merged_opts)
       launch_sim(merged_opts)
