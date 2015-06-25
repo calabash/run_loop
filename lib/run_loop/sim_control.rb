@@ -69,15 +69,12 @@ module RunLoop
     end
 
     # If it is not already running, launch the simulator for the current version
-    # of Xcode.
+    # of Xcode.  Launches the simulator in the background so it does not
+    # steal focus.
     #
     # @param [Hash] opts Optional controls.
     # @option opts [Float] :post_launch_wait (2.0) How long to sleep after the
     #  simulator has launched.
-    # @option opts [Boolean] :hide_after (false) If true, will attempt to Hide
-    #  the simulator after it is launched.  This is useful `only when testing
-    #  gem features` that require the simulator be launched repeated and you are
-    #  tired of your editor losing focus. :)
     #
     # @todo Consider migrating apple script call to xctools.
     def launch_sim(opts={})
