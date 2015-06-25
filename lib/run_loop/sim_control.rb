@@ -183,7 +183,6 @@ module RunLoop
     def reset_sim_content_and_settings(opts={})
       default_opts = {:post_quit_wait => 1.0,
                       :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 3.0,
-                      :hide_after => false,
                       :sim_udid => nil}
       merged_opts = default_opts.merge(opts)
 
