@@ -94,10 +94,6 @@ module RunLoop
     #  simulator has quit.
     # @option opts [Float] :post_launch_wait (2.0) How long to sleep after the
     #  simulator has launched.
-    # @option opts [Boolean] :hide_after (false) If true, will attempt to Hide
-    #  the simulator after it is launched.  This is useful `only when testing
-    #  gem features` that require the simulator be launched repeated and you are
-    #  tired of your editor losing focus. :)
     def relaunch_sim(opts={})
       default_opts = {:post_quit_wait => 1.0,
                       :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0,
