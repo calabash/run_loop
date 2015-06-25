@@ -178,11 +178,6 @@ module RunLoop
     #  simulator has launched.  Waits longer than normal because we need the
     #  simulator directories to be repopulated. **NOTE:** This option is ignored
     #  in Xcode 6.
-    # @option opts [Boolean] :hide_after (false) If true, will attempt to Hide
-    #  the simulator after it is launched.  This is useful `only when testing
-    #  gem features` that require the simulator be launched repeated and you are
-    #  tired of your editor losing focus. :) **NOTE:** This option is ignored
-    #  in Xcode 6.
     # @option opts [String] :sim_udid (nil) The udid of the simulator to reset.
     #  **NOTE:** This option is ignored in Xcode < 6.
     def reset_sim_content_and_settings(opts={})
