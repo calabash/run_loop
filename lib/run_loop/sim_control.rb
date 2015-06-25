@@ -79,13 +79,9 @@ module RunLoop
     # @todo Consider migrating apple script call to xctools.
     def launch_sim(opts={})
       unless sim_is_running?
-        default_opts = {:post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0,
-                        :hide_after => false}
+        default_opts = {:post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0}
         merged_opts = default_opts.merge(opts)
         `xcrun open -g -a "#{sim_app_path}"`
-        if merged_opts[:hide_after]
-          `xcrun /usr/bin/osascript -e 'tell application "System Events" to keystroke "h" using command down'`
-        end
         sleep(merged_opts[:post_launch_wait]) if merged_opts[:post_launch_wait]
       end
     end
