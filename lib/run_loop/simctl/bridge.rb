@@ -371,7 +371,7 @@ module RunLoop::Simctl
     end
 
     def launch_simulator
-      args = ['open', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', device.udid]
+      args = ['open', '-g', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', device.udid]
       pid = spawn('xcrun', *args)
       Process.detach(pid)
 

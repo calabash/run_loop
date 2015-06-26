@@ -69,26 +69,19 @@ module RunLoop
     end
 
     # If it is not already running, launch the simulator for the current version
-    # of Xcode.
+    # of Xcode.  Launches the simulator in the background so it does not
+    # steal focus.
     #
     # @param [Hash] opts Optional controls.
     # @option opts [Float] :post_launch_wait (2.0) How long to sleep after the
     #  simulator has launched.
-    # @option opts [Boolean] :hide_after (false) If true, will attempt to Hide
-    #  the simulator after it is launched.  This is useful `only when testing
-    #  gem features` that require the simulator be launched repeated and you are
-    #  tired of your editor losing focus. :)
     #
     # @todo Consider migrating apple script call to xctools.
     def launch_sim(opts={})
       unless sim_is_running?
-        default_opts = {:post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0,
-                        :hide_after => false}
+        default_opts = {:post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0}
         merged_opts = default_opts.merge(opts)
-        `xcrun open -a "#{sim_app_path}"`
-        if merged_opts[:hide_after]
-          `xcrun /usr/bin/osascript -e 'tell application "System Events" to keystroke "h" using command down'`
-        end
+        `xcrun open -g -a "#{sim_app_path}"`
         sleep(merged_opts[:post_launch_wait]) if merged_opts[:post_launch_wait]
       end
     end
@@ -101,14 +94,9 @@ module RunLoop
     #  simulator has quit.
     # @option opts [Float] :post_launch_wait (2.0) How long to sleep after the
     #  simulator has launched.
-    # @option opts [Boolean] :hide_after (false) If true, will attempt to Hide
-    #  the simulator after it is launched.  This is useful `only when testing
-    #  gem features` that require the simulator be launched repeated and you are
-    #  tired of your editor losing focus. :)
     def relaunch_sim(opts={})
       default_opts = {:post_quit_wait => 1.0,
-                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0,
-                      :hide_after => false}
+                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0}
       merged_opts = default_opts.merge(opts)
       quit_sim(merged_opts)
       launch_sim(merged_opts)
@@ -190,17 +178,11 @@ module RunLoop
     #  simulator has launched.  Waits longer than normal because we need the
     #  simulator directories to be repopulated. **NOTE:** This option is ignored
     #  in Xcode 6.
-    # @option opts [Boolean] :hide_after (false) If true, will attempt to Hide
-    #  the simulator after it is launched.  This is useful `only when testing
-    #  gem features` that require the simulator be launched repeated and you are
-    #  tired of your editor losing focus. :) **NOTE:** This option is ignored
-    #  in Xcode 6.
     # @option opts [String] :sim_udid (nil) The udid of the simulator to reset.
     #  **NOTE:** This option is ignored in Xcode < 6.
     def reset_sim_content_and_settings(opts={})
       default_opts = {:post_quit_wait => 1.0,
                       :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 3.0,
-                      :hide_after => false,
                       :sim_udid => nil}
       merged_opts = default_opts.merge(opts)
 
