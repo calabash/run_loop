@@ -21,6 +21,16 @@ module RunLoop
     end
 
     # @!visibility private
+    # Are we running Xcode 7 or above?
+    #
+    # This is a convenience method.
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 7.0
+    def xcode_version_gte_7?
+      xctools.xcode_version_gte_7?
+    end
+
+    # @!visibility private
     # Are we running Xcode 6 or above?
     #
     # This is a convenience method.
