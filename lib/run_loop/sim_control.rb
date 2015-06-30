@@ -637,7 +637,9 @@ module RunLoop
     def sim_app_path
       @sim_app_path ||= lambda {
         dev_dir = xctools.xcode_developer_dir
-        if xcode_version_gte_6?
+        if xcode_version_gte_7?
+          "#{dev_dir}/Applications/Simulator.app"
+        elsif xcode_version_gte_6?
           "#{dev_dir}/Applications/iOS Simulator.app"
         else
           "#{dev_dir}/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app"
