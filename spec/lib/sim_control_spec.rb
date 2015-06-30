@@ -50,7 +50,7 @@ describe RunLoop::SimControl do
       expect(xctools).to receive(:xcode_developer_dir).and_return('/Xcode')
       expect(xctools).to receive(:xcode_version).and_return(xctools.v60)
       expected = '/Xcode/Applications/iOS Simulator.app'
-      expect(sim_control.instance_eval { sim_app_path }).to be == expected
+      expect(sim_control.send(:sim_app_path)).to be == expected
     end
 
     it 'for Xcode < 6.0' do
@@ -58,7 +58,7 @@ describe RunLoop::SimControl do
       expect(xctools).to receive(:xcode_developer_dir).and_return('/Xcode')
       expect(xctools).to receive(:xcode_version).and_return(xctools.v51)
       expected = '/Xcode/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app'
-      expect(sim_control.instance_eval { sim_app_path }).to be == expected
+      expect(sim_control.send(:sim_app_path)).to be == expected
     end
 
     it 'returns a path that exists' do
