@@ -130,7 +130,13 @@ module RunLoop
       # SimControl.new.quit_sim({:post_quit_wait => 0.5})
 
       processes =
-            ['iPhone Simulator.app', 'iOS Simulator.app',
+            [
+                  # Xcode < 5.1
+                  'iPhone Simulator.app',
+                  # 7.0 < Xcode <= 6.0
+                  'iOS Simulator.app',
+                  # Xcode >= 7.0
+                  'Simulator.app',
 
              # Multiple launchd_sim processes have been causing problems.  This
              # is a first pass at investigating what it would mean to kill the
