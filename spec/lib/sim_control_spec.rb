@@ -15,7 +15,13 @@ describe RunLoop::SimControl do
   end
 
   describe '#sim_name' do
-    it 'for Xcode >= 6.0' do
+    it 'for Xcode >= 7.0' do
+      xctools = sim_control.xctools
+      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(xctools.v70)
+      expect(sim_control.send(:sim_name)).to be == 'Simulator'
+    end
+
+    it 'for 7.0 < Xcode >= 6.0' do
       xctools = sim_control.xctools
       expect(xctools).to receive(:xcode_version).at_least(:once).and_return(xctools.v60)
       expect(sim_control.send(:sim_name)).to be == 'iOS Simulator'
@@ -23,7 +29,7 @@ describe RunLoop::SimControl do
 
     it 'for Xcode < 6.0' do
       xctools = sim_control.xctools
-      expect(xctools).to receive(:xcode_version).and_return(xctools.v51)
+      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(xctools.v51)
       expect(sim_control.send(:sim_name)).to be == 'iPhone Simulator'
     end
   end
