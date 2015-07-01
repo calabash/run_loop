@@ -60,7 +60,7 @@ module RunLoop
     end
 
     # Inspects the app's Info.plist for the executable name.
-    # @return [String] The value of CFBundleIdentifier.
+    # @return [String] The value of CFBundleExecutable.
     # @raise [RuntimeError] If the plist cannot be read or the
     #   CFBundleExecutable is empty or does not exist.
     def executable_name
