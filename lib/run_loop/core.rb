@@ -639,6 +639,8 @@ module RunLoop
       #
       # Xcode 6 Beta versions also return paths, but revert to 'normal'
       # behavior when GM is released.
+      #
+      # Xcode 7 Beta versions appear to behavior like Xcode 6 Beta versions.
       res = templates.select { |name| name == 'Automation' }.first
       return res if res
 
