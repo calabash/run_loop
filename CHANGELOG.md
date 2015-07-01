@@ -1,7 +1,8 @@
 ## Change Log
 
-### 1.4
+### 1.4 WIP
 
+* Add support for inspecting ipa app bundles #192
 * Managing the CoreSimulator daemon #191
 * Expect {} raise\_error should specify the error #190
 * Xcode 7 beta support #189
