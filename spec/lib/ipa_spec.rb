@@ -9,14 +9,14 @@ describe RunLoop::Ipa do
       it 'when the path does not exist' do
         expect {
           RunLoop::Ipa.new('/path/does/not/exist')
-        }.to raise_error
+        }.to raise_error(RuntimeError)
       end
 
       it 'when the path does not end in .ipa' do
         expect(File).to receive(:exist?).with('/path/foo.app').and_return(true)
         expect {
           RunLoop::Ipa.new('/path/foo.app')
-        }.to raise_error
+        }.to raise_error(RuntimeError)
       end
     end
 
@@ -37,12 +37,12 @@ describe RunLoop::Ipa do
     describe 'raises an error when' do
       it 'cannot find the bundle_dir' do
         expect(ipa).to receive(:bundle_dir).and_return(nil)
-        expect { ipa.bundle_identifier }.to raise_error
+        expect { ipa.bundle_identifier }.to raise_error(RuntimeError)
       end
 
       it 'cannot find the Info.plist' do
         expect(ipa).to receive(:bundle_dir).at_least(:once).and_return(Dir.mktmpdir)
-        expect { ipa.bundle_identifier }.to raise_error
+        expect { ipa.bundle_identifier }.to raise_error(RuntimeError)
       end
     end
   end

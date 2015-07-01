@@ -41,7 +41,7 @@ module RunLoop
     #  directory.
     # @raise [RuntimeError] If an Info.plist does exist in the .app.
     def bundle_identifier
-      unless File.exist?(bundle_dir)
+      if bundle_dir.nil? || !File.exist?(bundle_dir)
         raise "Expected a '#{File.basename(path).split('.').first}.app'\nat path '#{payload_dir}'"
       end
 
