@@ -604,7 +604,8 @@ module RunLoop
     #
     # @return [String, nil] The pid as a String or nil if no process is found.
     def sim_pid
-      `xcrun ps x -o pid,command | grep "#{sim_name}" | grep -v grep`.strip.split(' ').first
+      process_name = "MacOS/#{sim_name}"
+      `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split(' ').first
     end
 
     # @!visibility private
