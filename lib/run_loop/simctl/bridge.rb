@@ -374,7 +374,8 @@ module RunLoop::Simctl
 
       # @todo Does not always appear?
       # RunLoop::ProcessWaiter.new('CoreSimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
-      RunLoop::ProcessWaiter.new('iOS Simulator', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+      sim_name = @sim_control.send(:sim_name)
+      RunLoop::ProcessWaiter.new(sim_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       RunLoop::ProcessWaiter.new('SimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       wait_for_device_state 'Booted'
       sleep(SIM_POST_LAUNCH_WAIT)
