@@ -92,6 +92,15 @@ describe RunLoop::Core do
       actual = RunLoop::Core.default_simulator(xctools)
       expect(actual).to be == expected
     end
+
+    it "when Xcode 7.0 it returns 'iPhone 5s (9.0 Simulator)'" do
+      version = RunLoop::Version.new('7.0')
+      xctools = RunLoop::XCTools.new
+      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+      expected = 'iPhone 5s (9.0 Simulator)'
+      actual = RunLoop::Core.default_simulator(xctools)
+      expect(actual).to be == expected
+    end
   end
 
   describe '.udid_and_bundle_for_launcher' do

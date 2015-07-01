@@ -33,6 +33,11 @@ describe RunLoop::XCTools do
     it { expect(xctools.instruments_supports_hyphen_s? '4.6.3').to be == false }
   end
 
+  it '#xc70' do
+    expect(xctools.v70).to be == RunLoop::Version.new('7.0')
+    expect(xctools.instance_variable_get(:@xc70)).to be == RunLoop::Version.new('7.0')
+  end
+
   describe '#xc62' do
     it { expect(xctools.v62).to be == RunLoop::Version.new('6.2') }
   end
@@ -73,6 +78,18 @@ describe RunLoop::XCTools do
           end
         end
       end
+    end
+  end
+
+  describe '#xcode_version_gte_70?' do
+    it 'returns true for Xcode >= 7.0' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('7.0'))
+      expect(xctools.xcode_version_gte_7?).to be == true
+    end
+
+    it 'returns false for Xcode < 7.0' do
+      expect(xctools).to receive(:xcode_version).and_return(RunLoop::Version.new('6.4'))
+      expect(xctools.xcode_version_gte_7?).to be == false
     end
   end
 

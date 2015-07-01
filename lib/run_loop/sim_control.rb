@@ -21,6 +21,16 @@ module RunLoop
     end
 
     # @!visibility private
+    # Are we running Xcode 7 or above?
+    #
+    # This is a convenience method.
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 7.0
+    def xcode_version_gte_7?
+      xctools.xcode_version_gte_7?
+    end
+
+    # @!visibility private
     # Are we running Xcode 6 or above?
     #
     # This is a convenience method.
@@ -120,7 +130,13 @@ module RunLoop
       # SimControl.new.quit_sim({:post_quit_wait => 0.5})
 
       processes =
-            ['iPhone Simulator.app', 'iOS Simulator.app',
+            [
+                  # Xcode < 5.1
+                  'iPhone Simulator.app',
+                  # 7.0 < Xcode <= 6.0
+                  'iOS Simulator.app',
+                  # Xcode >= 7.0
+                  'Simulator.app',
 
              # Multiple launchd_sim processes have been causing problems.  This
              # is a first pass at investigating what it would mean to kill the
@@ -588,7 +604,8 @@ module RunLoop
     #
     # @return [String, nil] The pid as a String or nil if no process is found.
     def sim_pid
-      `xcrun ps x -o pid,command | grep "#{sim_name}" | grep -v grep`.strip.split(' ').first
+      process_name = "MacOS/#{sim_name}"
+      `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split(' ').first
     end
 
     # @!visibility private
@@ -603,7 +620,9 @@ module RunLoop
     #  launching the current simulator.
     def sim_name
       @sim_name ||= lambda {
-        if xcode_version_gte_6?
+        if xcode_version_gte_7?
+          'Simulator'
+        elsif xcode_version_gte_6?
           'iOS Simulator'
         else
           'iPhone Simulator'
@@ -621,7 +640,9 @@ module RunLoop
     def sim_app_path
       @sim_app_path ||= lambda {
         dev_dir = xctools.xcode_developer_dir
-        if xcode_version_gte_6?
+        if xcode_version_gte_7?
+          "#{dev_dir}/Applications/Simulator.app"
+        elsif xcode_version_gte_6?
           "#{dev_dir}/Applications/iOS Simulator.app"
         else
           "#{dev_dir}/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app"

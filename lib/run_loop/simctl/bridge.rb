@@ -27,10 +27,7 @@ module RunLoop::Simctl
       @pbuddy = RunLoop::PlistBuddy.new
 
       @sim_control = RunLoop::SimControl.new
-      @path_to_ios_sim_app_bundle = lambda {
-        dev_dir = @sim_control.xctools.xcode_developer_dir
-        "#{dev_dir}/Applications/iOS Simulator.app"
-      }.call
+      @path_to_ios_sim_app_bundle = @sim_control.send(:sim_app_path)
 
       @app = RunLoop::App.new(app_bundle_path)
 
@@ -177,8 +174,10 @@ module RunLoop::Simctl
     def terminate_core_simulator_processes
       debug_logging = RunLoop::Environment.debug?
       [
-            # Probably no.
+            # Takes forever to kill this process.
             #'com.apple.CoreSimulator.CoreSimulatorService',
+
+            # Probably do not need to quit this.
             #'com.apple.CoreSimulator.SimVerificationService',
 
             # Started by Xamarin Studio, this is the parent process of the
@@ -377,7 +376,8 @@ module RunLoop::Simctl
 
       # @todo Does not always appear?
       # RunLoop::ProcessWaiter.new('CoreSimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
-      RunLoop::ProcessWaiter.new('iOS Simulator', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+      sim_name = @sim_control.send(:sim_name)
+      RunLoop::ProcessWaiter.new(sim_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       RunLoop::ProcessWaiter.new('SimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       wait_for_device_state 'Booted'
       sleep(SIM_POST_LAUNCH_WAIT)
