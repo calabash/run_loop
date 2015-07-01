@@ -32,7 +32,7 @@ module RunLoop
 
     # @!visibility private
     def to_s
-      "#<Ipa: #{bundle_identifier}: '#{path}'>"
+      "#<IPA: #{bundle_identifier}: '#{path}'>"
     end
 
     # The bundle identifier of this ipa.
