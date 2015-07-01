@@ -39,7 +39,7 @@ describe RunLoop::App do
       let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
       it 'there is no info plist' do
         app = RunLoop::App.new(path)
-        expect { app.info_plist_path }.to raise_error
+        expect { app.info_plist_path }.to raise_error(RuntimeError)
       end
     end
   end
@@ -54,7 +54,7 @@ describe RunLoop::App do
         app = RunLoop::App.new(path)
         file = RunLoop::PlistBuddy.new.create_plist(File.join(path, 'Info.plist'))
         expect(File.exist?(file)).to be_truthy
-        expect { app.bundle_identifier }.to raise_error
+        expect { app.bundle_identifier }.to raise_error(RuntimeError)
       end
     end
   end
@@ -69,7 +69,7 @@ describe RunLoop::App do
         app = RunLoop::App.new(path)
         file = RunLoop::PlistBuddy.new.create_plist(File.join(path, 'Info.plist'))
         expect(File.exist?(file)).to be_truthy
-        expect { app.executable_name }.to raise_error
+        expect { app.executable_name }.to raise_error(RuntimeError)
       end
     end
   end

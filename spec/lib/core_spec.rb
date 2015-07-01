@@ -25,7 +25,7 @@ describe RunLoop::Core do
                   "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Time Profiler.tracetemplate",
             ]
       expect(xctools).to receive(:instruments).with(:templates).and_return(templates)
-      expect { RunLoop::Core.default_tracetemplate(xctools) }.to raise_error
+      expect { RunLoop::Core.default_tracetemplate(xctools) }.to raise_error(RuntimeError)
     end
   end
 
