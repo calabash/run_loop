@@ -644,10 +644,13 @@ module RunLoop
       res = templates.select { |name| name == 'Automation' }.first
       return res if res
 
-      res = templates.select do |path|
+      candidate = templates.select do |path|
         path =~ /\/Automation.tracetemplate/ and path =~ /Xcode/
-      end.first.tr("\"", '').strip
-      return res if res
+      end
+
+      if !candidate.empty? && !candidate.first.nil?
+        return candidate.first.tr("\"", '').strip
+      end
 
       msgs = ['Expected instruments to report an Automation tracetemplate.',
               'Please report this as bug:  https://github.com/calabash/run_loop/issues',
