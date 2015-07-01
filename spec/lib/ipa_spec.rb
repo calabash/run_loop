@@ -47,6 +47,30 @@ describe RunLoop::Ipa do
     end
   end
 
+  describe '#executable_name' do
+    it "reads the app's Info.plist" do
+      expect(ipa.executable_name).to be == 'CalSmoke-cal'
+    end
+
+    describe 'raises an error when' do
+      it 'cannot find the bundle_dir' do
+        expect(ipa).to receive(:bundle_dir).and_return(nil)
+        expect { ipa.executable_name }.to raise_error(RuntimeError)
+      end
+
+      it 'cannot find the Info.plist' do
+        expect(ipa).to receive(:bundle_dir).at_least(:once).and_return(Dir.mktmpdir)
+        expect { ipa.executable_name }.to raise_error(RuntimeError)
+      end
+
+      it 'Info.plist does not contain key CFBundleExecutable' do
+        pbuddy = ipa.send(:plist_buddy)
+        expect(pbuddy).to receive(:plist_read).and_return nil
+        expect { ipa.executable_name }.to raise_error(RuntimeError)
+      end
+    end
+  end
+
   describe 'private' do
     it '#tmpdir' do
       tmp_dir = ipa.send(:tmpdir)
@@ -68,6 +92,10 @@ describe RunLoop::Ipa do
       expect(File.exist?(bundle_dir)).to be_truthy
       expect(File.directory?(bundle_dir)).to be_truthy
       expect(ipa.instance_variable_get(:@bundle_dir)).to be == bundle_dir
+    end
+
+    it '#plist_buddy' do
+      expect(ipa.send(:plist_buddy)).to be_a_kind_of(RunLoop::PlistBuddy)
     end
   end
 end

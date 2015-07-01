@@ -55,6 +55,29 @@ module RunLoop
       }.call
     end
 
+    # Inspects the app's Info.plist for the executable name.
+    # @return [String] The value of CFBundleIdentifier.
+    # @raise [RuntimeError] If the plist cannot be read or the
+    #   CFBundleExecutable is empty or does not exist.
+    def executable_name
+      if bundle_dir.nil? || !File.exist?(bundle_dir)
+        raise "Expected a '#{File.basename(path).split('.').first}.app'\nat path '#{payload_dir}'"
+      end
+
+      @executable_name ||= lambda {
+        info_plist_path = File.join(bundle_dir, 'Info.plist')
+        unless File.exist? info_plist_path
+          raise "Expected an 'Info.plist' at '#{bundle_dir}'"
+        end
+        name = plist_buddy.plist_read('CFBundleExecutable', info_plist_path)
+
+        unless name
+          raise "Expected key 'CFBundleExecutable' in '#{info_plist_path}'"
+        end
+        name
+      }.call
+    end
+
     private
 
     def tmpdir
@@ -76,6 +99,10 @@ module RunLoop
       @bundle_dir ||= lambda {
         Dir.glob(File.join(payload_dir, '*')).detect {|f| File.directory?(f) && f.end_with?('.app')}
       }.call
+    end
+
+    def plist_buddy
+      @plist_buddy ||= RunLoop::PlistBuddy.new
     end
   end
 end
