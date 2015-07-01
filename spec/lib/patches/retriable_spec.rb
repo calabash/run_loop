@@ -21,19 +21,19 @@ describe RunLoop::RetryOpts do
       it ':tries is not allowed' do
         expect {
           retry_module.tries_and_interval(3, 4, {:tries => 3})
-        }.to raise_error
+        }.to raise_error(RuntimeError)
       end
 
       it ':interval is not allowed' do
         expect {
           retry_module.tries_and_interval(3, 4, {:interval => 3})
-        }.to raise_error
+        }.to raise_error(RuntimeError)
       end
 
       it ':intervals is not allowed' do
         expect {
           retry_module.tries_and_interval(3, 4, {:intervals => 3})
-        }.to raise_error
+        }.to raise_error(RuntimeError)
       end
     end
 

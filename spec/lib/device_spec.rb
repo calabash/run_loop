@@ -150,7 +150,7 @@ describe RunLoop::Device do
         let(:xcode_tools) { RunLoop::XCTools.new }
         it 'raises an error' do
           expect(xcode_tools).to receive(:xcode_version_gte_6?).and_return(false)
-          expect { device.instruments_identifier(xcode_tools) }.to raise_error
+          expect { device.instruments_identifier(xcode_tools) }.to raise_error(RuntimeError)
         end
       end
     end
@@ -160,7 +160,7 @@ describe RunLoop::Device do
     describe 'is a physical device' do
       it 'raises an error' do
         device = RunLoop::Device.new('name', '7.1.2', '30c4b52a41d0f6c64a44bd01ff2966f03105de1e', 'Shutdown')
-        expect { device.send(:instruction_set) }.to raise_error
+        expect { device.send(:instruction_set) }.to raise_error(RuntimeError)
       end
     end
 

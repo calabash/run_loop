@@ -92,7 +92,7 @@ module RunLoop
         self.udid
       else
         unless xcode_tools.xcode_version_gte_6?
-          raise "Expected Xcode >= 6, but found version #{xcode_tools.version} - cannot create an identifier"
+          raise "Expected Xcode >= 6, but found version #{xcode_tools.xcode_version} - cannot create an identifier"
         end
         if self.version == RunLoop::Version.new('7.0.3')
           version_part = self.version.to_s

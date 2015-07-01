@@ -28,7 +28,7 @@ describe RunLoop::Simctl::Bridge do
       allow_any_instance_of(RunLoop::App).to receive(:valid?).and_return(false)
       expect {
         RunLoop::Simctl::Bridge.new(device, abp)
-      }.to raise_error
+      }.to raise_error(RuntimeError)
     end
   end
 

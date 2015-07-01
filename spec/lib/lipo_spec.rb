@@ -42,7 +42,7 @@ describe RunLoop::Lipo do
       expect(lipo).to receive(:execute_lipo).and_yield(stream.call(''),
                                                        stream.call('stderr output'),
                                                        RunLoop::Lipo::ProcessStatus.new)
-      expect { lipo.info }.to raise_error
+      expect { lipo.info }.to raise_error(RuntimeError)
     end
 
     context 'bundle path has spaces' do
