@@ -174,8 +174,10 @@ module RunLoop::Simctl
     def terminate_core_simulator_processes
       debug_logging = RunLoop::Environment.debug?
       [
-            # Probably no.
+            # Takes forever to kill this process.
             #'com.apple.CoreSimulator.CoreSimulatorService',
+
+            # Probably do not need to quit this.
             #'com.apple.CoreSimulator.SimVerificationService',
 
             # Started by Xamarin Studio, this is the parent process of the
