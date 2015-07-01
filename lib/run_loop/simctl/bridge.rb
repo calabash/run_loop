@@ -172,37 +172,43 @@ module RunLoop::Simctl
     end
 
     def terminate_core_simulator_processes
-      debug_logging = RunLoop::Environment.debug?
       [
-            # Takes forever to kill this process.
-            #'com.apple.CoreSimulator.CoreSimulatorService',
+            # Pattern.
+            # [ '< process name >', < send term first > ]
 
-            # Probably do not need to quit this.
-            #'com.apple.CoreSimulator.SimVerificationService',
+            # No. This process is a daemon, and requires 'KILL' to terminate.
+            # Killing the process is fast, but it takes a long time to restart.
+            # ['com.apple.CoreSimulator.CoreSimulatorService', false],
+
+            # Probably do not need to quit this, but it is tempting to do so.
+            #['com.apple.CoreSimulator.SimVerificationService', false],
 
             # Started by Xamarin Studio, this is the parent process of the
             # processes launched by Xamarin's interaction with
             # CoreSimulatorBridge
-            'csproxy',
+            ['csproxy', true],
 
             # Yes.
-            'SimulatorBridge',
-            'configd_sim',
-            'launchd_sim',
+            ['SimulatorBridge', true],
+            ['configd_sim', true],
+            ['launchd_sim', true],
 
             # Yes, but does not always appear.
-            'CoreSimulatorBridge'
-      ].each do |name|
+            ['CoreSimulatorBridge', true]
+      ].each do |pair|
+        name = pair[0]
+        send_term = pair[1]
         pids = RunLoop::ProcessWaiter.new(name).pids
         pids.each do |pid|
-          if debug_logging
-            puts "Sending 'TERM' to #{name} '#{pid}'"
+
+          if send_term
+            term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
+            killed = term.kill_process
+          else
+            killed = false
           end
-          term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
-          unless term.kill_process
-            if debug_logging
-              puts "Sending 'KILL' to #{name} '#{pid}'"
-            end
+
+          unless killed
             term = RunLoop::ProcessTerminator.new(pid, 'KILL', name)
             term.kill_process
           end
