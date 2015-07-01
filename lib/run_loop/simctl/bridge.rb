@@ -27,10 +27,7 @@ module RunLoop::Simctl
       @pbuddy = RunLoop::PlistBuddy.new
 
       @sim_control = RunLoop::SimControl.new
-      @path_to_ios_sim_app_bundle = lambda {
-        dev_dir = @sim_control.xctools.xcode_developer_dir
-        "#{dev_dir}/Applications/iOS Simulator.app"
-      }.call
+      @path_to_ios_sim_app_bundle = @sim_control.send(:sim_app_path)
 
       @app = RunLoop::App.new(app_bundle_path)
 
