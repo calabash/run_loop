@@ -50,8 +50,12 @@ module RunLoop
         unless File.exist? info_plist_path
           raise "Expected an 'Info.plist' at '#{bundle_dir}'"
         end
-        pbuddy = RunLoop::PlistBuddy.new
-        pbuddy.plist_read('CFBundleIdentifier', info_plist_path)
+        identifier = plist_buddy.plist_read('CFBundleIdentifier', info_plist_path)
+
+        unless identifier
+          raise "Expected key 'CFBundleIdentifier' in '#{info_plist_path}'"
+        end
+        identifier
       }.call
     end
 

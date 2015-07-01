@@ -44,6 +44,12 @@ describe RunLoop::Ipa do
         expect(ipa).to receive(:bundle_dir).at_least(:once).and_return(Dir.mktmpdir)
         expect { ipa.bundle_identifier }.to raise_error(RuntimeError)
       end
+
+      it 'Info.plist does not contain CFBundleIdentifier' do
+        pbuddy = ipa.send(:plist_buddy)
+        expect(pbuddy).to receive(:plist_read).and_return nil
+        expect { ipa.bundle_identifier }.to raise_error(RuntimeError)
+      end
     end
   end
 
