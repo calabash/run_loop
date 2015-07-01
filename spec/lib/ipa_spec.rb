@@ -31,7 +31,7 @@ describe RunLoop::Ipa do
 
   describe '#bundle_identifier' do
     it "reads the app's Info.plist" do
-      expect(ipa.bundle_identifier).to be == 'com.xamarin.CalSmoke-cal'
+      expect(ipa.bundle_identifier).to be == 'sh.calaba.CalSmoke-cal'
     end
 
     describe 'raises an error when' do
