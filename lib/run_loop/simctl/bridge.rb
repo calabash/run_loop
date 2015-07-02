@@ -27,10 +27,7 @@ module RunLoop::Simctl
       @pbuddy = RunLoop::PlistBuddy.new
 
       @sim_control = RunLoop::SimControl.new
-      @path_to_ios_sim_app_bundle = lambda {
-        dev_dir = @sim_control.xctools.xcode_developer_dir
-        "#{dev_dir}/Applications/iOS Simulator.app"
-      }.call
+      @path_to_ios_sim_app_bundle = @sim_control.send(:sim_app_path)
 
       @app = RunLoop::App.new(app_bundle_path)
 
@@ -175,35 +172,43 @@ module RunLoop::Simctl
     end
 
     def terminate_core_simulator_processes
-      debug_logging = RunLoop::Environment.debug?
       [
-            # Probably no.
-            #'com.apple.CoreSimulator.CoreSimulatorService',
-            #'com.apple.CoreSimulator.SimVerificationService',
+            # Pattern.
+            # [ '< process name >', < send term first > ]
+
+            # No. This process is a daemon, and requires 'KILL' to terminate.
+            # Killing the process is fast, but it takes a long time to restart.
+            # ['com.apple.CoreSimulator.CoreSimulatorService', false],
+
+            # Probably do not need to quit this, but it is tempting to do so.
+            #['com.apple.CoreSimulator.SimVerificationService', false],
 
             # Started by Xamarin Studio, this is the parent process of the
             # processes launched by Xamarin's interaction with
             # CoreSimulatorBridge
-            'csproxy',
+            ['csproxy', true],
 
             # Yes.
-            'SimulatorBridge',
-            'configd_sim',
-            'launchd_sim',
+            ['SimulatorBridge', true],
+            ['configd_sim', true],
+            ['launchd_sim', true],
 
             # Yes, but does not always appear.
-            'CoreSimulatorBridge'
-      ].each do |name|
+            ['CoreSimulatorBridge', true]
+      ].each do |pair|
+        name = pair[0]
+        send_term = pair[1]
         pids = RunLoop::ProcessWaiter.new(name).pids
         pids.each do |pid|
-          if debug_logging
-            puts "Sending 'TERM' to #{name} '#{pid}'"
+
+          if send_term
+            term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
+            killed = term.kill_process
+          else
+            killed = false
           end
-          term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
-          unless term.kill_process
-            if debug_logging
-              puts "Sending 'KILL' to #{name} '#{pid}'"
-            end
+
+          unless killed
             term = RunLoop::ProcessTerminator.new(pid, 'KILL', name)
             term.kill_process
           end
@@ -371,13 +376,14 @@ module RunLoop::Simctl
     end
 
     def launch_simulator
-      args = ['open', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', device.udid]
+      args = ['open', '-g', '-a', @path_to_ios_sim_app_bundle, '--args', '-CurrentDeviceUDID', device.udid]
       pid = spawn('xcrun', *args)
       Process.detach(pid)
 
       # @todo Does not always appear?
       # RunLoop::ProcessWaiter.new('CoreSimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
-      RunLoop::ProcessWaiter.new('iOS Simulator', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+      sim_name = @sim_control.send(:sim_name)
+      RunLoop::ProcessWaiter.new(sim_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       RunLoop::ProcessWaiter.new('SimulatorBridge', WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
       wait_for_device_state 'Booted'
       sleep(SIM_POST_LAUNCH_WAIT)

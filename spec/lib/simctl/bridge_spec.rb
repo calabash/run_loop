@@ -28,7 +28,7 @@ describe RunLoop::Simctl::Bridge do
       allow_any_instance_of(RunLoop::App).to receive(:valid?).and_return(false)
       expect {
         RunLoop::Simctl::Bridge.new(device, abp)
-      }.to raise_error
+      }.to raise_error(RuntimeError)
     end
   end
 
@@ -104,7 +104,9 @@ describe RunLoop::Simctl::Bridge do
         expect(bridge).to receive(:fetch_app_dir).and_return('/some/path')
         device_data_dir = Resources.shared.mock_core_simulator_device_data_dir(:sdk8)
         expect(bridge).to receive(:device_data_dir).and_return(device_data_dir)
+
         match = bridge.app_data_dir
+
         expect(File.exist?(match)).to be_truthy
         expect(File.directory?(match)).to be_truthy
       end

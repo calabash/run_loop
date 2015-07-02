@@ -1,5 +1,17 @@
 ## Change Log
 
+### 1.4.0
+
+* Add support for inspecting ipa app bundles #192
+* Managing the CoreSimulator daemon #191
+* Expect {} raise\_error should specify the error #190
+* Xcode 7 beta support #189
+* Prevent simulator from stealing focus between scenarios #188
+  @michaelkirk
+* Search for and validate gem version #187
+* Add a generic file cache for hashes #185
+* Move host cache from /tmp to ~/.run-loop #184
+
 ### 1.3.3
 
 * Add Device.device\_with\_identifer method #181

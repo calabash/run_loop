@@ -1,6 +1,7 @@
 describe RunLoop::App do
 
   let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
+  let(:bundle_id) { 'sh.calaba.CalSmoke' }
 
   describe '.new' do
     it 'creates a new app with a path' do
@@ -39,14 +40,14 @@ describe RunLoop::App do
       let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
       it 'there is no info plist' do
         app = RunLoop::App.new(path)
-        expect { app.info_plist_path }.to raise_error
+        expect { app.info_plist_path }.to raise_error(RuntimeError)
       end
     end
   end
 
   context '#bundle_identifier' do
     subject { RunLoop::App.new(Resources.shared.app_bundle_path).bundle_identifier }
-    it { is_expected.to be == 'com.xamarin.CalSmoke' }
+    it { is_expected.to be == bundle_id }
 
     context 'raises an error when' do
       let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
@@ -54,7 +55,7 @@ describe RunLoop::App do
         app = RunLoop::App.new(path)
         file = RunLoop::PlistBuddy.new.create_plist(File.join(path, 'Info.plist'))
         expect(File.exist?(file)).to be_truthy
-        expect { app.bundle_identifier }.to raise_error
+        expect { app.bundle_identifier }.to raise_error(RuntimeError)
       end
     end
   end
@@ -69,7 +70,7 @@ describe RunLoop::App do
         app = RunLoop::App.new(path)
         file = RunLoop::PlistBuddy.new.create_plist(File.join(path, 'Info.plist'))
         expect(File.exist?(file)).to be_truthy
-        expect { app.executable_name }.to raise_error
+        expect { app.executable_name }.to raise_error(RuntimeError)
       end
     end
   end

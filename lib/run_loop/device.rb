@@ -64,7 +64,6 @@ module RunLoop
       return simulator if !simulator.nil?
 
       physical_device = sim_control.xctools.instruments(:devices).detect do |device|
-        puts device
         device.name == udid_or_name ||
               device.udid == udid_or_name
       end
@@ -76,9 +75,9 @@ module RunLoop
 
     def to_s
       if simulator?
-        "Simulator: #{instruments_identifier} #{udid} #{instruction_set}"
+        "#<Simulator: #{instruments_identifier} #{udid} #{instruction_set}>"
       else
-        "Device: #{name} #{udid}"
+        "#<Device: #{name} #{udid}>"
       end
     end
 
@@ -93,7 +92,7 @@ module RunLoop
         self.udid
       else
         unless xcode_tools.xcode_version_gte_6?
-          raise "Expected Xcode >= 6, but found version #{xcode_tools.version} - cannot create an identifier"
+          raise "Expected Xcode >= 6, but found version #{xcode_tools.xcode_version} - cannot create an identifier"
         end
         if self.version == RunLoop::Version.new('7.0.3')
           version_part = self.version.to_s

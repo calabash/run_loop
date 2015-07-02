@@ -1,7 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-require File.join(File.dirname(__FILE__), 'lib', 'run_loop', 'version')
-
 ruby_files = Dir.glob('{lib}/**/*')
 java_scripts = Dir.glob('scripts/*.js')
 bash_scripts = ['scripts/udidetect', 'scripts/read-cmd.sh', 'scripts/timeout3']
@@ -9,7 +7,30 @@ plists = Dir.glob('plists/**/*.plist')
 
 Gem::Specification.new do |s|
   s.name        = 'run_loop'
-  s.version     = RunLoop::VERSION
+  s.version     =
+        lambda {
+          file = File.join('./', 'lib', 'run_loop', 'version.rb')
+          lines = File.readlines(file)
+          version_regex = /\s*VERSION\s*=\s*/
+          version_lines = lines.select { |line| line =~ version_regex }
+
+          if version_lines.nil? || version_lines.empty?
+            raise "Could not find a VERSION line in '#{file}'"
+          end
+
+          if version_lines.count != 1
+            raise "Found multiple matches for VERSION\n#{version_lines}"
+          end
+
+          match_regex = /VERSION\s*=\s*'(\d\.\d\.\d(\.pre\d+)?)'/
+          version_line = version_lines.first.strip
+          match = version_line[match_regex,0]
+          unless match == version_line
+            raise "Could not parse #{version_line} into a valid version, e.g. 1.2.3 or 1.2.3.pre10"
+          end
+
+          version_line[match_regex,1]
+        }.call
   s.platform    = Gem::Platform::RUBY
   s.authors     = ['Karl Krukow']
   s.email       = ['karl.krukow@xamarin.com']

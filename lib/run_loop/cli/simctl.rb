@@ -31,6 +31,37 @@ module RunLoop
         end
       end
 
+      desc 'refresh', 'EXPERIMENTAL: Terminate CoreSimulatorService daemons'
+
+      method_option 'debug',
+                    :desc => 'Enable debug logging.',
+                    :aliases => '-v',
+                    :required => false,
+                    :default => false,
+                    :type => :boolean
+
+      def refresh
+        debug = options[:debug]
+        original_value = ENV['DEBUG']
+
+        ENV['DEBUG'] = '1' if debug
+
+        RunLoop::SimControl.terminate_all_sims
+
+        begin
+          process_name = 'com.apple.CoreSimulator.CoreSimulatorService'
+          pids = RunLoop::ProcessWaiter.new(process_name, {:timeout => 0.2}).pids
+          if debug && pids.empty?
+            puts 'There are no CoreSimulatorServices processes running'
+          end
+          pids.each do |pid|
+            RunLoop::ProcessTerminator.new(pid, 'KILL', process_name).kill_process
+          end
+        ensure
+          ENV['DEBUG'] = original_value if debug
+        end
+      end
+
       no_commands do
         def sim_control
           @sim_control ||= RunLoop::SimControl.new

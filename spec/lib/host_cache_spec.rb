@@ -36,11 +36,31 @@ describe RunLoop::HostCache do
   end
 
   describe '.default_directory' do
-    it 'returns a user-specific directory when possible' do
-      uid = 501
-      expect(RunLoop::Environment).to receive(:uid).and_return(uid)
-      expected = File.expand_path("/tmp/com.xamarin.calabash.run-loop_host-cache_#{uid}")
-      expect(RunLoop::HostCache.default_directory).to be == expected
+
+    let(:run_loop_dir) { '~/.run-loop' }
+    let(:tmp_dir) { Dir.mktmpdir }
+
+    before do
+      expect(File).to receive(:expand_path).with(run_loop_dir).and_return(tmp_dir)
+    end
+
+    it 'returns directory if it exists' do
+      expect(RunLoop::HostCache.default_directory).to be == tmp_dir
+    end
+
+    it 'creates a directory if it does not exist' do
+      FileUtils.rm_rf(tmp_dir)
+      expect(FileUtils).to receive(:mkdir).with(tmp_dir).and_call_original
+
+      expect(RunLoop::HostCache.default_directory).to be == tmp_dir
+    end
+
+    it 'raises error if directory is actually a file' do
+      expect(File).to receive(:directory?).and_return false
+
+      expect do
+        RunLoop::HostCache.default_directory
+      end.to raise_error RuntimeError
     end
   end
 
@@ -55,7 +75,7 @@ describe RunLoop::HostCache do
   describe 'io' do
     let(:hash) { { :number => 1, :word => 'word', :symbol => :symbol } }
     describe '#read' do
-      it 'returns an empty array if cache file does not exist' do
+      it 'returns an empty Hash if cache file does not exist' do
         cache = RunLoop::HostCache.new(directory)
         result = cache.read
         expect(result).to be_a Hash
