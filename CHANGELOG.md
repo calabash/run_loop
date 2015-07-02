@@ -1,6 +1,6 @@
 ## Change Log
 
-### 1.4 WIP
+### 1.4.0
 
 * Add support for inspecting ipa app bundles #192
 * Managing the CoreSimulator daemon #191
