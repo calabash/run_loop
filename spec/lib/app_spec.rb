@@ -1,6 +1,7 @@
 describe RunLoop::App do
 
   let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
+  let(:bundle_id) { 'sh.calaba.CalSmoke' }
 
   describe '.new' do
     it 'creates a new app with a path' do
@@ -46,7 +47,7 @@ describe RunLoop::App do
 
   context '#bundle_identifier' do
     subject { RunLoop::App.new(Resources.shared.app_bundle_path).bundle_identifier }
-    it { is_expected.to be == 'com.xamarin.CalSmoke' }
+    it { is_expected.to be == bundle_id }
 
     context 'raises an error when' do
       let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
