@@ -1,5 +1,9 @@
 ## Change Log
 
+### 1.4.1
+
+* Fixed typo in Xcode 7 check #195 @krukow
+
 ### 1.4.0
 
 * Add support for inspecting ipa app bundles #192
