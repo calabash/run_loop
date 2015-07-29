@@ -23,6 +23,22 @@ describe RunLoop::XCTools do
     end
   end
 
+  describe '#lookup_localization_name' do
+
+    subject { xctools.lookup_localization_name("delete.key", localization) }
+
+    context 'when using the danish localization' do
+      let('localization') { "da" }
+      it { is_expected.to be == "Slet" }
+    end
+
+    context 'when using an unknown localization' do
+      let('localization') { "not-real" }
+      it { is_expected.to be == nil }
+    end
+
+  end
+
   describe '#instruments' do
     it 'checks its arguments' do
       expect { xctools.instruments(:foo) }.to raise_error(ArgumentError)
