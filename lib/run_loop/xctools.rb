@@ -162,6 +162,39 @@ module RunLoop
             end
     end
 
+    # Find the localized name for a given key_code
+    #
+    # @example
+    #  lookup_localization_name('delete.key', 'da') => 'Slet'
+    #
+    # @param [String] key_code the localization signifier, e.g. 'delete.key'
+    # @param [String] localized_lang an iso language code returned by calabash ios server
+    #
+    # @return [String] the localized name
+    def lookup_localization_name(key_code, localized_lang)
+
+      l10n_path = uikit_bundle_l10n_path
+
+      lang_dir_name = "#{localized_lang}.lproj".sub('-','_')
+
+      if(File.exists?(File.join(l10n_path, lang_dir_name)))
+        return key_name_lookup_table(lang_dir_name)[key_code]
+      end
+
+      two_char_country_code = localized_lang.split('-')[0]
+      lang_dir_name = "#{two_char_country_code}.lproj"
+      if(File.exists?(File.join(l10n_path, lang_dir_name)))
+        return key_name_lookup_table(lang_dir_name)[key_code]
+      end
+
+      if is_full_name?(two_char_country_code)
+        return key_name_lookup_table("#{@@full_name_lookup[two_char_country_code]}.lproj")[key_code]
+      end
+
+      return nil
+    end
+
+
     # Is this a beta version of Xcode?
     #
     # @note Relies on Xcode beta versions having and app bundle named Xcode-Beta.app
@@ -291,5 +324,36 @@ module RunLoop
         _version >= RunLoop::Version.new('5.1')
       }.call
     end
+
+  private
+
+  def uikit_bundle_l10n_path
+    if !xcode_developer_dir
+      nil
+    else
+      uikit_bundle_path = "./Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/"
+      File.join(xcode_developer_dir, uikit_bundle_path);
+    end
+  end
+
+  @@full_name_lookup = {
+    'en' => 'English',
+    'nl' => 'Dutch',
+    'fr' => 'French',
+    'de' => 'German',
+    'es' => 'Spanish',
+    'it' => 'Italian',
+    'jp' => 'Japanese'
+  }
+
+  def is_full_name?(two_letter_country_code)
+    @@full_name_lookup.has_key?(two_letter_country_code)
+  end
+
+  def key_name_lookup_table(lang_dir_name)
+    JSON.parse(`plutil -convert json #{File.join(uikit_bundle_l10n_path, lang_dir_name, 'Accessibility.strings')} -o -`)
+  end
+
+
   end
 end

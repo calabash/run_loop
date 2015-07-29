@@ -15,6 +15,14 @@ describe RunLoop::XCTools do
     end
   end
 
+  describe '.uikit_bundle_l18n_path' do
+    it 'return value' do
+      stub_env('DEVELOPER_DIR', '/some/xcode/path')
+      expected_uikit_l18n_path = "./Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/"
+      expect(xctools.uikit_bundle_l18n_path).to be == File.join('/some/xcode/path', expected_uikit_l18n_path);
+    end
+  end
+
   describe '#instruments' do
     it 'checks its arguments' do
       expect { xctools.instruments(:foo) }.to raise_error(ArgumentError)
