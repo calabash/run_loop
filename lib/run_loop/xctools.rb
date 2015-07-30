@@ -172,28 +172,11 @@ module RunLoop
     #
     # @return [String] the localized name
     def lookup_localization_name(key_code, localized_lang)
+      lookup_table_dir = lang_dir(localized_lang)
+      return nil unless lookup_table_dir
 
-      l10n_path = uikit_bundle_l10n_path
-
-      lang_dir_name = "#{localized_lang}.lproj".sub('-','_')
-
-      if(File.exists?(File.join(l10n_path, lang_dir_name)))
-        return key_name_lookup_table(lang_dir_name)[key_code]
-      end
-
-      two_char_country_code = localized_lang.split('-')[0]
-      lang_dir_name = "#{two_char_country_code}.lproj"
-      if(File.exists?(File.join(l10n_path, lang_dir_name)))
-        return key_name_lookup_table(lang_dir_name)[key_code]
-      end
-
-      if is_full_name?(two_char_country_code)
-        return key_name_lookup_table("#{@@full_name_lookup[two_char_country_code]}.lproj")[key_code]
-      end
-
-      return nil
+      key_name_lookup_table(lookup_table_dir)[key_code]
     end
-
 
     # Is this a beta version of Xcode?
     #
@@ -326,6 +309,35 @@ module RunLoop
     end
 
   private
+
+  # maps the ios keyboard localization to a language directory where we can
+  # find a key-code -> localized-label mapping 
+  def lang_dir(localized_lang)
+    l10n_path = uikit_bundle_l10n_path
+
+    ## 2 char + _ + sub localization
+    # en_GB.lproj
+    lang_dir_name = "#{localized_lang}.lproj".sub('-','_')
+    if(File.exists?(File.join(l10n_path, lang_dir_name)))
+      return lang_dir_name
+    end
+
+    # 2 char iso language code
+    # vi.lproj
+    two_char_country_code = localized_lang.split('-')[0]
+    lang_dir_name = "#{two_char_country_code}.lproj"
+    if(File.exists?(File.join(l10n_path, lang_dir_name)))
+      return lang_dir_name
+    end
+
+    # Full name
+    # e.g. Dutch.lproj
+    lang_dir_name = "#{@@full_name_lookup[two_char_country_code]}.lproj"
+    if is_full_name?(two_char_country_code) &&
+        File.exists?(File.join(l10n_path, lang_dir_name))
+      return lang_dir_name
+    end
+  end
 
   def uikit_bundle_l10n_path
     if !xcode_developer_dir

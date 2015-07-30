@@ -36,7 +36,35 @@ describe RunLoop::XCTools do
       let('localization') { "not-real" }
       it { is_expected.to be == nil }
     end
+  end
 
+  describe "#lang_dir" do
+    subject { xctools.send(:lang_dir, localization) }
+
+    context 'existing sub localization' do
+      let(:localization) { 'en-GB' }
+      it { is_expected.to be == 'en_GB.lproj' }
+    end
+
+    context 'existing iso localization' do
+      let(:localization) { 'vi' }
+      it { is_expected.to be == 'vi.lproj' }
+    end
+
+    context 'specially named localization' do
+      let(:localization) { 'nl' }
+      it { is_expected.to be == 'Dutch.lproj' }
+    end
+
+    context 'non-exisiting sub localization with specially named super-localization' do
+      let(:localization) { 'en-AU' }
+      it { is_expected.to be == 'English.lproj' }
+    end
+
+    context 'non-exisiting sub localization with iso super-localization' do
+      let(:localization) { 'vi-VN' }
+      it { is_expected.to be == 'vi.lproj' }
+    end
   end
 
   describe '#instruments' do
