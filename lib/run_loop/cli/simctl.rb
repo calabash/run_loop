@@ -16,8 +16,13 @@ module RunLoop
       no_commands do
         def tail_booted
           device = booted_device
-          log_file = device.simulator_log_file_path
-          exec('tail', *['-F', log_file])
+          if device.nil?
+            version = XCTools.new.xcode_version
+            puts "No simulator for active Xcode (version #{version}) is booted."
+          else
+            log_file = device.simulator_log_file_path
+            exec('tail', *['-F', log_file])
+          end
         end
       end
 
@@ -25,7 +30,8 @@ module RunLoop
       def booted
         device = booted_device
         if device.nil?
-          puts 'No simulator is booted.'
+          version = XCTools.new.xcode_version
+          puts "No simulator for active Xcode (version #{version}) is booted."
         else
           puts device
         end
