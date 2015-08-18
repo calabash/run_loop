@@ -26,7 +26,7 @@ module RunLoop
     # Returns a version instance for `Xcode 6.4`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
-    # @return [RunLoop::Version] 6.3
+    # @return [RunLoop::Version] 6.4
     def v64
       @xc64 ||= RunLoop::Version.new('6.4')
     end
