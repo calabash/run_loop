@@ -191,6 +191,8 @@ module RunLoop
 
       dependencies = options[:dependencies] || []
       dependencies << File.join(scripts_path, 'calabash_script_uia.js')
+      dependencies << File.join(scripts_path, 'detect_externally_generated_alerts.js')
+      dependencies << File.join(scripts_path, 'logger.js')
       dependencies.each do |dep|
         FileUtils.cp(dep, results_dir)
       end
