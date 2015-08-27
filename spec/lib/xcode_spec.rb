@@ -170,4 +170,30 @@ describe RunLoop::Xcode do
       expect(xcode.version_gte_51?).to be_falsey
     end
   end
+
+  describe '#developer_dir' do
+    it 'respects the DEVELOPER_DIR env var' do
+      expected = '/developer/dir'
+      stub_env({'DEVELOPER_DIR' => expected})
+
+      expect(xcode.developer_dir).to be == expected
+
+      expect(RunLoop::Environment).not_to receive(:developer_dir)
+
+      expect(xcode.instance_variable_get(:@xcode_developer_dir)).to be == expected
+    end
+
+    it 'or it returns the value of xcode-select' do
+      expected = '/xcode-select/path'
+      expect(xcode).to receive(:xcode_select_path).and_return(expected)
+      stub_env({'DEVELOPER_DIR' => nil})
+
+      expect(xcode.developer_dir).to be == '/xcode-select/path'
+
+      expect(RunLoop::Environment).not_to receive(:developer_dir)
+      expect(xcode).not_to receive(:xcode_select_path)
+
+      expect(xcode.instance_variable_get(:@xcode_developer_dir)).to be == expected
+    end
+  end
 end

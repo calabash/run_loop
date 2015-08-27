@@ -17,4 +17,10 @@ Build version 7A192o
     #Testing memoization
     expect(xcode.version).to be == expected
   end
+
+  it '#xcode_select_path' do
+    path = xcode.send(:xcode_select_path)
+    expect(Dir.exist?(path)).to be_truthy
+    expect(path[/Contents\/Developer/, 0]).to be_truthy
+  end
 end
