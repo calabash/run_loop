@@ -239,4 +239,30 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
       expect(instruments.instance_variable_get(:@instruments_templates)).to be == expected
     end
   end
+
+  describe '#devices' do
+    it 'Xcode >= 7.0' do
+      xcode = instruments.xcode
+      expect(xcode).to receive(:version_gte_7?).at_least(:once).and_return true
+      expect(instruments).to receive(:xcode_gte_7_devices).and_return 'devices'
+
+      expect(instruments.devices).to be == 'devices'
+      expect(instruments.instance_variable_get(:@instruments_devices)).to be == 'devices'
+
+      # Testing memoization
+      expect(instruments.devices).to be == 'devices'
+    end
+
+    it 'Xcode < 7.0' do
+      xcode = instruments.xcode
+      expect(xcode).to receive(:version_gte_7?).at_least(:once).and_return false
+      expect(instruments).to receive(:xcode_lt_7_devices).and_return 'devices'
+
+      expect(instruments.devices).to be == 'devices'
+      expect(instruments.instance_variable_get(:@instruments_devices)).to be == 'devices'
+
+      # Testing memoization
+      expect(instruments.devices).to be == 'devices'
+    end
+  end
 end

@@ -139,6 +139,16 @@ module RunLoop
       end.call
     end
 
+    def devices
+      @instruments_devices ||= lambda do
+        if xcode.version_gte_7?
+          xcode_gte_7_devices
+        else
+          xcode_lt_7_devices
+        end
+      end.call
+    end
+
     private
 
     # @!visibility private
@@ -270,6 +280,24 @@ module RunLoop
       stderr.read.strip.split("\n").each do |line|
         unless line[/WebKit Threading Violation/, 0]
           $stderr.puts line
+        end
+      end
+    end
+
+    def xcode_gte_7_devices
+      nil
+    end
+
+    def xcode_lt_7_devices
+      execute_command(['-s', 'devices']) do |stdout, stderr, _|
+        filter_stderr_spam.call(stderr)
+        all = stdout.read.chomp.split("\n")
+        valid = all.select { |device| device =~ /[a-f0-9]{40}/ }
+        valid.map do |device|
+          udid = device[/[a-f0-9]{40}/, 0]
+          version = device[/(\d\.\d(\.\d)?)/, 0]
+          name = device.split('(').first.strip
+          RunLoop::Device.new(name, version, udid)
         end
       end
     end
