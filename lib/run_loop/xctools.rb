@@ -369,6 +369,5 @@ module RunLoop
       JSON.parse(`plutil -convert json #{path} -o -`)
     end
 
-
   end
 end
