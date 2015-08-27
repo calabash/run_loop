@@ -94,6 +94,51 @@ module RunLoop
       end.call
     end
 
+    # Returns an array of Instruments.app templates.
+    #
+    # Depending on the Xcode version Instruments.app templates will either be:
+    #
+    # * A full path to the template. # Xcode 5 and Xcode > 5 betas
+    # * The name of a template.      # Xcode >= 6 (non beta)
+    #
+    # **Maintainers!** The rules above are important and explain why we can't
+    # simply filter by `~= /tracetemplate/`.
+    #
+    # Templates that users have saved will always be full paths - regardless
+    # of the Xcode version.
+    #
+    # @return [Array<String>] Instruments.app templates.
+    def templates
+      @instruments_templates ||= lambda do
+        if xcode.version_gte_6?
+          execute_command(['-s', 'templates']) do |stdout, stderr, _|
+            filter_stderr_spam(stderr)
+            stdout.read.chomp.split("\n").map do |elm|
+              stripped = elm.strip.tr('"', '')
+              if stripped == '' || stripped == 'Known Templates:'
+                nil
+              else
+                stripped
+              end
+            end.compact
+          end
+        elsif xcode.version_gte_51?
+          execute_command(['-s', 'templates']) do |stdout, stderr, _|
+            err = stderr.read
+            if !err.nil? || err != ''
+              $stderr.puts stderr.read
+            end
+
+            stdout.read.strip.split("\n").delete_if do |path|
+              not path =~ /tracetemplate/
+            end.map { |elm| elm.strip }
+          end
+        else
+          raise "Xcode version '#{xcode.version}' is not supported."
+        end
+      end.call
+    end
+
     private
 
     # @!visibility private
@@ -217,6 +262,15 @@ module RunLoop
     def execute_command(args)
       Open3.popen3('xcrun', 'instruments', *args) do |_, stdout, stderr, process_status|
         yield stdout, stderr, process_status
+      end
+    end
+
+    def filter_stderr_spam(stderr)
+      # Xcode 6 GM is spamming "WebKit Threading Violations"
+      stderr.read.strip.split("\n").each do |line|
+        unless line[/WebKit Threading Violation/, 0]
+          $stderr.puts line
+        end
       end
     end
   end
