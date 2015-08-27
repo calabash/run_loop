@@ -192,5 +192,15 @@ module RunLoop
     def kill_signal(xcode_tools = RunLoop::XCTools.new)
       xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
     end
+
+    # @!visibility private
+    #
+    # Execute an instruments command.
+    # @param [Array] args An array of arguments
+    def execute_command(args)
+      Open3.popen3('xcrun', 'instruments', *args) do |_, stdout, stderr, process_status|
+        yield stdout, stderr, process_status
+      end
+    end
   end
 end
