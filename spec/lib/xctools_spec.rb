@@ -26,20 +26,20 @@ describe RunLoop::XCTools do
 
   describe '#lookup_localization_name' do
 
-    subject { xctools.lookup_localization_name("delete.key", localization) }
+    subject { xctools.lookup_localization_name('delete.key', localization) }
 
     context 'when using the danish localization' do
-      let('localization') { "da" }
-      it { is_expected.to be == "Slet" }
+      let('localization') { 'da' }
+      it { is_expected.to be == 'Slet' }
     end
 
     context 'when using an unknown localization' do
-      let('localization') { "not-real" }
+      let('localization') { 'not-real' }
       it { is_expected.to be == nil }
     end
   end
 
-  describe "#lang_dir" do
+  describe '#lang_dir' do
     subject { xctools.send(:lang_dir, localization) }
 
     context 'existing sub localization' do
@@ -62,7 +62,7 @@ describe RunLoop::XCTools do
       it { is_expected.to be == 'English.lproj' }
     end
 
-    context 'non-exisiting sub localization with iso super-localization' do
+    context 'non-existing sub localization with iso super-localization' do
       let(:localization) { 'vi-VN' }
       it { is_expected.to be == 'vi.lproj' }
     end
