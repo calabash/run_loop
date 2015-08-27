@@ -1160,8 +1160,20 @@ module RunLoop
             next
           end
 
-          unavailable_skd = line[/Unavailable/, 0]
-          if unavailable_skd
+          unavailable_sdk = line[/Unavailable/, 0]
+          if unavailable_sdk
+            current_sdk = nil
+            next
+          end
+
+          watch_os = line[/watchOS/, 0]
+          if watch_os
+            current_sdk = nil
+            next
+          end
+
+          watch = line[/Apple Watch/, 0]
+          if watch
             current_sdk = nil
             next
           end
