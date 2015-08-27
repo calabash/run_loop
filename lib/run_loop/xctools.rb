@@ -308,63 +308,63 @@ module RunLoop
       }.call
     end
 
-  private
+    private
 
-  # maps the ios keyboard localization to a language directory where we can
-  # find a key-code -> localized-label mapping 
-  def lang_dir(localized_lang)
-    l10n_path = uikit_bundle_l10n_path
+    # maps the ios keyboard localization to a language directory where we can
+    # find a key-code -> localized-label mapping
+    def lang_dir(localized_lang)
+      l10n_path = uikit_bundle_l10n_path
 
-    ## 2 char + _ + sub localization
-    # en_GB.lproj
-    lang_dir_name = "#{localized_lang}.lproj".sub('-','_')
-    if(File.exists?(File.join(l10n_path, lang_dir_name)))
-      return lang_dir_name
+      ## 2 char + _ + sub localization
+      # en_GB.lproj
+      lang_dir_name = "#{localized_lang}.lproj".sub('-','_')
+      if(File.exists?(File.join(l10n_path, lang_dir_name)))
+        return lang_dir_name
+      end
+
+      # 2 char iso language code
+      # vi.lproj
+      two_char_country_code = localized_lang.split('-')[0]
+      lang_dir_name = "#{two_char_country_code}.lproj"
+      if(File.exists?(File.join(l10n_path, lang_dir_name)))
+        return lang_dir_name
+      end
+
+      # Full name
+      # e.g. Dutch.lproj
+      lang_dir_name = "#{@@full_name_lookup[two_char_country_code]}.lproj"
+      if is_full_name?(two_char_country_code) &&
+            File.exists?(File.join(l10n_path, lang_dir_name))
+        return lang_dir_name
+      end
     end
 
-    # 2 char iso language code
-    # vi.lproj
-    two_char_country_code = localized_lang.split('-')[0]
-    lang_dir_name = "#{two_char_country_code}.lproj"
-    if(File.exists?(File.join(l10n_path, lang_dir_name)))
-      return lang_dir_name
+    def uikit_bundle_l10n_path
+      if !xcode_developer_dir
+        nil
+      else
+        uikit_bundle_path = "./Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/"
+        File.join(xcode_developer_dir, uikit_bundle_path);
+      end
     end
 
-    # Full name
-    # e.g. Dutch.lproj
-    lang_dir_name = "#{@@full_name_lookup[two_char_country_code]}.lproj"
-    if is_full_name?(two_char_country_code) &&
-        File.exists?(File.join(l10n_path, lang_dir_name))
-      return lang_dir_name
+    @@full_name_lookup = {
+          'en' => 'English',
+          'nl' => 'Dutch',
+          'fr' => 'French',
+          'de' => 'German',
+          'es' => 'Spanish',
+          'it' => 'Italian',
+          'jp' => 'Japanese'
+    }
+
+    def is_full_name?(two_letter_country_code)
+      @@full_name_lookup.has_key?(two_letter_country_code)
     end
-  end
 
-  def uikit_bundle_l10n_path
-    if !xcode_developer_dir
-      nil
-    else
-      uikit_bundle_path = "./Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/"
-      File.join(xcode_developer_dir, uikit_bundle_path);
+    def key_name_lookup_table(lang_dir_name)
+      JSON.parse(`plutil -convert json #{File.join(uikit_bundle_l10n_path, lang_dir_name, 'Accessibility.strings')} -o -`)
     end
-  end
-
-  @@full_name_lookup = {
-    'en' => 'English',
-    'nl' => 'Dutch',
-    'fr' => 'French',
-    'de' => 'German',
-    'es' => 'Spanish',
-    'it' => 'Italian',
-    'jp' => 'Japanese'
-  }
-
-  def is_full_name?(two_letter_country_code)
-    @@full_name_lookup.has_key?(two_letter_country_code)
-  end
-
-  def key_name_lookup_table(lang_dir_name)
-    JSON.parse(`plutil -convert json #{File.join(uikit_bundle_l10n_path, lang_dir_name, 'Accessibility.strings')} -o -`)
-  end
 
 
   end
