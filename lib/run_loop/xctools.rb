@@ -312,6 +312,16 @@ module RunLoop
 
     UIKIT_AXBUNDLE_PATH = '/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
 
+    LANG_CODE_TO_LANG_NAME_MAP = {
+          'en' => 'English',
+          'nl' => 'Dutch',
+          'fr' => 'French',
+          'de' => 'German',
+          'es' => 'Spanish',
+          'it' => 'Italian',
+          'jp' => 'Japanese'
+    }
+
     # maps the ios keyboard localization to a language directory where we can
     # find a key-code -> localized-label mapping
     def lang_dir(localized_lang)
@@ -334,7 +344,7 @@ module RunLoop
 
       # Full name
       # e.g. Dutch.lproj
-      lang_dir_name = "#{@@full_name_lookup[two_char_country_code]}.lproj"
+      lang_dir_name = "#{LANG_CODE_TO_LANG_NAME_MAP[two_char_country_code]}.lproj"
       if is_full_name?(two_char_country_code) &&
             File.exists?(File.join(l10n_path, lang_dir_name))
         return lang_dir_name
@@ -349,18 +359,8 @@ module RunLoop
       end
     end
 
-    @@full_name_lookup = {
-          'en' => 'English',
-          'nl' => 'Dutch',
-          'fr' => 'French',
-          'de' => 'German',
-          'es' => 'Spanish',
-          'it' => 'Italian',
-          'jp' => 'Japanese'
-    }
-
     def is_full_name?(two_letter_country_code)
-      @@full_name_lookup.has_key?(two_letter_country_code)
+      LANG_CODE_TO_LANG_NAME_MAP.has_key?(two_letter_country_code)
     end
 
     def key_name_lookup_table(lang_dir_name)
