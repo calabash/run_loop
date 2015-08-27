@@ -56,8 +56,8 @@ describe RunLoop::XCTools do
       it { is_expected.to be == 'Dutch.lproj' }
     end
 
-    context 'non-exisiting sub localization with specially named super-localization' do
-      let(:localization) { 'en-AU' }
+    context 'non-existing sub localization with specially named super-localization' do
+      let(:localization) { 'en-XX' }
       it { is_expected.to be == 'English.lproj' }
     end
 
