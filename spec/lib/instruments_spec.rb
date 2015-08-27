@@ -291,4 +291,92 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
       expect(instruments.instance_variable_get(:@instruments_physical_devices)).to be == actual
     end
   end
+
+  describe '#line_is_xcode5_simulator?' do
+    subject { instruments.send(:line_is_xcode5_simulator?, line) }
+
+    context 'Xcode 7 simulator' do
+      let(:line) { 'iPhone 6 (8.4) [AFD41B4D-AAB8-4FFD-A80D-7B32DE8EC01C]' }
+      it { is_expected.to be_falsey }
+    end
+
+    context 'Xcode 6 simulator' do
+      let(:line) { 'iPhone 6 (8.4 Simulator) [AFD41B4D-AAB8-4FFD-A80D-7B32DE8EC01C]' }
+      it { is_expected.to be_falsey }
+    end
+
+    context 'Xcode 5 simulator' do
+      let(:line) { 'iPad Retina - Simulator - iOS 6.1' }
+      it { is_expected.to be_truthy }
+    end
+  end
+
+  describe '#line_is_core_simulator?' do
+    subject { instruments.send(:line_is_core_simulator?, line) }
+
+    context 'Xcode 7 simulator' do
+      let(:line) { 'iPhone 6 (8.4) [AFD41B4D-AAB8-4FFD-A80D-7B32DE8EC01C]' }
+      it { is_expected.to be_truthy }
+    end
+
+    context 'Xcode 6 simulator' do
+      let(:line) { 'iPhone 5 (8.4 Simulator) [72EBC8B1-E76F-48D8-9586-D179A68EB2B7]' }
+      it { is_expected.to be_truthy }
+    end
+
+    context 'Simulator paired with watch' do
+      let(:line) { 'iPhone 6 Plus (9.0) + Apple Watch - 42mm (2.0) [8002F486-CF21-4DA0-8CDE-17B3D054C4DE]' }
+      it { is_expected.to be_truthy }
+    end
+
+    context 'Custom simulator' do
+      let(:line) { 'my simulator (8.1) [6E43E3CF-25F5-41CC-A833-588F043AE749]' }
+      it { is_expected.to be_truthy }
+    end
+
+    context 'Xcode 5 simulator' do
+      let(:line) { 'iPad Retina - Simulator - iOS 6.1' }
+      it { is_expected.to be_falsey }
+    end
+
+    describe 'Not the host machine' do
+      context 'Not hostname' do
+        let(:line) do
+          "#{`xcrun hostname`} [4AFA48C7-5D39-54D0-9733-04301E70E235]"
+        end
+        it { is_expected.to be_falsey }
+      end
+
+      context 'Not uname -n' do
+        let(:line) do
+          "#{`xcrun uname -n`} [4AFA48C7-5D39-54D0-9733-04301E70E235]"
+        end
+        it { is_expected.to be_falsey }
+      end
+    end
+
+    context 'Not a physical device' do
+      let(:line) { 'mercury (8.4.1) [5ddbd7cc1e0894a77811b3f41c8e5caecef3e912]' }
+      it { is_expected.to be_falsey }
+    end
+  end
+
+  describe '#line_is_simulator_paired_with_watch?' do
+    subject { instruments.send(:line_is_simulator_paired_with_watch?, line) }
+
+    context 'Xcode 7 simulator' do
+      let(:line) { 'iPhone 6 (8.4) [AFD41B4D-AAB8-4FFD-A80D-7B32DE8EC01C]' }
+      it { is_expected.to be_falsey }
+    end
+
+    context 'Xcode 6 simulator' do
+      let(:line) { 'iPhone 5 (8.4 Simulator) [72EBC8B1-E76F-48D8-9586-D179A68EB2B7]' }
+      it { is_expected.to be_falsey }
+    end
+
+    context 'Simulator paired with watch' do
+      let(:line) { 'iPhone 6 Plus (9.0) + Apple Watch - 42mm (2.0) [8002F486-CF21-4DA0-8CDE-17B3D054C4DE]' }
+      it { is_expected.to be_truthy }
+    end
+  end
 end

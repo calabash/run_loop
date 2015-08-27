@@ -196,6 +196,11 @@ module RunLoop
     INSTRUMENTS_FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
+    #
+    # For detecting CoreSimulator simulators.
+    CORE_SIMULATOR_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
+
+    # @!visibility private
     # Parses the run-loop options hash into an array of arguments that can be
     # passed to `Process.spawn` to launch instruments.
     def spawn_arguments(automation_template, options)
@@ -303,6 +308,9 @@ module RunLoop
       end
     end
 
+    # @!visibility private
+    #
+    # Filters `instruments` spam.
     def filter_stderr_spam(stderr)
       # Xcode 6 GM is spamming "WebKit Threading Violations"
       stderr.read.strip.split("\n").each do |line|
@@ -310,6 +318,32 @@ module RunLoop
           $stderr.puts line
         end
       end
+    end
+
+    # @!visibility private
+    def line_is_simulator?(line)
+      line_is_core_simulator?(line) || line_is_xcode5_simulator?(line)
+    end
+
+    # @!visibility private
+    def line_is_xcode5_simulator?(line)
+      !line[CORE_SIMULATOR_UDID_REGEX, 0] && line[/Simulator/, 0]
+    end
+
+    # @!visibility private
+    def line_is_core_simulator?(line)
+      hostname = `xcrun hostname`.strip
+      uname = `xcrun uname -n`.strip
+
+      return nil if line[/#{hostname}/]
+      return nil if line[/#{uname}/]
+
+      line[CORE_SIMULATOR_UDID_REGEX, 0]
+    end
+
+    # @!visibility private
+    def line_is_simulator_paired_with_watch?(line)
+      line[CORE_SIMULATOR_UDID_REGEX, 0] && line[/Apple Watch/, 0]
     end
   end
 end
