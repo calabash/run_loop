@@ -3,8 +3,14 @@ require 'open3'
 module RunLoop
 
   # A model of the active Xcode version.
+  #
+  # @note All command line tools are run in the context of `xcrun`.
+  #
+  # Throughout this class's documentation, there are references to the
+  # _active version of Xcode_.  The active Xcode version is the one returned
+  # by `xcrun xcodebuild`.  The current Xcode version can be set using
+  # `xcode-select` or overridden using the `DEVELOPER_DIR`.
   class Xcode
-
 
     # Returns a version instance for `Xcode 7.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
