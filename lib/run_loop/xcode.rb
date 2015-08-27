@@ -9,7 +9,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 7.0
     def v70
-      @xc70 ||= RunLoop::Version.new('7.0')
+      fetch_version(:v70)
     end
 
     # Returns a version instance for `Xcode 6.4`; used to check for the
@@ -17,7 +17,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.4
     def v64
-      @xc64 ||= RunLoop::Version.new('6.4')
+      fetch_version(:v64)
     end
 
     # Returns a version instance for `Xcode 6.3`; used to check for the
@@ -25,7 +25,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.3
     def v63
-      @xc63 ||= RunLoop::Version.new('6.3')
+      fetch_version(:v63)
     end
 
     # Returns a version instance for `Xcode 6.2`; used to check for the
@@ -33,7 +33,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.2
     def v62
-      @xc62 ||= RunLoop::Version.new('6.2')
+      fetch_version(:v62)
     end
 
     # Returns a version instance for `Xcode 6.1`; used to check for the
@@ -41,7 +41,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.1
     def v61
-      @xc61 ||= RunLoop::Version.new('6.1')
+      fetch_version(:v61)
     end
 
     # Returns a version instance for `Xcode 6.0`; used to check for the
@@ -49,7 +49,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.0
     def v60
-      @xc60 ||= RunLoop::Version.new('6.0')
+      fetch_version(:v60)
     end
 
     # Returns a version instance for `Xcode 5.1`; used to check for the
@@ -57,10 +57,10 @@ module RunLoop
     #
     # @return [RunLoop::Version] 5.1
     def v51
-      @xc51 ||= RunLoop::Version.new('5.1')
+      fetch_version(:v51)
     end
 
-    # Returns a version instance for `Xcode 5.0`; ; used to check for the
+    # Returns a version instance for `Xcode 5.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 5.0
@@ -117,7 +117,6 @@ module RunLoop
       @xcode_gte_51 ||= version >= v51
     end
 
-
     private
 
     attr_reader :xcode_versions
@@ -132,6 +131,8 @@ module RunLoop
 
       return value if value
 
+      string = key.to_s
+      string[0] = ''
       version_string = string.split(/(?!^)/).join('.')
       version = RunLoop::Version.new(version_string)
       xcode_versions[key] = version
