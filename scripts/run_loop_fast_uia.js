@@ -206,7 +206,13 @@ function isLocationPrompt(alert) {
             ["OK", /Would Like to Access Your Photos/],
             ["OK", /Would Like to Access Your Contacts/],
             ["OK", /Location Accuracy/],
-            ["OK", /запрашивает разрешение на использование Ващей текущей пгеопозиции/]
+            ["OK", /запрашивает разрешение на использование Ващей текущей пгеопозиции/],
+            ["OK", /Access the Microphone/],
+            ["OK", /enviarle notificaiones/],
+            ["OK", /Would Like to Access Your Calendar/],
+            ["OK", /Would Like to Access Your Reminders/],
+            ["OK", /Would Like to Access Your Motion Activity/],
+            ["OK", /Would Like to Access the Camera/]
         ],
         ans, exp,
         txt;
