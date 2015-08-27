@@ -222,15 +222,8 @@ module RunLoop
       }
       case cmd
         when :version
-          @instruments_version ||= lambda {
-            # Xcode 6 can print out some very strange output, so we have to retry.
-            Retriable.retriable({:tries => 5}) do
-              Open3.popen3("#{instruments}") do |_, _, stderr, _|
-                version_str = stderr.read.chomp.split(/\s/)[2]
-                RunLoop::Version.new(version_str)
-              end
-            end
-          }.call
+          @instruments ||= RunLoop::Instruments.new
+          @instruments.version
         when :sims
           @instruments_sims ||=  lambda {
             # Instruments 6 spams a lot of error messages.  I don't like to
