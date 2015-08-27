@@ -18,27 +18,28 @@ describe RunLoop::XCTools do
   describe '#uikit_bundle_l10n_path' do
     it 'return value' do
       stub_env('DEVELOPER_DIR', '/some/xcode/path')
-      expected_uikit_l10n_path = "./Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/"
-      expect(xctools.instance_eval {uikit_bundle_l10n_path}).to be == File.join('/some/xcode/path', expected_uikit_l10n_path);
+      axbundle_path = RunLoop::XCTools.const_get('UIKIT_AXBUNDLE_PATH')
+      expected = File.join('/some/xcode/path', axbundle_path)
+      expect(xctools.send(:uikit_bundle_l10n_path)).to be == expected
     end
   end
 
   describe '#lookup_localization_name' do
 
-    subject { xctools.lookup_localization_name("delete.key", localization) }
+    subject { xctools.lookup_localization_name('delete.key', localization) }
 
     context 'when using the danish localization' do
-      let('localization') { "da" }
-      it { is_expected.to be == "Slet" }
+      let('localization') { 'da' }
+      it { is_expected.to be == 'Slet' }
     end
 
     context 'when using an unknown localization' do
-      let('localization') { "not-real" }
+      let('localization') { 'not-real' }
       it { is_expected.to be == nil }
     end
   end
 
-  describe "#lang_dir" do
+  describe '#lang_dir' do
     subject { xctools.send(:lang_dir, localization) }
 
     context 'existing sub localization' do
@@ -56,14 +57,19 @@ describe RunLoop::XCTools do
       it { is_expected.to be == 'Dutch.lproj' }
     end
 
-    context 'non-exisiting sub localization with specially named super-localization' do
-      let(:localization) { 'en-AU' }
+    context 'non-existing sub localization with specially named super-localization' do
+      let(:localization) { 'en-XX' }
       it { is_expected.to be == 'English.lproj' }
     end
 
-    context 'non-exisiting sub localization with iso super-localization' do
+    context 'non-existing sub localization with iso super-localization' do
       let(:localization) { 'vi-VN' }
       it { is_expected.to be == 'vi.lproj' }
+    end
+
+    context 'unknown localization' do
+      let(:localization) { 'xx' }
+      it { is_expected.to be == nil }
     end
   end
 
