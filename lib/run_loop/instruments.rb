@@ -161,7 +161,39 @@ module RunLoop
       end.call
     end
 
+    # Returns an array of the available simulators.
+    #
+    # @return [Array<RunLoop::Device>] All the devices will be simulators.
+    def simulators
+      @instruments_simulators ||= lambda do
+        execute_command(['-s', 'devices']) do |stdout, stderr, _|
+          filter_stderr_spam(stderr)
+
+        end
+
+        devices = stdout.read.chomp.split("\n")
+        devices.select { |device| device.downcase.include?('simulator') }
+
+      end
+    end
+
     private
+
+    # @!visibility private
+    #
+    # ```
+    # $ ps x -o pid,command | grep -v grep | grep instruments
+    # 98081 sh -c xcrun instruments -w "43be3f89d9587e9468c24672777ff6241bd91124" < args >
+    # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
+    # ```
+    #
+    # When run from run-loop (via rspec), expect this:
+    #
+    # ```
+    # $ ps x -o pid,command | grep -v grep | grep instruments
+    # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
+    # ```
+    INSTRUMENTS_FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
     # Parses the run-loop options hash into an array of arguments that can be
@@ -192,22 +224,6 @@ module RunLoop
       end
       array + options.fetch(:args, [])
     end
-
-    # @!visibility private
-    #
-    # ```
-    # $ ps x -o pid,command | grep -v grep | grep instruments
-    # 98081 sh -c xcrun instruments -w "43be3f89d9587e9468c24672777ff6241bd91124" < args >
-    # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
-    # ```
-    #
-    # When run from run-loop (via rspec), expect this:
-    #
-    # ```
-    # $ ps x -o pid,command | grep -v grep | grep instruments
-    # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
-    # ```
-    INSTRUMENTS_FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
     #
