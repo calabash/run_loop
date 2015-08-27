@@ -240,29 +240,55 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     end
   end
 
-  describe '#devices' do
+  describe '#physical_devices' do
     it 'Xcode >= 7.0' do
-      xcode = instruments.xcode
-      expect(xcode).to receive(:version_gte_7?).at_least(:once).and_return true
-      expect(instruments).to receive(:xcode_gte_7_devices).and_return 'devices'
+      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_GTE_70)
+      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
+      yielded = [stdout, stderr, nil]
+      args = ['-s', 'devices']
+      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
 
-      expect(instruments.devices).to be == 'devices'
-      expect(instruments.instance_variable_get(:@instruments_devices)).to be == 'devices'
+      actual = instruments.physical_devices
+
+      expect(actual.count).to be == 2
+      expect(actual.first.name).to be == 'mercury'
+      expect(actual.first.version).to be == RunLoop::Version.new('8.4.1')
+      expect(actual.first.udid).to be == '5ddbd7cc1e0894a77811b3f41c8e5caecef3e912'
+      expect(actual.first.physical_device?).to be_truthy
+
+      expect(actual.last.name).to be == 'neptune'
+      expect(actual.last.version).to be == RunLoop::Version.new('9.0')
+      expect(actual.last.udid).to be == '43be3f89d9587e9468c24672777ff6211bd91124'
+      expect(actual.last.physical_device?).to be_truthy
 
       # Testing memoization
-      expect(instruments.devices).to be == 'devices'
+      expect(instruments.physical_devices).to be == actual
+      expect(instruments.instance_variable_get(:@instruments_physical_devices)).to be == actual
     end
 
     it 'Xcode < 7.0' do
-      xcode = instruments.xcode
-      expect(xcode).to receive(:version_gte_7?).at_least(:once).and_return false
-      expect(instruments).to receive(:xcode_lt_7_devices).and_return 'devices'
+      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_LT_70)
+      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
+      yielded = [stdout, stderr, nil]
+      args = ['-s', 'devices']
+      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
 
-      expect(instruments.devices).to be == 'devices'
-      expect(instruments.instance_variable_get(:@instruments_devices)).to be == 'devices'
+      actual = instruments.physical_devices
+
+      expect(actual.count).to be == 2
+      expect(actual.first.name).to be == 'mercury'
+      expect(actual.first.version).to be == RunLoop::Version.new('8.4.1')
+      expect(actual.first.udid).to be == '5ddbd7cc1e0894a77811b3f41c8e5caecef3e912'
+      expect(actual.first.physical_device?).to be_truthy
+
+      expect(actual.last.name).to be == 'neptune'
+      expect(actual.last.version).to be == RunLoop::Version.new('9.0')
+      expect(actual.last.udid).to be == '43be3f89d9587e9468c24672777ff6211bd91124'
+      expect(actual.last.physical_device?).to be_truthy
 
       # Testing memoization
-      expect(instruments.devices).to be == 'devices'
+      expect(instruments.physical_devices).to be == actual
+      expect(instruments.instance_variable_get(:@instruments_physical_devices)).to be == actual
     end
   end
 end
