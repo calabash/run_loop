@@ -365,7 +365,8 @@ module RunLoop
     end
 
     def key_name_lookup_table(lang_dir_name)
-      JSON.parse(`plutil -convert json #{File.join(uikit_bundle_l10n_path, lang_dir_name, 'Accessibility.strings')} -o -`)
+      path = File.join(uikit_bundle_l10n_path, lang_dir_name, 'Accessibility.strings')
+      JSON.parse(`plutil -convert json #{path} -o -`)
     end
 
 
