@@ -1160,8 +1160,8 @@ module RunLoop
             next
           end
 
-          unavailable_skd = line[/Unavailable/, 0]
-          if unavailable_skd
+          unavailable_sdk = line[/Unavailable/, 0]
+          if unavailable_sdk
             current_sdk = nil
             next
           end
