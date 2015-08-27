@@ -171,21 +171,23 @@ describe RunLoop::Instruments do
     end
   end
 
-  describe '#version' do
-    it 'returns instruments version' do
-      stderr = %q(
+  it '#version' do
+
+    stderr = %q(
 instruments, version 7.0 (58143.1)
 usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device] [[-p pid] | [application [-e variable value] [argument ...]]]
 )
-      yielded = ['', StringIO.new(stderr), nil]
-      expect(instruments).to receive(:execute_command).with([]).and_yield(*yielded)
+    yielded = ['', StringIO.new(stderr), nil]
+    expect(instruments).to receive(:execute_command).with([]).and_yield(*yielded)
 
-      expected = RunLoop::Version.new('7.0')
-      expect(instruments.version).to be == RunLoop::Version.new('7.0')
-      expect(instruments.instance_variable_get(:@instruments_version)).to be == expected
-      # Testing memoization
-      expect(instruments.version).to be == expected
-    end
+    expected = RunLoop::Version.new('7.0')
+    expect(instruments.version).to be == RunLoop::Version.new('7.0')
+    expect(instruments.instance_variable_get(:@instruments_version)).to be == expected
+    # Testing memoization
+    expect(instruments.version).to be == expected
+  end
+
+
   it '#xcode' do
     expect(RunLoop::Xcode).to receive(:new).and_return 'xcode'
 
