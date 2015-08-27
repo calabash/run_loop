@@ -67,7 +67,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 5.0
     def v50
-      @xc50 ||= RunLoop::Version.new('5.0')
+      fetch_version(:v50)
     end
 
     # Are we running Xcode 6.4 or above?
