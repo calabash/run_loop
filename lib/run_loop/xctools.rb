@@ -259,7 +259,7 @@ module RunLoop
               # prints to $stderr (>_>) - seriously?
               Open3.popen3(cmd) do |_, _, stderr, _|
                 stderr.read.chomp.split(/(,|\(|")/).map do |elm|
-                   elm.strip
+                  elm.strip
                 end.delete_if { |path| not path =~ /tracetemplate/ }
               end
             end
