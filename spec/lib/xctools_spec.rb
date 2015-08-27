@@ -20,7 +20,7 @@ describe RunLoop::XCTools do
       stub_env('DEVELOPER_DIR', '/some/xcode/path')
       axbundle_path = RunLoop::XCTools.const_get('UIKIT_AXBUNDLE_PATH')
       expected = File.join('/some/xcode/path', axbundle_path)
-      expect(xctools.instance_eval {uikit_bundle_l10n_path}).to be == expected
+      expect(xctools.send(:uikit_bundle_l10n_path)).to be == expected
     end
   end
 
