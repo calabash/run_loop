@@ -87,7 +87,7 @@ describe RunLoop::Instruments do
     it 'when a block is passed it is applied to the processes' do
       pids = [98081, 98082]
       expect(instruments).to receive(:pids_from_ps_output).and_return(pids)
-      expected = ["98081", "98082"]
+      expected = ['98081', '98082']
       collected = []
       instruments.instruments_pids do |pid|
         collected << pid.to_s
@@ -168,6 +168,23 @@ describe RunLoop::Instruments do
                   args[1]
             ]
       expect(actual).to be == expected
+    end
+  end
+
+  describe '#version' do
+    it 'returns instruments version' do
+      stderr = %q(
+instruments, version 7.0 (58143.1)
+usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device] [[-p pid] | [application [-e variable value] [argument ...]]]
+)
+      yielded = ['', StringIO.new(stderr), nil]
+      expect(instruments).to receive(:execute_command).with([]).and_yield(*yielded)
+
+      expected = RunLoop::Version.new('7.0')
+      expect(instruments.version).to be == RunLoop::Version.new('7.0')
+      expect(instruments.instance_variable_get(:@instruments_version)).to be == expected
+      # Testing memoization
+      expect(instruments.version).to be == expected
     end
   end
 end

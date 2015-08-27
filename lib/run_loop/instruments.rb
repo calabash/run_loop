@@ -77,6 +77,17 @@ module RunLoop
       pid.to_i
     end
 
+    # Returns the instruments version.
+    # @return [RunLoop::Version] A version object.
+    def version
+      @instruments_version ||= lambda do
+        execute_command([]) do |_, stderr, _|
+          version_str = stderr.read[/(\d\.\d(\.\d)?)/, 0]
+          RunLoop::Version.new(version_str)
+        end
+      end.call
+    end
+
     private
 
     # @!visibility private
