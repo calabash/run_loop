@@ -312,11 +312,12 @@ describe RunLoop::Instruments do
 
   it '#version' do
 
-    stderr = %q(
+    output = %q(
 instruments, version 7.0 (58143.1)
 usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device] [[-p pid] | [application [-e variable value] [argument ...]]]
 )
-    yielded = ['', StringIO.new(stderr), nil]
+    stderr = StringIO.new(output)
+    yielded = ['', stderr, nil]
     expect(instruments).to receive(:execute_command).with([]).and_yield(*yielded)
 
     expected = RunLoop::Version.new('7.0')
