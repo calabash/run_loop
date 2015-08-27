@@ -3,8 +3,14 @@ require 'open3'
 module RunLoop
 
   # A model of the active Xcode version.
+  #
+  # @note All command line tools are run in the context of `xcrun`.
+  #
+  # Throughout this class's documentation, there are references to the
+  # _active version of Xcode_.  The active Xcode version is the one returned
+  # by `xcrun xcodebuild`.  The current Xcode version can be set using
+  # `xcode-select` or overridden using the `DEVELOPER_DIR`.
   class Xcode
-
 
     # Returns a version instance for `Xcode 7.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
@@ -130,6 +136,14 @@ module RunLoop
           RunLoop::Version.new(version_string)
         end
       end.call
+    end
+
+    # Is this a beta version of Xcode?
+    #
+    # @note Relies on Xcode beta versions having and app bundle named Xcode-Beta.app
+    # @return [Boolean] True if the Xcode version is beta.
+    def beta?
+      developer_dir[/Xcode-[Bb]eta.app/, 0]
     end
 
     # Returns the path to the current developer directory.
