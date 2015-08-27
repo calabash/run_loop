@@ -18,8 +18,9 @@ describe RunLoop::XCTools do
   describe '#uikit_bundle_l10n_path' do
     it 'return value' do
       stub_env('DEVELOPER_DIR', '/some/xcode/path')
-      expected_uikit_l10n_path = "./Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/"
-      expect(xctools.instance_eval {uikit_bundle_l10n_path}).to be == File.join('/some/xcode/path', expected_uikit_l10n_path);
+      axbundle_path = RunLoop::XCTools.const_get('UIKIT_AXBUNDLE_PATH')
+      expected = File.join('/some/xcode/path', axbundle_path)
+      expect(xctools.instance_eval {uikit_bundle_l10n_path}).to be == expected
     end
   end
 

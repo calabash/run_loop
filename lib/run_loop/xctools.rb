@@ -310,6 +310,8 @@ module RunLoop
 
     private
 
+    UIKIT_AXBUNDLE_PATH = '/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
+
     # maps the ios keyboard localization to a language directory where we can
     # find a key-code -> localized-label mapping
     def lang_dir(localized_lang)
@@ -343,8 +345,7 @@ module RunLoop
       if !xcode_developer_dir
         nil
       else
-        uikit_bundle_path = "./Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/"
-        File.join(xcode_developer_dir, uikit_bundle_path);
+        File.join(xcode_developer_dir, UIKIT_AXBUNDLE_PATH)
       end
     end
 
