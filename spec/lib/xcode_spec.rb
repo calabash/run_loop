@@ -196,4 +196,25 @@ describe RunLoop::Xcode do
       expect(xcode.instance_variable_get(:@xcode_developer_dir)).to be == expected
     end
   end
+
+  describe '#beta?' do
+    it 'true if this is a beta version' do
+      beta = '/Xcode/7.0b6/Xcode-beta.app/Contents/Developer'
+      expect(xcode).to receive(:developer_dir).and_return beta
+
+      expect(xcode.beta?).to be_truthy
+
+      big_beta = '/Xcode/7.0b6/Xcode-Beta.app/Contents/Developer'
+      expect(xcode).to receive(:developer_dir).and_return big_beta
+
+      expect(xcode.beta?).to be_truthy
+    end
+
+    it 'false if this is not a beta version' do
+      app = '/Xcode/6.4/Xcode.app/Contents/Developer/'
+      expect(xcode).to receive(:developer_dir).and_return app
+
+      expect(xcode.beta?).to be_falsey
+    end
+  end
 end

@@ -138,6 +138,14 @@ module RunLoop
       end.call
     end
 
+    # Is this a beta version of Xcode?
+    #
+    # @note Relies on Xcode beta versions having and app bundle named Xcode-Beta.app
+    # @return [Boolean] True if the Xcode version is beta.
+    def beta?
+      developer_dir[/Xcode-[Bb]eta.app/, 0]
+    end
+
     # Returns the path to the current developer directory.
     #
     # From the man pages:
