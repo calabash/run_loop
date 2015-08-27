@@ -135,7 +135,7 @@ describe RunLoop::SimControl do
     if RunLoop::XCTools.new.xcode_version_gte_6?
       describe "with Xcode #{Resources.shared.current_xcode_version}" do
         local_sim_control = RunLoop::SimControl.new
-        sim_details = local_sim_control.instance_eval { sim_details(:udid) }
+        sim_details = local_sim_control.send(:sim_details, :udid)
         sdk7_udid = nil
         sdk8_udid = nil
         sim_details.each do |key, value|
