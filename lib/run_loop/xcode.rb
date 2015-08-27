@@ -70,53 +70,53 @@ module RunLoop
       fetch_version(:v50)
     end
 
-    # Are we running Xcode 6.4 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.4
-    def xcode_version_gte_64?
-      @xcode_gte_64 ||= version >= v64
-    end
-
-    # Are we running Xcode 6.3 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.3
-    def xcode_version_gte_63?
-      @xcode_gte_63 ||= version >= v63
-    end
-
-    # Are we running Xcode 6.2 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.2
-    def xcode_version_gte_62?
-      @xcode_gte_62 ||= version >= v62
-    end
-
-    # Are we running Xcode 6.1 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.1
-    def xcode_version_gte_61?
-      @xcode_gte_61 ||= version >= v61
-    end
-
-    # Are we running Xcode 6 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.0
-    def xcode_version_gte_6?
-      @xcode_gte_6 ||= version >= v60
-    end
-
-    # Are we running Xcode 7 or above?
+    # Is the active Xcode version 7 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 7.0
-    def xcode_version_gte_7?
-      @xcode_gte_7 ||= version >= v70
+    def version_gte_7?
+      version >= v70
     end
 
-    # Are we running Xcode 5.1 or above?
+    # Is the active Xcode version 6.4 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 6.4
+    def version_gte_64?
+      version >= v64
+    end
+
+    # Is the active Xcode version 6.3 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 6.3
+    def version_gte_63?
+      version >= v63
+    end
+
+    # Is the active Xcode version 6.2 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 6.2
+    def version_gte_62?
+      version >= v62
+    end
+
+    # Is the active Xcode version 6.1 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 6.1
+    def version_gte_61?
+      version >= v61
+    end
+
+    # Is the active Xcode version 6 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 6.0
+    def version_gte_6?
+      version >= v60
+    end
+
+    # Is the active Xcode version 5.1 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 5.1
-    def xcode_version_gte_51?
-      @xcode_gte_51 ||= version >= v51
+    def version_gte_51?
+      version >= v51
     end
 
     # Returns the current version of Xcode.
