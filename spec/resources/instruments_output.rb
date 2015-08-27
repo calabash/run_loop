@@ -133,9 +133,29 @@ instruments[98552:4623] WebKit Threading Violation - initial use of WebKit from 
 2014-10-01 05:24:43.030 instruments[51852:5503] Connection peer refused channel request for "com.apple.instruments.server.services.device.applictionListing"; channel canceled <DTXChannel: 0x7ff188efb610>
 )
 
-      DEVICES_LT_70 = %q(
+      DEVICES_GTE_70 = %q(
 Known Devices:
-stern [4AFA58C7-5D39-54D0-9733-04301E70E235]
+stern [4AFA48C7-5D39-54D0-9733-04301E70E235]
+mercury (8.4.1) [5ddbd7cc1e0894a77811b3f41c8e5caecef3e912]
+neptune (9.0) [43be3f89d9587e9468c24672777ff6211bd91124]
+iPad 2 (9.0) [492F53BE-4E57-4294-AE8D-FE1CD68843E5]
+iPad Air (8.4) [643BAA7B-2DA9-4E13-9B0E-858650B25141]
+iPad Air 2 (9.0) [C4119171-BB51-46BD-A870-738A828679CF]
+iPad Retina (8.1) [C6163436-8B6C-4ED4-831A-C98956F99DA3]
+iPhone 4s (8.2) [C8A0303D-9C0A-4442-B461-0059915BEB40]
+iPhone 5 (9.0) [C7342EDF-4B29-41CE-9B8B-96DA5F4815F6]
+iPhone 5s (8.2) [7D828A9B-8635-4739-9AB4-A752FCAA8B4A]
+iPhone 6 (9.0) [3EDC9C6E-3096-48BF-BCEC-7A5CAF8AA706]
+iPhone 6 (9.0) + Apple Watch - 38mm (2.0) [EE3C200C-69BA-4816-A087-0457C5FCEDA0]
+iPhone 6 Plus (8.4) [B04685D3-FBA0-45FF-B4B0-C3162A77F90B]
+iPhone 6 Plus (9.0) [87354E70-0645-4A50-B2A3-84C664089358]
+iPhone 6 Plus (9.0) + Apple Watch - 42mm (2.0) [8002F486-CF21-4DA0-8CDE-17B3D054C4DE]
+my simulator (8.1) [6E43E3CF-25F5-41CC-A833-588F043AE749]
+)
+
+      DEVICES_60 = %q(
+Known Devices:
+stern [4AFA48C7-5D39-54D0-9733-04301E70E235]
 mercury (8.4.1) [5ddbd7cc1e0894a77811b3f41c8e5caecef3e912]
 neptune (9.0) [43be3f89d9587e9468c24672777ff6211bd91124]
 Resizable iPad (8.1 Simulator) [77DA3AC3-EB3E-4B24-B899-4A20E315C318]
@@ -152,24 +172,32 @@ iPhone 6 Plus (8.4 Simulator) [B04685D3-FBA0-45FF-B4B0-C3162A77F90B]
 my simulator (8.1 Simulator) [6E43E3CF-25F5-41CC-A833-588F043AE749]
 )
 
-      DEVICES_GTE_70 = %q(
+      DEVICES_511 = %q(
 Known Devices:
-stern [4AFA58C7-5D39-54D0-9733-04301E70E235]
-mercury (8.4.1) [5ddbd7cc1e0894a77811b3f41c8e5caecef3e912]
-neptune (9.0) [43be3f89d9587e9468c24672777ff6211bd91124]
-iPad 2 (9.0) [492F53BE-4E57-4294-AE8D-FE1CD68843E5]
-iPad Air (8.4) [643BAA7B-2DA9-4E13-9B0E-858650B25141]
-iPad Air 2 (9.0) [C4119171-BB51-46BD-A870-738A828679CF]
-iPad Retina (8.1) [C6163436-8B6C-4ED4-831A-C98956F99DA3]
-iPhone 4s (8.2) [C8A0303D-9C0A-4442-B461-0059915BEB40]
-iPhone 5 (9.0) [C7342EDF-4B29-41CE-9B8B-96DA5F4815F6]
-iPhone 5s (8.2) [7D828A9B-8635-4739-9AB4-A752FCAA8B4A]
-iPhone 6 (9.0) [3EDC9C6E-3096-48BF-BCEC-7A5CAF8AA706]
-iPhone 6 (9.0) + Apple Watch - 38mm (2.0) [EE3C200C-69BA-4816-A087-0457C5FCEDA0]
-iPhone 6 Plus (8.4) [B04685D3-FBA0-45FF-B4B0-C3162A77F90B]
-iPhone 6 Plus (9.0) [87354E70-0645-4A50-B2A3-84C664089358]
-iPhone 6 Plus (9.0) + Apple Watch - 42mm (2.0) [8002F486-CF21-4DA0-8CDE-17B3D054C4DE]
-my simulator (8.1) [6E43E3CF-25F5-41CC-A833-588F043AE749]
+neptune (v8.4.1) (43be3f89d9587e9468c24672777ff6211bd91124)
+mercury (v8.4.1) (5ddbd7cc1e0894a77811b3f41c8e5caecef3e912)
+stern (com.apple.instruments.devices.local)
+iPhone - Simulator - iOS 6.1
+iPhone - Simulator - iOS 7.0
+iPhone - Simulator - iOS 7.1
+iPhone Retina (3.5-inch) - Simulator - iOS 6.1
+iPhone Retina (3.5-inch) - Simulator - iOS 7.0
+iPhone Retina (3.5-inch) - Simulator - iOS 7.1
+iPhone Retina (4-inch) - Simulator - iOS 6.1
+iPhone Retina (4-inch) - Simulator - iOS 7.0
+iPhone Retina (4-inch) - Simulator - iOS 7.1
+iPhone Retina (4-inch 64-bit) - Simulator - iOS 6.1
+iPhone Retina (4-inch 64-bit) - Simulator - iOS 7.0
+iPhone Retina (4-inch 64-bit) - Simulator - iOS 7.1
+iPad - Simulator - iOS 6.1
+iPad - Simulator - iOS 7.0
+iPad - Simulator - iOS 7.1
+iPad Retina - Simulator - iOS 6.1
+iPad Retina - Simulator - iOS 7.0
+iPad Retina - Simulator - iOS 7.1
+iPad Retina (64-bit) - Simulator - iOS 6.1
+iPad Retina (64-bit) - Simulator - iOS 7.0
+iPad Retina (64-bit) - Simulator - iOS 7.1
 )
     end
   end

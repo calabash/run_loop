@@ -267,7 +267,7 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     end
 
     it 'Xcode < 7.0' do
-      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_LT_70)
+      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_60)
       stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
       yielded = [stdout, stderr, nil]
       args = ['-s', 'devices']
@@ -358,6 +358,56 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     context 'Not a physical device' do
       let(:line) { 'mercury (8.4.1) [5ddbd7cc1e0894a77811b3f41c8e5caecef3e912]' }
       it { is_expected.to be_falsey }
+    end
+  end
+
+  describe '#simulators' do
+    it 'Xcode >= 7.0' do
+      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_GTE_70)
+      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
+      yielded = [stdout, stderr, nil]
+      args = ['-s', 'devices']
+      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
+
+      actual = instruments.simulators
+      expect(actual.count).to be == 11
+      actual.map do |device|
+        expect(device.name[/(iPhone|iPad|my simulator)/, 0]).to be_truthy
+        expect(device.udid[RunLoop::Instruments::CORE_SIMULATOR_UDID_REGEX, 0]).to be_truthy
+        expect(device.version).to be_a_kind_of(RunLoop::Version)
+      end
+    end
+
+    it '6.0 <= Xcode < 7.0' do
+      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_60)
+      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
+      yielded = [stdout, stderr, nil]
+      args = ['-s', 'devices']
+      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
+
+      actual = instruments.simulators
+      expect(actual.count).to be == 12
+      actual.map do |device|
+        expect(device.name[/(iPhone|iPad|my simulator)/, 0]).to be_truthy
+        expect(device.udid[RunLoop::Instruments::CORE_SIMULATOR_UDID_REGEX, 0]).to be_truthy
+        expect(device.version).to be_a_kind_of(RunLoop::Version)
+      end
+    end
+
+    it '5.1.1 <= Xcode < 6.0' do
+      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_511)
+      stderr = StringIO.new('')
+      yielded = [stdout, stderr, nil]
+      args = ['-s', 'devices']
+      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
+
+      actual = instruments.simulators
+      expect(actual.count).to be == 21
+      actual.map do |device|
+        expect(device.name[/(iPhone|iPad)/, 0]).to be_truthy
+        expect(device.udid).to be == device.name
+        expect(device.version).to be_a_kind_of(RunLoop::Version)
+      end
     end
   end
 

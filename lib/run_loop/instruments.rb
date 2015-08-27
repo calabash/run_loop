@@ -5,6 +5,11 @@ module RunLoop
   # @note All instruments commands are run in the context of `xcrun`.
   class Instruments
 
+    # @!visibility private
+    #
+    # For detecting CoreSimulator simulators.
+    CORE_SIMULATOR_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
+
     attr_reader :xcode
 
     def xcode
@@ -163,18 +168,43 @@ module RunLoop
 
     # Returns an array of the available simulators.
     #
+    # **Xcode 5.1**
+    # * iPad Retina - Simulator - iOS 7.1
+    #
+    # **Xcode 6**
+    # * iPad Retina (8.3 Simulator) [EA79555F-ADB4-4D75-930C-A745EAC8FA8B]
+    #
+    # **Xcode 7**
+    # * iPhone 6 (9.0) [3EDC9C6E-3096-48BF-BCEC-7A5CAF8AA706]
+    # * iPhone 6 (9.0) + Apple Watch - 38mm (2.0) [EE3C200C-69BA-4816-A087-0457C5FCEDA0]
+    #
     # @return [Array<RunLoop::Device>] All the devices will be simulators.
     def simulators
       @instruments_simulators ||= lambda do
         execute_command(['-s', 'devices']) do |stdout, stderr, _|
           filter_stderr_spam(stderr)
+          lines = stdout.read.chomp.split("\n")
+          lines.map do |line|
+            stripped = line.strip
+            if line_is_simulator?(stripped) &&
+                  !line_is_simulator_paired_with_watch?(stripped)
+              version = stripped[/(\d\.\d(\.\d)?)/, 0]
 
+              if line_is_xcode5_simulator?(stripped)
+                name = line
+                udid = line
+              else
+                name = stripped.split('(').first.strip
+                udid = line[CORE_SIMULATOR_UDID_REGEX, 0]
+              end
+
+              RunLoop::Device.new(name, version, udid)
+            else
+              nil
+            end
+          end.compact
         end
-
-        devices = stdout.read.chomp.split("\n")
-        devices.select { |device| device.downcase.include?('simulator') }
-
-      end
+      end.call
     end
 
     private
@@ -194,11 +224,6 @@ module RunLoop
     # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
     # ```
     INSTRUMENTS_FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
-
-    # @!visibility private
-    #
-    # For detecting CoreSimulator simulators.
-    CORE_SIMULATOR_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
 
     # @!visibility private
     # Parses the run-loop options hash into an array of arguments that can be
