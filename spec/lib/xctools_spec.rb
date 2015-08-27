@@ -66,6 +66,11 @@ describe RunLoop::XCTools do
       let(:localization) { 'vi-VN' }
       it { is_expected.to be == 'vi.lproj' }
     end
+
+    context 'unknown localization' do
+      let(:localization) { 'xx' }
+      it { is_expected.to be == nil }
+    end
   end
 
   describe '#instruments' do
