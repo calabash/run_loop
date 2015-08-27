@@ -330,7 +330,7 @@ module RunLoop
       ## 2 char + _ + sub localization
       # en_GB.lproj
       lang_dir_name = "#{localized_lang}.lproj".sub('-','_')
-      if(File.exists?(File.join(l10n_path, lang_dir_name)))
+      if File.exists?(File.join(l10n_path, lang_dir_name))
         return lang_dir_name
       end
 
@@ -338,7 +338,7 @@ module RunLoop
       # vi.lproj
       two_char_country_code = localized_lang.split('-')[0]
       lang_dir_name = "#{two_char_country_code}.lproj"
-      if(File.exists?(File.join(l10n_path, lang_dir_name)))
+      if File.exists?(File.join(l10n_path, lang_dir_name))
         return lang_dir_name
       end
 
