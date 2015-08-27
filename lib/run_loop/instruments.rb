@@ -5,6 +5,12 @@ module RunLoop
   # @note All instruments commands are run in the context of `xcrun`.
   class Instruments
 
+    attr_reader :xcode
+
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
+
     # Returns an Array of instruments process ids.
     #
     # @note The `block` parameter is included for legacy API and will be

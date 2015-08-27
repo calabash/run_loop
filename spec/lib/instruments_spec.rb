@@ -186,5 +186,10 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
       # Testing memoization
       expect(instruments.version).to be == expected
     end
+  it '#xcode' do
+    expect(RunLoop::Xcode).to receive(:new).and_return 'xcode'
+
+    expect(instruments.xcode).to be == 'xcode'
+    expect(instruments.instance_variable_get(:@xcode)).to be == 'xcode'
   end
 end
