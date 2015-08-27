@@ -1,3 +1,5 @@
+require 'open3'
+
 module RunLoop
 
   # A model of the active Xcode version.
@@ -117,6 +119,19 @@ module RunLoop
       @xcode_gte_51 ||= version >= v51
     end
 
+    # Returns the current version of Xcode.
+    #
+    # @return [RunLoop::Version] The current version of Xcode as reported by
+    #  `xcrun xcodebuild -version`.
+    def version
+      @xcode_version ||= lambda do
+        execute_command(['-version']) do |stdout, _, _|
+          version_string = stdout.read.chomp[/(\d.\d)(.\d)?/, 0]
+          RunLoop::Version.new(version_string)
+        end
+      end.call
+    end
+
     private
 
     attr_reader :xcode_versions
@@ -147,6 +162,12 @@ module RunLoop
 
       unless string[/v\d{2}/, 0]
         raise "Expected version key '#{key}' to match vXX pattern"
+      end
+    end
+
+    def execute_command(args)
+      Open3.popen3('xcrun', 'xcodebuild', *args) do |_, stdout, stderr, wait_thr|
+        yield stdout, stderr, wait_thr
       end
     end
   end
