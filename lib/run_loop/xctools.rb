@@ -349,6 +349,7 @@ module RunLoop
             File.exists?(File.join(l10n_path, lang_dir_name))
         return lang_dir_name
       end
+      nil
     end
 
     def uikit_bundle_l10n_path
