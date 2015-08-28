@@ -394,9 +394,8 @@ module RunLoop
       if xcode.is_a?(RunLoop::XCTools)
         RunLoop.deprecated('1.5.0',
                            %q(
-'RunLoop::XCTools has been replaced with RunLoop::Xcode.
-Please update your sources to pass an instance of RunLoop::Xcode'
-))
+RunLoop::XCTools has been replaced with RunLoop::Xcode.
+Please update your sources to pass an instance of RunLoop::Xcode))
       end
 
       if xcode.version_gte_7?
