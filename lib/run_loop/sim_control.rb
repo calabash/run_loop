@@ -1012,16 +1012,17 @@ module RunLoop
       end
 
       hash = {}
-      xctools.instruments(:sims).each do |elm|
-        launch_name = elm[/\A.+\((\d\.\d(\.\d)? Simulator\))/, 0]
-        udid = elm[XCODE_6_SIM_UDID_REGEX,0]
-        sdk_version = elm[/(\d\.\d(\.\d)? Simulator)/, 0].split(' ').first
-        value =
-              {
-                    :launch_name => launch_name,
-                    :udid => udid,
-                    :sdk_version => RunLoop::Version.new(sdk_version)
-              }
+
+      simulators.each do |device|
+        launch_name = device.instruments_identifier
+        udid = device.udid
+        value = {
+              :launch_name => device.instruments_identifier(xcode),
+              :udid => device.udid,
+              :sdk_version => device.version
+
+        }
+
         if primary_key == :udid
           key = udid
         else
