@@ -279,6 +279,22 @@ module RunLoop
       }.call
     end
 
+    # Find the localized name for a given key_code
+    #
+    # @example
+    #  lookup_localization_name('delete.key', 'da') => 'Slet'
+    #
+    # @param [String] key_code the localization signifier, e.g. 'delete.key'
+    # @param [String] localized_lang an iso language code returned by calabash ios server
+    #
+    # @return [String] the localized name
+    def lookup_localization_name(key_code, localized_lang)
+      lookup_table_dir = lang_dir(localized_lang)
+      return nil unless lookup_table_dir
+
+      key_name_lookup_table(lookup_table_dir)[key_code]
+    end
+
     private
 
     UIKIT_AXBUNDLE_PATH = '/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
