@@ -388,20 +388,28 @@ module RunLoop
     #
     # For historical reasons, the most recent non-64b SDK should be used.
     #
-    # @param [RunLoop::XCTools] xcode_tools Used to detect the current xcode
+    # @param [RunLoop::XCTools, RunLoop::XCode] xcode Used to detect the current xcode
     #  version.
-    def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
-      if xcode_tools.xcode_version_gte_7?
+    def self.default_simulator(xcode=RunLoop::Xcode.new)
+      if xcode.is_a?(RunLoop::XCTools)
+        RunLoop.deprecated('1.5.0',
+                           %q(
+'RunLoop::XCTools has been replaced with RunLoop::Xcode.
+Please update your sources to pass an instance of RunLoop::Xcode'
+))
+      end
+
+      if xcode.version_gte_7?
         'iPhone 5s (9.0)'
-      elsif xcode_tools.xcode_version_gte_64?
+      elsif xcode.version_gte_64?
         'iPhone 5s (8.4 Simulator)'
-      elsif xcode_tools.xcode_version_gte_63?
+      elsif xcode.version_gte_63?
         'iPhone 5s (8.3 Simulator)'
-      elsif xcode_tools.xcode_version_gte_62?
+      elsif xcode.version_gte_62?
         'iPhone 5s (8.2 Simulator)'
-      elsif xcode_tools.xcode_version_gte_61?
+      elsif xcode.version_gte_61?
         'iPhone 5s (8.1 Simulator)'
-      elsif xcode_tools.xcode_version_gte_6?
+      elsif xcode.version_gte_6?
         'iPhone 5s (8.0 Simulator)'
       else
         'iPhone Retina (4-inch) - Simulator - iOS 7.1'

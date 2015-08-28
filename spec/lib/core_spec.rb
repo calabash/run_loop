@@ -2,6 +2,8 @@ require 'tmpdir'
 
 describe RunLoop::Core do
 
+  let(:xcode) { RunLoop::Xcode.new }
+
   describe '.automation_template' do
 
     it 'respects the TRACE_TEMPLATE env var if the tracetemplate exists' do
@@ -30,76 +32,46 @@ describe RunLoop::Core do
   end
 
   describe '.default_simulator' do
-    it "when Xcode 5.1 it returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1'" do
-      version = RunLoop::Version.new('5.1')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode < 6.0' do
       expected = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 5.1.1 it returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1'" do
-      version = RunLoop::Version.new('5.1.1')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-      expected = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
-    end
-
-    it "when Xcode 6.0* it returns 'iPhone 5s (8.0 Simulator)'" do
-      version = RunLoop::Version.new('6.0')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.0*' do
       expected = 'iPhone 5s (8.0 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v60
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 6.1* it returns 'iPhone 5s (8.1 Simulator)'" do
-      version = RunLoop::Version.new('6.1')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.1*' do
       expected = 'iPhone 5s (8.1 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v61
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 6.2* it returns 'iPhone 5s (8.2 Simulator)'" do
-      version = RunLoop::Version.new('6.2')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.2*' do
       expected = 'iPhone 5s (8.2 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v62
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 6.3* it returns 'iPhone 5s (8.3 Simulator)'" do
-      version = RunLoop::Version.new('6.3')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.3*' do
       expected = 'iPhone 5s (8.3 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v63
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 6.4* it returns 'iPhone 5s (8.4 Simulator)'" do
-      version = RunLoop::Version.new('6.4')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.4*' do
       expected = 'iPhone 5s (8.4 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v64
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 7.0 it returns 'iPhone 5s (9.0)'" do
-      version = RunLoop::Version.new('7.0')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode > 7.0' do
       expected = 'iPhone 5s (9.0)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v64
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
   end
 
