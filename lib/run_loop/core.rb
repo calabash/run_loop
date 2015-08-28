@@ -87,7 +87,7 @@ module RunLoop
       if sim_control.xcode_version_gte_6?
         sim_identifier = launch_options[:udid]
         simulator = sim_control.simulators.find do |simulator|
-          [simulator.instruments_identifier(sim_control.xctools),
+          [simulator.instruments_identifier(sim_control.xcode),
            simulator.udid].include?(sim_identifier)
         end
 
@@ -100,7 +100,7 @@ module RunLoop
         RunLoop::Logging.log_debug(logger, "Simulator instruction set '#{simulator.instruction_set}' is compatible with #{lipo.info}")
         true
       else
-        RunLoop::Logging.log_debug(logger, "Xcode #{sim_control.xctools.xcode_version} detected; skipping simulator architecture check.")
+        RunLoop::Logging.log_debug(logger, "Xcode #{sim_control.xcode_version} detected; skipping simulator architecture check.")
         false
       end
     end
@@ -124,7 +124,7 @@ module RunLoop
         sim_control.quit_sim
       end
 
-      if !sim_control.xctools.xcode_version_gte_6?
+      if !sim_control.xcode.xcode_version_gte_6?
         # Xcode 5.1.1
 
         # Will quit the simulator!
@@ -156,7 +156,7 @@ module RunLoop
 
         # Xcode 6.3 instruments cannot launch an app that is already installed on
         # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
-        if sim_control.xctools.xcode_version_gte_63?
+        if sim_control.xcode.xcode_version_gte_63?
           app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
           bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
 
