@@ -369,5 +369,11 @@ module RunLoop
       JSON.parse(`plutil -convert json #{path} -o -`)
     end
 
+    attr_reader :xcode
+
+    # @!visibility private
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
   end
 end
