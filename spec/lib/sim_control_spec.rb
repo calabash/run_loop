@@ -109,7 +109,7 @@ describe RunLoop::SimControl do
       local_sim_control = RunLoop::SimControl.new
       mocked_dir = Resources.shared.mocked_sim_support_dir
       expect(local_sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
-      actual = local_sim_control.instance_eval { existing_sim_sdk_or_device_data_dirs }
+      actual = local_sim_control.send(:existing_sim_sdk_or_device_data_dirs)
       expect(actual).to be_a Array
       expect(actual.count).to be == 6
 
@@ -125,7 +125,9 @@ describe RunLoop::SimControl do
       it 'on Xcode 6' do
         local_sim_control = RunLoop::SimControl.new
         expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(true)
-        expect { local_sim_control.instance_eval { enable_accessibility_in_sdk_dir :any_arg } }.to raise_error RuntimeError
+        expect do
+          local_sim_control.send(:enable_accessibility_in_sdk_dir, :any_arg)
+        end.to raise_error RuntimeError
       end
     end
 
@@ -134,7 +136,7 @@ describe RunLoop::SimControl do
       it "with Xcode #{Resources.shared.current_xcode_version}" do
         sdk_dir = File.expand_path(File.join(Dir.mktmpdir, '7.0.3-64'))
         plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
-        expect(sim_control.instance_eval { enable_accessibility_in_sdk_dir(sdk_dir) }).to be == true
+        expect(sim_control.send(:enable_accessibility_in_sdk_dir, sdk_dir)).to be == true
         expect(File.exist?(plist_path)).to be == true
       end
     end
@@ -145,7 +147,9 @@ describe RunLoop::SimControl do
       it 'on Xcode < 6' do
         local_sim_control = RunLoop::SimControl.new
         expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-        expect { local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(nil, nil, nil) } }.to raise_error RuntimeError
+        expect do
+          local_sim_control.send(:enable_accessibility_in_sim_data_dir, nil, nil, nil)
+        end.to raise_error RuntimeError
       end
     end
 
@@ -177,13 +181,13 @@ describe RunLoop::SimControl do
         it 'and sdk >= 8.0' do
           sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{sdk8_udid}/data"))
           plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
-          expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+          expect(local_sim_control.send(:enable_accessibility_in_sim_data_dir, sdk_dir, sim_details)).to be == true
           expect(File.exist?(plist_path)).to be == true
         end
 
         it 'can skip directories not reported by instruments' do
           sdk_dir = "~/Library/Developer/CoreSimulator/Devices/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
-          expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+          expect(local_sim_control.send(:enable_accessibility_in_sim_data_dir, sdk_dir, sim_details)).to be == true
         end
       end
     end
@@ -194,29 +198,31 @@ describe RunLoop::SimControl do
       it 'on Xcode < 6' do
         local_sim_control = RunLoop::SimControl.new
         expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-        expect { local_sim_control.instance_eval { enable_keyboard_in_sim_data_dir(nil, nil, nil) } }.to raise_error RuntimeError
+        expect do
+          local_sim_control.send(:enable_keyboard_in_sim_data_dir, nil, nil, nil)
+        end.to raise_error RuntimeError
       end
     end
 
     if RunLoop::XCTools.new.xcode_version_gte_6?
       describe "with Xcode #{Resources.shared.current_xcode_version}" do
         local_sim_control = RunLoop::SimControl.new
-        sim_details = local_sim_control.instance_eval { sim_details(:udid) }
+        sim_details = local_sim_control.send(:sim_details, :udid)
         simulator_udid = nil
-        sim_details.each do |key, value|
+        sim_details.each do |key, _|
           simulator_udid = key
           break if simulator_udid
         end
         it 'sets the keyboard preferences' do
           sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{simulator_udid}/data"))
           plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Preferences.plist")
-          expect(local_sim_control.instance_eval { enable_keyboard_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+          expect(local_sim_control.send(:enable_keyboard_in_sim_data_dir, sdk_dir, sim_details)).to be == true
           expect(File.exist?(plist_path)).to be == true
         end
 
         it 'can skip directories not reported by instruments' do
           sdk_dir = "~/Library/Developer/CoreSimulator/Devices/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
-          expect(local_sim_control.instance_eval { enable_keyboard_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+          expect(local_sim_control.send(:enable_keyboard_in_sim_data_dir, sdk_dir, sim_details)).to be == true
         end
       end
     end
@@ -227,12 +233,16 @@ describe RunLoop::SimControl do
       it 'on XCode < 6' do
         local_sim_control = RunLoop::SimControl.new
         expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-        expect { local_sim_control.instance_eval { sim_details(:any_arg) } }.to raise_error RuntimeError
+        expect do
+          local_sim_control.send(:sim_details, :any_arg)
+        end.to raise_error RuntimeError
       end
 
       if RunLoop::XCTools.new.xcode_version_gte_6?
         it 'is passed an invalid argument' do
-          expect { sim_control.instance_eval { sim_details(:invalid_arg) } }.to raise_error ArgumentError
+          expect do
+            sim_control.send(:sim_details, :invalid_arg)
+          end.to raise_error ArgumentError
         end
       end
     end
@@ -243,12 +253,16 @@ describe RunLoop::SimControl do
       it 'on Xcode < 6' do
         local_sim_control = RunLoop::SimControl.new
         expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-        expect { local_sim_control.instance_eval { simctl_list(:any_arg) } }.to raise_error RuntimeError
+        expect do
+          local_sim_control.send(:simctl_list, :any_arg)
+        end.to raise_error RuntimeError
       end
 
       if RunLoop::XCTools.new.xcode_version_gte_6?
         it 'with an invalid argument' do
-          expect { sim_control.instance_eval { simctl_list(:invalid_arg) } }.to raise_error ArgumentError
+          expect do
+            sim_control.send(:simctl_list, :invalid_arg)
+          end.to raise_error ArgumentError
         end
       end
     end
@@ -256,11 +270,11 @@ describe RunLoop::SimControl do
     if RunLoop::XCTools.new.xcode_version_gte_6?
       describe 'valid arguments' do
         it ':devices' do
-          expect(sim_control.instance_eval { simctl_list :devices }).to be_a Hash
+          expect(sim_control.send(:simctl_list, :devices)).to be_a Hash
         end
 
         it ':runtimes' do
-          actual = sim_control.instance_eval { simctl_list :runtimes }
+          actual = sim_control.send(:simctl_list, :runtimes)
           expect(actual).to be_a Hash
         end
       end
