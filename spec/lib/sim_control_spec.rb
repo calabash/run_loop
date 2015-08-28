@@ -50,35 +50,44 @@ describe RunLoop::SimControl do
   end
 
   describe '#sim_app_path' do
-    it 'for Xcode >= 7.0' do
-      xctools = sim_control.xctools
-      expect(xctools).to receive(:xcode_developer_dir).and_return('/Xcode')
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(xctools.v70)
-      expected = '/Xcode/Applications/Simulator.app'
-      expect(sim_control.send(:sim_app_path)).to be == expected
-      expect(sim_control.instance_variable_get(:@sim_app_path)).to be == expected
-    end
+    describe 'per version' do
+      before do
+        expect(sim_control).to receive(:xcode_developer_dir).and_return('/Xcode')
+      end
 
-    it 'for 7.0 < Xcode >= 6.0' do
-      xctools = sim_control.xctools
-      expect(xctools).to receive(:xcode_developer_dir).and_return('/Xcode')
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(xctools.v60)
-      expected = '/Xcode/Applications/iOS Simulator.app'
-      expect(sim_control.send(:sim_app_path)).to be == expected
-      expect(sim_control.instance_variable_get(:@sim_app_path)).to be == expected
-    end
+      it 'Xcode >= 7.0' do
+        expect(sim_control).to receive(:xcode_version_gte_7?).and_return true
+        expected = '/Xcode/Applications/Simulator.app'
 
-    it 'for Xcode < 6.0' do
-      xctools = sim_control.xctools
-      expect(xctools).to receive(:xcode_developer_dir).and_return('/Xcode')
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(xctools.v51)
-      expected = '/Xcode/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app'
-      expect(sim_control.send(:sim_app_path)).to be == expected
-      expect(sim_control.instance_variable_get(:@sim_app_path)).to be == expected
+        expect(sim_control.send(:sim_app_path)).to be == expected
+        expect(sim_control.instance_variable_get(:@sim_app_path)).to be == expected
+        expect(sim_control.send(:sim_app_path)).to be == expected
+      end
+
+      it '6.0 <= Xcode < 7.0' do
+        expect(sim_control).to receive(:xcode_version_gte_7?).and_return false
+        expect(sim_control).to receive(:xcode_version_gte_6?).and_return true
+
+        expected = '/Xcode/Applications/iOS Simulator.app'
+        expect(sim_control.send(:sim_app_path)).to be == expected
+        expect(sim_control.instance_variable_get(:@sim_app_path)).to be == expected
+        expect(sim_control.send(:sim_app_path)).to be == expected
+      end
+
+      it 'Xcode < 6.0' do
+        expect(sim_control).to receive(:xcode_version_gte_7?).and_return false
+        expect(sim_control).to receive(:xcode_version_gte_6?).and_return false
+
+        expected = '/Xcode/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app'
+        expect(sim_control.send(:sim_app_path)).to be == expected
+        expect(sim_control.instance_variable_get(:@sim_app_path)).to be == expected
+        expect(sim_control.send(:sim_app_path)).to be == expected
+      end
     end
 
     it 'returns a path that exists' do
-      path = sim_control.instance_eval { sim_app_path }
+      path = sim_control.send(:sim_app_path)
+      ap path
       expect(File.exist?(path)).to be == true
     end
   end
