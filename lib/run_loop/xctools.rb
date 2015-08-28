@@ -204,22 +204,13 @@ module RunLoop
       xcode.beta?
     end
 
-    # Find the localized name for a given key_code
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Instruments.
     #
-    # @example
-    #  lookup_localization_name('delete.key', 'da') => 'Slet'
+    # @see {RunLoop::Instruments#version}
+    # @see {RunLoop::Instruments#templates}
+    # @see {RunLoop::Instruments#physical_devices}
+    # @see {RunLoop::Instruments#simulators}
     #
-    # @param [String] key_code the localization signifier, e.g. 'delete.key'
-    # @param [String] localized_lang an iso language code returned by calabash ios server
-    #
-    # @return [String] the localized name
-    def lookup_localization_name(key_code, localized_lang)
-      lookup_table_dir = lang_dir(localized_lang)
-      return nil unless lookup_table_dir
-
-      key_name_lookup_table(lookup_table_dir)[key_code]
-    end
-
     # Method for interacting with instruments.
     #
     # @example Getting a runnable command for instruments
@@ -241,70 +232,20 @@ module RunLoop
     #   instruments binary.
     # @raise [ArgumentError] if invalid `cmd` is passed
     def instruments(cmd=nil)
+      # Not yet!  Called too often to be useful.
+      # RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Instruments')
       instruments = 'xcrun instruments'
       return instruments if cmd == nil
 
-      # Xcode 6 GM is spamming "WebKit Threading Violations"
-      stderr_filter = lambda { |stderr|
-        stderr.read.strip.split("\n").each do |line|
-          unless line[/WebKit Threading Violation/, 0]
-            $stderr.puts line
-          end
-        end
-      }
       case cmd
         when :version
-          @instruments ||= RunLoop::Instruments.new
-          @instruments.version
+          instruments_instance.version
         when :sims
-          @instruments_sims ||=  lambda {
-            # Instruments 6 spams a lot of error messages.  I don't like to
-            # hide them, but they seem to be around to stay (Xcode 6 GM).
-            cmd = "#{instruments} -s devices"
-            Open3.popen3(cmd) do |_, stdout, stderr, _|
-              stderr_filter.call(stderr)
-              devices = stdout.read.chomp.split("\n")
-              devices.select { |device| device.downcase.include?('simulator') }
-            end
-          }.call
-
+          instruments_instance.simulators
         when :templates
-          @instruments_templates ||= lambda {
-            cmd = "#{instruments} -s templates"
-            if self.xcode_version >= self.v60
-              Open3.popen3(cmd) do |_, stdout, stderr, _|
-                stderr_filter.call(stderr)
-                stdout.read.chomp.split("\n").map { |elm| elm.strip.tr('"', '') }
-              end
-            elsif self.xcode_version >= self.v51
-              `#{cmd}`.split("\n").delete_if do |path|
-                not path =~ /tracetemplate/
-              end.map { |elm| elm.strip }
-            else
-              # prints to $stderr (>_>) - seriously?
-              Open3.popen3(cmd) do |_, _, stderr, _|
-                stderr.read.chomp.split(/(,|\(|")/).map do |elm|
-                  elm.strip
-                end.delete_if { |path| not path =~ /tracetemplate/ }
-              end
-            end
-          }.call
-
+          instruments_instance.templates
         when :devices
-          @devices ||= lambda {
-            cmd = "#{instruments} -s devices"
-            Open3.popen3(cmd) do |_, stdout, stderr, _|
-              stderr_filter.call(stderr)
-              all = stdout.read.chomp.split("\n")
-              valid = all.select { |device| device =~ /[a-f0-9]{40}/ }
-              valid.map do |device|
-                udid = device[/[a-f0-9]{40}/, 0]
-                version = device[/(\d\.\d(\.\d)?)/, 0]
-                name = device.split('(').first.strip
-                RunLoop::Device.new(name, version, udid)
-              end
-            end
-          }.call
+          instruments_instance.physical_devices
         else
           candidates = [:version, :sims, :devices]
           raise(ArgumentError, "expected '#{cmd}' to be one of '#{candidates}'")
@@ -394,11 +335,20 @@ module RunLoop
       JSON.parse(`plutil -convert json #{path} -o -`)
     end
 
+    # @!visibility private
     attr_reader :xcode
 
     # @!visibility private
     def xcode
       @xcode ||= RunLoop::Xcode.new
+    end
+
+    # @!visibility private
+    attr_reader :instruments_instance
+
+    # @!visibility private
+    def instruments_instance
+      @instruments_instance ||= RunLoop::Instruments.new
     end
   end
 end
