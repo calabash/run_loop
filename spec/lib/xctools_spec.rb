@@ -72,14 +72,6 @@ describe RunLoop::XCTools do
     end
   end
 
-  describe '#instruments_supports_hypen_s?' do
-    it { expect(xctools.instruments_supports_hyphen_s? '6.0' ).to be == true }
-    it { expect(xctools.instruments_supports_hyphen_s? '5.1.1').to be == true }
-    it { expect(xctools.instruments_supports_hyphen_s? '5.1' ).to be == true }
-    it { expect(xctools.instruments_supports_hyphen_s? '5.0.2').to be == false }
-    it { expect(xctools.instruments_supports_hyphen_s? '4.6.3').to be == false }
-  end
-
   it '#xcode_developer_dir' do
     expected = '/some/path'
     expect(xcode).to receive(:developer_dir).and_return expected

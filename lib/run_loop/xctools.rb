@@ -252,6 +252,10 @@ module RunLoop
       end
     end
 
+    # @deprecated Since 1.5.0 - no replacement.
+    #
+    # All supported Xcode versions accept -s flag.
+    #
     # Does the instruments `version` accept the -s flag?
     #
     # @example
@@ -264,6 +268,7 @@ module RunLoop
     #
     # @return [Boolean] true if the version is >= 5.*
     def instruments_supports_hyphen_s?(version=instruments(:version))
+      RunLoop.deprecated('1.5.0', 'Not replaced.')
       @instruments_supports_hyphen_s ||= lambda {
         if version.is_a? String
           _version = RunLoop::Version.new(version)
