@@ -241,13 +241,10 @@ describe RunLoop::Core do
         end
       end
 
-      if RunLoop::XCTools.new.xcode_version_gte_6?
-        describe 'Xcode 6 behaviors' do
-          it ":device_target => Xcode 6 simulator UDID" do
-            options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
-            expect(RunLoop::Core.simulator_target?(options)).to be == true
-          end
-        end
+      it ":device_target => Xcode 6 simulator UDID" do
+        expect(sim_control).to receive(:xcode_version_gte_6?).and_return true
+        options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
+        expect(RunLoop::Core.simulator_target?(options, sim_control)).to be == true
       end
     end
   end
@@ -289,14 +286,19 @@ describe RunLoop::Core do
                                                              sim_control)
     }
 
-    if RunLoop::XCTools.new.xcode_version_gte_6?
-      context 'simulator an binary are compatible' do
-        let(:sim_control) { RunLoop::SimControl.new }
-        let(:launch_options) { { :udid =>  RunLoop::Core.default_simulator,
-                                 :bundle_dir_or_bundle_id =>
-                                       Resources.shared.app_bundle_path_i386
-        }}
-        it { is_expected.to be == true }
+
+    context 'simulator an binary are compatible' do
+      let(:sim_control) { RunLoop::SimControl.new }
+      let(:launch_options) { { :udid =>  RunLoop::Core.default_simulator,
+                               :bundle_dir_or_bundle_id =>
+                                     Resources.shared.app_bundle_path_i386
+      }}
+      it do
+        if Resources.shared.core_simulator_env?
+          is_expected.to be == true
+        else
+          Luffa.log_warn('Skipping test - Xcode < 6 detected')
+        end
       end
     end
   end
