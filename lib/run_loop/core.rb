@@ -417,7 +417,7 @@ Please update your sources to pass an instance of RunLoop::Xcode'
     end
 
     def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
-      xctools = sim_control.xctools
+      xcode = sim_control.xcode
 
       bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
 
@@ -427,9 +427,9 @@ Please update your sources to pass an instance of RunLoop::Xcode'
 
       udid = nil
 
-      if xctools.xcode_version_gte_51?
+      if xcode.version_gte_51?
         if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          device_target = self.default_simulator(xctools)
+          device_target = self.default_simulator(xcode)
         end
         udid = device_target
 
@@ -437,6 +437,7 @@ Please update your sources to pass an instance of RunLoop::Xcode'
           bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
         end
       else
+        #TODO: this can be removed - Xcode < 5.1.1 not supported.
         if device_target == 'simulator'
 
           unless File.exist?(bundle_dir_or_bundle_id)

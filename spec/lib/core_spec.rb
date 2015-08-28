@@ -2,7 +2,8 @@ require 'tmpdir'
 
 describe RunLoop::Core do
 
-  let(:xcode) { RunLoop::Xcode.new }
+  let(:sim_control) { RunLoop::SimControl.new }
+  let(:xcode) { sim_control.xcode }
 
   describe '.automation_template' do
 
@@ -70,46 +71,37 @@ describe RunLoop::Core do
 
     it 'Xcode > 7.0' do
       expected = 'iPhone 5s (9.0)'
-      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v64
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v70
       expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
   end
 
   describe '.udid_and_bundle_for_launcher' do
-    describe 'when 5.1 <= xcode < 6.0' do
-      options = {:app => Resources.shared.cal_app_bundle_path}
-      valid_targets = [nil, '', 'simulator']
-      valid_versions = ['5.1', '5.1.1'].map { |elm| RunLoop::Version.new(elm) }
-      valid_targets.each do |target|
-        valid_versions.each do |version|
-          it "returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1' for Xcode '#{version}' if simulator = '#{target.nil? ? 'nil' : target }'" do
-            sim_control = RunLoop::SimControl.new
-            xctools = sim_control.xctools
-            expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-            udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, sim_control)
-            expect(udid).to be == 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-            expect(apb).to be == options[:app]
-          end
-        end
-      end
+    let(:options) { {:app => Resources.shared.cal_app_bundle_path} }
+    let(:app) { options[:app] }
+
+    before do
+      expect(xcode).to receive(:version).and_return xcode.v51
+      expect(RunLoop::Core).to receive(:default_simulator).with(xcode).and_return 'Simulator'
     end
 
-    describe 'when xcode <= 6.0' do
-      options = {:app => Resources.shared.cal_app_bundle_path}
-      valid_targets = [nil, '', 'simulator']
-      valid_targets.each do |target|
-        it "returns 'iPhone 5s (8.0 Simulator)' for Xcode >= 6.0 if simulator = '#{target.nil? ? 'nil' : target }'" do
-          sim_control = RunLoop::SimControl.new
-          xctools = sim_control.xctools
-          version = RunLoop::Version.new('6.0')
-          expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-          default_sim = 'iPhone 5s (8.0 Simulator)'
-          expect(RunLoop::Core).to receive(:default_simulator).and_return(default_sim)
-          udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, sim_control)
-          expect(udid).to be == default_sim
-          expect(apb).to be == options[:app]
-        end
-      end
+
+    it 'target is nil' do
+      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher(nil, options, sim_control)
+      expect(udid).to be == 'Simulator'
+      expect(app_bundle).to be == app
+    end
+
+    it "target is ''" do
+      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('', options, sim_control)
+      expect(udid).to be == 'Simulator'
+      expect(app_bundle).to be == app
+    end
+
+    it "target is 'simulator'" do
+      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('simulator', options, sim_control)
+      expect(udid).to be == 'Simulator'
+      expect(app_bundle).to be == app
     end
   end
 
