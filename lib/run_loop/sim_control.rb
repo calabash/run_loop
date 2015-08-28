@@ -14,40 +14,44 @@ module RunLoop
   # @todo `puts` calls need to be replaced with proper logging
   class SimControl
 
-    # Returns an instance of XCTools.
-    # @return [RunLoop::XCTools] The xcode tools instance that is used internally.
+    # @deprecated 1.5.0 - replaced by #xcode and #instruments.
     def xctools
       @xctools ||= RunLoop::XCTools.new
     end
 
     # @!visibility private
-    # Are we running Xcode 7 or above?
-    #
-    # This is a convenience method.
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 7.0
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
+
+    # @!visibility private
+    def instruments
+      @instruments ||= RunLoop::Instruments.new
+    end
+
+    # @!visibility private
+    def xcode_version
+      xcode.version
+    end
+
+    # @!visibility private
     def xcode_version_gte_7?
-      xctools.xcode_version_gte_7?
+      xcode.version_gte_7?
     end
 
     # @!visibility private
-    # Are we running Xcode 6 or above?
-    #
-    # This is a convenience method.
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.0
     def xcode_version_gte_6?
-      xctools.xcode_version_gte_6?
+      xcode.version_gte_6?
     end
 
     # @!visibility private
-    # Are we running Xcode 5.1 or above?
-    #
-    # This is a convenience method.
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 5.1
     def xcode_version_gte_51?
-      xctools.xcode_version_gte_51?
+      xcode.version_gte_51?
+    end
+
+    # @!visibility private
+    def xcode_developer_dir
+      xcode.developer_dir
     end
 
     # Return an instance of PlistBuddy.
@@ -639,7 +643,7 @@ module RunLoop
     #  Xcode.
     def sim_app_path
       @sim_app_path ||= lambda {
-        dev_dir = xctools.xcode_developer_dir
+        dev_dir = xcode_developer_dir
         if xcode_version_gte_7?
           "#{dev_dir}/Applications/Simulator.app"
         elsif xcode_version_gte_6?
@@ -846,7 +850,6 @@ module RunLoop
       simulator_details = sim_details_keyed_with_udid[target_udid]
       if simulator_details.nil?
         if verbose
-          xcode_version = xctools.xcode_version
           puts ["INFO: Skipping '#{target_udid}' directory because",
                 "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
         end
@@ -936,7 +939,6 @@ module RunLoop
       simulator_details = sim_details_keyed_with_udid[target_udid]
       if simulator_details.nil?
         if verbose
-          xcode_version = xctools.xcode_version
           puts ["INFO: Skipping '#{target_udid}' directory because",
                 "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
         end
