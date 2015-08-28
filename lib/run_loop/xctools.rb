@@ -3,7 +3,7 @@ require 'retriable'
 
 module RunLoop
 
-  # @deprecated
+  # @deprecated Since 1.5.0
   #
   # The behaviors of this class are in the process of being refactored to other
   # classes.  Please do not implement any new behaviors in this class.
@@ -22,130 +22,144 @@ module RunLoop
   # @todo Refactor instruments related code to instruments class.
   class XCTools
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 7.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 7.0
     def v70
-      @xc70 ||= RunLoop::Version.new('7.0')
+      xcode.v70
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.4`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.4
     def v64
-      @xc64 ||= RunLoop::Version.new('6.4')
+      xcode.v64
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.3`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.3
     def v63
-      @xc63 ||= RunLoop::Version.new('6.3')
+      xcode.v63
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.2`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.2
     def v62
-      @xc62 ||= RunLoop::Version.new('6.2')
+      xcode.v62
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.1`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.1
     def v61
-      @xc61 ||= RunLoop::Version.new('6.1')
+      xcode.v61
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.0
     def v60
-      @xc60 ||= RunLoop::Version.new('6.0')
+      xcode.v60
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 5.1`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 5.1
     def v51
-      @xc51 ||= RunLoop::Version.new('5.1')
+      xcode.v51
     end
 
-    # Returns a version instance for `Xcode 5.0`; ; used to check for the
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
+    # Returns a version instance for `Xcode 5.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 5.0
     def v50
-      @xc50 ||= RunLoop::Version.new('5.0')
+      xcode.v50
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6.4 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.4
     def xcode_version_gte_64?
-      @xcode_gte_64 ||= xcode_version >= v64
+      xcode.version_gte_64?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6.3 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.3
     def xcode_version_gte_63?
-      @xcode_gte_63 ||= xcode_version >= v63
+      xcode.version_gte_63?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6.2 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.2
     def xcode_version_gte_62?
-      @xcode_gte_62 ||= xcode_version >= v62
+      xcode.version_gte_62?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6.1 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.1
     def xcode_version_gte_61?
-      @xcode_gte_61 ||= xcode_version >= v61
+      xcode.version_gte_61?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.0
     def xcode_version_gte_6?
-      @xcode_gte_6 ||= xcode_version >= v60
+      xcode.version_gte_6?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 7 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 7.0
     def xcode_version_gte_7?
-      @xcode_gte_7 ||= xcode_version >= v70
+      xcode.version_gte_7?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 5.1 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 5.1
     def xcode_version_gte_51?
-      @xcode_gte_51 ||= xcode_version >= v51
+      xcode.version_gte_51?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns the current version of Xcode.
     #
     # @return [RunLoop::Version] The current version of Xcode as reported by
     #  `xcrun xcodebuild -version`.
     def xcode_version
-      @xcode_version ||= lambda {
-        xcode_build_output = `xcrun xcodebuild -version`.split(/\s/)[1]
-        RunLoop::Version.new(xcode_build_output)
-      }.call
+      xcode.version
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns the path to the current developer directory.
     #
     # From the man pages:
@@ -160,13 +174,16 @@ module RunLoop
     #
     # @return [String] path to current developer directory
     def xcode_developer_dir
-      @xcode_developer_dir ||=
-            if RunLoop::Environment.developer_dir
-              RunLoop::Environment.developer_dir
-            else
-              # fall back to xcode-select
-              `xcode-select --print-path`.chomp
-            end
+      xcode.developer_dir
+    end
+
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
+    # Is this a beta version of Xcode?
+    #
+    # @note Relies on Xcode beta versions having and app bundle named Xcode-Beta.app
+    # @return [Boolean] True if the Xcode version is beta.
+    def xcode_is_beta?
+      xcode.beta?
     end
 
     # Find the localized name for a given key_code
@@ -183,16 +200,6 @@ module RunLoop
       return nil unless lookup_table_dir
 
       key_name_lookup_table(lookup_table_dir)[key_code]
-    end
-
-    # Is this a beta version of Xcode?
-    #
-    # @note Relies on Xcode beta versions having and app bundle named Xcode-Beta.app
-    # @return [Boolean] True if the Xcode version is beta.
-    def xcode_is_beta?
-      @xcode_is_beta ||= lambda {
-        (xcode_developer_dir =~ /Xcode-[Bb]eta.app/) != nil
-      }.call
     end
 
     # Method for interacting with instruments.
