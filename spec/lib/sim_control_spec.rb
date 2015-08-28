@@ -28,7 +28,7 @@ describe RunLoop::SimControl do
 
     it 'Xcode < 6.0' do
       expect(sim_control).to receive(:xcode_version_gte_7?).and_return false
-      expect(sim_control).to receive(:xcode_version_gte_6?).and_return true
+      expect(sim_control).to receive(:xcode_version_gte_6?).and_return false
       expect(sim_control.send(:sim_name)).to be == 'iPhone Simulator'
     end
   end
