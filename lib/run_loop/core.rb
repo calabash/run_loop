@@ -172,7 +172,16 @@ module RunLoop
 
       logger = options[:logger]
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
+
+      if options[:xctools]
+        RunLoop.deprecated('1.5.0', %q(
+RunLoop::XCTools has been replaced with RunLoop::Xcode.
+The :xctools key will be ignored.  It has been replaced by the :xcode key.
+Please update your sources to pass an instance of RunLoop::Xcode))
+      end
+
       xctools ||= options[:xctools] || sim_control.xctools
+      xcode ||= options[:xcode] || sim_control.xcode
 
       instruments = RunLoop::Instruments.new
       instruments.kill_instruments
@@ -251,7 +260,7 @@ module RunLoop
         self.prepare_simulator(merged_options, sim_control)
       end
 
-      self.log_run_loop_options(merged_options, xctools)
+      self.log_run_loop_options(merged_options, xcode)
 
       automation_template = automation_template(xctools)
 
