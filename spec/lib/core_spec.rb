@@ -4,6 +4,7 @@ describe RunLoop::Core do
 
   let(:sim_control) { RunLoop::SimControl.new }
   let(:xcode) { sim_control.xcode }
+  let(:instruments) { RunLoop::Instruments.new }
 
   describe '.automation_template' do
 
@@ -12,14 +13,12 @@ describe RunLoop::Core do
       tracetemplate = File.expand_path(File.join(dir, 'some.tracetemplate'))
       FileUtils.touch tracetemplate
       expect(RunLoop::Environment).to receive(:trace_template).and_return(tracetemplate)
-      xctools = RunLoop::XCTools.new
-      expect(RunLoop::Core.automation_template xctools).to be == tracetemplate
+      expect(RunLoop::Core.automation_template(instruments)).to be == tracetemplate
     end
   end
 
   describe '.default_tracetemplate' do
     it 'raises an error when template cannot be found' do
-      xctools = RunLoop::XCTools.new
       templates =
             [
                   "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Leaks.tracetemplate",
@@ -27,8 +26,11 @@ describe RunLoop::Core do
                   "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/System Trace.tracetemplate",
                   "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Time Profiler.tracetemplate",
             ]
-      expect(xctools).to receive(:instruments).with(:templates).and_return(templates)
-      expect { RunLoop::Core.default_tracetemplate(xctools) }.to raise_error(RuntimeError)
+      expect(instruments).to receive(:templates).and_return(templates)
+
+      expect do
+        RunLoop::Core.default_tracetemplate(instruments)
+      end.to raise_error(RuntimeError)
     end
   end
 

@@ -262,7 +262,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
       self.log_run_loop_options(merged_options, xcode)
 
-      automation_template = automation_template(xctools)
+      automation_template = automation_template(instruments)
 
       RunLoop::Logging.log_header(logger, "Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
 
@@ -638,15 +638,25 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       result
     end
 
-    def self.automation_template(xctools, candidate = RunLoop::Environment.trace_template)
+    def self.automation_template(instruments, candidate=RunLoop::Environment.trace_template)
       unless candidate && File.exist?(candidate)
-        candidate = default_tracetemplate xctools
+        candidate = default_tracetemplate(instruments)
       end
       candidate
     end
 
-    def self.default_tracetemplate(xctools=RunLoop::XCTools.new)
-      templates = xctools.instruments :templates
+    def self.default_tracetemplate(instruments_arg=RunLoop::Instruments.new)
+      if instruments_arg.is_a?(RunLoop::XCTools)
+        RunLoop.deprecated('1.5.0',
+                           %q(
+RunLoop::XCTools has been replaced with RunLoop::Xcode.
+Please update your sources to pass an instance of RunLoop::Instruments))
+        instruments = RunLoop::Instruments.new
+      else
+        instruments = instruments_arg
+      end
+
+      templates = instruments.templates
 
       # xcrun instruments -s templates
       # Xcode >= 6 will return known, Apple defined tracetemplates as names
@@ -669,12 +679,12 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         return candidate.first.tr("\"", '').strip
       end
 
-      msgs = ['Expected instruments to report an Automation tracetemplate.',
+      message = ['Expected instruments to report an Automation tracetemplate.',
               'Please report this as bug:  https://github.com/calabash/run_loop/issues',
               "In the bug report, include the output of:\n",
               '$ xcrun xcodebuild -version',
               "$ xcrun instruments -s templates\n"]
-      raise msgs.join("\n")
+      raise message.join("\n")
     end
 
     # @deprecated 1.0.5
