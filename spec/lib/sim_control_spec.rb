@@ -7,19 +7,19 @@ describe RunLoop::SimControl do
   let(:instruments) { sim_control.instruments }
 
   def cached_simulator_details
-    if Resources.shared.core_simulator_env
+    if Resources.shared.core_simulator_env?
       @cached_sim_details ||= sim_control.send(:sim_details, :udid)
     end
   end
 
   def cached_simulators
-    if Resources.shared.core_simulator_env
+    if Resources.shared.core_simulator_env?
       @cached_simulators ||= sim_control.simulators
     end
   end
 
   def cached_ios_lt_80_sim
-    if Resources.shared.core_simulator_env
+    if Resources.shared.core_simulator_env?
       cached_simulators.find do |device|
         device.version < RunLoop::Version.new('8.0')
       end
@@ -27,7 +27,7 @@ describe RunLoop::SimControl do
   end
 
   def cached_ios_gte_80_sim
-    if Resources.shared.core_simulator_env
+    if Resources.shared.core_simulator_env?
       cached_simulators.find do |device|
         device.version >= RunLoop::Version.new('8.0')
       end
@@ -182,7 +182,7 @@ describe RunLoop::SimControl do
       let(:sim_details) { cached_simulator_details }
 
       it 'iOS < 8.0' do
-        if !Resources.shared.core_simulator_env
+        if !Resources.shared.core_simulator_env?
           Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
         else
           simulator = cached_ios_lt_80_sim
@@ -202,7 +202,7 @@ describe RunLoop::SimControl do
       end
 
       it 'iOS >= 8.0' do
-        if !Resources.shared.core_simulator_env
+        if !Resources.shared.core_simulator_env?
           Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
         else
           simulator = cached_ios_gte_80_sim
@@ -222,7 +222,7 @@ describe RunLoop::SimControl do
       end
 
       it 'can skip directories not reported by instruments' do
-        if !Resources.shared.core_simulator_env
+        if !Resources.shared.core_simulator_env?
           Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
         else
           sdk_dir = "~/Library/Developer/CoreSimulator/Devices/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
@@ -246,7 +246,7 @@ describe RunLoop::SimControl do
       let(:sim_details) { cached_simulator_details }
 
       it 'any iOS version' do
-        if !Resources.shared.core_simulator_env
+        if !Resources.shared.core_simulator_env?
           Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
         else
           simulator = cached_ios_gte_80_sim
@@ -266,7 +266,7 @@ describe RunLoop::SimControl do
       end
 
       it 'can skip directories not reported by instruments' do
-        if !Resources.shared.core_simulator_env
+        if !Resources.shared.core_simulator_env?
           Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
         else
           sdk_dir = "~/Library/Developer/CoreSimulator/Devices/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
@@ -316,7 +316,7 @@ describe RunLoop::SimControl do
 
     describe 'valid arguments' do
       it ':devices' do
-        if Resources.shared.core_simulator_env
+        if Resources.shared.core_simulator_env?
           expect(sim_control.send(:simctl_list, :devices)).to be_a Hash
         else
           Luffa.log_warn("Skipping test; Xcode < 6 detected")
@@ -324,7 +324,7 @@ describe RunLoop::SimControl do
       end
 
       it ':runtimes' do
-        if Resources.shared.core_simulator_env
+        if Resources.shared.core_simulator_env?
           actual = sim_control.send(:simctl_list, :runtimes)
           expect(actual).to be_a Hash
         else
@@ -341,7 +341,7 @@ describe RunLoop::SimControl do
     end
 
     it 'returns a list RunLoop::Device instances' do
-      if Resources.shared.core_simulator_env
+      if Resources.shared.core_simulator_env?
         sims = sim_control.simulators
         expect(sims).to be_a Array
         expect(sims.empty?).to be == false

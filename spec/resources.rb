@@ -3,6 +3,8 @@ require 'singleton'
 class Resources
   include Singleton
 
+  attr_reader :xcode
+
   attr_accessor :fake_instruments_pids
 
   def self.shared
@@ -19,6 +21,14 @@ class Resources
 
   def launch_retries
     travis_ci? ? 8 : 2
+  end
+
+  def xcode
+    @xcode ||= RunLoop::Xcode.new
+  end
+
+  def core_simulator_env?
+    xcode.version_gte_6?
   end
 
   def with_debugging(&block)
