@@ -692,8 +692,8 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     end
 
     # @deprecated 1.0.0 replaced with Xctools#version
-    def self.xcode_version(xctools=RunLoop::XCTools.new)
-      xctools.xcode_version.to_s
+    def self.xcode_version(xcode=RunLoop::Xcode.new)
+      xcode.version
     end
 
     # @deprecated since 1.0.0
