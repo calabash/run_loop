@@ -204,6 +204,17 @@ module RunLoop
       xcode.beta?
     end
 
+    alias_method :version_gte_64?, :xcode_version_gte_64?
+    alias_method :version_gte_63?, :xcode_version_gte_63?
+    alias_method :version_gte_62?, :xcode_version_gte_62?
+    alias_method :version_gte_61?, :xcode_version_gte_61?
+    alias_method :version_gte_6?, :xcode_version_gte_6?
+    alias_method :version_gte_7?, :xcode_version_gte_7?
+    alias_method :version_gte_51?, :xcode_version_gte_51?
+    alias_method :version, :xcode_version
+    alias_method :developer_dir, :xcode_developer_dir
+    alias_method :beta?, :xcode_is_beta?
+
     # @deprecated Since 1.5.0 - replaced with RunLoop::Instruments.
     #
     # @see {RunLoop::Instruments#version}
