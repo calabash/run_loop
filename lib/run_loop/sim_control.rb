@@ -317,22 +317,18 @@ module RunLoop
     end
 
     def simulators
-      unless xcode_version_gte_51?
+      unless xcode_version_gte_6?
         raise RuntimeError, 'simctl is only available on Xcode >= 6'
       end
 
-      if xcode_version_gte_6?
-        hash = simctl_list :devices
-        sims = []
-        hash.each_pair do |sdk, list|
-          list.each do |details|
-            sims << RunLoop::Device.new(details[:name], sdk, details[:udid], details[:state])
-          end
+      hash = simctl_list :devices
+      sims = []
+      hash.each_pair do |sdk, list|
+        list.each do |details|
+          sims << RunLoop::Device.new(details[:name], sdk, details[:udid], details[:state])
         end
-        sims
-      else
-        raise NotImplementedError, 'the simulators method is not available yet for Xcode 5.1.1'
       end
+      sims
     end
 
     def accessibility_enabled?(device)
