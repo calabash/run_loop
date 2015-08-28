@@ -42,7 +42,7 @@ class Resources
   end
 
   def current_xcode_version
-    @current_xcode_version ||= RunLoop::XCTools.new.xcode_version
+    @current_xcode_version ||= RunLoop::XCode.new.version
   end
 
   def resources_dir
@@ -172,19 +172,19 @@ class Resources
 
   def alt_xcode_details_hash(skip_versions=[RunLoop::Version.new('6.0')])
     @alt_xcodes_gte_xc51_hash ||= lambda {
-      active_xcode_path = RunLoop::XCTools.new.xcode_developer_dir
+      active_xcode_path = RunLoop::Xcode.new.developer_dir
       with_developer_dir(active_xcode_path) do
         paths =  alt_xcode_install_paths
         paths.map do |path|
           ENV['DEVELOPER_DIR'] = path
-          version = RunLoop::XCTools.new.xcode_version
+          version = RunLoop::Xcode.new.version
           if path == active_xcode_path
             nil
           elsif skip_versions.include?(version)
             nil
           elsif version >= RunLoop::Version.new('5.1.1')
             {
-                  :version => RunLoop::XCTools.new.xcode_version,
+                  :version => RunLoop::Xcode.version,
                   :path => path
             }
           else
@@ -419,8 +419,8 @@ class Resources
     }.call
   end
 
-  def launch_instruments_app(xcode_tools = RunLoop::XCTools.new)
-    dev_dir = xcode_tools.xcode_developer_dir
+  def launch_instruments_app(xcode = RunLoop::Xcode.new)
+    dev_dir = xcode.developer_dir
     instruments_app = File.join(dev_dir, '..', 'Applications', 'Instruments.app')
     pid = Process.fork
     if pid.nil?
