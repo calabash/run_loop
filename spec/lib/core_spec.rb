@@ -93,11 +93,11 @@ describe RunLoop::Core do
       expect(actual).to be == expected
     end
 
-    it "when Xcode 7.0 it returns 'iPhone 5s (9.0 Simulator)'" do
+    it "when Xcode 7.0 it returns 'iPhone 5s (9.0)'" do
       version = RunLoop::Version.new('7.0')
       xctools = RunLoop::XCTools.new
       expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-      expected = 'iPhone 5s (9.0 Simulator)'
+      expected = 'iPhone 5s (9.0)'
       actual = RunLoop::Core.default_simulator(xctools)
       expect(actual).to be == expected
     end
