@@ -4,19 +4,6 @@ describe RunLoop::XCTools do
 
   let(:xcode) { xctools.send(:xcode) }
 
-  describe '#xcode_developer_dir' do
-    it 'respects the DEVELOPER_DIR env var' do
-      Resources.shared.with_developer_dir('/foo/bar') do
-        expect(xctools.xcode_developer_dir).to be == ENV['DEVELOPER_DIR']
-      end
-    end
-
-    it 'or it returns the value of xcode-select' do
-      actual = `xcode-select --print-path`.chomp
-      expect(xctools.xcode_developer_dir).to be == actual
-    end
-  end
-
   describe '#uikit_bundle_l10n_path' do
     it 'return value' do
       stub_env('DEVELOPER_DIR', '/some/xcode/path')
@@ -91,6 +78,12 @@ describe RunLoop::XCTools do
     it { expect(xctools.instruments_supports_hyphen_s? '5.1' ).to be == true }
     it { expect(xctools.instruments_supports_hyphen_s? '5.0.2').to be == false }
     it { expect(xctools.instruments_supports_hyphen_s? '4.6.3').to be == false }
+  end
+
+  it '#xcode_developer_dir' do
+    expected = '/some/path'
+    expect(xcode).to receive(:developer_dir).and_return expected
+    expect(xctools.xcode_developer_dir).to be == expected
   end
 
   it '#v70' do expect(xctools.v70).to be == RunLoop::Version.new('7.0') end
