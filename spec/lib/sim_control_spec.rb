@@ -4,7 +4,6 @@ describe RunLoop::SimControl do
 
   subject(:sim_control) { RunLoop::SimControl.new }
   let(:xcode) { sim_control.xcode }
-  let(:instruments) { sim_control.instruments }
 
   def cached_simulator_details
     if Resources.shared.core_simulator_env?
@@ -45,12 +44,6 @@ describe RunLoop::SimControl do
       xcode = sim_control.xcode
       expect(xcode).to be_a RunLoop::Xcode
       expect(sim_control.instance_variable_get(:@xcode)).to be == xcode
-    end
-
-    it 'instruments' do
-      instruments = sim_control.instruments
-      expect(instruments).to be_a RunLoop::Instruments
-      expect(sim_control.instance_variable_get(:@instruments)).to be == instruments
     end
   end
 

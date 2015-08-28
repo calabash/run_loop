@@ -14,7 +14,7 @@ module RunLoop
   # @todo `puts` calls need to be replaced with proper logging
   class SimControl
 
-    # @deprecated 1.5.0 - replaced by #xcode and #instruments.
+    # @deprecated 1.5.0 - replaced by #xcode
     def xctools
       @xctools ||= RunLoop::XCTools.new
     end
@@ -22,11 +22,6 @@ module RunLoop
     # @!visibility private
     def xcode
       @xcode ||= RunLoop::Xcode.new
-    end
-
-    # @!visibility private
-    def instruments
-      @instruments ||= RunLoop::Instruments.new
     end
 
     # @!visibility private
