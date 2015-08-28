@@ -3,6 +3,36 @@ require 'tmpdir'
 describe RunLoop::SimControl do
 
   subject(:sim_control) { RunLoop::SimControl.new }
+  let(:xcode) { sim_control.xcode }
+  let(:instruments) { sim_control.instruments }
+
+  def cached_simulator_details
+    if Resources.shared.core_simulator_env
+      @cached_sim_details ||= sim_control.send(:sim_details, :udid)
+    end
+  end
+
+  def cached_simulators
+    if Resources.shared.core_simulator_env
+      @cached_simulators ||= sim_control.simulators
+    end
+  end
+
+  def cached_ios_lt_80_sim
+    if Resources.shared.core_simulator_env
+      cached_simulators.find do |device|
+        device.version < RunLoop::Version.new('8.0')
+      end
+    end
+  end
+
+  def cached_ios_gte_80_sim
+    if Resources.shared.core_simulator_env
+      cached_simulators.find do |device|
+        device.version >= RunLoop::Version.new('8.0')
+      end
+    end
+  end
 
   describe '.new' do
     it 'plist_buddy' do
@@ -97,7 +127,6 @@ describe RunLoop::SimControl do
 
     it 'returns a path that exists' do
       path = sim_control.send(:sim_app_path)
-      ap path
       expect(File.exist?(path)).to be == true
     end
   end
@@ -106,201 +135,218 @@ describe RunLoop::SimControl do
     before(:each) {  RunLoop::SimControl.terminate_all_sims }
 
     it 'returns an Array of properly formatted paths' do
-      local_sim_control = RunLoop::SimControl.new
       mocked_dir = Resources.shared.mocked_sim_support_dir
-      expect(local_sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
-      actual = local_sim_control.send(:existing_sim_sdk_or_device_data_dirs)
+      expect(sim_control).to receive(:sim_app_support_dir).and_return(mocked_dir)
+
+      actual = sim_control.send(:existing_sim_sdk_or_device_data_dirs)
       expect(actual).to be_a Array
       expect(actual.count).to be == 6
 
-      if local_sim_control.xcode_version_gte_6?
+      if sim_control.xcode_version_gte_6?
         expect(actual.all? { |elm| elm =~ /^.*\/data$/ }).to be == true
       end
-
     end
   end
 
   describe '#enable_accessibility_in_sdk_dir' do
     describe 'raises an error' do
-      it 'on Xcode 6' do
-        local_sim_control = RunLoop::SimControl.new
-        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(true)
+      it 'Xcode >= 6' do
+        expect(sim_control).to receive(:xcode_version_gte_6?).and_return(true)
+
         expect do
-          local_sim_control.send(:enable_accessibility_in_sdk_dir, :any_arg)
+          sim_control.send(:enable_accessibility_in_sdk_dir, :any_arg)
         end.to raise_error RuntimeError
       end
     end
 
-    # Xcode 5 only method
-    unless RunLoop::XCTools.new.xcode_version_gte_6?
-      it "with Xcode #{Resources.shared.current_xcode_version}" do
-        sdk_dir = File.expand_path(File.join(Dir.mktmpdir, '7.0.3-64'))
-        plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
-        expect(sim_control.send(:enable_accessibility_in_sdk_dir, sdk_dir)).to be == true
-        expect(File.exist?(plist_path)).to be == true
-      end
+    it 'Xcode < 6' do
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
+      sdk_dir = File.expand_path(File.join(Dir.mktmpdir, '7.0.3-64'))
+      plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+
+      expect(sim_control.send(:enable_accessibility_in_sdk_dir, sdk_dir)).to be == true
+      expect(File.exist?(plist_path)).to be == true
     end
   end
 
   describe '#enable_accessibility_in_sim_data_dir' do
-    describe 'raises an error' do
-      it 'on Xcode < 6' do
-        local_sim_control = RunLoop::SimControl.new
-        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-        expect do
-          local_sim_control.send(:enable_accessibility_in_sim_data_dir, nil, nil, nil)
-        end.to raise_error RuntimeError
-      end
+    it 'Xcode < 6 raises error' do
+      expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+
+      expect do
+        sim_control.send(:enable_accessibility_in_sim_data_dir, nil, nil, nil)
+      end.to raise_error RuntimeError
     end
 
-    # Xcode >= 6 only method
-    if RunLoop::XCTools.new.xcode_version_gte_6?
-      describe "with Xcode #{Resources.shared.current_xcode_version}" do
-        local_sim_control = RunLoop::SimControl.new
-        sim_details = local_sim_control.send(:sim_details, :udid)
-        sdk7_udid = nil
-        sdk8_udid = nil
-        sim_details.each do |key, value|
-          if value[:sdk_version] >= RunLoop::Version.new('8.0')
-            sdk8_udid = key
-          elsif value[:sdk_version] < RunLoop::Version.new('8.0')
-            sdk7_udid = key
-          end
-          break if sdk8_udid and sdk7_udid
-        end
+    describe 'Xcode >= 6.0' do
+      let(:sim_details) { cached_simulator_details }
 
-        unless Resources.shared.travis_ci?
-          it 'and sdk < 8.0' do
-            sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{sdk7_udid}/data"))
+      it 'iOS < 8.0' do
+        if !Resources.shared.core_simulator_env
+          Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
+        else
+          simulator = cached_ios_lt_80_sim
+
+          if simulator
+            udid = simulator.udid
+            sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{udid}/data"))
             plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
-            expect(local_sim_control.instance_eval { enable_accessibility_in_sim_data_dir(sdk_dir, sim_details) }).to be == true
+
+            actual = sim_control.send(:enable_accessibility_in_sim_data_dir, sdk_dir, sim_details)
+            expect(actual).to be_truthy
             expect(File.exist?(plist_path)).to be == true
+          else
+            Luffa.log_warn 'Skipping test: No iOS < 8.0 Simulators installed'
           end
         end
+      end
 
-        it 'and sdk >= 8.0' do
-          sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{sdk8_udid}/data"))
-          plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
-          expect(local_sim_control.send(:enable_accessibility_in_sim_data_dir, sdk_dir, sim_details)).to be == true
-          expect(File.exist?(plist_path)).to be == true
+      it 'iOS >= 8.0' do
+        if !Resources.shared.core_simulator_env
+          Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
+        else
+          simulator = cached_ios_gte_80_sim
+
+          if simulator
+            udid = simulator.udid
+            sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{udid}/data"))
+            plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Accessibility.plist")
+
+            actual = sim_control.send(:enable_accessibility_in_sim_data_dir, sdk_dir, sim_details)
+            expect(actual).to be_truthy
+            expect(File.exist?(plist_path)).to be == true
+          else
+            Luffa.log_warn 'Skipping test: No iOS >= 8.0 Simulators installed'
+          end
         end
+      end
 
-        it 'can skip directories not reported by instruments' do
+      it 'can skip directories not reported by instruments' do
+        if !Resources.shared.core_simulator_env
+          Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
+        else
           sdk_dir = "~/Library/Developer/CoreSimulator/Devices/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
-          expect(local_sim_control.send(:enable_accessibility_in_sim_data_dir, sdk_dir, sim_details)).to be == true
+
+          actual = sim_control.send(:enable_keyboard_in_sim_data_dir, sdk_dir, sim_details)
+          expect(actual).to be_truthy
         end
       end
     end
   end
 
   describe '#enable_keyboard_in_sim_data_dir' do
-    describe 'raises an error' do
-      it 'on Xcode < 6' do
-        local_sim_control = RunLoop::SimControl.new
-        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-        expect do
-          local_sim_control.send(:enable_keyboard_in_sim_data_dir, nil, nil, nil)
-        end.to raise_error RuntimeError
-      end
+    it 'raises error Xcode < 6' do
+      expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+      expect do
+        sim_control.send(:enable_keyboard_in_sim_data_dir, nil, nil, nil)
+      end.to raise_error RuntimeError
     end
 
-    if RunLoop::XCTools.new.xcode_version_gte_6?
-      describe "with Xcode #{Resources.shared.current_xcode_version}" do
-        local_sim_control = RunLoop::SimControl.new
-        sim_details = local_sim_control.send(:sim_details, :udid)
-        simulator_udid = nil
-        sim_details.each do |key, _|
-          simulator_udid = key
-          break if simulator_udid
-        end
-        it 'sets the keyboard preferences' do
-          sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{simulator_udid}/data"))
-          plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Preferences.plist")
-          expect(local_sim_control.send(:enable_keyboard_in_sim_data_dir, sdk_dir, sim_details)).to be == true
-          expect(File.exist?(plist_path)).to be == true
-        end
+    describe 'Xcode >= 6.0' do
+      let(:sim_details) { cached_simulator_details }
 
-        it 'can skip directories not reported by instruments' do
+      it 'any iOS version' do
+        if !Resources.shared.core_simulator_env
+          Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
+        else
+          simulator = cached_ios_gte_80_sim
+
+          if simulator
+            udid = simulator.udid
+            sdk_dir = File.expand_path(File.join(Dir.mktmpdir, "#{udid}/data"))
+            plist_path = File.expand_path("#{sdk_dir}/Library/Preferences/com.apple.Preferences.plist")
+
+            actual = sim_control.send(:enable_keyboard_in_sim_data_dir, sdk_dir, sim_details)
+            expect(actual).to be_truthy
+            expect(File.exist?(plist_path)).to be == true
+          else
+            Luffa.log_warn 'Skipping test: No iOS >= 8.0 Simulators installed'
+          end
+        end
+      end
+
+      it 'can skip directories not reported by instruments' do
+        if !Resources.shared.core_simulator_env
+          Luffa.log_warn 'Skipping test: Xcode < 6.0 detected'
+        else
           sdk_dir = "~/Library/Developer/CoreSimulator/Devices/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"
-          expect(local_sim_control.send(:enable_keyboard_in_sim_data_dir, sdk_dir, sim_details)).to be == true
+          expect(sim_control.send(:enable_keyboard_in_sim_data_dir, sdk_dir, sim_details)).to be == true
         end
       end
     end
   end
 
-  describe '#sims_details' do
-    describe 'raises an error when called' do
-      it 'on XCode < 6' do
-        local_sim_control = RunLoop::SimControl.new
-        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+  describe '#sim_details' do
+    describe 'raises an error when' do
+      it 'Xcode < 6' do
+        expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
         expect do
-          local_sim_control.send(:sim_details, :any_arg)
+          sim_control.send(:sim_details, :any_arg)
         end.to raise_error RuntimeError
       end
 
-      if RunLoop::XCTools.new.xcode_version_gte_6?
-        it 'is passed an invalid argument' do
-          expect do
-            sim_control.send(:sim_details, :invalid_arg)
-          end.to raise_error ArgumentError
-        end
+      it 'is passed an invalid argument' do
+        expect(sim_control).to receive(:xcode_version_gte_6?).and_return(true)
+
+        expect do
+          sim_control.send(:sim_details, :invalid_arg)
+        end.to raise_error ArgumentError
       end
     end
   end
 
   describe '#simctl_list' do
-    describe 'raises an error when called' do
-      it 'on Xcode < 6' do
-        local_sim_control = RunLoop::SimControl.new
-        expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+    describe 'raises an error when' do
+      it 'Xcode < 6' do
+        expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+
         expect do
-          local_sim_control.send(:simctl_list, :any_arg)
+          sim_control.send(:simctl_list, :any_arg)
         end.to raise_error RuntimeError
       end
 
-      if RunLoop::XCTools.new.xcode_version_gte_6?
-        it 'with an invalid argument' do
-          expect do
-            sim_control.send(:simctl_list, :invalid_arg)
-          end.to raise_error ArgumentError
-        end
+      it 'invalid argument' do
+        expect(sim_control).to receive(:xcode_version_gte_6?).and_return(true)
+
+        expect do
+          sim_control.send(:simctl_list, :invalid_arg)
+        end.to raise_error ArgumentError
       end
     end
 
-    if RunLoop::XCTools.new.xcode_version_gte_6?
-      describe 'valid arguments' do
-        it ':devices' do
+    describe 'valid arguments' do
+      it ':devices' do
+        if Resources.shared.core_simulator_env
           expect(sim_control.send(:simctl_list, :devices)).to be_a Hash
+        else
+          Luffa.log_warn("Skipping test; Xcode < 6 detected")
         end
+      end
 
-        it ':runtimes' do
+      it ':runtimes' do
+        if Resources.shared.core_simulator_env
           actual = sim_control.send(:simctl_list, :runtimes)
           expect(actual).to be_a Hash
+        else
+          Luffa.log_warn("Skipping test; Xcode < 6 detcted")
         end
       end
     end
   end
 
   describe '#simulators' do
-    describe 'raises an error when called' do
-      it 'on Xcode < 5.1' do
-        local_sim_control = RunLoop::SimControl.new
-        expect(local_sim_control).to receive(:xcode_version_gte_51?).and_return(false)
-        expect { local_sim_control.simulators }.to raise_error RuntimeError
-      end
-
-      if RunLoop::XCTools.new.xcode_version == RunLoop::Version.new('5.1.1')
-        it 'on Xcode == 5.1.1 b/c it is not implemented yet' do
-          expect { sim_control.simulators }.to raise_error NotImplementedError
-        end
-      end
+    it 'raises an error Xcode < 6' do
+      expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
+      expect { sim_control.simulators }.to raise_error RuntimeError
     end
 
-    if RunLoop::XCTools.new.xcode_version_gte_6?
-      it 'returns a list RunLoop::Device instances' do
+    it 'returns a list RunLoop::Device instances' do
+      if Resources.shared.core_simulator_env
         sims = sim_control.simulators
         expect(sims).to be_a Array
         expect(sims.empty?).to be == false
+      else
+        Luffa.log_warn("Skipping test; Xcode < 6 detcted")
       end
     end
   end
@@ -411,3 +457,4 @@ describe RunLoop::SimControl do
     end
   end
 end
+
