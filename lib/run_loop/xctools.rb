@@ -3,6 +3,13 @@ require 'retriable'
 
 module RunLoop
 
+  # @deprecated
+  #
+  # The behaviors of this class are in the process of being refactored to other
+  # classes.  Please do not implement any new behaviors in this class.
+  #
+  # Callers should be updated ASAP.
+  #
   # A class for interacting with the Xcode tools.
   #
   # @note All command line tools are run in the context of `xcrun`.
