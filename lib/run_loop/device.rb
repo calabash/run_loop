@@ -55,7 +55,7 @@ module RunLoop
     #  Users should never need to provide this.
     # @return [RunLoop::Device] A device that matches `udid_or_name`.
     # @raise [ArgumentError] If no matching device can be found.
-    def self.device_with_identifier(udid_or_name, sim_control=RunLoop::SimControl.new)
+    def self.device_with_identifier(udid_or_name, sim_control=SIM_CONTROL)
       simulator = sim_control.simulators.detect do |sim|
         sim.instruments_identifier == udid_or_name ||
               sim.udid == udid_or_name
@@ -84,22 +84,35 @@ module RunLoop
     # Returns and instruments-ready device identifier that is a suitable value
     # for DEVICE_TARGET environment variable.
     #
+    # @param [RunLoop::Xcode, RunLoop::XCTools] xcode The version of the active
+    #  Xcode.
     # @return [String] An instruments-ready device identifier.
     # @raise [RuntimeError] If trying to obtain a instruments-ready identifier
     #  for a simulator when Xcode < 6.
-    def instruments_identifier(xcode_tools=RunLoop::XCTools.new)
+    def instruments_identifier(xcode=SIM_CONTROL.xcode)
+      if xcode.is_a?(RunLoop::XCTools)
+        RunLoop.deprecated('1.5.0',
+                           %q(
+RunLoop::XCTools has been replaced with RunLoop::Xcode.
+Please update your sources to pass an instance of RunLoop::Xcode))
+      end
+
       if physical_device?
-        self.udid
+        udid
       else
-        unless xcode_tools.xcode_version_gte_6?
-          raise "Expected Xcode >= 6, but found version #{xcode_tools.xcode_version} - cannot create an identifier"
-        end
-        if self.version == RunLoop::Version.new('7.0.3')
-          version_part = self.version.to_s
+        if version == RunLoop::Version.new('7.0.3')
+          version_part = version.to_s
         else
-          version_part = "#{self.version.major}.#{self.version.minor}"
+          version_part = "#{version.major}.#{version.minor}"
         end
-        "#{self.name} (#{version_part} Simulator)"
+
+        if xcode.version_gte_7?
+          "#{name} (#{version_part})"
+        elsif xcode.version_gte_6?
+          "#{name} (#{version_part} Simulator)"
+        else
+          udid
+        end
       end
     end
 
@@ -171,5 +184,8 @@ module RunLoop
 
     CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
     CORE_SIMULATOR_LOGS_DIR = File.expand_path('~/Library/Logs/CoreSimulator')
+
+    # TODO Is this a good idea?  It speeds up rspec tests by a factor of ~2x...
+    SIM_CONTROL = RunLoop::SimControl.new
   end
 end

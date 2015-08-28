@@ -128,30 +128,55 @@ describe RunLoop::Device do
   end
 
   describe '#instruments_identifier' do
-    subject { device.instruments_identifier }
+
+    subject { device.instruments_identifier(xcode) }
+
+    let(:xcode) { RunLoop::Xcode.new }
+
     context 'physical device' do
       let(:device) { RunLoop::Device.new('name', '8.1.1', 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d', 'Shutdown') }
       it { is_expected.to be == 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d' }
     end
 
     describe 'simulator' do
-      context 'with Major.Minor SDK version' do
-        let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid', 'Shutdown') }
-        it { is_expected.to be == 'Form Factor (8.1 Simulator)' }
-      end
-
-      context 'with Major.Minor.Patch SDK version' do
-        let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
-        it { is_expected.to be == 'Form Factor (7.0.3 Simulator)' }
-      end
-
-      describe 'Xcode < 6' do
-        let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
-        let(:xcode_tools) { RunLoop::XCTools.new }
-        it 'raises an error' do
-          expect(xcode_tools).to receive(:xcode_version_gte_6?).and_return(false)
-          expect { device.instruments_identifier(xcode_tools) }.to raise_error(RuntimeError)
+      describe 'Xcode > 7.0' do
+        before { expect(xcode).to receive(:version_gte_7?).and_return true }
+        context 'with Major.Minor SDK version' do
+          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid', 'Shutdown') }
+          it { is_expected.to be == 'Form Factor (8.1)' }
         end
+
+        context 'with Major.Minor.Patch SDK version' do
+          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
+          it { is_expected.to be == 'Form Factor (7.0.3)' }
+        end
+      end
+
+      describe '6.0 <= Xcode < 7.0' do
+        before do
+          expect(xcode).to receive(:version_gte_7?).and_return false
+          expect(xcode).to receive(:version_gte_6?).and_return true
+        end
+
+        context 'with Major.Minor SDK version' do
+          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid', 'Shutdown') }
+          it { is_expected.to be == 'Form Factor (8.1 Simulator)' }
+        end
+
+        context 'with Major.Minor.Patch SDK version' do
+          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
+          it { is_expected.to be == 'Form Factor (7.0.3 Simulator)' }
+        end
+      end
+
+      describe '5.1 <= Xcode < 6' do
+        before do
+          expect(xcode).to receive(:version_gte_7?).and_return false
+          expect(xcode).to receive(:version_gte_6?).and_return false
+        end
+
+        let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'Xcode 5 Simulator', 'Shutdown') }
+        it { is_expected.to be == 'Xcode 5 Simulator' }
       end
     end
   end
