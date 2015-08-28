@@ -26,4 +26,5 @@ guard(:rspec, options) do
   watch('lib/run_loop.rb')  { 'spec/lib' }
   watch('spec/spec_helper.rb')  { 'spec/lib' }
   watch('spec/resources.rb')  { 'spec/lib' }
+  watch('spec/resources/instruments_output') { 'spec/lib' }
 end
