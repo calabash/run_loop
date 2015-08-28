@@ -5,12 +5,22 @@ describe RunLoop::SimControl do
   subject(:sim_control) { RunLoop::SimControl.new }
 
   describe '.new' do
-    it 'has xctools attr' do
-      expect(sim_control.xctools).to be_a RunLoop::XCTools
+    it 'plist_buddy' do
+      pbuddy = sim_control.pbuddy
+      expect(pbuddy).to be_a RunLoop::PlistBuddy
+      expect(sim_control.instance_variable_get(:@pbuddy)).to be == pbuddy
     end
 
-    it 'has plist_buddy attr' do
-      expect(sim_control.pbuddy).to be_a RunLoop::PlistBuddy
+    it 'xcode' do
+      xcode = sim_control.xcode
+      expect(xcode).to be_a RunLoop::Xcode
+      expect(sim_control.instance_variable_get(:@xcode)).to be == xcode
+    end
+
+    it 'instruments' do
+      instruments = sim_control.instruments
+      expect(instruments).to be_a RunLoop::Instruments
+      expect(sim_control.instance_variable_get(:@instruments)).to be == instruments
     end
   end
 
