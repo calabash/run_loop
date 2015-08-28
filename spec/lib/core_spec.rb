@@ -170,12 +170,12 @@ describe RunLoop::Core do
       }
     }
 
-    let(:xctools) { RunLoop::XCTools.new }
+    let(:xcode) { RunLoop::Xcode.new }
 
     it "when DEBUG != '1' it logs nothing" do
       stub_env('DEBUG', '0')
       out = capture_stdout do
-        RunLoop::Core.log_run_loop_options(options, xctools)
+        RunLoop::Core.log_run_loop_options(options, xcode)
       end
       expect(out.string).to be == ''
     end
@@ -184,21 +184,21 @@ describe RunLoop::Core do
       before(:each) { stub_env('DEBUG', '1') }
       it 'does some logging' do
         out = capture_stdout do
-          RunLoop::Core.log_run_loop_options(options, xctools)
+          RunLoop::Core.log_run_loop_options(options, xcode)
         end
         expect(out.string).not_to be == ''
       end
 
       it 'does not print :sim_control key' do
         out = capture_stdout do
-          RunLoop::Core.log_run_loop_options(options, xctools)
+          RunLoop::Core.log_run_loop_options(options, xcode)
         end
         expect(out.string[/:sim_control/]).to be == nil
       end
 
       it 'does print xcode details' do
         out = capture_stdout do
-          RunLoop::Core.log_run_loop_options(options, xctools)
+          RunLoop::Core.log_run_loop_options(options, xcode)
         end
         expect(out.string[/:xcode/]).to be == ':xcode'
         expect(out.string[/:xcode_path/]).to be == ':xcode_path'

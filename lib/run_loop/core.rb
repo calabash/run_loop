@@ -29,7 +29,7 @@ module RunLoop
       SCRIPTS_PATH
     end
 
-    def self.log_run_loop_options(options, xctools)
+    def self.log_run_loop_options(options, xcode)
       return unless RunLoop::Environment.debug?
       # Ignore :sim_control b/c it is a ruby object; printing is not useful.
       ignored_keys = [:sim_control]
@@ -41,8 +41,8 @@ module RunLoop
       # Objects that override '==' cannot be printed by awesome_print
       # https://github.com/michaeldv/awesome_print/issues/154
       # RunLoop::Version overrides '=='
-      options_to_log[:xcode] = xctools.xcode_version.to_s
-      options_to_log[:xcode_path] = xctools.xcode_developer_dir
+      options_to_log[:xcode] = xcode.version.to_s
+      options_to_log[:xcode_path] = xcode.developer_dir
       message = options_to_log.ai({:sort_keys => true})
       logger = options[:logger]
       RunLoop::Logging.log_debug(logger, "\n" + message)
