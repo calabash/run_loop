@@ -6,8 +6,9 @@
 
 ### Supported Xcode Versions
 
-* Xcode >= 5.1.1
-* Xcode 6.0.1, 6.1.1, 6.2, 6.3
+* Xcode 5 and 6.
+* Experimental support for Xcode 7.
+
 
 ### License
 
@@ -40,28 +41,36 @@ At this time, there is no reason to update.
 #### CI
 
 * https://travis-ci.org/calabash/calabash-ios
-* https://travis-ci.org/calabash/run_loop
+* https://travis-ci.org/calabash/run\_loop
 * https://travis-ci.org/calabash/calabash-ios-server
 * Calabash iOS toolchain testing - http://ci.endoftheworl.de:8080/
 
 To simulate CI locally:
 
 ```
-[run-loop] $ scripts/ci/travis/local-run-as-travis.rb
+$ scripts/ci/travis/local-run-as-travis.rb
 ```
 
-#### Rspec
-
-Take a break because these test launch and quit the simulator multiple times which hijacks your machine.  You have enough time to take some deep breaths and do some stretching.  You'll feel better afterward.  For continuous TDD/BDD see the Guard section below (most simulator tests are disabled in Guard).
+#### Unit Tests
 
 ```
-[run-loop] $ be rake spec
+$ be rake unit
 ```
 
-#### Device Testing
+#### Integration Tests
 
-* Requires ideviceinstaller
-* Each connected device running iOS 6.0 <= iOS < 8.* is targeted with one test.
+Take a break because these test launch and quit the simulator multiple times
+which hijacks your machine.  You have enough time to take some deep breaths
+and do some stretching.  You'll feel better afterward.
+
+For continuous TDD/BDD see the Guard section below.
+
+##### Device Testing
+
+* Requires ideviceinstaller.
+* Requires devices to be connected with USB.
+* Each compatible device will be targeted with tests.
+* These are _integration_ tests
 
 ##### Regression vs. Xcode version
 
@@ -85,4 +94,5 @@ Requires MacOS Growl - available in the AppStore.
 $ bundle exec guard start
 ```
 
-Most of the tests that involve launching the simulator are not run in Guard.
+Only the unit tests are run by guard.
+
