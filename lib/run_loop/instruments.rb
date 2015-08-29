@@ -5,10 +5,7 @@ module RunLoop
   # @note All instruments commands are run in the context of `xcrun`.
   class Instruments
 
-    # @!visibility private
-    #
-    # For detecting CoreSimulator simulators.
-    CORE_SIMULATOR_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
+    include RunLoop::Regex
 
     attr_reader :xcode
 
@@ -100,7 +97,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def version
       @instruments_version ||= lambda do
         execute_command([]) do |_, stderr, _|
-          version_str = stderr.read[/(\d\.\d(\.\d)?)/, 0]
+          version_str = stderr.read[VERSION_REGEX, 0]
           RunLoop::Version.new(version_str)
         end
       end.call
@@ -161,11 +158,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
           filter_stderr_spam(stderr)
           all = stdout.read.chomp.split("\n")
           valid = all.select do |device|
-            device =~ /[a-f0-9]{40}/
+            device =~ DEVICE_UDID_REGEX
           end
           valid.map do |device|
-            udid = device[/[a-f0-9]{40}/, 0]
-            version = device[/(\d\.\d(\.\d)?)/, 0]
+            udid = device[DEVICE_UDID_REGEX, 0]
+            version = device[VERSION_REGEX, 0]
             name = device.split('(').first.strip
             RunLoop::Device.new(name, version, udid)
           end
@@ -196,7 +193,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
             if line_is_simulator?(stripped) &&
                   !line_is_simulator_paired_with_watch?(stripped)
 
-              version = stripped[/(\d\.\d(\.\d)?)/, 0]
+              version = stripped[VERSION_REGEX, 0]
 
               if line_is_xcode5_simulator?(stripped)
                 name = line
@@ -378,7 +375,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
     # @!visibility private
     def line_has_a_version?(line)
-      line[/(\d\.\d(\.\d)?)/, 0]
+      line[VERSION_REGEX, 0]
     end
 
     # @!visibility private
