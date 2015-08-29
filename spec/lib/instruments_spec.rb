@@ -340,17 +340,8 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     end
 
     describe 'Not the host machine' do
-      context 'Not hostname' do
-        let(:line) do
-          "#{`xcrun hostname`} [4AFA48C7-5D39-54D0-9733-04301E70E235]"
-        end
-        it { is_expected.to be_falsey }
-      end
-
-      context 'Not uname -n' do
-        let(:line) do
-          "#{`xcrun uname -n`} [4AFA48C7-5D39-54D0-9733-04301E70E235]"
-        end
+      context 'Has no version info' do
+        let(:line) { 'stern [4AFA48C7-5D39-54D0-9733-04301E70E235]' }
         it { is_expected.to be_falsey }
       end
     end
@@ -358,6 +349,20 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     context 'Not a physical device' do
       let(:line) { 'mercury (8.4.1) [5ddbd7cc1e0894a77811b3f41c8e5caecef3e912]' }
       it { is_expected.to be_falsey }
+    end
+  end
+
+  describe '#line_has_a_version?' do
+    subject { instruments.send(:line_has_a_version?, line) }
+
+    context 'no version' do
+      let(:line) { 'stern [4AFA48C7-5D39-54D0-9733-04301E70E235]' }
+      it { is_expected.to be_falsey }
+    end
+
+    context 'has a version' do
+      let(:line) { 'neptune (9.0) [43be3f89d9587e9468c24672777ff6211bd91124]' }
+      it { is_expected.to be_truthy }
     end
   end
 
@@ -370,6 +375,7 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
       expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
 
       actual = instruments.simulators
+
       expect(actual.count).to be == 11
       actual.map do |device|
         expect(device.name[/(iPhone|iPad|my simulator)/, 0]).to be_truthy

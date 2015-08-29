@@ -195,6 +195,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
             stripped = line.strip
             if line_is_simulator?(stripped) &&
                   !line_is_simulator_paired_with_watch?(stripped)
+
               version = stripped[/(\d\.\d(\.\d)?)/, 0]
 
               if line_is_xcode5_simulator?(stripped)
@@ -370,13 +371,14 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
     # @!visibility private
     def line_is_core_simulator?(line)
-      hostname = `xcrun hostname`.strip
-      uname = `xcrun uname -n`.strip
-
-      return nil if line[/#{hostname}/]
-      return nil if line[/#{uname}/]
+      return nil if !line_has_a_version?(line)
 
       line[CORE_SIMULATOR_UDID_REGEX, 0]
+    end
+
+    # @!visibility private
+    def line_has_a_version?(line)
+      line[/(\d\.\d(\.\d)?)/, 0]
     end
 
     # @!visibility private
