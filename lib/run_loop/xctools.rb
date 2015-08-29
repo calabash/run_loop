@@ -243,8 +243,7 @@ module RunLoop
     #   instruments binary.
     # @raise [ArgumentError] if invalid `cmd` is passed
     def instruments(cmd=nil)
-      # Not yet!  Called too often to be useful.
-      # RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Instruments')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Instruments')
       instruments = 'xcrun instruments'
       return instruments if cmd == nil
 
