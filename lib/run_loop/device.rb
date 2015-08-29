@@ -1,6 +1,8 @@
 module RunLoop
   class Device
 
+    include RunLoop::Regex
+
     attr_reader :name
     attr_reader :version
     attr_reader :udid
@@ -40,7 +42,7 @@ module RunLoop
     # passed to instruments.
     #
     # @example
-    #  RunLoop::Device.device_with_identifier('iPhone 4s (8.3 Simulator')
+    #  RunLoop::Device.device_with_identifier('iPhone 4s (8.3 Simulator'))
     #  RunLoop::Device.device_with_identifier('6E43E3CF-25F5-41CC-A833-588F043AE749')
     #  RunLoop::Device.device_with_identifier('denis') # Simulator or device named 'denis'
     #  RunLoop::Device.device_with_identifier('893688959205dc7eb48d603c558ede919ad8dd0c')
@@ -143,13 +145,13 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # Is this a physical device?
     # @return [Boolean] Returns true if this is a device.
     def physical_device?
-      not self.udid[/[a-f0-9]{40}/, 0].nil?
+      not udid[DEVICE_UDID_REGEX, 0].nil?
     end
 
     # Is this a simulator?
     # @return [Boolean] Returns true if this is a simulator.
     def simulator?
-      not self.physical_device?
+      not physical_device?
     end
 
     # Return the instruction set for this device.
@@ -165,7 +167,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @raise [RuntimeError] Raises an error if this device is a physical device.
     # @return [String] An instruction set.
     def instruction_set
-      if self.simulator?
+      if simulator?
         if ['iPhone 4s', 'iPhone 5', 'iPad 2', 'iPad Retina'].include?(self.name)
           'i386'
         else
