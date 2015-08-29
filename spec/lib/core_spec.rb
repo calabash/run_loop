@@ -265,21 +265,38 @@ describe RunLoop::Core do
       it 'when launch_options[:udid] cannot be used to find simulator' do
        launch_options = {:udid => 'invalid simulator id' }
        sim_control = RunLoop::SimControl.new
-       expect {
-         RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                sim_control)
-       }.to raise_error RuntimeError
+
+       if Resources.shared.core_simulator_env?
+         expect {
+           RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                  sim_control)
+         }.to raise_error RuntimeError
+       else
+         expect do
+           RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                  sim_control)
+         end.not_to raise_error
+       end
       end
 
       it 'when architecture is incompatible with instruction set of target device' do
         launch_options = {:udid =>  RunLoop::Core.default_simulator,
                           :bundle_dir_or_bundle_id => Resources.shared.app_bundle_path_arm_FAT }
         sim_control = RunLoop::SimControl.new
-        expect_any_instance_of(RunLoop::Device).to receive(:instruction_set).and_return('nonsense')
-        expect {
-          RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                 sim_control)
-        }.to raise_error RunLoop::IncompatibleArchitecture
+
+        if Resources.shared.core_simulator_env?
+          expect_any_instance_of(RunLoop::Device).to receive(:instruction_set).and_return('nonsense')
+
+          expect do
+            RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                   sim_control)
+          end.to raise_error RunLoop::IncompatibleArchitecture
+        else
+          expect do
+            RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                   sim_control)
+          end.not_to raise_error
+        end
       end
     end
 
