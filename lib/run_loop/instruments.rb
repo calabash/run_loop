@@ -195,8 +195,13 @@ Please update your sources to pass an instance of RunLoop::Xcode))
             stripped = line.strip
             if line_is_simulator?(stripped) &&
                   !line_is_simulator_paired_with_watch?(stripped)
+
+              puts "line = '#{line}'"
+              puts "stripped = '#{stripped}'"
+
               version = stripped[/(\d\.\d(\.\d)?)/, 0]
 
+              puts "version = #{version}"
               if line_is_xcode5_simulator?(stripped)
                 name = line
                 udid = line
@@ -205,7 +210,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
                 udid = line[CORE_SIMULATOR_UDID_REGEX, 0]
               end
 
-              RunLoop::Device.new(name, version, udid)
+              puts "name = '#{name}'"
+              puts "udid = '#{udid}'"
+              device = RunLoop::Device.new(name, version, udid)
+              puts device
+              device
             else
               nil
             end

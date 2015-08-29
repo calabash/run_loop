@@ -364,12 +364,16 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
   describe '#simulators' do
     it 'Xcode >= 7.0' do
       stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_GTE_70)
-      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
+      #stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
+      stderr = StringIO.new('')
       yielded = [stdout, stderr, nil]
       args = ['-s', 'devices']
       expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
 
       actual = instruments.simulators
+
+      puts actual
+
       expect(actual.count).to be == 11
       actual.map do |device|
         expect(device.name[/(iPhone|iPad|my simulator)/, 0]).to be_truthy
