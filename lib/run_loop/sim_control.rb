@@ -14,6 +14,8 @@ module RunLoop
   # @todo `puts` calls need to be replaced with proper logging
   class SimControl
 
+    include RunLoop::Regex
+
     # @deprecated 1.5.0 - replaced by #xcode
     def xctools
       RunLoop.deprecated('1.5.0', 'Replaced by RunLoop::Xcode')
@@ -309,7 +311,7 @@ module RunLoop
     # @param [String] udid the String to check
     # @return [Boolean] Returns true iff the `udid` matches /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/
     def sim_udid?(udid)
-      udid.length == 36 and udid[XCODE_6_SIM_UDID_REGEX,0] != nil
+      udid.length == 36 and udid[CORE_SIMULATOR_UDID_REGEX,0] != nil
     end
 
     def simulators
@@ -582,7 +584,7 @@ module RunLoop
     # @!visibility private
     # A regex for finding directories under ~/Library/Developer/CoreSimulator/Devices
     # and parsing the output of `simctl list sessions`.
-    XCODE_6_SIM_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
+    CORE_SIMULATOR_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
 
     CORE_SIMULATOR_KEYBOARD_PROPERTIES_HASH =
           {
@@ -700,9 +702,9 @@ module RunLoop
     def existing_sim_sdk_or_device_data_dirs
       base_dir = sim_app_support_dir
       if xcode_version_gte_6?
-        regex = XCODE_6_SIM_UDID_REGEX
+        regex = CORE_SIMULATOR_UDID_REGEX
       else
-        regex = /(\d)\.(\d)\.?(\d)?(-64)?/
+        regex = XCODE_511_SIMULATOR_REGEX
       end
       dirs = Dir.glob("#{base_dir}/*").select { |path|
         path =~ regex
@@ -836,7 +838,7 @@ module RunLoop
       quit_sim
 
       verbose = merged_opts[:verbose]
-      target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
+      target_udid = sim_data_dir[CORE_SIMULATOR_UDID_REGEX, 0]
 
       # Directory contains simulators not reported by instruments -s devices
       simulator_details = sim_details_keyed_with_udid[target_udid]
@@ -925,7 +927,7 @@ module RunLoop
       quit_sim
 
       verbose = merged_opts[:verbose]
-      target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
+      target_udid = sim_data_dir[CORE_SIMULATOR_UDID_REGEX, 0]
 
       # Directory contains simulators not reported by instruments -s devices
       simulator_details = sim_details_keyed_with_udid[target_udid]
@@ -1148,7 +1150,7 @@ module RunLoop
         res = {}
         out.split("\n").each do |line|
 
-          possible_sdk = line[/(\d\.\d(\.\d)?)/,0]
+          possible_sdk = line[VERSION_REGEX,0]
           if possible_sdk
             current_sdk = possible_sdk
             res[current_sdk] = []
@@ -1176,7 +1178,7 @@ module RunLoop
           if current_sdk
             unless line[/unavailable/,0]
               name = line.split('(').first.strip
-              udid = line[XCODE_6_SIM_UDID_REGEX,0]
+              udid = line[CORE_SIMULATOR_UDID_REGEX,0]
               state = line[/(Booted|Shutdown)/,0]
               res[current_sdk] << {:name => name, :udid => udid, :state => state}
             end
