@@ -56,7 +56,7 @@ describe 'Simulator/Binary Compatibility Check' do
       expect {  RunLoop.run(options) }.to raise_error RunLoop::IncompatibleArchitecture
     end
 
-    if RunLoop::XCTools.new.xcode_version_gte_6?
+    if Resources.shared.core_simulator_env?
       it 'targeting i386 simulator with binary that contains only a x86_64 slice' do
         # The latest iPad 2; will eventually fail when the iPad 2 is no longer supported. :(
          ipad2 = sim_control.simulators.select do |device|

@@ -49,12 +49,21 @@ describe RunLoop::Device do
 
   describe '.device_with_identifier' do
     let(:sim_control) { RunLoop::SimControl.new }
+    let(:instruments) { RunLoop::Instruments.new }
+    let(:options) do
+      {
+            :sim_control => sim_control,
+            :instruments => instruments
+      }
+    end
+
     it 'raises an error if no simulator or device with UDID or name is found' do
       expect(sim_control).to receive(:simulators).and_return([])
-      expect(sim_control.xctools).to receive(:instruments).with(:devices).and_return([])
-      expect {
-        RunLoop::Device.device_with_identifier('a string or udid', sim_control)
-      }.to raise_error ArgumentError
+      expect(instruments).to receive(:physical_devices).and_return([])
+
+      expect do
+        RunLoop::Device.device_with_identifier('a string or udid', options)
+      end.to raise_error ArgumentError
     end
 
     describe 'physical devices' do
@@ -65,15 +74,17 @@ describe RunLoop::Device do
 
       it 'find by name' do
         expect(sim_control).to receive(:simulators).and_return([])
-        expect(sim_control.xctools).to receive(:instruments).with(:devices).and_return([device])
-        actual = RunLoop::Device.device_with_identifier(device.name, sim_control)
+        expect(instruments).to receive(:physical_devices).and_return([device])
+
+        actual = RunLoop::Device.device_with_identifier(device.name, options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
 
       it 'find by udid' do
         expect(sim_control).to receive(:simulators).and_return([])
-        expect(sim_control.xctools).to receive(:instruments).with(:devices).and_return([device])
-        actual = RunLoop::Device.device_with_identifier(device.udid, sim_control)
+        expect(instruments).to receive(:physical_devices).and_return([device])
+
+        actual = RunLoop::Device.device_with_identifier(device.udid, options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
     end
@@ -88,14 +99,15 @@ describe RunLoop::Device do
 
       it 'find by name' do
         expect(sim_control).to receive(:simulators).and_return([device])
+
         actual = RunLoop::Device.device_with_identifier(device.instruments_identifier,
-                                                        sim_control)
+                                                        options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
 
       it 'find by udid' do
         expect(sim_control).to receive(:simulators).and_return([device])
-        actual = RunLoop::Device.device_with_identifier(device.udid, sim_control)
+        actual = RunLoop::Device.device_with_identifier(device.udid, options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
     end
@@ -128,30 +140,55 @@ describe RunLoop::Device do
   end
 
   describe '#instruments_identifier' do
-    subject { device.instruments_identifier }
+
+    subject { device.instruments_identifier(xcode) }
+
+    let(:xcode) { RunLoop::Xcode.new }
+
     context 'physical device' do
       let(:device) { RunLoop::Device.new('name', '8.1.1', 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d', 'Shutdown') }
       it { is_expected.to be == 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d' }
     end
 
     describe 'simulator' do
-      context 'with Major.Minor SDK version' do
-        let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid', 'Shutdown') }
-        it { is_expected.to be == 'Form Factor (8.1 Simulator)' }
-      end
-
-      context 'with Major.Minor.Patch SDK version' do
-        let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
-        it { is_expected.to be == 'Form Factor (7.0.3 Simulator)' }
-      end
-
-      describe 'Xcode < 6' do
-        let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
-        let(:xcode_tools) { RunLoop::XCTools.new }
-        it 'raises an error' do
-          expect(xcode_tools).to receive(:xcode_version_gte_6?).and_return(false)
-          expect { device.instruments_identifier(xcode_tools) }.to raise_error(RuntimeError)
+      describe 'Xcode > 7.0' do
+        before { expect(xcode).to receive(:version_gte_7?).and_return true }
+        context 'with Major.Minor SDK version' do
+          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid', 'Shutdown') }
+          it { is_expected.to be == 'Form Factor (8.1)' }
         end
+
+        context 'with Major.Minor.Patch SDK version' do
+          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
+          it { is_expected.to be == 'Form Factor (7.0.3)' }
+        end
+      end
+
+      describe '6.0 <= Xcode < 7.0' do
+        before do
+          expect(xcode).to receive(:version_gte_7?).and_return false
+          expect(xcode).to receive(:version_gte_6?).and_return true
+        end
+
+        context 'with Major.Minor SDK version' do
+          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid', 'Shutdown') }
+          it { is_expected.to be == 'Form Factor (8.1 Simulator)' }
+        end
+
+        context 'with Major.Minor.Patch SDK version' do
+          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
+          it { is_expected.to be == 'Form Factor (7.0.3 Simulator)' }
+        end
+      end
+
+      describe '5.1 <= Xcode < 6' do
+        before do
+          expect(xcode).to receive(:version_gte_7?).and_return false
+          expect(xcode).to receive(:version_gte_6?).and_return false
+        end
+
+        let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'Xcode 5 Simulator', 'Shutdown') }
+        it { is_expected.to be == 'Xcode 5 Simulator' }
       end
     end
   end

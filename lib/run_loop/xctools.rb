@@ -3,6 +3,13 @@ require 'retriable'
 
 module RunLoop
 
+  # @deprecated Since 1.5.0
+  #
+  # The behaviors of this class are in the process of being refactored to other
+  # classes.  Please do not implement any new behaviors in this class.
+  #
+  # Callers should be updated ASAP.
+  #
   # A class for interacting with the Xcode tools.
   #
   # @note All command line tools are run in the context of `xcrun`.
@@ -15,130 +22,160 @@ module RunLoop
   # @todo Refactor instruments related code to instruments class.
   class XCTools
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 7.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 7.0
     def v70
-      @xc70 ||= RunLoop::Version.new('7.0')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.v70
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.4`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.4
     def v64
-      @xc64 ||= RunLoop::Version.new('6.4')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.v64
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.3`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.3
     def v63
-      @xc63 ||= RunLoop::Version.new('6.3')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.v63
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.2`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.2
     def v62
-      @xc62 ||= RunLoop::Version.new('6.2')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.v62
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.1`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.1
     def v61
-      @xc61 ||= RunLoop::Version.new('6.1')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.v61
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 6.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 6.0
     def v60
-      @xc60 ||= RunLoop::Version.new('6.0')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.v60
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 5.1`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 5.1
     def v51
-      @xc51 ||= RunLoop::Version.new('5.1')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.v51
     end
 
-    # Returns a version instance for `Xcode 5.0`; ; used to check for the
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
+    # Returns a version instance for `Xcode 5.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
     # @return [RunLoop::Version] 5.0
     def v50
-      @xc50 ||= RunLoop::Version.new('5.0')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.v50
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6.4 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.4
     def xcode_version_gte_64?
-      @xcode_gte_64 ||= xcode_version >= v64
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.version_gte_64?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6.3 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.3
     def xcode_version_gte_63?
-      @xcode_gte_63 ||= xcode_version >= v63
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.version_gte_63?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6.2 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.2
     def xcode_version_gte_62?
-      @xcode_gte_62 ||= xcode_version >= v62
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.version_gte_62?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6.1 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.1
     def xcode_version_gte_61?
-      @xcode_gte_61 ||= xcode_version >= v61
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.version_gte_61?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 6 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.0
     def xcode_version_gte_6?
-      @xcode_gte_6 ||= xcode_version >= v60
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.version_gte_6?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 7 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 7.0
     def xcode_version_gte_7?
-      @xcode_gte_7 ||= xcode_version >= v70
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.version_gte_7?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Are we running Xcode 5.1 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 5.1
     def xcode_version_gte_51?
-      @xcode_gte_51 ||= xcode_version >= v51
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.version_gte_51?
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns the current version of Xcode.
     #
     # @return [RunLoop::Version] The current version of Xcode as reported by
     #  `xcrun xcodebuild -version`.
     def xcode_version
-      @xcode_version ||= lambda {
-        xcode_build_output = `xcrun xcodebuild -version`.split(/\s/)[1]
-        RunLoop::Version.new(xcode_build_output)
-      }.call
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.version
     end
 
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns the path to the current developer directory.
     #
     # From the man pages:
@@ -153,41 +190,38 @@ module RunLoop
     #
     # @return [String] path to current developer directory
     def xcode_developer_dir
-      @xcode_developer_dir ||=
-            if RunLoop::Environment.developer_dir
-              RunLoop::Environment.developer_dir
-            else
-              # fall back to xcode-select
-              `xcode-select --print-path`.chomp
-            end
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.developer_dir
     end
 
-    # Find the localized name for a given key_code
-    #
-    # @example
-    #  lookup_localization_name('delete.key', 'da') => 'Slet'
-    #
-    # @param [String] key_code the localization signifier, e.g. 'delete.key'
-    # @param [String] localized_lang an iso language code returned by calabash ios server
-    #
-    # @return [String] the localized name
-    def lookup_localization_name(key_code, localized_lang)
-      lookup_table_dir = lang_dir(localized_lang)
-      return nil unless lookup_table_dir
-
-      key_name_lookup_table(lookup_table_dir)[key_code]
-    end
-
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Is this a beta version of Xcode?
     #
     # @note Relies on Xcode beta versions having and app bundle named Xcode-Beta.app
     # @return [Boolean] True if the Xcode version is beta.
     def xcode_is_beta?
-      @xcode_is_beta ||= lambda {
-        (xcode_developer_dir =~ /Xcode-[Bb]eta.app/) != nil
-      }.call
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.beta?
     end
 
+    alias_method :version_gte_64?, :xcode_version_gte_64?
+    alias_method :version_gte_63?, :xcode_version_gte_63?
+    alias_method :version_gte_62?, :xcode_version_gte_62?
+    alias_method :version_gte_61?, :xcode_version_gte_61?
+    alias_method :version_gte_6?, :xcode_version_gte_6?
+    alias_method :version_gte_7?, :xcode_version_gte_7?
+    alias_method :version_gte_51?, :xcode_version_gte_51?
+    alias_method :version, :xcode_version
+    alias_method :developer_dir, :xcode_developer_dir
+    alias_method :beta?, :xcode_is_beta?
+
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Instruments.
+    #
+    # @see {RunLoop::Instruments#version}
+    # @see {RunLoop::Instruments#templates}
+    # @see {RunLoop::Instruments#physical_devices}
+    # @see {RunLoop::Instruments#simulators}
+    #
     # Method for interacting with instruments.
     #
     # @example Getting a runnable command for instruments
@@ -209,76 +243,29 @@ module RunLoop
     #   instruments binary.
     # @raise [ArgumentError] if invalid `cmd` is passed
     def instruments(cmd=nil)
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Instruments')
       instruments = 'xcrun instruments'
       return instruments if cmd == nil
 
-      # Xcode 6 GM is spamming "WebKit Threading Violations"
-      stderr_filter = lambda { |stderr|
-        stderr.read.strip.split("\n").each do |line|
-          unless line[/WebKit Threading Violation/, 0]
-            $stderr.puts line
-          end
-        end
-      }
       case cmd
         when :version
-          @instruments ||= RunLoop::Instruments.new
-          @instruments.version
+          instruments_instance.version
         when :sims
-          @instruments_sims ||=  lambda {
-            # Instruments 6 spams a lot of error messages.  I don't like to
-            # hide them, but they seem to be around to stay (Xcode 6 GM).
-            cmd = "#{instruments} -s devices"
-            Open3.popen3(cmd) do |_, stdout, stderr, _|
-              stderr_filter.call(stderr)
-              devices = stdout.read.chomp.split("\n")
-              devices.select { |device| device.downcase.include?('simulator') }
-            end
-          }.call
-
+          instruments_instance.simulators
         when :templates
-          @instruments_templates ||= lambda {
-            cmd = "#{instruments} -s templates"
-            if self.xcode_version >= self.v60
-              Open3.popen3(cmd) do |_, stdout, stderr, _|
-                stderr_filter.call(stderr)
-                stdout.read.chomp.split("\n").map { |elm| elm.strip.tr('"', '') }
-              end
-            elsif self.xcode_version >= self.v51
-              `#{cmd}`.split("\n").delete_if do |path|
-                not path =~ /tracetemplate/
-              end.map { |elm| elm.strip }
-            else
-              # prints to $stderr (>_>) - seriously?
-              Open3.popen3(cmd) do |_, _, stderr, _|
-                stderr.read.chomp.split(/(,|\(|")/).map do |elm|
-                  elm.strip
-                end.delete_if { |path| not path =~ /tracetemplate/ }
-              end
-            end
-          }.call
-
+          instruments_instance.templates
         when :devices
-          @devices ||= lambda {
-            cmd = "#{instruments} -s devices"
-            Open3.popen3(cmd) do |_, stdout, stderr, _|
-              stderr_filter.call(stderr)
-              all = stdout.read.chomp.split("\n")
-              valid = all.select { |device| device =~ /[a-f0-9]{40}/ }
-              valid.map do |device|
-                udid = device[/[a-f0-9]{40}/, 0]
-                version = device[/(\d\.\d(\.\d)?)/, 0]
-                name = device.split('(').first.strip
-                RunLoop::Device.new(name, version, udid)
-              end
-            end
-          }.call
+          instruments_instance.physical_devices
         else
           candidates = [:version, :sims, :devices]
           raise(ArgumentError, "expected '#{cmd}' to be one of '#{candidates}'")
       end
     end
 
+    # @deprecated Since 1.5.0 - no replacement.
+    #
+    # All supported Xcode versions accept -s flag.
+    #
     # Does the instruments `version` accept the -s flag?
     #
     # @example
@@ -291,6 +278,7 @@ module RunLoop
     #
     # @return [Boolean] true if the version is >= 5.*
     def instruments_supports_hyphen_s?(version=instruments(:version))
+      RunLoop.deprecated('1.5.0', 'Not replaced.')
       @instruments_supports_hyphen_s ||= lambda {
         if version.is_a? String
           _version = RunLoop::Version.new(version)
@@ -301,9 +289,25 @@ module RunLoop
       }.call
     end
 
+    # Find the localized name for a given key_code
+    #
+    # @example
+    #  lookup_localization_name('delete.key', 'da') => 'Slet'
+    #
+    # @param [String] key_code the localization signifier, e.g. 'delete.key'
+    # @param [String] localized_lang an iso language code returned by calabash ios server
+    #
+    # @return [String] the localized name
+    def lookup_localization_name(key_code, localized_lang)
+      lookup_table_dir = lang_dir(localized_lang)
+      return nil unless lookup_table_dir
+
+      key_name_lookup_table(lookup_table_dir)[key_code]
+    end
+
     private
 
-    UIKIT_AXBUNDLE_PATH = '/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
+    UIKIT_AXBUNDLE_PATH_CORE_SIM = 'Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
 
     LANG_CODE_TO_LANG_NAME_MAP = {
           'en' => 'English',
@@ -346,11 +350,31 @@ module RunLoop
     end
 
     def uikit_bundle_l10n_path
-      if !xcode_developer_dir
+      developer_dir = xcode.developer_dir
+      if !developer_dir
         nil
       else
-        File.join(xcode_developer_dir, UIKIT_AXBUNDLE_PATH)
+        if xcode.version_gte_6?
+          File.join(developer_dir, UIKIT_AXBUNDLE_PATH_CORE_SIM)
+        else
+          ['7.1', '7.0', '6.1'].map do |sdk|
+            path = axbundle_path_for_sdk(developer_dir, sdk)
+            if File.exist?(path)
+              path
+            else
+              nil
+            end
+          end.compact.first
+        end
       end
+    end
+
+    # Xcode 5.1.1 path.
+    def axbundle_path_for_sdk(developer_dir, sdk)
+      File.join(developer_dir,
+                'Platforms/iPhoneSimulator.platform/Developer/SDKs',
+                "iPhoneSimulator#{sdk}.sdk",
+                'System/Library/AccessibilityBundles/UIKit.axbundle')
     end
 
     def is_full_name?(two_letter_country_code)
@@ -362,5 +386,20 @@ module RunLoop
       JSON.parse(`plutil -convert json #{path} -o -`)
     end
 
+    # @!visibility private
+    attr_reader :xcode
+
+    # @!visibility private
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
+
+    # @!visibility private
+    attr_reader :instruments_instance
+
+    # @!visibility private
+    def instruments_instance
+      @instruments_instance ||= RunLoop::Instruments.new
+    end
   end
 end

@@ -110,9 +110,9 @@ describe RunLoop::Instruments do
 
   describe '#kill_signal' do
     it 'the current Xcode version' do
-      xcode_tools = RunLoop::XCTools.new
-      expected =  xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
-      expect(instruments.send(:kill_signal, xcode_tools)).to be == expected
+      xcode = RunLoop::Xcode.new
+      expected =  xcode.version_gte_6? ? 'QUIT' : 'TERM'
+      expect(instruments.send(:kill_signal, xcode)).to be == expected
     end
 
     describe 'regression' do
@@ -125,9 +125,9 @@ describe RunLoop::Instruments do
         xcode_installs.each do |developer_dir|
           it "#{developer_dir}" do
             Resources.shared.with_developer_dir(developer_dir) do
-              xcode_tools = RunLoop::XCTools.new
-              expected =  xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
-              expect(instruments.send(:kill_signal, xcode_tools)).to be == expected
+              xcode = RunLoop::Xcode.new
+              expected =  xcode.version_gte_6? ? 'QUIT' : 'TERM'
+              expect(instruments.send(:kill_signal, xcode)).to be == expected
             end
           end
         end

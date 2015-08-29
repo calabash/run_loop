@@ -3,8 +3,9 @@ unless Resources.shared.travis_ci?
   describe RunLoop do
 
     context 'running on physical devices' do
-      xctools = RunLoop::XCTools.new
-      physical_devices = Resources.shared.physical_devices_for_testing(xctools)
+      xcode = Resources.shared.xcode
+      instruments = Resources.shared.instruments
+      physical_devices = Resources.shared.physical_devices_for_testing(instruments)
       if physical_devices.empty?
         it 'no devices attached to this computer' do
           expect(true).to be == true
@@ -15,12 +16,12 @@ unless Resources.shared.travis_ci?
         end
       else
         physical_devices.each do |device|
-          if Resources.shared.incompatible_xcode_ios_version(device.version, xctools.xcode_version)
-            it "Skipping #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version} - combination not supported" do
+          if Resources.shared.incompatible_xcode_ios_version(device.version, xcode.version)
+            it "Skipping #{device.name} iOS #{device.version} Xcode #{xcode.version} - combination not supported" do
               expect(true).to be == true
             end
           else
-            it "on #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version}" do
+            it "on #{device.name} iOS #{device.version} Xcode #{xcode.version}" do
               options =
                     {
                           :bundle_id => Resources.shared.bundle_id,
@@ -43,8 +44,9 @@ unless Resources.shared.travis_ci?
     end
 
     describe 'regression: running on physical devices' do
-      outer_xctools = RunLoop::XCTools.new
-      physical_devices = Resources.shared.physical_devices_for_testing(outer_xctools)
+      instruments = Resources.shared.instruments
+
+      physical_devices = Resources.shared.physical_devices_for_testing(instruments)
       xcode_installs = Resources.shared.alt_xcode_details_hash
       if not xcode_installs.empty? and Resources.shared.ideviceinstaller_available? and not physical_devices.empty?
         xcode_installs.each do |install_hash|

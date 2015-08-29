@@ -46,11 +46,11 @@ unless Luffa::Environment.travis_ci?
       end
 
       it 'launching an app on a different simulator' do
-        xcode_version = RunLoop::XCTools.new.xcode_version
+        xcode = RunLoop::Xcode.new.version
         shared = Luffa::Simulator.instance
         simulator = shared.core_simulator_for_xcode_version('iPad',
                                                             'Air',
-                                                            xcode_version)
+                                                            xcode)
         cmd =
               [
                     'bundle exec run-loop instruments launch',

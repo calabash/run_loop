@@ -7,12 +7,19 @@ describe RunLoop::Core do
     it 'ignores the TRACE_TEMPLATE env var if the tracetemplate does not exist' do
       tracetemplate = '/tmp/some.tracetemplate'
       expect(RunLoop::Environment).to receive(:trace_template).and_return(tracetemplate)
-      xctools = RunLoop::XCTools.new
-      actual = RunLoop::Core.automation_template(xctools)
+      instruments = Resources.shared.instruments
+      xcode = Resources.shared.xcode
+
+      actual = RunLoop::Core.automation_template(instruments)
       expect(actual).not_to be == nil
       expect(actual).not_to be == tracetemplate
-      if xctools.xcode_version_gte_6?
-        expect(actual).to be == 'Automation'
+      if xcode.version_gte_6?
+        if xcode.beta?
+          expect(actual[/Automation.tracetemplate/, 0]).to be_truthy
+        else
+          expect(actual).to be == 'Automation'
+        end
+
       else
         expect(File.exist?(actual)).to be == true
       end
@@ -20,7 +27,7 @@ describe RunLoop::Core do
   end
 
   describe '.simulator_target?' do
-    if RunLoop::XCTools.new.xcode_version_gte_6?
+    if Resources.shared.core_simulator_env?
       describe "named simulator" do
 
         after(:each) do
@@ -40,8 +47,9 @@ describe RunLoop::Core do
         end
 
         it ":device_target => 'rspec-test-device'" do
+          pending('Bad test!  Needs to grab an existing runtime!')
           device_type_id = 'iPhone 5s'
-          if RunLoop::XCTools.new.xcode_version_gte_61?
+          if RunLoop::Xcode.new.version_gte_61?
             runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-1'
           else
             runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
@@ -61,11 +69,13 @@ describe RunLoop::Core do
 
   describe '.default_tracetemplate' do
     describe 'returns a template for' do
-      it "Xcode #{Resources.shared.current_xcode_version}" do
-        xctools = RunLoop::XCTools.new
-        default_template = RunLoop::Core.default_tracetemplate(xctools)
-        if xctools.xcode_version_gte_6?
-          if xctools.xcode_is_beta?
+      xcode = Resources.shared.xcode
+
+      it "Xcode #{xcode.version}" do
+        instruments = Resources.shared.instruments
+        default_template = RunLoop::Core.default_tracetemplate(instruments)
+        if xcode.version_gte_6?
+          if xcode.beta?
             expect(File.exist?(default_template)).to be true
           else
             expect(default_template).to be == 'Automation'
@@ -85,10 +95,11 @@ describe RunLoop::Core do
           xcode_installs.each do |xcode_details|
             it "#{xcode_details[:path]} - #{xcode_details[:version]}" do
               Resources.shared.with_developer_dir(xcode_details[:path]) {
-                xctools = RunLoop::XCTools.new
-                default_template = RunLoop::Core.default_tracetemplate(xctools)
-                if xctools.xcode_version_gte_6?
-                  if xctools.xcode_is_beta?
+                instruments = RunLoop::Instruments.new
+                default_template = RunLoop::Core.default_tracetemplate(instruments)
+                internal_xcode = RunLoop::Xcode.new
+                if internal_xcode.version_gte_6?
+                  if internal_xcode.beta?
                     expect(File.exist?(default_template)).to be true
                   else
                     expect(default_template).to be == 'Automation'

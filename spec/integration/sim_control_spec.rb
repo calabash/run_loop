@@ -106,8 +106,7 @@ describe RunLoop::SimControl do
         expect(actual.count).to be >= 1
       end
 
-      # Xcode >= 6 only method
-      if RunLoop::XCTools.new.xcode_version_gte_6?
+      if Resources.shared.core_simulator_env?
         describe "with Xcode #{Resources.shared.current_xcode_version}" do
           it "can reset the content and settings on a single simulator" do
             udid = sim_control.instance_eval { sim_details :udid }.keys.sample
@@ -142,7 +141,7 @@ describe RunLoop::SimControl do
       expect { local_sim_control.instance_eval { simctl_reset } }.to raise_error RuntimeError
     end
 
-    if RunLoop::XCTools.new.xcode_version_gte_6?
+    if Resources.shared.core_simulator_env?
       it 'resets the _all_ simulators when sim_udid is nil' do
         expect(sim_control.send(:simctl_reset)).to be == true
         sim_details = sim_control.send(:sim_details, :udid)
@@ -168,7 +167,7 @@ describe RunLoop::SimControl do
   end
 
   describe '#sims_details' do
-    if RunLoop::XCTools.new.xcode_version_gte_6?
+    if Resources.shared.core_simulator_env?
       describe 'returns a hash with the primary key' do
         it ':udid' do
           actual = sim_control.instance_eval { sim_details :udid }

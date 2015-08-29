@@ -17,7 +17,7 @@ module RunLoop
         def tail_booted
           device = booted_device
           if device.nil?
-            version = XCTools.new.xcode_version
+            version = Xcode.new.version
             puts "No simulator for active Xcode (version #{version}) is booted."
           else
             log_file = device.simulator_log_file_path
@@ -30,7 +30,7 @@ module RunLoop
       def booted
         device = booted_device
         if device.nil?
-          version = XCTools.new.xcode_version
+          version = Xcode.new.version
           puts "No simulator for active Xcode (version #{version}) is booted."
         else
           puts device

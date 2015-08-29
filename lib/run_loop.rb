@@ -26,6 +26,25 @@ require 'run_loop/simctl/plists'
 
 module RunLoop
 
+  # Prints a deprecated message that includes the line number.
+  #
+  # @param [String] version Indicates when the feature was deprecated.
+  # @param [String] msg Deprecation message (possibly suggesting alternatives)
+  # @return [void]
+  def self.deprecated(version, msg)
+
+    if RUBY_VERSION < '2.0'
+      stack = Kernel.caller[1..6].join("\n")
+    else
+      stack = Kernel.caller(0, 6)[1..-1].join("\n")
+    end
+
+    msg = "deprecated '#{version}' - #{msg}\n#{stack}"
+
+    $stderr.puts "\033[34mWARN: #{msg}\033[0m"
+    $stderr.flush
+  end
+
   class TimeoutError < RuntimeError
   end
 
