@@ -12,6 +12,8 @@ module RunLoop
   # `xcode-select` or overridden using the `DEVELOPER_DIR`.
   class Xcode
 
+    include RunLoop::Regex
+
     # Returns a version instance for `Xcode 7.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
@@ -132,7 +134,7 @@ module RunLoop
     def version
       @xcode_version ||= lambda do
         execute_command(['-version']) do |stdout, _, _|
-          version_string = stdout.read.chomp[/(\d.\d)(.\d)?/, 0]
+          version_string = stdout.read.chomp[VERSION_REGEX, 0]
           RunLoop::Version.new(version_string)
         end
       end.call
