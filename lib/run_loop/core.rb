@@ -180,11 +180,10 @@ The :xctools key will be ignored.  It has been replaced by the :xcode key.
 Please update your sources to pass an instance of RunLoop::Xcode))
       end
 
-      xctools ||= options[:xctools] || sim_control.xctools
       xcode ||= options[:xcode] || sim_control.xcode
 
       instruments = RunLoop::Instruments.new
-      instruments.kill_instruments
+      instruments.kill_instruments(xcode)
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
