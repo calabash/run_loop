@@ -8,11 +8,18 @@ describe RunLoop::Core do
       tracetemplate = '/tmp/some.tracetemplate'
       expect(RunLoop::Environment).to receive(:trace_template).and_return(tracetemplate)
       instruments = Resources.shared.instruments
+      xcode = Resources.shared.xcode
+
       actual = RunLoop::Core.automation_template(instruments)
       expect(actual).not_to be == nil
       expect(actual).not_to be == tracetemplate
       if xcode.version_gte_6?
-        expect(actual).to be == 'Automation'
+        if xcode.beta?
+          expect(actual[/Automation.tracetemplate/, 0]).to be_truthy
+        else
+          expect(actual).to be == 'Automation'
+        end
+
       else
         expect(File.exist?(actual)).to be == true
       end
@@ -62,7 +69,9 @@ describe RunLoop::Core do
 
   describe '.default_tracetemplate' do
     describe 'returns a template for' do
-      it "Xcode #{Resources.shared.current_xcode_version}" do
+      xcode = Resources.shared.xcode
+
+      it "Xcode #{xcode.version}" do
         instruments = Resources.shared.instruments
         default_template = RunLoop::Core.default_tracetemplate(instruments)
         if xcode.version_gte_6?
@@ -88,8 +97,9 @@ describe RunLoop::Core do
               Resources.shared.with_developer_dir(xcode_details[:path]) {
                 instruments = RunLoop::Instruments.new
                 default_template = RunLoop::Core.default_tracetemplate(instruments)
-                if xcode.version_gte_6?
-                  if xcode.beta?
+                internal_xcode = RunLoop::Xcode.new
+                if internal_xcode.version_gte_6?
+                  if internal_xcode.beta?
                     expect(File.exist?(default_template)).to be true
                   else
                     expect(default_template).to be == 'Automation'
