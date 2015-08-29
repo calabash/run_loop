@@ -6,10 +6,17 @@ describe RunLoop::XCTools do
 
   describe '#uikit_bundle_l10n_path' do
     it 'return value' do
-      stub_env('DEVELOPER_DIR', '/some/xcode/path')
-      axbundle_path = RunLoop::XCTools.const_get('UIKIT_AXBUNDLE_PATH')
-      expected = File.join('/some/xcode/path', axbundle_path)
-      expect(xctools.send(:uikit_bundle_l10n_path)).to be == expected
+      if Resources.shared.core_simulator_env?
+        stub_env('DEVELOPER_DIR', '/some/xcode/path')
+        axbundle_path = RunLoop::XCTools.const_get('UIKIT_AXBUNDLE_PATH_CORE_SIM')
+        expected = File.join('/some/xcode/path', axbundle_path)
+        expect(xctools.send(:uikit_bundle_l10n_path)).to be == expected
+      else
+        expect(xctools).to receive(:axbundle_path_for_sdk).at_least(:once).and_return 'path'
+        expect(File).to receive(:exist?).with('path').at_least(:once).and_return true
+
+        expect(xctools.send(:uikit_bundle_l10n_path)).to be == 'path'
+      end
     end
   end
 

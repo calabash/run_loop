@@ -307,7 +307,7 @@ module RunLoop
 
     private
 
-    UIKIT_AXBUNDLE_PATH = 'Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
+    UIKIT_AXBUNDLE_PATH_CORE_SIM = 'Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
 
     LANG_CODE_TO_LANG_NAME_MAP = {
           'en' => 'English',
@@ -354,8 +354,27 @@ module RunLoop
       if !developer_dir
         nil
       else
-        File.join(developer_dir, UIKIT_AXBUNDLE_PATH)
+        if xcode.version_gte_6?
+          File.join(developer_dir, UIKIT_AXBUNDLE_PATH_CORE_SIM)
+        else
+          ['7.1', '7.0', '6.1'].map do |sdk|
+            path = axbundle_path_for_sdk(developer_dir, sdk)
+            if File.exist?(path)
+              path
+            else
+              nil
+            end
+          end.compact.first
+        end
       end
+    end
+
+    # Xcode 5.1.1 path.
+    def axbundle_path_for_sdk(developer_dir, sdk)
+      File.join(developer_dir,
+                'Platforms/iPhoneSimulator.platform/Developer/SDKs',
+                "iPhoneSimulator#{sdk}.sdk",
+                'System/Library/AccessibilityBundles/UIKit.axbundle')
     end
 
     def is_full_name?(two_letter_country_code)
