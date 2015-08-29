@@ -307,7 +307,7 @@ module RunLoop
 
     private
 
-    UIKIT_AXBUNDLE_PATH = '/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
+    UIKIT_AXBUNDLE_PATH = 'Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
 
     LANG_CODE_TO_LANG_NAME_MAP = {
           'en' => 'English',
@@ -350,10 +350,11 @@ module RunLoop
     end
 
     def uikit_bundle_l10n_path
-      if !xcode_developer_dir
+      developer_dir = xcode.developer_dir
+      if !developer_dir
         nil
       else
-        File.join(xcode_developer_dir, UIKIT_AXBUNDLE_PATH)
+        File.join(developer_dir, UIKIT_AXBUNDLE_PATH)
       end
     end
 
