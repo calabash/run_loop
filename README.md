@@ -4,11 +4,13 @@
 
 ## Run Loop
 
+* [How to contribute.](CONTRIBUTING.md)
+* [How to make a release.](CONTRIBUTING.md)
+
 ### Supported Xcode Versions
 
 * Xcode 5 and 6.
 * Experimental support for Xcode 7.
-
 
 ### License
 

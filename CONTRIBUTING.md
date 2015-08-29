@@ -40,66 +40,46 @@ $ git push -u origin feature/my-new-feature
 
 ## Releasing
 
-### Create the release branch
+After the release branch is created:
+
+* No more features can be added.
+* All in-progress features and un-merged pull-requests must wait for the next release.
+* You can, and should, make changes to the documentation.
+* You can bump the gem version.
+
+The release pull request ***must*** be made against the _master_ branch.
+
+Be sure to check CI.
+
+* https://travis-ci.org/calabash/run\_loop
+* http://ci.endoftheworl.de:8080/ # Briar jobs.
 
 ```
-$ git co develop
-$ git pull
-$ git checkout -b release-<next number> develop
-```
+$ git co -b release/1.5.0
 
-No more features can be added.  All in-progress features and un-merged pull-requests must wait for the next release.
+1. Update the CHANGELOG.
+2. Bump the RunLoop::VERSION
+3. Have a look at the README.md to see if it can be updated.
 
-You can, and should, make changes to the documentation.  You can bump the gem version.
+$ git push -u origin release/1.5.0
 
-### Create a pull request for the release branch
-
-Do this very soon after you make the release branch to notify the team that you are planning a release.
-
-```
-$ git push -u origin release-<next number>
-```
-
-Again, no more features can be added to this pull request.  Only changes to documentation are allowed.  You can bump the gem version.
-
-### Cut a new release
-
-```
-# Make sure all pull requests have been merged to `develop`
-# Check CI!
-# * https://travis-ci.org/calabash/run_loop
-# * http://ci.endoftheworl.de:8080/ # Briar jobs.
-
-# Get the latest develop.
-
-$ git fetch
-$ git co develop
-$ git pull origin develop
-
-# Make a release branch.
-
-$ git co develop
-$ git co -b release/1.1.0
-
-# *** Bump the version in lib/version! ***
-# *** Add changes to CHANGELOG.md ***
-$ git push -u origin release
-
-# *** Make pull request targeting _master_ (not develop) ***
-# *** Let CI run. ***
-# *** Merge the PR. ***
+**IMPORTANT**
+1. Make a pull request on GitHub on the master branch.
+2. Wait for CI to finish.
+3. Merge pull request.
 
 $ git co master
 $ git pull
+
 $ gem update --system
 $ rake release
 
-# Clean up.
-
 $ git co develop
-$ git merge --no-ff release/1.1.0
+$ git merge --no-ff release/1.5.0
 $ git push
-$ git br -d release/1.1.0
 
-# Celebrate.
+$ git branch -d release/1.5.0
+
+Announce the release on the public channels.
 ```
+
