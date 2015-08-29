@@ -1,3 +1,4 @@
+require 'run_loop/regex'
 require 'run_loop/directory'
 require 'run_loop/environment'
 require 'run_loop/logging'
