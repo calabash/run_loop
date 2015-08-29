@@ -67,6 +67,10 @@ and do some stretching.  You'll feel better afterward.
 
 For continuous TDD/BDD see the Guard section below.
 
+**TMUX USERS**
+
+Do not try to run the integration tests in a tmux session.  Trust me.
+
 ##### Device Testing
 
 * Requires ideviceinstaller.
