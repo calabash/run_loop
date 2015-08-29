@@ -49,12 +49,21 @@ describe RunLoop::Device do
 
   describe '.device_with_identifier' do
     let(:sim_control) { RunLoop::SimControl.new }
+    let(:instruments) { RunLoop::Instruments.new }
+    let(:options) do
+      {
+            :sim_control => sim_control,
+            :instruments => instruments
+      }
+    end
+
     it 'raises an error if no simulator or device with UDID or name is found' do
       expect(sim_control).to receive(:simulators).and_return([])
-      expect(sim_control.xctools).to receive(:instruments).with(:devices).and_return([])
-      expect {
-        RunLoop::Device.device_with_identifier('a string or udid', sim_control)
-      }.to raise_error ArgumentError
+      expect(instruments).to receive(:physical_devices).and_return([])
+
+      expect do
+        RunLoop::Device.device_with_identifier('a string or udid', options)
+      end.to raise_error ArgumentError
     end
 
     describe 'physical devices' do
@@ -65,15 +74,17 @@ describe RunLoop::Device do
 
       it 'find by name' do
         expect(sim_control).to receive(:simulators).and_return([])
-        expect(sim_control.xctools).to receive(:instruments).with(:devices).and_return([device])
-        actual = RunLoop::Device.device_with_identifier(device.name, sim_control)
+        expect(instruments).to receive(:physical_devices).and_return([device])
+
+        actual = RunLoop::Device.device_with_identifier(device.name, options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
 
       it 'find by udid' do
         expect(sim_control).to receive(:simulators).and_return([])
-        expect(sim_control.xctools).to receive(:instruments).with(:devices).and_return([device])
-        actual = RunLoop::Device.device_with_identifier(device.udid, sim_control)
+        expect(instruments).to receive(:physical_devices).and_return([device])
+
+        actual = RunLoop::Device.device_with_identifier(device.udid, options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
     end
@@ -88,14 +99,15 @@ describe RunLoop::Device do
 
       it 'find by name' do
         expect(sim_control).to receive(:simulators).and_return([device])
+
         actual = RunLoop::Device.device_with_identifier(device.instruments_identifier,
-                                                        sim_control)
+                                                        options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
 
       it 'find by udid' do
         expect(sim_control).to receive(:simulators).and_return([device])
-        actual = RunLoop::Device.device_with_identifier(device.udid, sim_control)
+        actual = RunLoop::Device.device_with_identifier(device.udid, options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
     end
