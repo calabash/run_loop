@@ -1,6 +1,8 @@
 require 'singleton'
 
 class Resources
+
+  include RunLoop::Regex
   include Singleton
 
   attr_reader :xcode
@@ -164,7 +166,7 @@ class Resources
     @alt_xcode_install_paths ||= lambda {
       min_xcode_version = RunLoop::Version.new('5.1.1')
       Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
-        xcode_version = path[/(\d\.\d(\.\d)?)/, 0]
+        xcode_version = path[VERSION_REGEX, 0]
         if RunLoop::Version.new(xcode_version) >= min_xcode_version
           path
         else
