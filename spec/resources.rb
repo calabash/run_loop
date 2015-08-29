@@ -31,6 +31,10 @@ class Resources
     xcode.version_gte_6?
   end
 
+  def instruments
+    @instruments ||= RunLoop::Instruments.new
+  end
+
   def with_debugging(&block)
     original_value = ENV['DEBUG']
     ENV['DEBUG'] = '1'
@@ -42,7 +46,7 @@ class Resources
   end
 
   def current_xcode_version
-    @current_xcode_version ||= RunLoop::XCode.new.version
+    xcode.version
   end
 
   def resources_dir
@@ -184,7 +188,7 @@ class Resources
             nil
           elsif version >= RunLoop::Version.new('5.1.1')
             {
-                  :version => RunLoop::Xcode.version,
+                  :version => RunLoop::Xcode.new.version,
                   :path => path
             }
           else
@@ -401,13 +405,13 @@ class Resources
     path and File.exist? path
   end
 
-  def physical_devices_for_testing(xcode_tools)
+  def physical_devices_for_testing(instruments)
     # Xcode 6 + iOS 8 - devices on the same network, whether development or not,
     # appear when calling $ xcrun instruments -s devices. For the purposes of
     # testing, we will only try to connect to devices that are connected via
     # udid.
     @physical_devices_for_testing ||= lambda {
-      devices = xcode_tools.instruments(:devices)
+      devices = instruments.physical_devices
       if idevice_id_available?
         white_list = `#{idevice_id_bin_path} -l`.strip.split("\n")
         devices.select do | device |
