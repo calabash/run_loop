@@ -1,5 +1,6 @@
 require 'irb/completion'
 require 'irb/ext/save-history'
+require 'benchmark'
 require 'run_loop'
 
 AwesomePrint.irb!
@@ -9,14 +10,59 @@ ARGV.concat [ '--readline',
               'simple']
 
 IRB.conf[:SAVE_HISTORY] = 100
-
-# Store results in home directory with specified file name
 IRB.conf[:HISTORY_FILE] = '.irb-history'
+
+IRB.conf[:AUTO_INDENT] = true
+
+IRB.conf[:PROMPT][:RUN_LOOP] = {
+  :PROMPT_I => "run-loop #{RunLoop::VERSION}> ",
+  :PROMPT_N => "run-loop #{RunLoop::VERSION}> ",
+  :PROMPT_S => nil,
+  :PROMPT_C => "> ",
+  :AUTO_INDENT => true,
+  :RETURN => "%s\n"
+}
+
+IRB.conf[:PROMPT_MODE] = :RUN_LOOP
+
+begin
+  require 'pry'
+  Pry.config.history.should_save = false
+  Pry.config.history.should_load = false
+  require 'pry-nav'
+rescue LoadError => _
+
+end
 
 spec_resources = './spec/resources.rb'
 print "require '#{spec_resources}'..."
 require spec_resources
 puts 'done!'
+
+
+puts ''
+puts '#       =>  Useful Methods  <=          #'
+puts '> xcode       => Xcode instance'
+puts '> instruments => Instruments instance'
+puts '> simcontrol  => SimControl instance'
+puts '> default_sim => Default simulator'
+puts ''
+
+def xcode
+  @xcode ||= RunLoop::Xcode.new
+end
+
+def instruments
+  @instruments ||= RunLoop::Instruments.new
+end
+
+def simcontrol
+  @simcontrol ||= RunLoop::SimControl.new
+end
+
+def default_sim
+  @default_sim ||= RunLoop::Core.default_simulator
+end
 
 motd=["Let's get this done!", 'Ready to rumble.', 'Enjoy.', 'Remember to breathe.',
       'Take a deep breath.', "Isn't it time for a break?", 'Can I get you a coffee?',
@@ -24,3 +70,4 @@ motd=["Let's get this done!", 'Ready to rumble.', 'Enjoy.', 'Remember to breathe
       "Don't touch that button!", "I'm gonna take this to 11.", 'Console. Engaged.',
       'Your wish is my command.', 'This console session was created just for you.']
 puts "#{motd.sample()}"
+
