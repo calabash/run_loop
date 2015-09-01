@@ -194,7 +194,12 @@ module RunLoop::Simctl
             ['launchd_sim', true],
 
             # Yes, but does not always appear.
-            ['CoreSimulatorBridge', true]
+            ['CoreSimulatorBridge', true],
+
+            # Xcode 7
+            ['ids_simd', true],
+            ['com.apple.CoreSimulator.CoreSimulatorService', true],
+            ['com.apple.CoreSimulator.SimVerificationService', true]
       ].each do |pair|
         name = pair[0]
         send_term = pair[1]
