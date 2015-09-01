@@ -6,7 +6,7 @@ describe 'RunLoop' do
 
     it 'raises error if Instruments.app is running' do
       Resources.shared.launch_instruments_app
-      expect { RunLoop.run }.to raise_error
+      expect { RunLoop.run }.to raise_error RuntimeError
     end
   end
 end

@@ -13,7 +13,7 @@ describe RunLoop::ProcessTerminator do
         terminator = RunLoop::ProcessTerminator.new(pid, 'TERM', process_name, options)
         expect {
           terminator.send(:wait_for_process_to_terminate)
-        }.to raise_error
+        }.to raise_error RuntimeError
       end
     end
 
