@@ -84,6 +84,10 @@ module RunLoop
       str
     end
 
+    def inspect
+      "#<Version #{to_s}>"
+    end
+
     # Compare this version to another for equality.
     # @param [Version] other the version to compare against
     # @return [Boolean] true if this Version is the same as `other`

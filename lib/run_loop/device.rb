@@ -100,12 +100,18 @@ Please update your sources.))
       raise ArgumentError, "Could not find a device with a UDID or name matching '#{udid_or_name}'"
     end
 
+    # @!visibility private
     def to_s
       if simulator?
         "#<Simulator: #{name} #{udid} #{instruction_set}>"
       else
         "#<Device: #{name} #{udid}>"
       end
+    end
+
+    # @!visibility private
+    def inspect
+      to_s
     end
 
     # Returns and instruments-ready device identifier that is a suitable value
