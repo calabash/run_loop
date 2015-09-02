@@ -29,6 +29,16 @@ module RunLoop
           'jp' => 'Japanese'
     }
 
+    # @!visibility private
+    def to_s
+      "#<L10N #{uikit_bundle_l10n_path}>"
+    end
+
+    # @!visibility private
+    def inspect
+      to_s
+    end
+
     # maps the ios keyboard localization to a language directory where we can
     # find a key-code -> localized-label mapping
     def lang_dir(localized_lang)
