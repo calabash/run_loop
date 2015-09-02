@@ -22,6 +22,16 @@ module RunLoop
       @plist_buddy = RunLoop::PlistBuddy.new
     end
 
+    # @!visibility private
+    def to_s
+      "#<Lipo #{bundle_path}>"
+    end
+
+    # @!visibility private
+    def inspect
+      to_s
+    end
+
     # Inspect the `CFBundleExecutable` in the app bundle path with `lipo` and
     # compare the result with the target device's instruction set.
     #
