@@ -108,6 +108,10 @@ Please update your sources.))
       end
     end
 
+    def inspect
+      to_s
+    end
+
     # Returns and instruments-ready device identifier that is a suitable value
     # for DEVICE_TARGET environment variable.
     #
