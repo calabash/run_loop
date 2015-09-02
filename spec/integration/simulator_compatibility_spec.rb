@@ -37,7 +37,7 @@ if Resources.shared.core_simulator_env?
         options =
               {
                     :app => Resources.shared.app_bundle_path_i386,
-                    :device_target => air.instruments_identifier,
+                    :device_target => air.instruments_identifier(sim_control.xcode),
                     :sim_control => sim_control
               }
 
@@ -74,7 +74,7 @@ if Resources.shared.core_simulator_env?
           options =
                 {
                       :app => Resources.shared.app_bundle_path_x86_64,
-                      :device_target => ipad2.instruments_identifier,
+                      :device_target => ipad2.instruments_identifier(sim_control.xcode),
                       :sim_control => sim_control
                 }
 

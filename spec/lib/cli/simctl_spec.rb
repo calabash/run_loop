@@ -36,8 +36,10 @@ if Resources.shared.core_simulator_env?
 
         it 'can create a device from default simulator' do
           expect(simctl.sim_control).to receive(:simulators).and_return([device])
-          expect(RunLoop::Core).to receive(:default_simulator).and_return(device.instruments_identifier)
-          expect(simctl.expect_device({})).to be_a_kind_of( RunLoop::Device)
+          identifier = device.instruments_identifier(simctl.sim_control.xcode)
+          expect(RunLoop::Core).to receive(:default_simulator).and_return(identifier)
+
+          expect(simctl.expect_device({})).to be_a_kind_of(RunLoop::Device)
         end
       end
 
@@ -50,7 +52,8 @@ if Resources.shared.core_simulator_env?
 
         it 'name' do
           expect(simctl.sim_control).to receive(:simulators).and_return([device])
-          options = { :device => device.instruments_identifier }
+          identifier = device.instruments_identifier(simctl.sim_control.xcode)
+          options = { :device => identifier }
           expect(simctl.expect_device(options).udid).to be == device.udid
         end
 

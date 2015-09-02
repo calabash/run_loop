@@ -45,16 +45,19 @@ describe RunLoop::CLI::Instruments do
     end
 
     describe 'launching different simulators' do
+      let(:instruments) { RunLoop::Instruments.new }
+      let(:xcode) { instruments.xcode }
+
       it 'iOS >= 9' do
 
-        sampled = RunLoop::Instruments.new.simulators.select do |device|
+        sampled = instruments.simulators.select do |device|
           device.version >= RunLoop::Version.new('9.0')
         end.sample
 
         if sampled.nil?
           Luffa.log_warn("Skipping test: no iOS Simulators >= 8.0 found")
         else
-          simulator = sampled.instruments_identifier
+          simulator = sampled.instruments_identifier(xcode)
           cmd =
                 [
                       'run-loop instruments launch',
@@ -69,7 +72,7 @@ describe RunLoop::CLI::Instruments do
 
       it '8.0 <= iOS < 9.0' do
 
-        sampled = RunLoop::Instruments.new.simulators.select do |device|
+        sampled = instruments.simulators.select do |device|
           device.version >= RunLoop::Version.new('8.0') &&
                 device.version < RunLoop::Version.new('9.0') &&
                 device.name[/Resizable/, 0].nil?
@@ -78,7 +81,7 @@ describe RunLoop::CLI::Instruments do
         if sampled.nil?
           Luffa.log_warn("Skipping test: no 8.0 <= iOS Simulators < 9.0 found")
         else
-          simulator = sampled.instruments_identifier
+          simulator = sampled.instruments_identifier(xcode)
           cmd =
                 [
                       'run-loop instruments launch',
@@ -91,14 +94,14 @@ describe RunLoop::CLI::Instruments do
       end
 
       it '7.1 <= iOS < 8.0' do
-        sampled = RunLoop::Instruments.new.simulators.select do |device|
+        sampled = instruments.simulators.select do |device|
           device.version == RunLoop::Version.new('7.1')
         end.sample
 
         if sampled.nil?
           Luffa.log_warn("Skipping test: no 7.1 <= iOS Simulators < 8.0 found")
         else
-          simulator = sampled.instruments_identifier
+          simulator = sampled.instruments_identifier(xcode)
           cmd =
                 [
                       'run-loop instruments launch',

@@ -134,8 +134,10 @@ module RunLoop
         # CoreSimulator
 
         udid = launch_options[:udid]
+        xcode = sim_control.xcode
+
         device = sim_control.simulators.detect do |sim|
-          sim.udid == udid || sim.instruments_identifier == udid
+          sim.udid == udid || sim.instruments_identifier(xcode) == udid
         end
 
         if device.nil?

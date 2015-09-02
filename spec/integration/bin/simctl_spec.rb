@@ -3,10 +3,13 @@ if Resources.shared.core_simulator_env?
 
   describe RunLoop::CLI::Simctl do
 
+    let(:sim_control) { RunLoop::SimControl.new }
+    let(:xcode) { sim_control.xcode }
+
     let(:bridge) {
       default = RunLoop::Core.default_simulator
-      device = RunLoop::SimControl.new.simulators.detect do |sim|
-        sim.instruments_identifier == default
+      device = sim_control.simulators.detect do |sim|
+        sim.instruments_identifier(xcode) == default
       end
       RunLoop::Simctl::Bridge.new(device, Resources.shared.app_bundle_path)
     }
@@ -89,7 +92,7 @@ if Resources.shared.core_simulator_env?
 
         it 'can install an app on simulator using name' do
           cmd << '--device'
-          cmd << device.instruments_identifier
+          cmd << device.instruments_identifier(xcode)
           Open3.popen3(cmd.shift, *cmd) do |_, stdout, stderr, process_status|
             out = stdout.read.strip
             ap out.split("\n")
