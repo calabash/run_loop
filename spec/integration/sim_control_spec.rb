@@ -234,7 +234,7 @@ describe RunLoop::SimControl do
         end
 
         it 'SDK >= 9.0' do
-          if sdk8_device
+          if sdk9_device
             expect(sim_control.enable_accessibility(sdk9_device)).to be_truthy
           else
             Luffa.log_warn('Skipping test: could not find an iOS Simulator >= 9.0')
