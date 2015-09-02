@@ -14,6 +14,16 @@ module RunLoop
 
     include RunLoop::Regex
 
+    # Returns a String representation.
+    def to_s
+      "#<Xcode #{version.to_s}>"
+    end
+
+    # Returns debug String representation
+    def inspect
+      to_s
+    end
+
     # Returns a version instance for `Xcode 7.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
