@@ -667,15 +667,15 @@ Please update your sources to pass an instance of RunLoop::Instruments))
       # behavior when GM is released.
       #
       # Xcode 7 Beta versions appear to behavior like Xcode 6 Beta versions.
-      res = templates.select { |name| name == 'Automation' }.first
-      return res if res
+      template = templates.find { |name| name == 'Automation' }
+      return template if template
 
-      candidate = templates.select do |path|
+      candidate = templates.find do |path|
         path =~ /\/Automation.tracetemplate/ and path =~ /Xcode/
       end
 
-      if !candidate.empty? && !candidate.first.nil?
-        return candidate.first.tr("\"", '').strip
+      if !candidate.nil?
+        return candidate.tr("\"", '').strip
       end
 
       message = ['Expected instruments to report an Automation tracetemplate.',
