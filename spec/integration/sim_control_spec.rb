@@ -156,9 +156,9 @@ describe RunLoop::SimControl do
           expect { sim_control.instance_eval { simctl_reset('unknown udid') } }.to raise_error RuntimeError
         end
         it 'resets the simulator with corresponding udid' do
-          sim_details = sim_control.instance_eval { sim_details(:udid) }
+          sim_details = sim_control.send(:sim_details, :udid)
           udid = sim_details.keys.sample
-          expect( sim_control.instance_eval { simctl_reset(udid) } ).to be == true
+          expect( sim_control.send(:simctl_reset, udid)).to be == true
           containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
           expect(File.exist? containers_dir).to be == false
         end
@@ -184,36 +184,63 @@ describe RunLoop::SimControl do
     end
   end
 
-  describe 'plist munging' do
-    let (:sim_control) { RunLoop::SimControl.new }
+  if Resources.shared.core_simulator_env?
+    describe 'plist munging' do
+      let (:sim_control) { RunLoop::SimControl.new }
 
-    let (:sdk8_device) {
-      test = lambda { |device|
-        device.version >= RunLoop::Version.new('8.0')
+      let (:sdk9_device) {
+        test = lambda { |device|
+          device.version >= RunLoop::Version.new('9.0')
+        }
+        Resources.shared.simulator_with_sdk_test(test, sim_control)
       }
-      Resources.shared.simulator_with_sdk_test(test, sim_control)
-    }
 
-    let (:sdk7_device) {
-      test = lambda { |device|
-        device.version < RunLoop::Version.new('8.0')
+      let (:sdk8_device) {
+        test = lambda { |device|
+          device.version >= RunLoop::Version.new('8.0') &&
+                device.version < RunLoop::Version.new('9.0')
+        }
+        Resources.shared.simulator_with_sdk_test(test, sim_control)
       }
+
+      let (:sdk7_device) {
+        test = lambda { |device|
+          device.version < RunLoop::Version.new('8.0')
+        }
       Resources.shared.simulator_with_sdk_test(test, sim_control)
-    }
+      }
 
-    describe 'enable accessibility on a device' do
+      describe 'enable accessibility on a device' do
 
-      it 'SDK < 8.0' do
-        expect(sim_control.enable_accessibility(sdk7_device)).to be_truthy
+        it 'SDK < 8.0' do
+          if sdk7_device
+            expect(sim_control.enable_accessibility(sdk7_device)).to be_truthy
+          else
+            Luffa.log_warn('Skipping test: could not find an iOS 7 simulator')
+          end
+        end
+
+        it '8.0 <= SDK < 9.0' do
+          if sdk8_device
+            expect(sim_control.enable_accessibility(sdk8_device)).to be_truthy
+          else
+            Luffa.log_warn('Skipping test: could not find an 8.0 <= iOS Simulator < 9.0')
+          end
+        end
+
+        it 'SDK >= 9.0' do
+          if sdk8_device
+            expect(sim_control.enable_accessibility(sdk9_device)).to be_truthy
+          else
+            Luffa.log_warn('Skipping test: could not find an iOS Simulator >= 9.0')
+          end
+        end
       end
 
-      it 'SDK >= 8.0' do
-        expect(sim_control.enable_accessibility(sdk8_device)).to be_truthy
+      it 'enable software keyboard on device' do
+        expect(sim_control.enable_software_keyboard(sdk8_device)).to be_truthy
       end
-    end
-
-    it 'enable software keyboard on device' do
-      expect(sim_control.enable_software_keyboard(sdk8_device)).to be_truthy
     end
   end
 end
+
