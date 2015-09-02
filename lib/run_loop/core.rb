@@ -29,7 +29,7 @@ module RunLoop
       SCRIPTS_PATH
     end
 
-    def self.log_run_loop_options(options, xctools)
+    def self.log_run_loop_options(options, xcode)
       return unless RunLoop::Environment.debug?
       # Ignore :sim_control b/c it is a ruby object; printing is not useful.
       ignored_keys = [:sim_control]
@@ -41,8 +41,8 @@ module RunLoop
       # Objects that override '==' cannot be printed by awesome_print
       # https://github.com/michaeldv/awesome_print/issues/154
       # RunLoop::Version overrides '=='
-      options_to_log[:xcode] = xctools.xcode_version.to_s
-      options_to_log[:xcode_path] = xctools.xcode_developer_dir
+      options_to_log[:xcode] = xcode.version.to_s
+      options_to_log[:xcode_path] = xcode.developer_dir
       message = options_to_log.ai({:sort_keys => true})
       logger = options[:logger]
       RunLoop::Logging.log_debug(logger, "\n" + message)
@@ -87,7 +87,7 @@ module RunLoop
       if sim_control.xcode_version_gte_6?
         sim_identifier = launch_options[:udid]
         simulator = sim_control.simulators.find do |simulator|
-          [simulator.instruments_identifier(sim_control.xctools),
+          [simulator.instruments_identifier(sim_control.xcode),
            simulator.udid].include?(sim_identifier)
         end
 
@@ -100,7 +100,7 @@ module RunLoop
         RunLoop::Logging.log_debug(logger, "Simulator instruction set '#{simulator.instruction_set}' is compatible with #{lipo.info}")
         true
       else
-        RunLoop::Logging.log_debug(logger, "Xcode #{sim_control.xctools.xcode_version} detected; skipping simulator architecture check.")
+        RunLoop::Logging.log_debug(logger, "Xcode #{sim_control.xcode_version} detected; skipping simulator architecture check.")
         false
       end
     end
@@ -124,7 +124,7 @@ module RunLoop
         sim_control.quit_sim
       end
 
-      if !sim_control.xctools.xcode_version_gte_6?
+      if !sim_control.xcode_version_gte_6?
         # Xcode 5.1.1
 
         # Will quit the simulator!
@@ -134,8 +134,10 @@ module RunLoop
         # CoreSimulator
 
         udid = launch_options[:udid]
+        xcode = sim_control.xcode
+
         device = sim_control.simulators.detect do |sim|
-          sim.udid == udid || sim.instruments_identifier == udid
+          sim.udid == udid || sim.instruments_identifier(xcode) == udid
         end
 
         if device.nil?
@@ -156,7 +158,7 @@ module RunLoop
 
         # Xcode 6.3 instruments cannot launch an app that is already installed on
         # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
-        if sim_control.xctools.xcode_version_gte_63?
+        if sim_control.xcode.version_gte_63?
           app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
           bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
 
@@ -172,10 +174,18 @@ module RunLoop
 
       logger = options[:logger]
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
-      xctools ||= options[:xctools] || sim_control.xctools
+
+      if options[:xctools]
+        RunLoop.deprecated('1.5.0', %q(
+RunLoop::XCTools has been replaced with RunLoop::Xcode.
+The :xctools key will be ignored.  It has been replaced by the :xcode key.
+Please update your sources to pass an instance of RunLoop::Xcode))
+      end
+
+      xcode ||= options[:xcode] || sim_control.xcode
 
       instruments = RunLoop::Instruments.new
-      instruments.kill_instruments
+      instruments.kill_instruments(xcode)
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
       if device_target && device_target.to_s.downcase == 'device'
@@ -251,9 +261,9 @@ module RunLoop
         self.prepare_simulator(merged_options, sim_control)
       end
 
-      self.log_run_loop_options(merged_options, xctools)
+      self.log_run_loop_options(merged_options, xcode)
 
-      automation_template = automation_template(xctools)
+      automation_template = automation_template(instruments)
 
       RunLoop::Logging.log_header(logger, "Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
 
@@ -388,20 +398,27 @@ module RunLoop
     #
     # For historical reasons, the most recent non-64b SDK should be used.
     #
-    # @param [RunLoop::XCTools] xcode_tools Used to detect the current xcode
+    # @param [RunLoop::XCTools, RunLoop::XCode] xcode Used to detect the current xcode
     #  version.
-    def self.default_simulator(xcode_tools=RunLoop::XCTools.new)
-      if xcode_tools.xcode_version_gte_7?
-        'iPhone 5s (9.0 Simulator)'
-      elsif xcode_tools.xcode_version_gte_64?
+    def self.default_simulator(xcode=RunLoop::Xcode.new)
+      if xcode.is_a?(RunLoop::XCTools)
+        RunLoop.deprecated('1.5.0',
+                           %q(
+RunLoop::XCTools has been replaced with RunLoop::Xcode.
+Please update your sources to pass an instance of RunLoop::Xcode))
+      end
+
+      if xcode.version_gte_7?
+        'iPhone 5s (9.0)'
+      elsif xcode.version_gte_64?
         'iPhone 5s (8.4 Simulator)'
-      elsif xcode_tools.xcode_version_gte_63?
+      elsif xcode.version_gte_63?
         'iPhone 5s (8.3 Simulator)'
-      elsif xcode_tools.xcode_version_gte_62?
+      elsif xcode.version_gte_62?
         'iPhone 5s (8.2 Simulator)'
-      elsif xcode_tools.xcode_version_gte_61?
+      elsif xcode.version_gte_61?
         'iPhone 5s (8.1 Simulator)'
-      elsif xcode_tools.xcode_version_gte_6?
+      elsif xcode.version_gte_6?
         'iPhone 5s (8.0 Simulator)'
       else
         'iPhone Retina (4-inch) - Simulator - iOS 7.1'
@@ -409,7 +426,7 @@ module RunLoop
     end
 
     def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
-      xctools = sim_control.xctools
+      xcode = sim_control.xcode
 
       bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
 
@@ -419,9 +436,9 @@ module RunLoop
 
       udid = nil
 
-      if xctools.xcode_version_gte_51?
+      if xcode.version_gte_51?
         if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          device_target = self.default_simulator(xctools)
+          device_target = self.default_simulator(xcode)
         end
         udid = device_target
 
@@ -429,6 +446,7 @@ module RunLoop
           bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
         end
       else
+        #TODO: this can be removed - Xcode < 5.1.1 not supported.
         if device_target == 'simulator'
 
           unless File.exist?(bundle_dir_or_bundle_id)
@@ -621,15 +639,25 @@ module RunLoop
       result
     end
 
-    def self.automation_template(xctools, candidate = RunLoop::Environment.trace_template)
+    def self.automation_template(instruments, candidate=RunLoop::Environment.trace_template)
       unless candidate && File.exist?(candidate)
-        candidate = default_tracetemplate xctools
+        candidate = default_tracetemplate(instruments)
       end
       candidate
     end
 
-    def self.default_tracetemplate(xctools=RunLoop::XCTools.new)
-      templates = xctools.instruments :templates
+    def self.default_tracetemplate(instruments_arg=RunLoop::Instruments.new)
+      if instruments_arg.is_a?(RunLoop::XCTools)
+        RunLoop.deprecated('1.5.0',
+                           %q(
+RunLoop::XCTools has been replaced with RunLoop::Xcode.
+Please update your sources to pass an instance of RunLoop::Instruments))
+        instruments = RunLoop::Instruments.new
+      else
+        instruments = instruments_arg
+      end
+
+      templates = instruments.templates
 
       # xcrun instruments -s templates
       # Xcode >= 6 will return known, Apple defined tracetemplates as names
@@ -641,23 +669,23 @@ module RunLoop
       # behavior when GM is released.
       #
       # Xcode 7 Beta versions appear to behavior like Xcode 6 Beta versions.
-      res = templates.select { |name| name == 'Automation' }.first
-      return res if res
+      template = templates.find { |name| name == 'Automation' }
+      return template if template
 
-      candidate = templates.select do |path|
+      candidate = templates.find do |path|
         path =~ /\/Automation.tracetemplate/ and path =~ /Xcode/
       end
 
-      if !candidate.empty? && !candidate.first.nil?
-        return candidate.first.tr("\"", '').strip
+      if !candidate.nil?
+        return candidate.tr("\"", '').strip
       end
 
-      msgs = ['Expected instruments to report an Automation tracetemplate.',
+      message = ['Expected instruments to report an Automation tracetemplate.',
               'Please report this as bug:  https://github.com/calabash/run_loop/issues',
               "In the bug report, include the output of:\n",
               '$ xcrun xcodebuild -version',
               "$ xcrun instruments -s templates\n"]
-      raise msgs.join("\n")
+      raise message.join("\n")
     end
 
     # @deprecated 1.0.5
@@ -675,8 +703,8 @@ module RunLoop
     end
 
     # @deprecated 1.0.0 replaced with Xctools#version
-    def self.xcode_version(xctools=RunLoop::XCTools.new)
-      xctools.xcode_version.to_s
+    def self.xcode_version(xcode=RunLoop::Xcode.new)
+      xcode.version
     end
 
     # @deprecated since 1.0.0

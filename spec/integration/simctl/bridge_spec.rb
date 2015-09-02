@@ -1,6 +1,10 @@
-unless Luffa::Environment.travis_ci?
+if Resources.shared.core_simulator_env?
 
   describe RunLoop::Simctl::Bridge do
+
+    before do
+      RunLoop::SimControl.terminate_all_sims
+    end
 
     let (:abp) { Resources.shared.cal_app_bundle_path }
 
@@ -11,10 +15,10 @@ unless Luffa::Environment.travis_ci?
     }
 
     let (:device) {
-      sim_control.simulators.shuffle.detect do |device|
-        [device.state == 'Shutdown',
-         device.name != 'rspec-0test-device',
-         !device.name[/Resizable/,0]].all?
+      sim_control.simulators.find do |device|
+        device.version > RunLoop::Version.new('7.1') &&
+              !device.name[/Resizable/, 0] &&
+              device.name != 'rspec-test-device'
       end
     }
 
@@ -55,5 +59,4 @@ unless Luffa::Environment.travis_ci?
       bridge.reset_app_sandbox
     end
   end
-
 end

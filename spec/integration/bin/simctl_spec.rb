@@ -1,19 +1,22 @@
-unless Luffa::Environment.travis_ci?
+if Resources.shared.core_simulator_env?
   require 'run_loop/cli/simctl'
 
   describe RunLoop::CLI::Simctl do
 
+    let(:sim_control) { RunLoop::SimControl.new }
+    let(:xcode) { sim_control.xcode }
+
     let(:bridge) {
       default = RunLoop::Core.default_simulator
-      device = RunLoop::SimControl.new.simulators.detect do |sim|
-        sim.instruments_identifier == default
+      device = sim_control.simulators.detect do |sim|
+        sim.instruments_identifier(xcode) == default
       end
       RunLoop::Simctl::Bridge.new(device, Resources.shared.app_bundle_path)
     }
 
-    describe 'bundle exec run-loop simctl booted' do
+    describe 'run-loop simctl booted' do
 
-      let(:cmd) { 'bundle exec run-loop simctl booted' }
+      let(:cmd) { 'run-loop simctl booted' }
 
       before {
         bridge.shutdown
@@ -24,7 +27,10 @@ unless Luffa::Environment.travis_ci?
         args = cmd.split(' ')
         Open3.popen3(args.shift, *args) do |_, stdout, _, process_status|
           out = stdout.read.strip
-          expect(out).to be == 'No simulator is booted.'
+          ap out.split("\n")
+          xcode_version = Resources.shared.current_xcode_version.to_s
+          expected = "No simulator for active Xcode (version #{xcode_version}) is booted."
+          expect(out).to be == expected
           expect(process_status.value.exitstatus).to be == 0
         end
       end
@@ -34,6 +40,7 @@ unless Luffa::Environment.travis_ci?
         args = cmd.split(' ')
         Open3.popen3(args.shift, *args) do |_, stdout, _, process_status|
           out = stdout.read.strip
+          ap out.split("\n")
           expect(out[/iPhone 5s/, 0]).to be_truthy
           expect(out[/x86_64/, 0]).to be_truthy
           expect(process_status.value.exitstatus).to be == 0
@@ -47,6 +54,10 @@ unless Luffa::Environment.travis_ci?
         'run-loop simctl install --debug --app spec/resources/CalSmoke.app'.split(' ')
       }
 
+      let(:bundle_id_regex) { /Installed 'sh.calaba.CalSmoke'/ }
+      let(:will_not_reinstall_regex) { /Will not re-install 'sh.calaba.CalSmoke' because the SHAs match/ }
+      let(:will_reinstall_regex) { /Will re-install 'sh.calaba.CalSmoke' because the SHAs don't match./}
+
       describe 'app is not installed' do
 
         before {
@@ -58,8 +69,9 @@ unless Luffa::Environment.travis_ci?
         it 'can install an app on default simulator' do
           Open3.popen3(cmd.shift, *cmd) do |_, stdout, stderr, process_status|
             out = stdout.read.strip
+            ap out.split("\n")
             expect(out[/iPhone 5s/, 0]).to be_truthy
-            expect(out[/Installed 'com.xamarin.CalSmoke'/, 0]).to be_truthy
+            expect(out[bundle_id_regex, 0]).to be_truthy
             expect(stderr.read).to be == ''
             expect(process_status.value.exitstatus).to be == 0
           end
@@ -70,8 +82,9 @@ unless Luffa::Environment.travis_ci?
           cmd << device.udid
           Open3.popen3(cmd.shift, *cmd) do |_, stdout, stderr, process_status|
             out = stdout.read.strip
+            ap out.split("\n")
             expect(out[/iPhone 5s/, 0]).to be_truthy
-            expect(out[/Installed 'com.xamarin.CalSmoke'/, 0]).to be_truthy
+            expect(out[bundle_id_regex, 0]).to be_truthy
             expect(stderr.read).to be == ''
             expect(process_status.value.exitstatus).to be == 0
           end
@@ -79,11 +92,12 @@ unless Luffa::Environment.travis_ci?
 
         it 'can install an app on simulator using name' do
           cmd << '--device'
-          cmd << device.instruments_identifier
+          cmd << device.instruments_identifier(xcode)
           Open3.popen3(cmd.shift, *cmd) do |_, stdout, stderr, process_status|
             out = stdout.read.strip
+            ap out.split("\n")
             expect(out[/iPhone 5s/, 0]).to be_truthy
-            expect(out[/Installed 'com.xamarin.CalSmoke'/, 0]).to be_truthy
+            expect(out[bundle_id_regex, 0]).to be_truthy
             expect(stderr.read).to be == ''
             expect(process_status.value.exitstatus).to be == 0
           end
@@ -99,9 +113,10 @@ unless Luffa::Environment.travis_ci?
         it 'skips the install' do
           Open3.popen3(cmd.shift, *cmd) do |_, stdout, stderr, process_status|
             out = stdout.read.strip
+            ap out.split("\n")
             expect(out[/iPhone 5s/, 0]).to be_truthy
-            expect(out[/Installed 'com.xamarin.CalSmoke'/, 0]).to be_truthy
-            expect(out[/Will not re-install 'com.xamarin.CalSmoke' because the SHAs match/, 0]).to be_truthy
+            expect(out[bundle_id_regex, 0]).to be_truthy
+            expect(out[will_not_reinstall_regex, 0]).to be_truthy
             expect(stderr.read).to be == ''
             expect(process_status.value.exitstatus).to be == 0
           end
@@ -112,14 +127,18 @@ unless Luffa::Environment.travis_ci?
         it 're-installs the app' do
           app_bundle_dir = bridge.fetch_app_dir
           path = FileUtils.touch(File.join(app_bundle_dir, 'tmp.txt')).first
+
           File.open(path, 'w') do |file|
             file.write('some text')
           end
+
           Open3.popen3(cmd.shift, *cmd) do |_, stdout, stderr, process_status|
             out = stdout.read.strip
+            ap out.split("\n")
+
             expect(out[/iPhone 5s/, 0]).to be_truthy
-            expect(out[/Installed 'com.xamarin.CalSmoke'/, 0]).to be_truthy
-            expect(out[/Will re-install 'com.xamarin.CalSmoke' because the SHAs don't match/, 0]).to be_truthy
+            expect(out[bundle_id_regex, 0]).to be_truthy
+            expect(out[will_reinstall_regex, 0]).to be_truthy
             expect(stderr.read).to be == ''
             expect(process_status.value.exitstatus).to be == 0
           end
@@ -131,8 +150,9 @@ unless Luffa::Environment.travis_ci?
           cmd << '--force'
           Open3.popen3(cmd.shift, *cmd) do |_, stdout, stderr, process_status|
             out = stdout.read.strip
+            ap out.split("\n")
             expect(out[/iPhone 5s/, 0]).to be_truthy
-            expect(out[/Installed 'com.xamarin.CalSmoke'/, 0]).to be_truthy
+            expect(out[bundle_id_regex, 0]).to be_truthy
             expect(out[/Will force a re-install/, 0]).to be_truthy
             expect(stderr.read).to be == ''
             expect(process_status.value.exitstatus).to be == 0

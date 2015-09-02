@@ -2,6 +2,10 @@ require 'tmpdir'
 
 describe RunLoop::Core do
 
+  let(:sim_control) { RunLoop::SimControl.new }
+  let(:xcode) { sim_control.xcode }
+  let(:instruments) { RunLoop::Instruments.new }
+
   describe '.automation_template' do
 
     it 'respects the TRACE_TEMPLATE env var if the tracetemplate exists' do
@@ -9,14 +13,12 @@ describe RunLoop::Core do
       tracetemplate = File.expand_path(File.join(dir, 'some.tracetemplate'))
       FileUtils.touch tracetemplate
       expect(RunLoop::Environment).to receive(:trace_template).and_return(tracetemplate)
-      xctools = RunLoop::XCTools.new
-      expect(RunLoop::Core.automation_template xctools).to be == tracetemplate
+      expect(RunLoop::Core.automation_template(instruments)).to be == tracetemplate
     end
   end
 
   describe '.default_tracetemplate' do
     it 'raises an error when template cannot be found' do
-      xctools = RunLoop::XCTools.new
       templates =
             [
                   "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Leaks.tracetemplate",
@@ -24,120 +26,84 @@ describe RunLoop::Core do
                   "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/System Trace.tracetemplate",
                   "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Time Profiler.tracetemplate",
             ]
-      expect(xctools).to receive(:instruments).with(:templates).and_return(templates)
-      expect { RunLoop::Core.default_tracetemplate(xctools) }.to raise_error(RuntimeError)
+      expect(instruments).to receive(:templates).and_return(templates)
+
+      expect do
+        RunLoop::Core.default_tracetemplate(instruments)
+      end.to raise_error(RuntimeError)
     end
   end
 
   describe '.default_simulator' do
-    it "when Xcode 5.1 it returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1'" do
-      version = RunLoop::Version.new('5.1')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode < 6.0' do
       expected = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 5.1.1 it returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1'" do
-      version = RunLoop::Version.new('5.1.1')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-      expected = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
-    end
-
-    it "when Xcode 6.0* it returns 'iPhone 5s (8.0 Simulator)'" do
-      version = RunLoop::Version.new('6.0')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.0*' do
       expected = 'iPhone 5s (8.0 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v60
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 6.1* it returns 'iPhone 5s (8.1 Simulator)'" do
-      version = RunLoop::Version.new('6.1')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.1*' do
       expected = 'iPhone 5s (8.1 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v61
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 6.2* it returns 'iPhone 5s (8.2 Simulator)'" do
-      version = RunLoop::Version.new('6.2')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.2*' do
       expected = 'iPhone 5s (8.2 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v62
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 6.3* it returns 'iPhone 5s (8.3 Simulator)'" do
-      version = RunLoop::Version.new('6.3')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.3*' do
       expected = 'iPhone 5s (8.3 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v63
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 6.4* it returns 'iPhone 5s (8.4 Simulator)'" do
-      version = RunLoop::Version.new('6.4')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
+    it 'Xcode 6.4*' do
       expected = 'iPhone 5s (8.4 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v64
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it "when Xcode 7.0 it returns 'iPhone 5s (9.0 Simulator)'" do
-      version = RunLoop::Version.new('7.0')
-      xctools = RunLoop::XCTools.new
-      expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-      expected = 'iPhone 5s (9.0 Simulator)'
-      actual = RunLoop::Core.default_simulator(xctools)
-      expect(actual).to be == expected
+    it 'Xcode > 7.0' do
+      expected = 'iPhone 5s (9.0)'
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v70
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
   end
 
   describe '.udid_and_bundle_for_launcher' do
-    describe 'when 5.1 <= xcode < 6.0' do
-      options = {:app => Resources.shared.cal_app_bundle_path}
-      valid_targets = [nil, '', 'simulator']
-      valid_versions = ['5.1', '5.1.1'].map { |elm| RunLoop::Version.new(elm) }
-      valid_targets.each do |target|
-        valid_versions.each do |version|
-          it "returns 'iPhone Retina (4-inch) - Simulator - iOS 7.1' for Xcode '#{version}' if simulator = '#{target.nil? ? 'nil' : target }'" do
-            sim_control = RunLoop::SimControl.new
-            xctools = sim_control.xctools
-            expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-            udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, sim_control)
-            expect(udid).to be == 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-            expect(apb).to be == options[:app]
-          end
-        end
-      end
+    let(:options) { {:app => Resources.shared.cal_app_bundle_path} }
+    let(:app) { options[:app] }
+
+    before do
+      expect(xcode).to receive(:version).and_return xcode.v51
+      expect(RunLoop::Core).to receive(:default_simulator).with(xcode).and_return 'Simulator'
     end
 
-    describe 'when xcode <= 6.0' do
-      options = {:app => Resources.shared.cal_app_bundle_path}
-      valid_targets = [nil, '', 'simulator']
-      valid_targets.each do |target|
-        it "returns 'iPhone 5s (8.0 Simulator)' for Xcode >= 6.0 if simulator = '#{target.nil? ? 'nil' : target }'" do
-          sim_control = RunLoop::SimControl.new
-          xctools = sim_control.xctools
-          version = RunLoop::Version.new('6.0')
-          expect(xctools).to receive(:xcode_version).at_least(:once).and_return(version)
-          default_sim = 'iPhone 5s (8.0 Simulator)'
-          expect(RunLoop::Core).to receive(:default_simulator).and_return(default_sim)
-          udid, apb = RunLoop::Core.udid_and_bundle_for_launcher(target, options, sim_control)
-          expect(udid).to be == default_sim
-          expect(apb).to be == options[:app]
-        end
-      end
+
+    it 'target is nil' do
+      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher(nil, options, sim_control)
+      expect(udid).to be == 'Simulator'
+      expect(app_bundle).to be == app
+    end
+
+    it "target is ''" do
+      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('', options, sim_control)
+      expect(udid).to be == 'Simulator'
+      expect(app_bundle).to be == app
+    end
+
+    it "target is 'simulator'" do
+      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('simulator', options, sim_control)
+      expect(udid).to be == 'Simulator'
+      expect(app_bundle).to be == app
     end
   end
 
@@ -206,12 +172,12 @@ describe RunLoop::Core do
       }
     }
 
-    let(:xctools) { RunLoop::XCTools.new }
+    let(:xcode) { RunLoop::Xcode.new }
 
     it "when DEBUG != '1' it logs nothing" do
       stub_env('DEBUG', '0')
       out = capture_stdout do
-        RunLoop::Core.log_run_loop_options(options, xctools)
+        RunLoop::Core.log_run_loop_options(options, xcode)
       end
       expect(out.string).to be == ''
     end
@@ -220,21 +186,21 @@ describe RunLoop::Core do
       before(:each) { stub_env('DEBUG', '1') }
       it 'does some logging' do
         out = capture_stdout do
-          RunLoop::Core.log_run_loop_options(options, xctools)
+          RunLoop::Core.log_run_loop_options(options, xcode)
         end
         expect(out.string).not_to be == ''
       end
 
       it 'does not print :sim_control key' do
         out = capture_stdout do
-          RunLoop::Core.log_run_loop_options(options, xctools)
+          RunLoop::Core.log_run_loop_options(options, xcode)
         end
         expect(out.string[/:sim_control/]).to be == nil
       end
 
       it 'does print xcode details' do
         out = capture_stdout do
-          RunLoop::Core.log_run_loop_options(options, xctools)
+          RunLoop::Core.log_run_loop_options(options, xcode)
         end
         expect(out.string[/:xcode/]).to be == ':xcode'
         expect(out.string[/:xcode_path/]).to be == ':xcode_path'
@@ -277,13 +243,10 @@ describe RunLoop::Core do
         end
       end
 
-      if RunLoop::XCTools.new.xcode_version_gte_6?
-        describe 'Xcode 6 behaviors' do
-          it ":device_target => Xcode 6 simulator UDID" do
-            options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
-            expect(RunLoop::Core.simulator_target?(options)).to be == true
-          end
-        end
+      it ":device_target => Xcode 6 simulator UDID" do
+        expect(sim_control).to receive(:xcode_version_gte_6?).and_return true
+        options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
+        expect(RunLoop::Core.simulator_target?(options, sim_control)).to be == true
       end
     end
   end
@@ -302,21 +265,38 @@ describe RunLoop::Core do
       it 'when launch_options[:udid] cannot be used to find simulator' do
        launch_options = {:udid => 'invalid simulator id' }
        sim_control = RunLoop::SimControl.new
-       expect {
-         RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                sim_control)
-       }.to raise_error RuntimeError
+
+       if Resources.shared.core_simulator_env?
+         expect {
+           RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                  sim_control)
+         }.to raise_error RuntimeError
+       else
+         expect do
+           RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                  sim_control)
+         end.not_to raise_error
+       end
       end
 
       it 'when architecture is incompatible with instruction set of target device' do
         launch_options = {:udid =>  RunLoop::Core.default_simulator,
                           :bundle_dir_or_bundle_id => Resources.shared.app_bundle_path_arm_FAT }
         sim_control = RunLoop::SimControl.new
-        expect_any_instance_of(RunLoop::Device).to receive(:instruction_set).and_return('nonsense')
-        expect {
-          RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                 sim_control)
-        }.to raise_error RunLoop::IncompatibleArchitecture
+
+        if Resources.shared.core_simulator_env?
+          expect_any_instance_of(RunLoop::Device).to receive(:instruction_set).and_return('nonsense')
+
+          expect do
+            RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                   sim_control)
+          end.to raise_error RunLoop::IncompatibleArchitecture
+        else
+          expect do
+            RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
+                                                                   sim_control)
+          end.not_to raise_error
+        end
       end
     end
 
@@ -325,14 +305,19 @@ describe RunLoop::Core do
                                                              sim_control)
     }
 
-    if RunLoop::XCTools.new.xcode_version_gte_6?
-      context 'simulator an binary are compatible' do
-        let(:sim_control) { RunLoop::SimControl.new }
-        let(:launch_options) { { :udid =>  RunLoop::Core.default_simulator,
-                                 :bundle_dir_or_bundle_id =>
-                                       Resources.shared.app_bundle_path_i386
-        }}
-        it { is_expected.to be == true }
+
+    context 'simulator an binary are compatible' do
+      let(:sim_control) { RunLoop::SimControl.new }
+      let(:launch_options) { { :udid =>  RunLoop::Core.default_simulator,
+                               :bundle_dir_or_bundle_id =>
+                                     Resources.shared.app_bundle_path_i386
+      }}
+      it do
+        if Resources.shared.core_simulator_env?
+          is_expected.to be == true
+        else
+          Luffa.log_warn('Skipping test - Xcode < 6 detected')
+        end
       end
     end
   end

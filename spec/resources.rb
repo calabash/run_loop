@@ -1,7 +1,11 @@
 require 'singleton'
 
 class Resources
+
+  include RunLoop::Regex
   include Singleton
+
+  attr_reader :xcode
 
   attr_accessor :fake_instruments_pids
 
@@ -21,6 +25,18 @@ class Resources
     travis_ci? ? 8 : 2
   end
 
+  def xcode
+    @xcode ||= RunLoop::Xcode.new
+  end
+
+  def core_simulator_env?
+    xcode.version_gte_6?
+  end
+
+  def instruments
+    @instruments ||= RunLoop::Instruments.new
+  end
+
   def with_debugging(&block)
     original_value = ENV['DEBUG']
     ENV['DEBUG'] = '1'
@@ -32,7 +48,7 @@ class Resources
   end
 
   def current_xcode_version
-    @current_xcode_version ||= RunLoop::XCTools.new.xcode_version
+    xcode.version
   end
 
   def resources_dir
@@ -130,7 +146,7 @@ class Resources
   def random_simulator_device(sim_control)
     @random_simulator_device ||= sim_control.simulators.shuffle.detect do |device|
       [device.state == 'Shutdown',
-         device.name != 'rspec-0test-device',
+         device.name != 'rspec-test-device',
          !device.name[/Resizable/,0]].all?
     end
   end
@@ -150,7 +166,7 @@ class Resources
     @alt_xcode_install_paths ||= lambda {
       min_xcode_version = RunLoop::Version.new('5.1.1')
       Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
-        xcode_version = path[/(\d\.\d(\.\d)?)/, 0]
+        xcode_version = path[VERSION_REGEX, 0]
         if RunLoop::Version.new(xcode_version) >= min_xcode_version
           path
         else
@@ -162,19 +178,19 @@ class Resources
 
   def alt_xcode_details_hash(skip_versions=[RunLoop::Version.new('6.0')])
     @alt_xcodes_gte_xc51_hash ||= lambda {
-      active_xcode_path = RunLoop::XCTools.new.xcode_developer_dir
+      active_xcode_path = RunLoop::Xcode.new.developer_dir
       with_developer_dir(active_xcode_path) do
         paths =  alt_xcode_install_paths
         paths.map do |path|
           ENV['DEVELOPER_DIR'] = path
-          version = RunLoop::XCTools.new.xcode_version
+          version = RunLoop::Xcode.new.version
           if path == active_xcode_path
             nil
           elsif skip_versions.include?(version)
             nil
           elsif version >= RunLoop::Version.new('5.1.1')
             {
-                  :version => RunLoop::XCTools.new.xcode_version,
+                  :version => RunLoop::Xcode.new.version,
                   :path => path
             }
           else
@@ -391,13 +407,13 @@ class Resources
     path and File.exist? path
   end
 
-  def physical_devices_for_testing(xcode_tools)
+  def physical_devices_for_testing(instruments)
     # Xcode 6 + iOS 8 - devices on the same network, whether development or not,
     # appear when calling $ xcrun instruments -s devices. For the purposes of
     # testing, we will only try to connect to devices that are connected via
     # udid.
     @physical_devices_for_testing ||= lambda {
-      devices = xcode_tools.instruments(:devices)
+      devices = instruments.physical_devices
       if idevice_id_available?
         white_list = `#{idevice_id_bin_path} -l`.strip.split("\n")
         devices.select do | device |
@@ -409,8 +425,8 @@ class Resources
     }.call
   end
 
-  def launch_instruments_app(xcode_tools = RunLoop::XCTools.new)
-    dev_dir = xcode_tools.xcode_developer_dir
+  def launch_instruments_app(xcode = RunLoop::Xcode.new)
+    dev_dir = xcode.developer_dir
     instruments_app = File.join(dev_dir, '..', 'Applications', 'Instruments.app')
     pid = Process.fork
     if pid.nil?

@@ -26,7 +26,7 @@ describe RunLoop::Instruments do
         Resources.shared.launch_sim_with_options(options) do |hash|
           expect(hash).not_to be nil
           expect(instruments.instruments_running?).to be == true
-          instruments.kill_instruments(sim_control.xctools)
+          instruments.kill_instruments(sim_control.xcode)
           expect(instruments.instruments_running?).to be == false
         end
       end
@@ -53,7 +53,7 @@ describe RunLoop::Instruments do
                 Resources.shared.launch_sim_with_options(options) do |hash|
                   expect(hash).not_to be nil
                   expect(instruments.instruments_running?).to be == true
-                  instruments.kill_instruments(sim_control.xctools)
+                  instruments.kill_instruments(sim_control.xcode)
                   expect(instruments.instruments_running?).to be == false
                 end
               end
@@ -65,8 +65,10 @@ describe RunLoop::Instruments do
 
     unless Resources.shared.travis_ci?
       describe 'running against devices' do
-        xctools = RunLoop::XCTools.new
-        physical_devices = Resources.shared.physical_devices_for_testing(xctools)
+        xcode = Resources.shared.xcode
+        instruments = Resources.shared.instruments
+
+        physical_devices = Resources.shared.physical_devices_for_testing(instruments)
         if physical_devices.empty?
           it 'no devices attached to this computer' do
             expect(true).to be == true
@@ -77,12 +79,12 @@ describe RunLoop::Instruments do
           end
         else
           physical_devices.each do |device|
-            if Resources.shared.incompatible_xcode_ios_version(device.version, xctools.xcode_version)
-              it "Skipping #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version} - combination not supported" do
+            if Resources.shared.incompatible_xcode_ios_version(device.version, xcode.version)
+              it "Skipping #{device.name} iOS #{device.version} Xcode #{xcode.version} - combination not supported" do
                 expect(true).to be == true
               end
             else
-              it "on #{device.name} iOS #{device.version} Xcode #{xctools.xcode_version}" do
+              it "on #{device.name} iOS #{device.version} Xcode #{xcode.version}" do
                 options =
                       {
                             :bundle_id => Resources.shared.bundle_id,
@@ -96,7 +98,7 @@ describe RunLoop::Instruments do
                 Resources.shared.launch_sim_with_options(options) do |hash|
                   expect(hash).not_to be nil
                   expect(instruments.instruments_running?).to be == true
-                  instruments.kill_instruments(xctools)
+                  instruments.kill_instruments(xcode)
                   expect(instruments.instruments_running?).to be == false
                 end
               end
@@ -106,8 +108,10 @@ describe RunLoop::Instruments do
       end
 
       describe 'regression: running on physical devices' do
-        xctools = RunLoop::XCTools.new
-        physical_devices = Resources.shared.physical_devices_for_testing(xctools)
+        xcode = Resources.shared.xcode
+        instruments = Resources.shared.instruments
+
+        physical_devices = Resources.shared.physical_devices_for_testing(instruments)
         xcode_installs = Resources.shared.alt_xcode_details_hash
         if not xcode_installs.empty? and Resources.shared.ideviceinstaller_available? and not physical_devices.empty?
           xcode_installs.each do |install_hash|
@@ -135,7 +139,7 @@ describe RunLoop::Instruments do
                     Resources.shared.launch_sim_with_options(options) do |hash|
                       expect(hash).not_to be nil
                       expect(instruments.instruments_running?).to be == true
-                      instruments.kill_instruments(xctools)
+                      instruments.kill_instruments(xcode)
                       expect(instruments.instruments_running?).to be == false
                     end
                   end
@@ -178,9 +182,19 @@ describe RunLoop::Instruments do
 
       Resources.shared.launch_sim_with_options(options) do |hash|
         expect(hash).not_to be nil
-        expect(instruments.instance_eval {
-                 pids_from_ps_output.count
-               }).to be == 1
+        expect(instruments.send(:pids_from_ps_output).count).to be == 1
+      end
+    end
+  end
+
+  describe '#execute_command' do
+    it 'yields stdout, stderr, and process_status' do
+      # equivalent to getting the version
+      instruments.send(:execute_command, []) do |stdout, stderr, process_status|
+        expect(stdout.read.strip).to be == ''
+        expect(stderr.read.strip[/instruments, version/, 0]).not_to be == nil
+        expect(process_status).to be_a_kind_of(Process::Waiter)
+        expect(process_status.value.exitstatus).not_to be == 0
       end
     end
   end

@@ -1,6 +1,8 @@
 module RunLoop
   class Device
 
+    include RunLoop::Regex
+
     attr_reader :name
     attr_reader :version
     attr_reader :udid
@@ -40,7 +42,7 @@ module RunLoop
     # passed to instruments.
     #
     # @example
-    #  RunLoop::Device.device_with_identifier('iPhone 4s (8.3 Simulator')
+    #  RunLoop::Device.device_with_identifier('iPhone 4s (8.3 Simulator'))
     #  RunLoop::Device.device_with_identifier('6E43E3CF-25F5-41CC-A833-588F043AE749')
     #  RunLoop::Device.device_with_identifier('denis') # Simulator or device named 'denis'
     #  RunLoop::Device.device_with_identifier('893688959205dc7eb48d603c558ede919ad8dd0c')
@@ -50,20 +52,45 @@ module RunLoop
     #
     # @param [String] udid_or_name A name or udid that identifies the device you
     #  are looking for.
-    # @param [RunLoop::SimControl] sim_control An instance of SimControl that
-    #  can be used for looking of simulators and providing an XCTools instance.
-    #  Users should never need to provide this.
+    # @param [Hash] options Allows callers to pass runtime models that might
+    #  optimize performance (via memoization).
+    # @option options [RunLoop::SimControl] :sim_control An instance of
+    #  SimControl.
+    # @option options [RunLoop::Instruments] :instruments An instance of
+    #  Instruments.
+    #
     # @return [RunLoop::Device] A device that matches `udid_or_name`.
     # @raise [ArgumentError] If no matching device can be found.
-    def self.device_with_identifier(udid_or_name, sim_control=RunLoop::SimControl.new)
+    def self.device_with_identifier(udid_or_name, options={})
+      if options.is_a?(RunLoop::SimControl)
+        RunLoop.deprecated('1.5.0', %q(
+The 'sim_control' argument has been deprecated.  It has been replaced by an
+options hash with two keys: :sim_control and :instruments.
+Please update your sources.))
+        merged_options = {
+              :sim_control => options,
+              :instruments => RunLoop::Instruments.new
+        }
+      else
+        default_options = {
+              :sim_control => RunLoop::SimControl.new,
+              :instruments => RunLoop::Instruments.new
+        }
+        merged_options = default_options.merge(options)
+      end
+
+      instruments = merged_options[:instruments]
+      sim_control = merged_options[:sim_control]
+
+      xcode = sim_control.xcode
       simulator = sim_control.simulators.detect do |sim|
-        sim.instruments_identifier == udid_or_name ||
+        sim.instruments_identifier(xcode) == udid_or_name ||
               sim.udid == udid_or_name
       end
 
       return simulator if !simulator.nil?
 
-      physical_device = sim_control.xctools.instruments(:devices).detect do |device|
+      physical_device = instruments.physical_devices.detect do |device|
         device.name == udid_or_name ||
               device.udid == udid_or_name
       end
@@ -73,46 +100,68 @@ module RunLoop
       raise ArgumentError, "Could not find a device with a UDID or name matching '#{udid_or_name}'"
     end
 
+    # @!visibility private
     def to_s
       if simulator?
-        "#<Simulator: #{instruments_identifier} #{udid} #{instruction_set}>"
+        "#<Simulator: #{name} #{udid} #{instruction_set}>"
       else
         "#<Device: #{name} #{udid}>"
       end
     end
 
+    # @!visibility private
+    def inspect
+      to_s
+    end
+
     # Returns and instruments-ready device identifier that is a suitable value
     # for DEVICE_TARGET environment variable.
     #
+    # @note As of 1.5.0, the XCTools optional argument has become a non-optional
+    #  Xcode argument.
+    #
+    # @param [RunLoop::Xcode, RunLoop::XCTools] xcode The version of the active
+    #  Xcode.
     # @return [String] An instruments-ready device identifier.
     # @raise [RuntimeError] If trying to obtain a instruments-ready identifier
     #  for a simulator when Xcode < 6.
-    def instruments_identifier(xcode_tools=RunLoop::XCTools.new)
+    def instruments_identifier(xcode=SIM_CONTROL.xcode)
+      if xcode.is_a?(RunLoop::XCTools)
+        RunLoop.deprecated('1.5.0',
+                           %q(
+RunLoop::XCTools has been replaced with a non-optional RunLoop::Xcode argument.
+Please update your sources to pass an instance of RunLoop::Xcode))
+      end
+
       if physical_device?
-        self.udid
+        udid
       else
-        unless xcode_tools.xcode_version_gte_6?
-          raise "Expected Xcode >= 6, but found version #{xcode_tools.xcode_version} - cannot create an identifier"
-        end
-        if self.version == RunLoop::Version.new('7.0.3')
-          version_part = self.version.to_s
+        if version == RunLoop::Version.new('7.0.3')
+          version_part = version.to_s
         else
-          version_part = "#{self.version.major}.#{self.version.minor}"
+          version_part = "#{version.major}.#{version.minor}"
         end
-        "#{self.name} (#{version_part} Simulator)"
+
+        if xcode.version_gte_7?
+          "#{name} (#{version_part})"
+        elsif xcode.version_gte_6?
+          "#{name} (#{version_part} Simulator)"
+        else
+          udid
+        end
       end
     end
 
     # Is this a physical device?
     # @return [Boolean] Returns true if this is a device.
     def physical_device?
-      not self.udid[/[a-f0-9]{40}/, 0].nil?
+      not udid[DEVICE_UDID_REGEX, 0].nil?
     end
 
     # Is this a simulator?
     # @return [Boolean] Returns true if this is a simulator.
     def simulator?
-      not self.physical_device?
+      not physical_device?
     end
 
     # Return the instruction set for this device.
@@ -128,7 +177,7 @@ module RunLoop
     # @raise [RuntimeError] Raises an error if this device is a physical device.
     # @return [String] An instruction set.
     def instruction_set
-      if self.simulator?
+      if simulator?
         if ['iPhone 4s', 'iPhone 5', 'iPad 2', 'iPad Retina'].include?(self.name)
           'i386'
         else
@@ -171,5 +220,8 @@ module RunLoop
 
     CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
     CORE_SIMULATOR_LOGS_DIR = File.expand_path('~/Library/Logs/CoreSimulator')
+
+    # TODO Is this a good idea?  It speeds up rspec tests by a factor of ~2x...
+    SIM_CONTROL = RunLoop::SimControl.new
   end
 end

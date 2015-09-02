@@ -35,6 +35,11 @@ module RunLoop
       "#<IPA: #{bundle_identifier}: '#{path}'>"
     end
 
+    # @!visibility private
+    def inspect
+      to_s
+    end
+
     # The bundle identifier of this ipa.
     # @return [String] A string representation of this ipa's CFBundleIdentifier
     # @raise [RuntimeError] If ipa does not expand into a Payload/<app name>.app

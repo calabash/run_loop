@@ -1,5 +1,5 @@
 module RunLoop
-  VERSION = '1.4.1'
+  VERSION = '1.5.0'
 
   # A model of a software release version that can be used to compare two versions.
   #
@@ -82,6 +82,10 @@ module RunLoop
       str = [major, minor, patch].compact.join('.')
       str = "#{str}.#{pre}" if pre
       str
+    end
+
+    def inspect
+      "#<Version #{to_s}>"
     end
 
     # Compare this version to another for equality.

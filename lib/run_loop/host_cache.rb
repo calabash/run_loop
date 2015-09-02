@@ -64,6 +64,16 @@ module RunLoop
       end
     end
 
+    # @!visibility private
+    def to_s
+      "#<HostCache #{path}>"
+    end
+
+    # @!visibility private
+    def inspect
+      to_s
+    end
+
     # Reads the current cache.
     # @return [Hash] A hash representation of the current state of the run-loop.
     def read

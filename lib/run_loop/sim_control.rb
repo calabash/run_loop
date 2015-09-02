@@ -14,40 +14,42 @@ module RunLoop
   # @todo `puts` calls need to be replaced with proper logging
   class SimControl
 
-    # Returns an instance of XCTools.
-    # @return [RunLoop::XCTools] The xcode tools instance that is used internally.
+    include RunLoop::Regex
+
+    # @deprecated 1.5.0 - replaced by #xcode
     def xctools
+      RunLoop.deprecated('1.5.0', 'Replaced by RunLoop::Xcode')
       @xctools ||= RunLoop::XCTools.new
     end
 
     # @!visibility private
-    # Are we running Xcode 7 or above?
-    #
-    # This is a convenience method.
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 7.0
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
+
+    # @!visibility private
+    def xcode_version
+      xcode.version
+    end
+
+    # @!visibility private
     def xcode_version_gte_7?
-      xctools.xcode_version_gte_7?
+      xcode.version_gte_7?
     end
 
     # @!visibility private
-    # Are we running Xcode 6 or above?
-    #
-    # This is a convenience method.
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.0
     def xcode_version_gte_6?
-      xctools.xcode_version_gte_6?
+      xcode.version_gte_6?
     end
 
     # @!visibility private
-    # Are we running Xcode 5.1 or above?
-    #
-    # This is a convenience method.
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 5.1
     def xcode_version_gte_51?
-      xctools.xcode_version_gte_51?
+      xcode.version_gte_51?
+    end
+
+    # @!visibility private
+    def xcode_developer_dir
+      xcode.developer_dir
     end
 
     # Return an instance of PlistBuddy.
@@ -309,26 +311,22 @@ module RunLoop
     # @param [String] udid the String to check
     # @return [Boolean] Returns true iff the `udid` matches /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/
     def sim_udid?(udid)
-      udid.length == 36 and udid[XCODE_6_SIM_UDID_REGEX,0] != nil
+      udid.length == 36 and udid[CORE_SIMULATOR_UDID_REGEX,0] != nil
     end
 
     def simulators
-      unless xcode_version_gte_51?
+      unless xcode_version_gte_6?
         raise RuntimeError, 'simctl is only available on Xcode >= 6'
       end
 
-      if xcode_version_gte_6?
-        hash = simctl_list :devices
-        sims = []
-        hash.each_pair do |sdk, list|
-          list.each do |details|
-            sims << RunLoop::Device.new(details[:name], sdk, details[:udid], details[:state])
-          end
+      hash = simctl_list :devices
+      sims = []
+      hash.each_pair do |sdk, list|
+        list.each do |details|
+          sims << RunLoop::Device.new(details[:name], sdk, details[:udid], details[:state])
         end
-        sims
-      else
-        raise NotImplementedError, 'the simulators method is not available yet for Xcode 5.1.1'
       end
+      sims
     end
 
     def accessibility_enabled?(device)
@@ -586,7 +584,7 @@ module RunLoop
     # @!visibility private
     # A regex for finding directories under ~/Library/Developer/CoreSimulator/Devices
     # and parsing the output of `simctl list sessions`.
-    XCODE_6_SIM_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
+    CORE_SIMULATOR_UDID_REGEX = /[A-F0-9]{8}-([A-F0-9]{4}-){3}[A-F0-9]{12}/.freeze
 
     CORE_SIMULATOR_KEYBOARD_PROPERTIES_HASH =
           {
@@ -639,7 +637,7 @@ module RunLoop
     #  Xcode.
     def sim_app_path
       @sim_app_path ||= lambda {
-        dev_dir = xctools.xcode_developer_dir
+        dev_dir = xcode_developer_dir
         if xcode_version_gte_7?
           "#{dev_dir}/Applications/Simulator.app"
         elsif xcode_version_gte_6?
@@ -704,9 +702,9 @@ module RunLoop
     def existing_sim_sdk_or_device_data_dirs
       base_dir = sim_app_support_dir
       if xcode_version_gte_6?
-        regex = XCODE_6_SIM_UDID_REGEX
+        regex = CORE_SIMULATOR_UDID_REGEX
       else
-        regex = /(\d)\.(\d)\.?(\d)?(-64)?/
+        regex = XCODE_511_SIMULATOR_REGEX
       end
       dirs = Dir.glob("#{base_dir}/*").select { |path|
         path =~ regex
@@ -840,13 +838,12 @@ module RunLoop
       quit_sim
 
       verbose = merged_opts[:verbose]
-      target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
+      target_udid = sim_data_dir[CORE_SIMULATOR_UDID_REGEX, 0]
 
       # Directory contains simulators not reported by instruments -s devices
       simulator_details = sim_details_keyed_with_udid[target_udid]
       if simulator_details.nil?
         if verbose
-          xcode_version = xctools.xcode_version
           puts ["INFO: Skipping '#{target_udid}' directory because",
                 "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
         end
@@ -930,13 +927,12 @@ module RunLoop
       quit_sim
 
       verbose = merged_opts[:verbose]
-      target_udid = sim_data_dir[XCODE_6_SIM_UDID_REGEX, 0]
+      target_udid = sim_data_dir[CORE_SIMULATOR_UDID_REGEX, 0]
 
       # Directory contains simulators not reported by instruments -s devices
       simulator_details = sim_details_keyed_with_udid[target_udid]
       if simulator_details.nil?
         if verbose
-          xcode_version = xctools.xcode_version
           puts ["INFO: Skipping '#{target_udid}' directory because",
                 "there is no corresponding simulator for active Xcode (version '#{xcode_version}')"].join("\n")
         end
@@ -1014,16 +1010,17 @@ module RunLoop
       end
 
       hash = {}
-      xctools.instruments(:sims).each do |elm|
-        launch_name = elm[/\A.+\((\d\.\d(\.\d)? Simulator\))/, 0]
-        udid = elm[XCODE_6_SIM_UDID_REGEX,0]
-        sdk_version = elm[/(\d\.\d(\.\d)? Simulator)/, 0].split(' ').first
-        value =
-              {
-                    :launch_name => launch_name,
-                    :udid => udid,
-                    :sdk_version => RunLoop::Version.new(sdk_version)
-              }
+
+      simulators.each do |device|
+        launch_name = device.instruments_identifier(xcode)
+        udid = device.udid
+        value = {
+              :launch_name => device.instruments_identifier(xcode),
+              :udid => device.udid,
+              :sdk_version => device.version
+
+        }
+
         if primary_key == :udid
           key = udid
         else
@@ -1153,15 +1150,27 @@ module RunLoop
         res = {}
         out.split("\n").each do |line|
 
-          possible_sdk = line[/(\d\.\d(\.\d)?)/,0]
+          possible_sdk = line[VERSION_REGEX,0]
           if possible_sdk
             current_sdk = possible_sdk
             res[current_sdk] = []
             next
           end
 
-          unavailable_skd = line[/Unavailable/, 0]
-          if unavailable_skd
+          unavailable_sdk = line[/Unavailable/, 0]
+          if unavailable_sdk
+            current_sdk = nil
+            next
+          end
+
+          watch_os = line[/watchOS/, 0]
+          if watch_os
+            current_sdk = nil
+            next
+          end
+
+          watch = line[/Apple Watch/, 0]
+          if watch
             current_sdk = nil
             next
           end
@@ -1169,7 +1178,7 @@ module RunLoop
           if current_sdk
             unless line[/unavailable/,0]
               name = line.split('(').first.strip
-              udid = line[XCODE_6_SIM_UDID_REGEX,0]
+              udid = line[CORE_SIMULATOR_UDID_REGEX,0]
               state = line[/(Booted|Shutdown)/,0]
               res[current_sdk] << {:name => name, :udid => udid, :state => state}
             end

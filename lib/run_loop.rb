@@ -1,6 +1,9 @@
+require 'run_loop/regex'
 require 'run_loop/directory'
 require 'run_loop/environment'
 require 'run_loop/logging'
+require 'run_loop/xcode'
+require 'run_loop/l10n'
 require 'run_loop/process_terminator'
 require 'run_loop/process_waiter'
 require 'run_loop/lldb'
@@ -24,6 +27,25 @@ require 'run_loop/simctl/bridge'
 require 'run_loop/simctl/plists'
 
 module RunLoop
+
+  # Prints a deprecated message that includes the line number.
+  #
+  # @param [String] version Indicates when the feature was deprecated.
+  # @param [String] msg Deprecation message (possibly suggesting alternatives)
+  # @return [void]
+  def self.deprecated(version, msg)
+
+    if RUBY_VERSION < '2.0'
+      stack = Kernel.caller[1..6].join("\n")
+    else
+      stack = Kernel.caller(0, 6)[1..-1].join("\n")
+    end
+
+    msg = "deprecated '#{version}' - #{msg}\n#{stack}"
+
+    $stderr.puts "\033[34mWARN: #{msg}\033[0m"
+    $stderr.flush
+  end
 
   class TimeoutError < RuntimeError
   end

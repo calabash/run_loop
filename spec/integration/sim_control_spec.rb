@@ -66,7 +66,7 @@ describe RunLoop::SimControl do
     before(:each) {  RunLoop::SimControl.terminate_all_sims }
     it "with Xcode #{Resources.shared.current_xcode_version} returns a path that exists" do
       sim_control.relaunch_sim
-      path = sim_control.instance_eval { sim_app_support_dir }
+      path = sim_control.send(:sim_app_support_dir)
       expect(File.exist?(path)).to be == true
     end
 
@@ -83,7 +83,7 @@ describe RunLoop::SimControl do
             Resources.shared.with_developer_dir(developer_dir) do
               local_sim_control = RunLoop::SimControl.new
               local_sim_control.relaunch_sim
-              path = local_sim_control.instance_eval { sim_app_support_dir }
+              path = local_sim_control.send(:sim_app_support_dir)
               expect(File.exist?(path)).to be == true
             end
           end
@@ -101,16 +101,15 @@ describe RunLoop::SimControl do
 
       it "with Xcode #{Resources.shared.current_xcode_version}" do
         sim_control.reset_sim_content_and_settings
-        actual = sim_control.instance_eval { existing_sim_sdk_or_device_data_dirs }
+        actual = sim_control.send(:existing_sim_sdk_or_device_data_dirs)
         expect(actual).to be_a Array
         expect(actual.count).to be >= 1
       end
 
-      # Xcode >= 6 only method
-      if RunLoop::XCTools.new.xcode_version_gte_6?
+      if Resources.shared.core_simulator_env?
         describe "with Xcode #{Resources.shared.current_xcode_version}" do
           it "can reset the content and settings on a single simulator" do
-            udid = sim_control.instance_eval { sim_details :udid }.keys.sample
+            udid = sim_control.send(:sim_details, :udid).keys.sample
             options = {:sim_udid => udid}
             sim_control.reset_sim_content_and_settings(options)
             containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
@@ -139,10 +138,13 @@ describe RunLoop::SimControl do
     it 'raises an error if on Xcode < 6' do
       local_sim_control = RunLoop::SimControl.new
       expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-      expect { local_sim_control.instance_eval { simctl_reset } }.to raise_error RuntimeError
+
+      expect do
+        local_sim_control.send(:simctl_reset)
+      end.to raise_error RuntimeError
     end
 
-    if RunLoop::XCTools.new.xcode_version_gte_6?
+    if Resources.shared.core_simulator_env?
       it 'resets the _all_ simulators when sim_udid is nil' do
         expect(sim_control.send(:simctl_reset)).to be == true
         sim_details = sim_control.send(:sim_details, :udid)
@@ -153,13 +155,15 @@ describe RunLoop::SimControl do
       end
 
       describe 'when sim_udid arg is not nil' do
+
         it 'raises an error when the sim_udid is invalid' do
-          expect { sim_control.instance_eval { simctl_reset('unknown udid') } }.to raise_error RuntimeError
+          expect { sim_control.send(:simctl_reset, 'unknown udid') }.to raise_error RuntimeError
         end
+
         it 'resets the simulator with corresponding udid' do
-          sim_details = sim_control.instance_eval { sim_details(:udid) }
+          sim_details = sim_control.send(:sim_details, :udid)
           udid = sim_details.keys.sample
-          expect( sim_control.instance_eval { simctl_reset(udid) } ).to be == true
+          expect( sim_control.send(:simctl_reset, udid)).to be == true
           containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
           expect(File.exist? containers_dir).to be == false
         end
@@ -168,16 +172,16 @@ describe RunLoop::SimControl do
   end
 
   describe '#sims_details' do
-    if RunLoop::XCTools.new.xcode_version_gte_6?
+    if Resources.shared.core_simulator_env?
       describe 'returns a hash with the primary key' do
         it ':udid' do
-          actual = sim_control.instance_eval { sim_details :udid }
+          actual = sim_control.send(:sim_details, :udid)
           expect(actual).to be_a Hash
           expect(actual.count).to be > 1
         end
 
         it ':launch_name' do
-          actual = sim_control.instance_eval { sim_details :launch_name }
+          actual = sim_control.send(:sim_details, :launch_name)
           expect(actual).to be_a Hash
           expect(actual.count).to be > 1
         end
@@ -185,36 +189,63 @@ describe RunLoop::SimControl do
     end
   end
 
-  describe 'plist munging' do
-    let (:sim_control) { RunLoop::SimControl.new }
+  if Resources.shared.core_simulator_env?
+    describe 'plist munging' do
+      let (:sim_control) { RunLoop::SimControl.new }
 
-    let (:sdk8_device) {
-      test = lambda { |device|
-        device.version >= RunLoop::Version.new('8.0')
+      let (:sdk9_device) {
+        test = lambda { |device|
+          device.version >= RunLoop::Version.new('9.0')
+        }
+        Resources.shared.simulator_with_sdk_test(test, sim_control)
       }
-      Resources.shared.simulator_with_sdk_test(test, sim_control)
-    }
 
-    let (:sdk7_device) {
-      test = lambda { |device|
-        device.version < RunLoop::Version.new('8.0')
+      let (:sdk8_device) {
+        test = lambda { |device|
+          device.version >= RunLoop::Version.new('8.0') &&
+                device.version < RunLoop::Version.new('9.0')
+        }
+        Resources.shared.simulator_with_sdk_test(test, sim_control)
       }
+
+      let (:sdk7_device) {
+        test = lambda { |device|
+          device.version < RunLoop::Version.new('8.0')
+        }
       Resources.shared.simulator_with_sdk_test(test, sim_control)
-    }
+      }
 
-    describe 'enable accessibility on a device' do
+      describe 'enable accessibility on a device' do
 
-      it 'SDK < 8.0' do
-        expect(sim_control.enable_accessibility(sdk7_device)).to be_truthy
+        it 'SDK < 8.0' do
+          if sdk7_device
+            expect(sim_control.enable_accessibility(sdk7_device)).to be_truthy
+          else
+            Luffa.log_warn('Skipping test: could not find an iOS 7 simulator')
+          end
+        end
+
+        it '8.0 <= SDK < 9.0' do
+          if sdk8_device
+            expect(sim_control.enable_accessibility(sdk8_device)).to be_truthy
+          else
+            Luffa.log_warn('Skipping test: could not find an 8.0 <= iOS Simulator < 9.0')
+          end
+        end
+
+        it 'SDK >= 9.0' do
+          if sdk9_device
+            expect(sim_control.enable_accessibility(sdk9_device)).to be_truthy
+          else
+            Luffa.log_warn('Skipping test: could not find an iOS Simulator >= 9.0')
+          end
+        end
       end
 
-      it 'SDK >= 8.0' do
-        expect(sim_control.enable_accessibility(sdk8_device)).to be_truthy
+      it 'enable software keyboard on device' do
+        expect(sim_control.enable_software_keyboard(sdk8_device)).to be_truthy
       end
-    end
-
-    it 'enable software keyboard on device' do
-      expect(sim_control.enable_software_keyboard(sdk8_device)).to be_truthy
     end
   end
 end
+

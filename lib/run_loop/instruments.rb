@@ -5,6 +5,24 @@ module RunLoop
   # @note All instruments commands are run in the context of `xcrun`.
   class Instruments
 
+    include RunLoop::Regex
+
+    attr_reader :xcode
+
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
+
+    # @!visibility private
+    def to_s
+      "#<Instruments #{version.to_s}>"
+    end
+
+    # @!visibility private
+    def inspect
+      to_s
+    end
+
     # Returns an Array of instruments process ids.
     #
     # @note The `block` parameter is included for legacy API and will be
@@ -32,10 +50,17 @@ module RunLoop
     #
     # Only one instruments process can be running at any one time.
     #
-    # @param [RunLoop::XCTools] xcode_tools The Xcode tools to use to determine
-    #  what version of Xcode is active.
-    def kill_instruments(xcode_tools = RunLoop::XCTools.new)
-      kill_signal = kill_signal xcode_tools
+    # @param [RunLoop::Xcode, RunLoop::XCTools] xcode Used to make check the
+    #  active Xcode version.
+    def kill_instruments(xcode = RunLoop::Xcode.new)
+      if xcode.is_a?(RunLoop::XCTools)
+        RunLoop.deprecated('1.5.0',
+                         %q(
+RunLoop::XCTools has been replaced with RunLoop::Xcode.
+Please update your sources to pass an instance of RunLoop::Xcode))
+      end
+
+      kill_signal = kill_signal(xcode)
       instruments_pids.each do |pid|
         terminator = RunLoop::ProcessTerminator.new(pid, kill_signal, 'instruments')
         unless terminator.kill_process
@@ -77,7 +102,143 @@ module RunLoop
       pid.to_i
     end
 
+    # Returns the instruments version.
+    # @return [RunLoop::Version] A version object.
+    def version
+      @instruments_version ||= lambda do
+        execute_command([]) do |_, stderr, _|
+          version_str = stderr.read[VERSION_REGEX, 0]
+          RunLoop::Version.new(version_str)
+        end
+      end.call
+    end
+
+    # Returns an array of Instruments.app templates.
+    #
+    # Depending on the Xcode version Instruments.app templates will either be:
+    #
+    # * A full path to the template. # Xcode 5 and Xcode > 5 betas
+    # * The name of a template.      # Xcode >= 6 (non beta)
+    #
+    # **Maintainers!** The rules above are important and explain why we can't
+    # simply filter by `~= /tracetemplate/`.
+    #
+    # Templates that users have saved will always be full paths - regardless
+    # of the Xcode version.
+    #
+    # @return [Array<String>] Instruments.app templates.
+    def templates
+      @instruments_templates ||= lambda do
+        if xcode.version_gte_6?
+          execute_command(['-s', 'templates']) do |stdout, stderr, _|
+            filter_stderr_spam(stderr)
+            stdout.read.chomp.split("\n").map do |elm|
+              stripped = elm.strip.tr('"', '')
+              if stripped == '' || stripped == 'Known Templates:'
+                nil
+              else
+                stripped
+              end
+            end.compact
+          end
+        elsif xcode.version_gte_51?
+          execute_command(['-s', 'templates']) do |stdout, stderr, _|
+            err = stderr.read
+            if !err.nil? || err != ''
+              $stderr.puts stderr.read
+            end
+
+            stdout.read.strip.split("\n").delete_if do |path|
+              not path =~ /tracetemplate/
+            end.map { |elm| elm.strip }
+          end
+        else
+          raise "Xcode version '#{xcode.version}' is not supported."
+        end
+      end.call
+    end
+
+    # Returns an array the available physical devices.
+    #
+    # @return [Array<RunLoop::Device>] All the devices will be physical
+    #  devices.
+    def physical_devices
+      @instruments_physical_devices ||= lambda do
+        execute_command(['-s', 'devices']) do |stdout, stderr, _|
+          filter_stderr_spam(stderr)
+          all = stdout.read.chomp.split("\n")
+          valid = all.select do |device|
+            device =~ DEVICE_UDID_REGEX
+          end
+          valid.map do |device|
+            udid = device[DEVICE_UDID_REGEX, 0]
+            version = device[VERSION_REGEX, 0]
+            name = device.split('(').first.strip
+            RunLoop::Device.new(name, version, udid)
+          end
+        end
+      end.call
+    end
+
+    # Returns an array of the available simulators.
+    #
+    # **Xcode 5.1**
+    # * iPad Retina - Simulator - iOS 7.1
+    #
+    # **Xcode 6**
+    # * iPad Retina (8.3 Simulator) [EA79555F-ADB4-4D75-930C-A745EAC8FA8B]
+    #
+    # **Xcode 7**
+    # * iPhone 6 (9.0) [3EDC9C6E-3096-48BF-BCEC-7A5CAF8AA706]
+    # * iPhone 6 (9.0) + Apple Watch - 38mm (2.0) [EE3C200C-69BA-4816-A087-0457C5FCEDA0]
+    #
+    # @return [Array<RunLoop::Device>] All the devices will be simulators.
+    def simulators
+      @instruments_simulators ||= lambda do
+        execute_command(['-s', 'devices']) do |stdout, stderr, _|
+          filter_stderr_spam(stderr)
+          lines = stdout.read.chomp.split("\n")
+          lines.map do |line|
+            stripped = line.strip
+            if line_is_simulator?(stripped) &&
+                  !line_is_simulator_paired_with_watch?(stripped)
+
+              version = stripped[VERSION_REGEX, 0]
+
+              if line_is_xcode5_simulator?(stripped)
+                name = line
+                udid = line
+              else
+                name = stripped.split('(').first.strip
+                udid = line[CORE_SIMULATOR_UDID_REGEX, 0]
+              end
+
+              RunLoop::Device.new(name, version, udid)
+            else
+              nil
+            end
+          end.compact
+        end
+      end.call
+    end
+
     private
+
+    # @!visibility private
+    #
+    # ```
+    # $ ps x -o pid,command | grep -v grep | grep instruments
+    # 98081 sh -c xcrun instruments -w "43be3f89d9587e9468c24672777ff6241bd91124" < args >
+    # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
+    # ```
+    #
+    # When run from run-loop (via rspec), expect this:
+    #
+    # ```
+    # $ ps x -o pid,command | grep -v grep | grep instruments
+    # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
+    # ```
+    INSTRUMENTS_FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
     # Parses the run-loop options hash into an array of arguments that can be
@@ -108,22 +269,6 @@ module RunLoop
       end
       array + options.fetch(:args, [])
     end
-
-    # @!visibility private
-    #
-    # ```
-    # $ ps x -o pid,command | grep -v grep | grep instruments
-    # 98081 sh -c xcrun instruments -w "43be3f89d9587e9468c24672777ff6241bd91124" < args >
-    # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
-    # ```
-    #
-    # When run from run-loop (via rspec), expect this:
-    #
-    # ```
-    # $ ps x -o pid,command | grep -v grep | grep instruments
-    # 98082 /Xcode/6.0.1/Xcode.app/Contents/Developer/usr/bin/instruments -w < args >
-    # ```
-    INSTRUMENTS_FIND_PIDS_CMD = 'ps x -o pid,command | grep -v grep | grep instruments'
 
     # @!visibility private
     #
@@ -185,12 +330,67 @@ module RunLoop
     #
     # @see https://github.com/calabash/run_loop/issues/34
     #
-    # @param [RunLoop::XCTools] xcode_tools The Xcode tools to use to determine
+    # @param [RunLoop::Xcode, RunLoop::XCTools] xcode The Xcode tools to use to determine
     #  what version of Xcode is active.
     # @return [String] Either 'QUIT' or 'TERM', depending on the Xcode
     #  version.
-    def kill_signal(xcode_tools = RunLoop::XCTools.new)
-      xcode_tools.xcode_version_gte_6? ? 'QUIT' : 'TERM'
+    def kill_signal(xcode = RunLoop::Xcode.new)
+      if xcode.is_a?(RunLoop::XCTools)
+        RunLoop.deprecated('1.5.0',
+                           %q(
+RunLoop::XCTools has been replaced with RunLoop::Xcode.
+Please update your sources to pass an instance of RunLoop::Xcode))
+      end
+      xcode.version_gte_6? ? 'QUIT' : 'TERM'
+    end
+
+    # @!visibility private
+    #
+    # Execute an instruments command.
+    # @param [Array] args An array of arguments
+    def execute_command(args)
+      Open3.popen3('xcrun', 'instruments', *args) do |_, stdout, stderr, process_status|
+        yield stdout, stderr, process_status
+      end
+    end
+
+    # @!visibility private
+    #
+    # Filters `instruments` spam.
+    def filter_stderr_spam(stderr)
+      # Xcode 6 GM is spamming "WebKit Threading Violations"
+      stderr.read.strip.split("\n").each do |line|
+        unless line[/WebKit Threading Violation/, 0]
+          $stderr.puts line
+        end
+      end
+    end
+
+    # @!visibility private
+    def line_is_simulator?(line)
+      line_is_core_simulator?(line) || line_is_xcode5_simulator?(line)
+    end
+
+    # @!visibility private
+    def line_is_xcode5_simulator?(line)
+      !line[CORE_SIMULATOR_UDID_REGEX, 0] && line[/Simulator/, 0]
+    end
+
+    # @!visibility private
+    def line_is_core_simulator?(line)
+      return nil if !line_has_a_version?(line)
+
+      line[CORE_SIMULATOR_UDID_REGEX, 0]
+    end
+
+    # @!visibility private
+    def line_has_a_version?(line)
+      line[VERSION_REGEX, 0]
+    end
+
+    # @!visibility private
+    def line_is_simulator_paired_with_watch?(line)
+      line[CORE_SIMULATOR_UDID_REGEX, 0] && line[/Apple Watch/, 0]
     end
   end
 end

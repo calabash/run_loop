@@ -1,5 +1,18 @@
 ## Change Log
 
+### 1.5.0
+
+* Deprecate optional argument in Device#instruments\_identifier
+* Changes to prepare Calabash for Xcode 7/iOS 9 testing.
+* Default sim for Xcode 7 is 'iPhone 5s (9.0)' #205
+* Xcode 7 instruments support #204
+* Expand the Instruments class behaviors
+* Add L10N class
+* Add Xcode class
+* Deprecate XCTools class
+* Add more privacy alert auto-dismiss regular expressions #199
+* uikit localization lookups in runloop #197 @svevang
+
 ### 1.4.1
 
 * Fixed typo in Xcode 7 check #195 @krukow
