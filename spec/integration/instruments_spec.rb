@@ -182,9 +182,7 @@ describe RunLoop::Instruments do
 
       Resources.shared.launch_sim_with_options(options) do |hash|
         expect(hash).not_to be nil
-        expect(instruments.instance_eval {
-                 pids_from_ps_output.count
-               }).to be == 1
+        expect(instruments.send(:pids_from_ps_output).count).to be == 1
       end
     end
   end

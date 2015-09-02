@@ -25,7 +25,7 @@ describe RunLoop::ProcessWaiter do
       options = {:timeout => 1, :raise_on_timeout => true }
       waiter = RunLoop::ProcessWaiter.new('ruby', options)
       expect(waiter).to receive(:running_process?).at_least(:twice).and_return(false)
-      expect { waiter.wait_for_any }.to raise_error
+      expect { waiter.wait_for_any }.to raise_error RuntimeError
     end
 
     it 'can log how long it waited' do
@@ -60,7 +60,7 @@ describe RunLoop::ProcessWaiter do
     it 'raises an error' do
       options = {:timeout => 1, :raise_on_timeout => true }
       waiter = RunLoop::ProcessWaiter.new('ruby', options)
-      expect { waiter.wait_for_none }.to raise_error
+      expect { waiter.wait_for_none }.to raise_error RuntimeError
     end
 
     it 'can log how long it waited' do
@@ -84,7 +84,7 @@ describe RunLoop::ProcessWaiter do
       it 'cannot find n processes and options say :raise' do
         options = {:timeout => 1, :raise_on_timeout => true }
         waiter = RunLoop::ProcessWaiter.new('ruby', options)
-        expect { waiter.wait_for_n(1000) }.to raise_error
+        expect { waiter.wait_for_n(1000) }.to raise_error RuntimeError
       end
     end
 

@@ -146,7 +146,7 @@ class Resources
   def random_simulator_device(sim_control)
     @random_simulator_device ||= sim_control.simulators.shuffle.detect do |device|
       [device.state == 'Shutdown',
-         device.name != 'rspec-0test-device',
+         device.name != 'rspec-test-device',
          !device.name[/Resizable/,0]].all?
     end
   end

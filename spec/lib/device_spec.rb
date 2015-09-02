@@ -50,6 +50,7 @@ describe RunLoop::Device do
   describe '.device_with_identifier' do
     let(:sim_control) { RunLoop::SimControl.new }
     let(:instruments) { RunLoop::Instruments.new }
+    let(:xcode) { sim_control.xcode }
     let(:options) do
       {
             :sim_control => sim_control,
@@ -99,9 +100,9 @@ describe RunLoop::Device do
 
       it 'find by name' do
         expect(sim_control).to receive(:simulators).and_return([device])
+        identifier = device.instruments_identifier(xcode)
 
-        actual = RunLoop::Device.device_with_identifier(device.instruments_identifier,
-                                                        options)
+        actual = RunLoop::Device.device_with_identifier(identifier, options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
 

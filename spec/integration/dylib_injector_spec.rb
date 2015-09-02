@@ -1,4 +1,5 @@
-if !Resources.shared.travis_ci? && Resources.shared.whoami == 'moody'
+if Resources.shared.core_simulator_env? && Resources.shared.whoami == 'moody'
+
   describe RunLoop::DylibInjector do
 
     def select_random_shutdown_sim
@@ -25,7 +26,7 @@ if !Resources.shared.travis_ci? && Resources.shared.whoami == 'moody'
           app = RunLoop::App.new(abp)
           dylib = Resources.shared.sim_dylib_path
           injector = RunLoop::DylibInjector.new(app.executable_name, dylib)
-          expect { injector.inject_dylib_with_timeout(1) }.to raise_error
+          expect { injector.inject_dylib_with_timeout(1) }.to raise_error RuntimeError
         end
       end
     end

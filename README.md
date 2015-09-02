@@ -71,6 +71,10 @@ For continuous TDD/BDD see the Guard section below.
 
 Do not try to run the integration tests in a tmux session.  Trust me.
 
+```
+$ be rake integration
+```
+
 ##### Device Testing
 
 * Requires ideviceinstaller.
@@ -97,7 +101,7 @@ the rspec tests will do regression testing against each version.
 Requires MacOS Growl - available in the AppStore.
 
 ```
-$ bundle exec guard start
+$ be guard
 ```
 
 Only the unit tests are run by guard.

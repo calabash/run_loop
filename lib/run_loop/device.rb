@@ -56,7 +56,7 @@ module RunLoop
     #  optimize performance (via memoization).
     # @option options [RunLoop::SimControl] :sim_control An instance of
     #  SimControl.
-    # @option options [RunLoop::Instruments] :instrumetns An instance of
+    # @option options [RunLoop::Instruments] :instruments An instance of
     #  Instruments.
     #
     # @return [RunLoop::Device] A device that matches `udid_or_name`.
@@ -82,8 +82,9 @@ Please update your sources.))
       instruments = merged_options[:instruments]
       sim_control = merged_options[:sim_control]
 
+      xcode = sim_control.xcode
       simulator = sim_control.simulators.detect do |sim|
-        sim.instruments_identifier == udid_or_name ||
+        sim.instruments_identifier(xcode) == udid_or_name ||
               sim.udid == udid_or_name
       end
 
@@ -101,7 +102,7 @@ Please update your sources.))
 
     def to_s
       if simulator?
-        "#<Simulator: #{instruments_identifier} #{udid} #{instruction_set}>"
+        "#<Simulator: #{name} #{udid} #{instruction_set}>"
       else
         "#<Device: #{name} #{udid}>"
       end
@@ -109,6 +110,9 @@ Please update your sources.))
 
     # Returns and instruments-ready device identifier that is a suitable value
     # for DEVICE_TARGET environment variable.
+    #
+    # @note As of 1.5.0, the XCTools optional argument has become a non-optional
+    #  Xcode argument.
     #
     # @param [RunLoop::Xcode, RunLoop::XCTools] xcode The version of the active
     #  Xcode.
@@ -119,7 +123,7 @@ Please update your sources.))
       if xcode.is_a?(RunLoop::XCTools)
         RunLoop.deprecated('1.5.0',
                            %q(
-RunLoop::XCTools has been replaced with RunLoop::Xcode.
+RunLoop::XCTools has been replaced with a non-optional RunLoop::Xcode argument.
 Please update your sources to pass an instance of RunLoop::Xcode))
       end
 

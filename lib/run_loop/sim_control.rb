@@ -1012,7 +1012,7 @@ module RunLoop
       hash = {}
 
       simulators.each do |device|
-        launch_name = device.instruments_identifier
+        launch_name = device.instruments_identifier(xcode)
         udid = device.udid
         value = {
               :launch_name => device.instruments_identifier(xcode),
