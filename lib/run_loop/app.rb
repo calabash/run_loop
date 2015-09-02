@@ -16,6 +16,16 @@ module RunLoop
       @path = File.expand_path(app_bundle_path)
     end
 
+    # @!visibility private
+    def to_s
+      "#<APP: #{path}>"
+    end
+
+    # @!visibility private
+    def inspect
+      to_s
+    end
+
     # Is this a valid app?
     def valid?
       [File.exist?(path),
