@@ -1,4 +1,4 @@
-if Resources.core_simulator_env? && Resources.shared.whoami == 'moody'
+if Resources.shared.core_simulator_env? && Resources.shared.whoami == 'moody'
 
   describe RunLoop::DylibInjector do
 
