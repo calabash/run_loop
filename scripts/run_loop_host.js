@@ -219,6 +219,7 @@ function isLocationPrompt(alert) {
             ["OK", /vil bruge din aktuelle placering/],
             ["OK", /Would Like to Use Your Current Location/],
             ["OK", /Would Like to Send You Notifications/],
+            ["OK", /would like to send you Push Notifications/],
             ["Allow", /access your location/],
             ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
             ["OK", /Would Like to Access Your Photos/],

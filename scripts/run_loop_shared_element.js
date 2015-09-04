@@ -202,6 +202,7 @@ function isLocationPrompt(alert) {
             ["OK", /Would Like to Use Your Current Location/],
             ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
             ["OK", /Would Like to Send You Notifications/],
+            ["OK", /would like to send you Push Notifications/],
             ["Allow", /access your location/],
             ["OK", /Would Like to Access Your Photos/],
             ["OK", /Would Like to Access Your Contacts/],
