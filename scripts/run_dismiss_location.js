@@ -1,43 +1,7 @@
 var target = UIATarget.localTarget(),
     screenshot_count = 0;
 
-function findAlertViewText(alert) {
-    if (!alert) {
-        return false;
-    }
-    var txt = alert.name(),
-        txts;
-    if (txt == null) {
-        txts = alert.staticTexts();
-        if (txts != null && txts.length > 0) {
-
-            txt = txts[0].name();
-        }
-
-    }
-    return txt;
-}
-
-function isLocationPrompt(alert) {
-    var exps = [
-            ["OK", /vil bruge din aktuelle placering/],
-            ["OK", /Would Like to Use Your Current Location/],
-            ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/]
-        ],
-        ans, exp,
-        txt;
-
-    txt = findAlertViewText(alert);
-    for (var i = 0; i < exps.length; i++) {
-        ans = exps[i][0];
-        exp = exps[i][1];
-        if (exp.test(txt)) {
-            return ans;
-        }
-    }
-    return false;
-}
-
+<%= render_template("lib/common.js") %>
 
 var alertHandlers = [//run in reverse order of this:
     isLocationPrompt
