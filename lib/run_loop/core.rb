@@ -258,7 +258,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
             }
       merged_options = options.merge(discovered_options)
 
-      if self.simulator_target?(merged_options, sim_control)
+      if self.simulator_target?(merged_options)
         self.expect_compatible_simulator_architecture(merged_options, sim_control)
         self.prepare_simulator(merged_options, sim_control)
       end
@@ -355,7 +355,9 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     #   `self.udid_and_bundle_for_launcher`
     #
     # @see {Core::RunLoop.udid_and_bundle_for_launcher}
-    def self.simulator_target?(run_options, sim_control = RunLoop::SimControl.new)
+    #
+    # @todo sim_control argument is no longer necessary and can be removed.
+    def self.simulator_target?(run_options, sim_control=nil)
       value = run_options[:device_target]
 
       # match the behavior of udid_and_bundle_for_launcher
@@ -436,7 +438,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         end
         udid = device_target
 
-        unless self.simulator_target?(options, sim_control)
+        unless self.simulator_target?(options)
           bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
         end
       else
