@@ -1,5 +1,10 @@
 ## Change Log
 
+### 1.5.1
+
+* Core.simulator\_target? - fixup for Xcode 7 #216
+* JS: can dismiss iOS 9 APNS privacy alerts #214
+
 ### 1.5.0
 
 * Deprecate optional argument in Device#instruments\_identifier
