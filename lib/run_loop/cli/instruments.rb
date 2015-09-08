@@ -94,13 +94,24 @@ module RunLoop
                     :type => :boolean
 
       def launch
-        launch_options = {
-              :args => parse_app_launch_args(options),
-              :udid => detect_device_udid_from_options(options),
-              :bundle_dir_or_bundle_id => detect_bundle_id_or_bundle_path(options)
-        }
-        run_loop = RunLoop.run(launch_options)
-        puts JSON.generate(run_loop)
+
+        debug = options[:debug]
+        original_value = ENV['DEBUG']
+
+        ENV['DEBUG'] = '1' if debug
+
+
+        begin
+          launch_options = {
+                :args => parse_app_launch_args(options),
+                :udid => detect_device_udid_from_options(options),
+                :bundle_dir_or_bundle_id => detect_bundle_id_or_bundle_path(options)
+          }
+          run_loop = RunLoop.run(launch_options)
+          puts JSON.generate(run_loop)
+        ensure
+          ENV['DEBUG'] = original_value if debug
+        end
       end
 
       no_commands do
