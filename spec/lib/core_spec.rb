@@ -243,10 +243,14 @@ describe RunLoop::Core do
         end
       end
 
-      it ":device_target => Xcode 6 simulator UDID" do
-        expect(sim_control).to receive(:xcode_version_gte_6?).and_return true
+      it ":device_target => CoreSimulator UDID" do
         options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
-        expect(RunLoop::Core.simulator_target?(options, sim_control)).to be == true
+        expect(RunLoop::Core.simulator_target?(options)).to be == true
+      end
+
+      it 'returns false when target is a physical device' do
+        options = { :device_target => '49b59706a3ac25e997770a91577ef4e6ad0ab7bb' }
+        expect(RunLoop::Core.simulator_target?(options)).to be == false
       end
     end
   end

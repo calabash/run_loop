@@ -10,6 +10,8 @@ module RunLoop
 
   module Core
 
+    include RunLoop::Regex
+
     START_DELIMITER = "OUTPUT_JSON:\n"
     END_DELIMITER="\nEND_OUTPUT"
 
@@ -362,15 +364,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       # support for 'simulator' and Xcode >= 5.1 device targets
       return true if value.downcase.include?('simulator')
 
-      # if Xcode < 6.0, we are done
-      return false if not sim_control.xcode_version_gte_6?
-
-      # support for Xcode >= 6 simulator udids
-      return true if sim_control.sim_udid? value
-
-      # support for Xcode >= 6 'named simulators'
-      sims = sim_control.simulators.each
-      sims.find_index { |device| device.name == value } != nil
+      value[DEVICE_UDID_REGEX, 0] == nil
     end
 
     # Extracts the value of :inject_dylib from options Hash.
