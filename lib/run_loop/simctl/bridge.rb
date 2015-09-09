@@ -198,8 +198,6 @@ module RunLoop::Simctl
 
             # Xcode 7
             ['ids_simd', true],
-            ['com.apple.CoreSimulator.CoreSimulatorService', true],
-            ['com.apple.CoreSimulator.SimVerificationService', true]
       ].each do |pair|
         name = pair[0]
         send_term = pair[1]
