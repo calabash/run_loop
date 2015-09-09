@@ -42,7 +42,7 @@ describe RunLoop::Device do
     it 'simulator' do
       device = RunLoop::Device.new('iPhone 4s',
                                    '8.3',
-                                   'CE5BA25E-9434-475A-8947-ECC3918E64E3 i386')
+                                   'CE5BA25E-9434-475A-8947-ECC3918E64E3')
       expect { device.to_s }.not_to raise_error
     end
   end
@@ -95,7 +95,7 @@ describe RunLoop::Device do
       let(:device) {
         RunLoop::Device.new('iPhone 4s',
                             '8.3',
-                            'CE5BA25E-9434-475A-8947-ECC3918E64E3 i386')
+                            'CE5BA25E-9434-475A-8947-ECC3918E64E3')
       }
 
       it 'find by name' do
