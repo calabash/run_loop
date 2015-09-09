@@ -144,6 +144,21 @@ module RunLoop
         !installed_app_bundle_dir.nil?
       end
 
+      # The sha1 of the installed app.
+      def installed_app_sha1
+        installed_bundle = installed_app_bundle_dir
+        if installed_bundle
+          RunLoop::Directory.directory_digest(installed_bundle)
+        else
+          nil
+        end
+      end
+
+      # Is the app that is install the same as the one we have in hand?
+      def same_sha1_as_installed?
+        app.sha1 == installed_app_sha1
+      end
+
       # @!visibility private
       #
       # Returns the path to the installed app bundle directory (.app).

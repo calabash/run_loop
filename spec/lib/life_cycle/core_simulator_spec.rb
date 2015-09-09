@@ -23,11 +23,11 @@ describe RunLoop::LifeCycle::CoreSimulator do
   end
 
   let(:app) { RunLoop::App.new(Resources.shared.cal_app_bundle_path) }
+  let(:device) { RunLoop::Device.new('iPhone 5s', '8.1',
+                                     'A08334BE-77BD-4A2F-BA25-A0E8251A1A80') }
+  let(:core_sim) { RunLoop::LifeCycle::CoreSimulator.new(app, device) }
 
   describe 'Mocked file system' do
-    let(:device) { RunLoop::Device.new('iPhone 5s', '8.1',
-                                       'A08334BE-77BD-4A2F-BA25-A0E8251A1A80') }
-    let(:core_sim) { RunLoop::LifeCycle::CoreSimulator.new(app, device) }
 
     describe '#sdk_gte_8?' do
       it 'returns true' do
@@ -268,6 +268,38 @@ describe RunLoop::LifeCycle::CoreSimulator do
           expect(actual).to be_falsey
         end
       end
+    end
+  end
+
+  describe '#installed_app_sha1' do
+    it 'returns nil if app is not installed' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
+
+      expect(core_sim.installed_app_sha1).to be == nil
+    end
+
+    it 'returns the sha1 of the installed app' do
+      path = '/path/to/installed.app'
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return path
+      expect(RunLoop::Directory).to receive(:directory_digest).with(path).and_return 'sha1'
+
+      expect(core_sim.installed_app_sha1).to be == 'sha1'
+    end
+  end
+
+  describe '#same_sha1_as_installed?' do
+    it 'returns false if they are different' do
+      expect(app).to receive(:sha1).and_return 'a'
+      expect(core_sim).to receive(:installed_app_sha1).and_return 'b'
+
+      expect(core_sim.same_sha1_as_installed?).to be_falsey
+    end
+
+    it 'returns true if they are the same' do
+      expect(app).to receive(:sha1).and_return 'a'
+      expect(core_sim).to receive(:installed_app_sha1).and_return 'a'
+
+      expect(core_sim.same_sha1_as_installed?).to be_truthy
     end
   end
 end
