@@ -340,5 +340,22 @@ describe RunLoop::Device do
         expect(simulator.send(:fetch_simulator_state)).to be == 'Shutdown'
       end
     end
+
+    describe '#update_simulator_state' do
+      it 'raises error if called on a physical device' do
+        expect(simulator).to receive(:physical_device?).and_return true
+
+        expect do
+          simulator.update_simulator_state
+        end.to raise_error RuntimeError, /This method is available only for simulators/
+      end
+
+      it 'sets the simulator state' do
+        expect(simulator).to receive(:fetch_simulator_state).and_return 'State'
+
+        expect(simulator.update_simulator_state).to be == 'State'
+        expect(simulator.instance_variable_get(:@state)).to be == 'State'
+      end
+    end
   end
 end

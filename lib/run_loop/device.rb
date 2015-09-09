@@ -216,6 +216,14 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    def update_simulator_state
+      if physical_device?
+        raise RuntimeError, 'This method is available only for simulators'
+      end
+
+      @state = fetch_simulator_state
+    end
+
     private
 
     def xcrun
