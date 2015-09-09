@@ -218,8 +218,10 @@ module RunLoop
         installed_app_bundle = installed_app_bundle_dir
         if installed_app_bundle
           uninstall_app_and_sandbox(installed_app_bundle)
+          :uninstalled
         else
           RunLoop.log_debug('App was not installed.  Nothing to do')
+          :not_installed
         end
       end
 
@@ -232,7 +234,7 @@ module RunLoop
 
         # App is installed but sha1 is different.
         if !same_sha1_as_installed?
-          return reinstall_existing_app_clear_sandbox(installed_app_bundle)
+          return reinstall_existing_app_and_clear_sandbox(installed_app_bundle)
         end
 
         RunLoop.log_debug('The installed app is the same as the app we are trying to install; skipping installation')

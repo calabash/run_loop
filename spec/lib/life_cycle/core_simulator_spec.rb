@@ -312,25 +312,41 @@ describe RunLoop::LifeCycle::CoreSimulator do
 
   describe '#install' do
     it 'when app is already installed and sha1 is the same' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return '/path'
+      expect(core_sim).to receive(:same_sha1_as_installed?).and_return true
 
+      expect(core_sim.install).to be == '/path'
     end
 
     it 'when app is already installed and sha1 is different' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return '/path'
+      expect(core_sim).to receive(:same_sha1_as_installed?).and_return false
+      method_name = :reinstall_existing_app_and_clear_sandbox
+      expect(core_sim).to receive(method_name).with('/path').and_return('/new/path')
 
+      expect(core_sim.install).to be == '/new/path'
     end
 
     it 'when the app is not installed' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
+      expect(core_sim).to receive(:install_new_app).and_return '/new/path'
 
+      expect(core_sim.install).to be == '/new/path'
     end
   end
 
   describe '#uninstall' do
     it 'when the app is not installed' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
 
+      expect(core_sim.uninstall).to be == :not_installed
     end
 
     it 'when the app is installed' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return '/path'
+      expect(core_sim).to receive(:uninstall_app_and_sandbox).with('/path').and_return nil
 
+      expect(core_sim.uninstall).to be == :uninstalled
     end
   end
 
