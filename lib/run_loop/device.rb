@@ -216,7 +216,57 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    def update_simulator_state
+      if physical_device?
+        raise RuntimeError, 'This method is available only for simulators'
+      end
+
+      @state = fetch_simulator_state
+    end
+
     private
+
+    def xcrun
+      RunLoop::Xcrun.new
+    end
+
+    def detect_state_from_line(line)
+
+      if line[/unavailable/, 0]
+        RunLoop.log_debug("Simulator state is unavailable: #{line}")
+        return 'Unavailable'
+      end
+
+      state = line[/(Booted|Shutdown)/,0]
+
+      if state.nil?
+        RunLoop.log_debug("Simulator state is unknown: #{line}")
+        'Unknown'
+      else
+        state
+      end
+    end
+
+    def fetch_simulator_state
+      if physical_device?
+        raise RuntimeError, 'This method is available only for simulators'
+      end
+
+      args = ['simctl', 'list', 'devices']
+      hash = xcrun.exec(args)
+      out = hash[:out]
+
+      matched_line = out.split("\n").find do |line|
+        line.include?(udid)
+      end
+
+      if matched_line.nil?
+        raise RuntimeError,
+              "Expected a simulator with udid '#{udid}', but found none"
+      end
+
+      detect_state_from_line(matched_line)
+    end
 
     CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
     CORE_SIMULATOR_LOGS_DIR = File.expand_path('~/Library/Logs/CoreSimulator')
