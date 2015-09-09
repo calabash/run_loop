@@ -172,7 +172,48 @@ module RunLoop
         end
       end
 
+      # Uninstall the app on the device.
+      def uninstall
+        installed_app_bundle = installed_app_bundle_dir
+        if installed_app_bundle
+          uninstall_app_and_sandbox(installed_app_bundle)
+        else
+          RunLoop.log_debug('App was not installed.  Nothing to do')
+        end
+      end
+
+      # Install the app on the device.
+      def install
+        installed_app_bundle = installed_app_bundle_dir
+
+        # App is not installed.
+        return install_new_app if installed_app_bundle.nil?
+
+        # App is installed but sha1 is different.
+        if !same_sha1_as_installed?
+          return reinstall_existing_app_clear_sandbox(installed_app_bundle)
+        end
+
+        RunLoop.log_debug('The installed app is the same as the app we are trying to install; skipping installation')
+        installed_app_bundle
+      end
+
+      # Reset app sandbox
+
+
       private
+
+      def install_new_app
+
+      end
+
+      def reinstall_existing_app_and_clear_sandbox(installed_app_bundle)
+
+      end
+
+      def uninstall_app_and_sandbox(installed_app_bundle)
+
+      end
 
       # @!visibility private
       def app_sandbox_dir_sdk_gte_8

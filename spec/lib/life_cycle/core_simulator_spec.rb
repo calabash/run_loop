@@ -302,4 +302,28 @@ describe RunLoop::LifeCycle::CoreSimulator do
       expect(core_sim.same_sha1_as_installed?).to be_truthy
     end
   end
+
+  describe '#install' do
+    it 'when app is already installed and sha1 is the same' do
+
+    end
+
+    it 'when app is already installed and sha1 is different' do
+
+    end
+
+    it 'when the app is not installed' do
+
+    end
+  end
+
+  describe '#uninstall' do
+    it 'when the app is not installed' do
+
+    end
+
+    it 'when the app is installed' do
+
+    end
+  end
 end
