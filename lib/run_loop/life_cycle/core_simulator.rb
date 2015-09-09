@@ -39,6 +39,18 @@ module RunLoop
                   ['ids_simd', true]
             ]
 
+      # @!visibility private
+      # How long to wait after the simulator has launched.
+      SIM_POST_LAUNCH_WAIT = RunLoop::Environment.sim_post_launch_wait || 1.0
+
+      # @!visibility private
+      # How long to wait for for a device to reach a state.
+      WAIT_FOR_DEVICE_STATE_OPTS =
+            {
+                  interval: 0.1,
+                  timeout: 5
+            }
+
       attr_reader :app
       attr_reader :device
       attr_reader :pbuddy
@@ -250,6 +262,29 @@ module RunLoop
             end
           end
         end
+      end
+
+      # @!visibility private
+      def wait_for_device_state(target_state)
+        return true if device.state == target_state
+
+        now = Time.now
+        timeout = WAIT_FOR_DEVICE_STATE_OPTS[:timeout]
+        poll_until = now + timeout
+        delay = WAIT_FOR_DEVICE_STATE_OPTS[:interval]
+        in_state = false
+        while Time.now < poll_until
+          in_state = device.update_simulator_state == target_state
+          break if in_state
+          sleep delay
+        end
+
+        RunLoop.log_debug("Waited for #{timeout} seconds for device to have state: '#{target_state}'.")
+
+        unless in_state
+          raise "Expected '#{target_state} but found '#{device.state}' after waiting."
+        end
+        in_state
       end
     end
   end

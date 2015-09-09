@@ -4,6 +4,8 @@ describe RunLoop::LifeCycle::CoreSimulator do
     allow_any_instance_of(RunLoop::LifeCycle::CoreSimulator).to(
           receive(:terminate_core_simulator_processes).and_return true
     )
+
+    allow(RunLoop::Environment).to receive(:debug?).and_return true
   end
 
   it '.new' do
@@ -324,6 +326,37 @@ describe RunLoop::LifeCycle::CoreSimulator do
 
     it 'when the app is installed' do
 
+    end
+  end
+
+  describe '#wait_for_device_state' do
+    it 'returns straight away if device is in state' do
+      expect(device).to receive(:state).and_return 'Desired'
+
+      expect(core_sim.send(:wait_for_device_state, 'Desired')).to be == true
+    end
+
+    it 'times out if state is never reached' do
+      options = { :timeout => 0.02, :interval => 0.01 }
+      stub_const('RunLoop::LifeCycle::CoreSimulator::WAIT_FOR_DEVICE_STATE_OPTS',
+                 options)
+      expect(device).to receive(:state).at_least(:once).and_return 'Undesired'
+      expect(device).to receive(:update_simulator_state).at_least(:once).and_return 'Undesired'
+
+      expect do
+        core_sim.send(:wait_for_device_state, 'Desired')
+      end.to raise_error RuntimeError, /Expected/
+    end
+
+    it 'waits for a state' do
+      options = { :timeout => 0.1, :interval => 0.01 }
+      stub_const('RunLoop::LifeCycle::CoreSimulator::WAIT_FOR_DEVICE_STATE_OPTS',
+                 options)
+      values = ['Undesired', 'Undesired', 'Desired']
+      expect(device).to receive(:state).at_least(:once).and_return 'Undesired'
+      expect(device).to receive(:update_simulator_state).at_least(:once).and_return(*values)
+
+      expect(core_sim.send(:wait_for_device_state, 'Desired')).to be_truthy
     end
   end
 end
