@@ -224,7 +224,68 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       @state = fetch_simulator_state
     end
 
+    # @!visibility private
+    #
+    # The timeout should be ~5 seconds.
+    # A quiet_time of 1 seconds is sufficient.
+    #
+    # Note: this does not solve the problem of "simulator is booting" that
+    # appeared in Xcode 7 - the log stops writing, but the device is still
+    # booting.
+    #
+    # TODO write a unit test.
+    def wait_for_simulator_log_to_stop_updating(timeout, quiet_time)
+      now = Time.now
+      timeout = timeout
+      poll_until = now + timeout
+      delay = 0.1
+      quiet = now + quiet_time
+
+      same_line = false
+      current_line = nil
+
+      while Time.now < poll_until do
+        latest_line = last_line_from_simulator_log_file
+        same_line = current_line == latest_line
+
+        break if same_line && Time.now > quiet
+
+        current_line = latest_line
+        sleep delay
+      end
+
+      if same_line
+        elapsed = Time.now - now
+        stabilized = elapsed - quiet_time
+        RunLoop.log_debug("Simulator log file stop updating after #{stabilized} seconds")
+        RunLoop.log_debug("Waited a total of #{elapsed} seconds for the log to stabilize")
+      else
+        RunLoop.log_debug("Simulator log file did not stabilize after #{timeout} seconds; proceeding regardless")
+      end
+    end
+
     private
+
+    # @!visibility private
+    # TODO write a unit test.
+    def last_line_from_simulator_log_file
+      file = simulator_log_file_path
+
+      return nil if !File.exist?(file)
+
+      begin
+        io = File.open(file, 'r')
+        io.seek(-100, IO::SEEK_END)
+
+        line = io.readline
+      rescue StandardError => e
+        RunLoop.log_debug("Caught #{e} while reading simulator log file")
+      ensure
+        io.close if io && !io.closed?
+      end
+
+      line
+    end
 
     def xcrun
       RunLoop::Xcrun.new
