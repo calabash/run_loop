@@ -364,4 +364,118 @@ describe RunLoop::LifeCycle::CoreSimulator do
       expect(core_sim.send(:wait_for_device_state, 'Desired')).to be_truthy
     end
   end
+
+  describe 'Clearing the app sandbox' do
+
+    # Helper method.
+    def create_sandbox_dirs(sub_dir_names)
+      base_dir = Dir.mktmpdir
+
+      sub_dir_names.each do |name|
+        sub_dir = File.join(base_dir, name)
+        FileUtils.mkdir_p(sub_dir)
+        FileUtils.touch(File.join(sub_dir, "a-#{name}-file.txt"))
+        FileUtils.mkdir_p(File.join(sub_dir, "a-#{name}-dir"))
+      end
+
+      base_dir
+    end
+
+    describe '#reset_app_sandbox' do
+      it 'does nothing if app is not installed' do
+        expect(core_sim).to receive(:app_is_installed?).and_return false
+        expect(core_sim).not_to receive(:reset_app_sandbox_internal)
+
+        expect(core_sim.reset_app_sandbox).to be_truthy
+      end
+
+      it 'calls reset_app_sandbox_internal otherwise' do
+        expect(core_sim).to receive(:app_is_installed?).and_return true
+        expect(core_sim).to receive(:wait_for_device_state).with('Shutdown').and_return true
+        expect(core_sim).to receive(:reset_app_sandbox_internal).and_return true
+
+        expect(core_sim.reset_app_sandbox).to be_truthy
+      end
+    end
+
+    describe '#reset_app_sandbox_internal_shared' do
+      it 'erases Documents and tmp directories' do
+        before = ['Documents', 'tmp']
+        base_dir = create_sandbox_dirs(before)
+        expect(core_sim).to receive(:app_sandbox_dir).at_least(:once).and_return(base_dir)
+
+        core_sim.send(:reset_app_sandbox_internal_shared)
+        after = Dir.glob("#{base_dir}/**/*").map { |elm| File.basename(elm) }
+
+        expect(after).to be == before
+      end
+    end
+
+    describe '#reset_app_sandbox_internal_sdk_gte_8' do
+      it 'erases all Library files, but preserves Preferences UIA plists' do
+        before = ['Caches', 'Cookies', 'WebKit', 'Preferences']
+        base_dir = create_sandbox_dirs(before)
+
+        uia_plists = ['com.apple.UIAutomation.plist', 'com.apple.UIAutomationPlugIn.plist']
+        uia_plists.each do |plist|
+          FileUtils.touch(File.join(base_dir, 'Preferences', plist))
+        end
+
+        expect(core_sim).to receive(:app_library_dir).at_least(:once).and_return(base_dir)
+
+        core_sim.send(:reset_app_sandbox_internal_sdk_gte_8)
+        after = Dir.glob("#{base_dir}/**/*").map { |elm| File.basename(elm) }
+
+        expect(after).to be == ['Preferences'] + uia_plists
+      end
+    end
+
+    describe '#reset_app_sandbox_internal_sdk_lt_8' do
+      it 'erases all Library files, preserves protected Preferences plists, but deletes device-app preferences' do
+        before = ['lib-prefs-SubDir0', 'lib-prefs-SubDir1']
+        base_dir = create_sandbox_dirs(before)
+
+        protected_plists = ['.GlobalPreferences.plist', 'com.apple.PeoplePicker.plist']
+        protected_plists.each do |plist|
+          FileUtils.touch("#{base_dir}/#{plist}")
+        end
+
+        expect(core_sim).to receive(:app_library_preferences_dir).at_least(:once).and_return(base_dir)
+
+        device_lib_prefs_dir = Dir.mktmpdir
+        bundle_id = 'com.example.Foo'
+        lib_prefs_dir_path = File.join(device_lib_prefs_dir, 'Library', 'Preferences')
+        FileUtils.mkdir_p(lib_prefs_dir_path)
+        plist_path = File.join(lib_prefs_dir_path, "#{bundle_id}.plist")
+        FileUtils.touch(plist_path)
+
+        expect(core_sim).to receive(:app_sandbox_dir).at_least(:once).and_return(device_lib_prefs_dir)
+        expect(app).to receive(:bundle_identifier).at_least(:once).and_return(bundle_id)
+
+        core_sim.send(:reset_app_sandbox_internal_sdk_lt_8)
+        after = RunLoop::Directory.recursive_glob_for_entries(base_dir).map { |elm| File.basename(elm) }
+
+        expect(after).to be == protected_plists
+        expect(File.exist?(plist_path)).to be_falsey
+      end
+    end
+
+    describe '#reset_app_sandbox_internal' do
+      it 'SDK >= 8.0' do
+        expect(device).to receive(:version).and_return(RunLoop::Version.new('8.0'))
+        expect(core_sim).to receive(:reset_app_sandbox_internal_shared)
+        expect(core_sim).to receive(:reset_app_sandbox_internal_sdk_gte_8)
+
+        core_sim.send(:reset_app_sandbox_internal)
+      end
+
+      it 'SDK < 8.0' do
+        expect(device).to receive(:version).and_return(RunLoop::Version.new('7.1'))
+        expect(core_sim).to receive(:reset_app_sandbox_internal_shared).and_return nil
+        expect(core_sim).to receive(:reset_app_sandbox_internal_sdk_lt_8)
+
+        core_sim.send(:reset_app_sandbox_internal)
+      end
+    end
+  end
 end

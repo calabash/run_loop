@@ -239,8 +239,14 @@ module RunLoop
         installed_app_bundle
       end
 
-      # Reset app sandbox
+      # Reset app sandbox.
+      def reset_app_sandbox
+        return true if !app_is_installed?
 
+        wait_for_device_state('Shutdown')
+
+        reset_app_sandbox_internal
+      end
 
       private
 
@@ -315,6 +321,72 @@ module RunLoop
           raise "Expected '#{target_state} but found '#{device.state}' after waiting."
         end
         in_state
+      end
+
+      # @!visibility private
+      def reset_app_sandbox_internal_shared
+        [app_documents_dir, app_tmp_dir].each do |dir|
+          FileUtils.rm_rf dir
+          FileUtils.mkdir dir
+        end
+      end
+
+      # @!visibility private
+      def reset_app_sandbox_internal_sdk_gte_8
+        lib_dir = app_library_dir
+        RunLoop::Directory.recursive_glob_for_entries(lib_dir).each do |entry|
+          if entry.include?('Preferences')
+            # nop
+          else
+            if File.exist?(entry)
+              FileUtils.rm_rf(entry)
+            end
+          end
+        end
+
+        prefs_dir = app_library_preferences_dir
+        protected = ['com.apple.UIAutomation.plist',
+                     'com.apple.UIAutomationPlugIn.plist']
+        RunLoop::Directory.recursive_glob_for_entries(prefs_dir).each do |entry|
+          unless protected.include?(File.basename(entry))
+            if File.exist?(entry)
+              FileUtils.rm_rf entry
+            end
+          end
+        end
+      end
+
+      # @!visibility private
+      def reset_app_sandbox_internal_sdk_lt_8
+        prefs_dir = app_library_preferences_dir
+        RunLoop::Directory.recursive_glob_for_entries(prefs_dir).each do |entry|
+          if entry.end_with?('.GlobalPreferences.plist') ||
+                entry.end_with?('com.apple.PeoplePicker.plist')
+            # nop
+          else
+            if File.exist?(entry)
+              FileUtils.rm_rf entry
+            end
+          end
+        end
+
+        # app preferences lives in device Library/Preferences
+        device_prefs_dir = File.join(app_sandbox_dir, 'Library', 'Preferences')
+        app_prefs_plist = File.join(device_prefs_dir, "#{app.bundle_identifier}.plist")
+        if File.exist?(app_prefs_plist)
+          FileUtils.rm_rf(app_prefs_plist)
+        end
+      end
+
+      # @!visibility private
+      def reset_app_sandbox_internal
+        reset_app_sandbox_internal_shared
+
+        if sdk_gte_8?
+          reset_app_sandbox_internal_sdk_gte_8
+        else
+          reset_app_sandbox_internal_sdk_lt_8
+        end
       end
     end
   end
