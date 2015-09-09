@@ -51,6 +51,14 @@ module RunLoop
                   timeout: 5
             }
 
+      # @!visibility private
+      # How long to wait for the CoreSimulator processes to start.
+      WAIT_FOR_SIMULATOR_PROCESSES_OPTS =
+            {
+                  timeout: 5,
+                  raise_on_timeout: true
+            }
+
       attr_reader :app
       attr_reader :device
       attr_reader :sim_control
@@ -65,7 +73,26 @@ module RunLoop
 
         # In order to manage the app on the device, we need to manage the
         # CoreSimulator processes.
+        RunLoop::SimControl.terminate_all_sims
         terminate_core_simulator_processes
+      end
+
+      # Launch simulator without specifying an app.
+      def launch_simulator
+        sim_path = sim_control.send(:sim_app_path)
+        args = ['open', '-g', '-a', sim_path, '--args', '-CurrentDeviceUDID', device.udid]
+
+        RunLoop.log_unix_cmd("xcrun #{args.join(' ')}")
+
+        pid = spawn('xcrun', *args)
+        Process.detach(pid)
+
+        sim_name = sim_control.send(:sim_name)
+        RunLoop::ProcessWaiter.new(sim_name, WAIT_FOR_SIMULATOR_PROCESSES_OPTS).wait_for_any
+        RunLoop::ProcessWaiter.new('SimulatorBridge', WAIT_FOR_SIMULATOR_PROCESSES_OPTS).wait_for_any
+        wait_for_device_state 'Booted'
+        device.wait_for_simulator_log_to_stop_updating(5, 1)
+        sleep(SIM_POST_LAUNCH_WAIT)
       end
 
       # @!visibility private
@@ -281,7 +308,8 @@ module RunLoop
           sleep delay
         end
 
-        RunLoop.log_debug("Waited for #{timeout} seconds for device to have state: '#{target_state}'.")
+        elapsed = Time.now - now
+        RunLoop.log_debug("Waited for #{elapsed} seconds for device to have state: '#{target_state}'.")
 
         unless in_state
           raise "Expected '#{target_state} but found '#{device.state}' after waiting."

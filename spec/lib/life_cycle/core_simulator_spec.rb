@@ -5,6 +5,7 @@ describe RunLoop::LifeCycle::CoreSimulator do
           receive(:terminate_core_simulator_processes).and_return true
     )
 
+    allow(RunLoop::SimControl).to receive(:terminate_all_sims).and_return true
     allow(RunLoop::Environment).to receive(:debug?).and_return true
   end
 
