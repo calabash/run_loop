@@ -53,13 +53,15 @@ module RunLoop
 
       attr_reader :app
       attr_reader :device
+      attr_reader :sim_control
       attr_reader :pbuddy
 
       # @param [RunLoop::App] app The application.
       # @param [RunLoop::Device] device The device.
-      def initialize(app, device)
+      def initialize(app, device, sim_control=RunLoop::SimControl.new)
         @app = app
         @device = device
+        @sim_control = sim_control
 
         # In order to manage the app on the device, we need to manage the
         # CoreSimulator processes.

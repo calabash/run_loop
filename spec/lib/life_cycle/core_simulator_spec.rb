@@ -13,6 +13,10 @@ describe RunLoop::LifeCycle::CoreSimulator do
 
     expect(core_sim.instance_variable_get(:@app)).to be == :a
     expect(core_sim.instance_variable_get(:@device)).to be == :b
+    expect(core_sim.instance_variable_get(:@sim_control)).to be_a_kind_of RunLoop::SimControl
+
+    core_sim = RunLoop::LifeCycle::CoreSimulator.new(:a, :b, :c)
+    expect(core_sim.instance_variable_get(:@sim_control)).to be == :c
   end
 
   it '#pbuddy' do
