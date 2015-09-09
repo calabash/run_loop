@@ -67,6 +67,11 @@ module RunLoop
       identifier
     end
 
+    # Returns the sha1 of the application.
+    def sha1
+      RunLoop::Directory.directory_digest(path)
+    end
+
     private
 
     def plist_buddy
