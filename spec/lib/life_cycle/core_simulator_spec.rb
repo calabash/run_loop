@@ -464,7 +464,12 @@ describe RunLoop::LifeCycle::CoreSimulator do
 
   describe '#wait_for_device_state' do
     it 'times out if state is never reached' do
-      options = { :timeout => 0.02, :interval => 0.01 }
+      if Resources.shared.travis_ci?
+        options = { :timeout => 0.2, :interval => 0.01 }
+      else
+        options = { :timeout => 0.02, :interval => 0.01 }
+      end
+
       stub_const('RunLoop::LifeCycle::CoreSimulator::WAIT_FOR_DEVICE_STATE_OPTS',
                  options)
       expect(device).to receive(:update_simulator_state).at_least(:once).and_return 'Undesired'
