@@ -1,10 +1,10 @@
-require 'digest'
-require 'openssl'
-
 module RunLoop
 
   # Class for performing operations on directories.
   class Directory
+    require 'digest'
+    require 'openssl'
+    require 'pathname'
 
     # Dir.glob ignores files that start with '.', but we often need to find
     # dotted files and directories.
@@ -41,7 +41,11 @@ module RunLoop
 
       sha = OpenSSL::Digest::SHA256.new
       self.recursive_glob_for_entries(path).each do |file|
-        unless File.directory?(file)
+        if File.directory?(file)
+          # skip directories
+        elsif !Pathname.new(file).exist?
+          # skip broken symlinks
+        else
           sha << File.read(file)
         end
       end
