@@ -11,6 +11,7 @@ module RunLoop
     attr_reader :simulator_accessibility_plist_path
     attr_reader :simulator_preferences_plist_path
     attr_reader :simulator_log_file_path
+    attr_reader :pbuddy
 
     # Create a new device.
     #
@@ -216,6 +217,26 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    def simulator_device_plist
+      @simulator_device_plist ||= lambda do
+        return nil if physical_device?
+        File.join(simulator_root_dir, 'device.plist')
+      end.call
+    end
+
+    # The install state of a simulator is an indication of how 'ready' the
+    # simulator is for work.  For example in Xcode 7 on first launch, iOS 9
+    # simulators show a "booting" screen with a progress bar.
+    #
+    # Unfortunately, we cannot wait for this state because it changes when the
+    # simulator is launched.
+    #
+    # '1' => not ready
+    # '3' => ready
+    def simulator_install_state
+      pbuddy.plist_read('state', simulator_device_plist)
+    end
+
     def update_simulator_state
       if physical_device?
         raise RuntimeError, 'This method is available only for simulators'
@@ -289,6 +310,10 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
     def xcrun
       RunLoop::Xcrun.new
+    end
+
+    def pbuddy
+      @pbuddy ||= RunLoop::PlistBuddy.new
     end
 
     def detect_state_from_line(line)
