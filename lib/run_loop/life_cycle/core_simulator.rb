@@ -259,7 +259,11 @@ module RunLoop
       end
 
       def existing_app_container_uuids
-         Dir.entries(device_applications_dir)
+        if File.exist?(device_applications_dir)
+          Dir.entries(device_applications_dir)
+        else
+          []
+        end
       end
 
       def generate_unique_uuid(existing, timeout=1.0)
@@ -461,6 +465,28 @@ module RunLoop
         else
           reset_app_sandbox_internal_sdk_lt_8
         end
+      end
+
+      # @!visibility private
+      # For testing.
+      def launch
+
+        install
+        launch_simulator
+
+        args = ['simctl', 'launch', device.udid, app.bundle_identifier]
+        hash = RunLoop::Xcrun.new.exec(args, 20)
+
+        exit_status = hash[:exit_status]
+
+        if exit_status != 0
+          err = hash[:err]
+          RunLoop.log_error(err)
+          raise RuntimeError, "Could not launch #{app.bundle_identifier} on #{device}"
+        end
+
+        RunLoop::ProcessWaiter.new(app.executable_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+        true
       end
     end
   end

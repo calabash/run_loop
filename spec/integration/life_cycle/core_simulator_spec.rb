@@ -14,4 +14,8 @@ describe RunLoop::LifeCycle::CoreSimulator do
   it '#launch_simulator' do
     expect(core_sim.launch_simulator).to be_truthy
   end
+
+  it '#launch' do
+    expect(core_sim.send(:launch)).to be_truthy
+  end
 end
