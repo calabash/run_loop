@@ -3,6 +3,16 @@ module RunLoop
 
     include RunLoop::Regex
 
+    # State from device.plist if simulator has been launched once.
+    SIM_INSTALLED_STATE_YES = 3
+
+    # State from device.plist if the simulator has not been launched since
+    # a reset or a new Simulator install.
+    SIM_INSTALLED_STATE_NO = 1
+
+    # The installation state if there is a problem reading the device.plist.
+    SIM_INSTALLED_STATE_UNKNOWN = -1
+
     attr_reader :name
     attr_reader :version
     attr_reader :udid
@@ -268,9 +278,9 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     #  * 1   # has not been launched
     #  * 3   # has been launched once and is presumably ready
     def simulator_install_state
-      state = -1
+      state = SIM_INSTALLED_STATE_UNKNOWN
       begin
-        state = pbuddy.plist_read('state', simulator_device_plist)
+        state = pbuddy.plist_read('state', simulator_device_plist).to_i
       rescue StandardError => e
         RunLoop.log_error(e)
       end
