@@ -19,7 +19,7 @@ IRB.conf[:PROMPT][:RUN_LOOP] = {
   :PROMPT_N => "run-loop #{RunLoop::VERSION}> ",
   :PROMPT_S => nil,
   :PROMPT_C => "> ",
-  :AUTO_INDENT => true,
+  :AUTO_INDENT => false,
   :RETURN => "%s\n"
 }
 
