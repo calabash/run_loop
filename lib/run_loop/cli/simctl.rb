@@ -37,6 +37,41 @@ module RunLoop
         end
       end
 
+      desc 'doctor', 'EXPERIMENTAL: Prepare the CoreSimulator environment for testing'
+
+      method_option 'debug',
+                    :desc => 'Enable debug logging.',
+                    :aliases => '-v',
+                    :required => false,
+                    :default => false,
+                    :type => :boolean
+
+      def doctor
+        debug = options[:debug]
+
+        if debug
+          RunLoop::Environment.with_debugging do
+            launch_each_simulator
+          end
+        else
+           launch_each_simulator
+        end
+      end
+
+      no_commands do
+        def launch_each_simulator
+          sim_control = RunLoop::SimControl.new
+          sim_control.simulators.each do |simulator|
+            #if simulator.version >= RunLoop::Version.new('9.0')
+              core_sim = RunLoop::LifeCycle::CoreSimulator.new(nil,
+                                                               simulator,
+                                                               sim_control)
+              core_sim.launch_simulator
+            #end
+          end
+        end
+      end
+
       desc 'manage-processes', 'Manage CoreSimulator processes by quiting stale processes'
 
       method_option 'debug',
