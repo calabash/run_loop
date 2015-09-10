@@ -463,17 +463,10 @@ describe RunLoop::LifeCycle::CoreSimulator do
   end
 
   describe '#wait_for_device_state' do
-    it 'returns straight away if device is in state' do
-      expect(device).to receive(:state).and_return 'Desired'
-
-      expect(core_sim.send(:wait_for_device_state, 'Desired')).to be == true
-    end
-
     it 'times out if state is never reached' do
       options = { :timeout => 0.02, :interval => 0.01 }
       stub_const('RunLoop::LifeCycle::CoreSimulator::WAIT_FOR_DEVICE_STATE_OPTS',
                  options)
-      expect(device).to receive(:state).at_least(:once).and_return 'Undesired'
       expect(device).to receive(:update_simulator_state).at_least(:once).and_return 'Undesired'
 
       expect do
@@ -486,7 +479,6 @@ describe RunLoop::LifeCycle::CoreSimulator do
       stub_const('RunLoop::LifeCycle::CoreSimulator::WAIT_FOR_DEVICE_STATE_OPTS',
                  options)
       values = ['Undesired', 'Undesired', 'Desired']
-      expect(device).to receive(:state).at_least(:once).and_return 'Undesired'
       expect(device).to receive(:update_simulator_state).at_least(:once).and_return(*values)
 
       expect(core_sim.send(:wait_for_device_state, 'Desired')).to be_truthy

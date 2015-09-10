@@ -377,8 +377,6 @@ module RunLoop
 
       # @!visibility private
       def wait_for_device_state(target_state)
-        return true if device.state == target_state
-
         now = Time.now
         timeout = WAIT_FOR_DEVICE_STATE_OPTS[:timeout]
         poll_until = now + timeout
