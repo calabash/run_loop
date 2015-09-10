@@ -3,13 +3,16 @@ module RunLoop
 
     include RunLoop::Regex
 
+    # @!visibility private
     # State from device.plist if simulator has been launched once.
     SIM_INSTALLED_STATE_YES = 3
 
+    # @!visibility private
     # State from device.plist if the simulator has not been launched since
     # a reset or a new Simulator install.
     SIM_INSTALLED_STATE_NO = 1
 
+    # @!visibility private
     # The installation state if there is a problem reading the device.plist.
     SIM_INSTALLED_STATE_UNKNOWN = -1
 
@@ -199,6 +202,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end
     end
 
+    # @!visibility private
     # The device `state` is reported by the simctl tool.
     #
     # The expected values from simctl are:
@@ -223,6 +227,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       @state = fetch_simulator_state
     end
 
+    # @!visibility private
     def simulator_root_dir
       @simulator_root_dir ||= lambda {
         return nil if physical_device?
@@ -230,6 +235,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_accessibility_plist_path
       @simulator_accessibility_plist_path ||= lambda {
         return nil if physical_device?
@@ -237,6 +243,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_preferences_plist_path
       @simulator_preferences_plist_path ||= lambda {
         return nil if physical_device?
@@ -244,6 +251,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_log_file_path
       @simulator_log_file_path ||= lambda {
         return nil if physical_device?
@@ -251,6 +259,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_device_plist
       @simulator_device_plist ||= lambda do
         return nil if physical_device?
@@ -258,6 +267,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end.call
     end
 
+    # @!visibility private
     # The install state of the simulator indicates whether or not the Simulator
     # has been launched since a reset or new Simulator installation.
     #
@@ -277,6 +287,8 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     #  * -1  # something when wrong while trying to read the state
     #  * 1   # has not been launched
     #  * 3   # has been launched once and is presumably ready
+    #
+    # TODO needs better unit tests.
     def simulator_install_state
       state = SIM_INSTALLED_STATE_UNKNOWN
       begin
@@ -287,6 +299,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       state
     end
 
+    # @!visibility private
     # The model name by inspecting the device.plist.
     #
     # We will need this value when trying to determine the size of the installed
@@ -306,6 +319,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end
     end
 
+    # @!visibility private
     # The size of the simulator data/ directory.
     #
     # TODO needs unit tests.
@@ -406,14 +420,17 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       line
     end
 
+    # @!visibility private
     def xcrun
       RunLoop::Xcrun.new
     end
 
+    # @!visibility private
     def pbuddy
       @pbuddy ||= RunLoop::PlistBuddy.new
     end
 
+    # @!visibility private
     def detect_state_from_line(line)
 
       if line[/unavailable/, 0]
@@ -431,6 +448,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end
     end
 
+    # @!visibility private
     def fetch_simulator_state
       if physical_device?
         raise RuntimeError, 'This method is available only for simulators'
@@ -452,12 +470,16 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       detect_state_from_line(matched_line)
     end
 
+    # @!visibility private
     CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
+
+    # @!visibility private
     CORE_SIMULATOR_LOGS_DIR = File.expand_path('~/Library/Logs/CoreSimulator')
 
     # TODO Is this a good idea?  It speeds up rspec tests by a factor of ~2x...
     SIM_CONTROL = RunLoop::SimControl.new
 
+    # @!visibility private
     def target_mb_for_install
       model_key = simulator_model_name
       version_key = version.to_s
@@ -475,10 +497,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       value * MB_FOR_SIM_DATA_DIR_SCALE
     end
 
+    # @!visibility private
     # How much to scale the default MB when waiting for install.
     MB_FOR_SIM_DATA_DIR_SCALE = 0.66
 
-    # This seems like a bad idea...
+    # @!visibility private
     # Typical size for data/ directory by iOS and model.
     MB_FOR_SIM_DATA_DIR = {
           '7.1' => {
