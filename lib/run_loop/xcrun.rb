@@ -37,10 +37,10 @@ module RunLoop
           @pid = process_status.pid
           exit_status = process_status.value.exitstatus
 
-          err = @stderr.read.chomp
+          err = @stderr.read.force_encoding('utf-8').chomp
           err = nil if err == ''
 
-          out = @stdout.read.chomp
+          out = @stdout.read.force_encoding('utf-8').chomp
         end
 
         {
