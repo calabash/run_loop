@@ -3,19 +3,6 @@ module RunLoop
 
     include RunLoop::Regex
 
-    # @!visibility private
-    # State from device.plist if simulator has been launched once.
-    SIM_INSTALLED_STATE_YES = 3
-
-    # @!visibility private
-    # State from device.plist if the simulator has not been launched since
-    # a reset or a new Simulator install.
-    SIM_INSTALLED_STATE_NO = 1
-
-    # @!visibility private
-    # The installation state if there is a problem reading the device.plist.
-    SIM_INSTALLED_STATE_UNKNOWN = -1
-
     attr_reader :name
     attr_reader :version
     attr_reader :udid
@@ -24,7 +11,6 @@ module RunLoop
     attr_reader :simulator_accessibility_plist_path
     attr_reader :simulator_preferences_plist_path
     attr_reader :simulator_log_file_path
-    attr_reader :pbuddy
 
     # Create a new device.
     #
@@ -215,10 +201,6 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     #
     # * Unavailable # Should never occur
     # * Unknown     # A stub for future changes
-    #
-    # Don't get this confused with the simulator _installed_ state which
-    # indicates whether or not the simulator has been launched once since a
-    # reset or new Simulator installation.
     def update_simulator_state
       if physical_device?
         raise RuntimeError, 'This method is available only for simulators'
@@ -268,53 +250,18 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     end
 
     # @!visibility private
-    # The install state of the simulator indicates whether or not the Simulator
-    # has been launched since a reset or new Simulator installation.
+    # Is this the first launch of this Simulator?
     #
-    # The installation process populates the data/ directory of the Simulator.
-    #
-    # The size of the data directory varies with iOS version and model, so the
-    # first launch can sometimes take more than 15 seconds.
-    #
-    # This is particularly true of the iOS 9 simulators which are completely
-    # unresponsive during the "install" process; displaying an Apple logo with
-    # a progress bar.
-    #
-    # Unfortunately, the value of the 'state' key in the device.plist changes
-    # the moment the simulator is launched and so we cannot wait for a good
-    # state.
-    #
-    #  * -1  # something when wrong while trying to read the state
-    #  * 1   # has not been launched
-    #  * 3   # has been launched once and is presumably ready
-    # TODO write a unit test
-    def simulator_install_state
-      state = SIM_INSTALLED_STATE_UNKNOWN
-      begin
-        state = pbuddy.plist_read('state', simulator_device_plist).to_i
-      rescue StandardError => e
-        RunLoop.log_error(e)
-      end
-      state
-    end
+    # TODO Needs unit and integration tests.
+    def simulator_first_launch?
+      megabytes = simulator_data_dir_size
 
-    # @!visibility private
-    # The model name by inspecting the device.plist.
-    #
-    # We will need this value when trying to determine the size of the installed
-    # CoreSimulator.  We cannot rely on the device.name because it might be
-    # simulator created by the user.
-    #
-    # Fall back to `name` if there is an error.
-    #
-    # TODO needs unit tests.
-    def simulator_model_name
-      begin
-        value = pbuddy.plist_read('deviceType', simulator_device_plist)
-        value.split('.').last.tr('-', ' ')
-      rescue StandardError => e
-        RunLoop.log_error(e)
-        name
+      if version >= RunLoop::Version.new('9.0')
+        megabytes < 20
+      elsif version >= RunLoop::Version.new('8.0')
+        megabytes < 12
+      else
+        megabytes < 8
       end
     end
 
@@ -330,69 +277,83 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     end
 
     # @!visibility private
-    # TODO needs unit tests.
-    def wait_for_simulator_to_install(timeout=15)
-      target_mb = target_mb_for_install
-      now = Time.now
-      timeout = timeout
-      poll_until = now + timeout
-      delay = 0.1
-      is_installed = false
+    #
+    # Waits for three conditions:
+    #
+    # 1. the SHA sum of the simulator data/ directory to be stable
+    # 2. not more log messages are begin generated
+    # 3. 1 and 2 must hold for 2 seconds.
+    #
+    # When the simulator version is >= iOS 9 _and_ it is the first launch of
+    # the simulator after a reset or a new simulator install a fourth condition
+    # is added:
+    #
+    # 4. After a sleep of 1.2 seconds, the first three conditions must be met
+    #    a second time.
+    def simulator_wait_for_stable_state
+      require 'securerandom'
 
-      while Time.now < poll_until
-        is_installed = simulator_data_dir_size >= target_mb
-        break if is_installed
-        sleep delay
+      quiet_time = 2
+      delay = 0.5
+
+      first_launch = false
+
+      if version >= RunLoop::Version.new('9.0')
+        first_launch = simulator_data_dir_size < 20
       end
 
-      if is_installed
-        elapsed = Time.now - now
-        RunLoop.log_debug("Waited #{elapsed} seconds for the simulator to install '#{target_mb} MB'")
-      else
-        mb = simulator_data_dir_size
-        RunLoop.log_debug("Simulator did not finish installing after #{timeout} seconds and installing '#{mb} MB'; proceeding regardless")
-      end
-
-      is_installed
-    end
-
-    # @!visibility private
-    #
-    # The timeout should be ~5 seconds.
-    # A quiet_time of 1 seconds is sufficient.
-    #
-    # Note: this does not solve the problem of "simulator is booting" that
-    # appeared in Xcode 7 - the log stops writing, but the device is still
-    # booting.
-    #
-    # TODO write a unit test.
-    def wait_for_simulator_log_to_stop_updating(timeout, quiet_time)
       now = Time.now
-      timeout = timeout
+      timeout = 30
       poll_until = now + timeout
-      delay = 0.1
       quiet = now + quiet_time
 
-      same_line = false
+      is_stable = false
+
+      path = File.join(simulator_root_dir, 'data')
+      current_sha = nil
+      sha_fn = lambda do |data_dir|
+        begin
+          RunLoop::Directory.directory_digest(data_dir)
+        rescue
+          SecureRandom.uuid
+        end
+      end
+
       current_line = nil
 
       while Time.now < poll_until do
+        latest_sha = sha_fn.call(path)
         latest_line = last_line_from_simulator_log_file
-        same_line = current_line == latest_line
 
-        break if same_line && Time.now > quiet
+        is_stable = current_sha == latest_sha && current_line == latest_line
 
+        if is_stable
+          if Time.now > quiet
+            if first_launch
+              RunLoop.log_debug('First launch detected - allowing additional time to stabilize')
+              first_launch = false
+              sleep 1.2
+              quiet = Time.now + quiet_time
+            else
+              break
+            end
+          else
+            quiet = Time.now + quiet_time
+          end
+        end
+
+        current_sha = latest_sha
         current_line = latest_line
         sleep delay
       end
 
-      if same_line
+      if is_stable
         elapsed = Time.now - now
         stabilized = elapsed - quiet_time
-        RunLoop.log_debug("Simulator log file stop updating after #{stabilized} seconds")
-        RunLoop.log_debug("Waited a total of #{elapsed} seconds for the log to stabilize")
+        RunLoop.log_debug("Simulator stable after #{stabilized} seconds")
+        RunLoop.log_debug("Waited a total of #{elapsed} seconds to stabilize")
       else
-        RunLoop.log_debug("Simulator log file did not stabilize after #{timeout} seconds; proceeding regardless")
+        RunLoop.log_debug("Timed out: simulator not stable after #{timeout} seconds")
       end
     end
 
@@ -422,11 +383,6 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @!visibility private
     def xcrun
       RunLoop::Xcrun.new
-    end
-
-    # @!visibility private
-    def pbuddy
-      @pbuddy ||= RunLoop::PlistBuddy.new
     end
 
     # @!visibility private
@@ -477,133 +433,5 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
     # TODO Is this a good idea?  It speeds up rspec tests by a factor of ~2x...
     SIM_CONTROL = RunLoop::SimControl.new
-
-    # @!visibility private
-    def target_mb_for_install
-      model_key = simulator_model_name
-      version_key = version.to_s
-
-      version_hash = MB_FOR_SIM_DATA_DIR[version_key]
-
-      if !version_hash
-        value = MB_FOR_SIM_DATA_DIR[model_key]
-      else
-        value = version_hash[model_key]
-      end
-
-      value = 34 if !value
-
-      value * MB_FOR_SIM_DATA_DIR_SCALE
-    end
-
-    # @!visibility private
-    # How much to scale the default MB when waiting for install.
-    MB_FOR_SIM_DATA_DIR_SCALE = 0.66
-
-    # @!visibility private
-    # Typical size for data/ directory by iOS and model.
-    MB_FOR_SIM_DATA_DIR = {
-          '7.1' => {
-                'iPhone 4s' => 12,
-                'iPhone 5' => 12,
-                'iPhone 5s' => 17,
-                'iPad 2' => 10,
-                'iPad Retina' => 14,
-                'iPad Air' => 14
-          },
-
-          '8.0' => {
-                'iPhone 4s' => 23,
-                'iPhone 5' => 25,
-                'iPhone 5s' => 25,
-                'iPhone 6' => 26,
-                'iPhone 6 Plus' => 30,
-                'iPad 2' => 21,
-                'iPad Retina' => 27,
-                'iPad Air' => 27,
-                'Resizable iPhone' => 37,
-                'Resizable iPad' => 34
-          },
-
-          '8.1' => {
-                'iPhone 4s' => 23,
-                'iPhone 5' => 25,
-                'iPhone 5s' => 25,
-                'iPhone 6' => 26,
-                'iPhone 6 Plus' => 30,
-                'iPad 2' => 21,
-                'iPad Retina' => 27,
-                'iPad Air' => 27,
-                'Resizable iPhone' => 37,
-                'Resizable iPad' => 34
-          },
-
-          '8.2' => {
-                'iPhone 4s' => 16,
-                'iPhone 5' => 16,
-                'iPhone 5s' => 16,
-                'iPhone 6' => 25,
-                'iPhone 6 Plus' => 40,
-                'iPad 2' => 21,
-                'iPad Retina' => 35,
-                'iPad Air' => 35,
-                'Resizable iPhone' => 33,
-                'Resizable iPad' => 34
-          },
-
-          '8.3' => {
-                'iPhone 4s' => 32,
-                'iPhone 5' => 33,
-                'iPhone 5s' => 33,
-                'iPhone 6' => 33,
-                'iPhone 6 Plus' => 43,
-                'iPad 2' => 32,
-                'iPad Retina' => 35,
-                'iPad Air' => 35,
-                'Resizable iPhone' => 29,
-                'Resizable iPad' => 30
-          },
-
-          '8.4' => {
-                'iPhone 4s' => 32,
-                'iPhone 5' => 33,
-                'iPhone 5s' => 33,
-                'iPhone 6' => 33,
-                'iPhone 6 Plus' => 43,
-                'iPad 2' => 32,
-                'iPad Retina' => 35,
-                'iPad Air' => 35,
-                'Resizable iPhone' => 26,
-                'Resizable iPad' => 27
-          },
-
-          '9.0' => {
-                'iPhone 4s' => 33,
-                'iPhone 5' => 32,
-                'iPhone 5s' => 27,
-                'iPhone 6' => 27,
-                'iPhone 6 Plus' => 38,
-                'iPhone 6s' => 32,
-                'iPhone 6s Plus' => 39,
-                'iPad 2' => 29,
-                'iPad Retina' => 34,
-                'iPad Air' => 34,
-                'iPad Air 2' => 44
-          },
-
-          # Thinking ahead to iOS 9.*
-          'iPhone 4s' => 34,
-          'iPhone 5' => 34,
-          'iPhone 5s' => 35,
-          'iPhone 6' => 40,
-          'iPhone 6 Plus' => 39,
-          'iPhone 6s' => 40,
-          'iPhone 6s Plus' => 46,
-          'iPad 2' => 31,
-          'iPad Retina' => 35,
-          'iPad Air' => 37,
-          'iPad Air 2' => 53
-    }
-
   end
 end
