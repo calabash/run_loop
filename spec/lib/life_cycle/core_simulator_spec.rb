@@ -276,6 +276,42 @@ describe RunLoop::LifeCycle::CoreSimulator do
         end
       end
     end
+
+    describe '#uninstall_app_and_sandbox' do
+      it 'iOS >= 8' do
+        core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, device_with_app)
+        expect(core_sim).to receive(:wait_for_device_state).with('Shutdown').and_return true
+
+        sandbox = core_sim.app_sandbox_dir
+        installed_app_dir = core_sim.installed_app_bundle_dir
+        container = File.dirname(installed_app_dir)
+
+        expect(File.exist?(sandbox)).to be_truthy
+        expect(File.exist?(container)).to be_truthy
+
+        core_sim.send(:uninstall_app_and_sandbox, installed_app_dir)
+
+        expect(File.exist?(sandbox)).to be_falsey
+        expect(File.exist?(container)).to be_falsey
+      end
+
+      it 'iOS < 8' do
+        core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, sdk_71_device_with_app)
+        expect(core_sim).to receive(:wait_for_device_state).with('Shutdown').and_return true
+
+        sandbox = core_sim.app_sandbox_dir
+        installed_app_dir = core_sim.installed_app_bundle_dir
+        container = File.dirname(installed_app_dir)
+
+        expect(File.exist?(sandbox)).to be_truthy
+        expect(File.exist?(container)).to be_truthy
+
+        core_sim.send(:uninstall_app_and_sandbox, installed_app_dir)
+
+        expect(File.exist?(sandbox)).to be_falsey
+        expect(File.exist?(container)).to be_falsey
+      end
+    end
   end
 
   describe '#installed_app_sha1' do

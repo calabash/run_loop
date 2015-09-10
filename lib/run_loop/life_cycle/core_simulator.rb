@@ -261,7 +261,29 @@ module RunLoop
       end
 
       def uninstall_app_and_sandbox(installed_app_bundle)
+        wait_for_device_state('Shutdown')
 
+        if sdk_gte_8?
+          # Must delete the sandbox first.
+          directory = app_sandbox_dir
+          if File.exist?(directory)
+            FileUtils.rm_rf(directory)
+            RunLoop.log_debug("Deleted app sandbox: #{directory}")
+          end
+
+          directory = File.dirname(installed_app_bundle)
+          if File.exist?(directory)
+            FileUtils.rm_rf(directory)
+            RunLoop.log_debug("Deleted app container: #{directory}")
+          end
+        else
+          # Sandbox _is_ in the container.
+          directory = File.dirname(installed_app_bundle)
+          if File.exist?(directory)
+            FileUtils.rm_rf(directory)
+            RunLoop.log_debug("Deleted app container: #{directory}")
+          end
+        end
       end
 
       # @!visibility private
