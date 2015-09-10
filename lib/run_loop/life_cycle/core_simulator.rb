@@ -3,6 +3,8 @@ module RunLoop
 
     class CoreSimulator
 
+      require 'securerandom'
+
       # @!visibility private
       METADATA_PLIST = '.com.apple.mobile_container_manager.metadata.plist'
 
@@ -251,6 +253,30 @@ module RunLoop
       end
 
       private
+
+      def generate_uuid
+        SecureRandom.uuid.upcase!
+      end
+
+      def existing_app_container_uuids
+         Dir.entries(device_applications_dir)
+      end
+
+      def generate_unique_uuid(existing, timeout=1.0)
+        begin
+          Timeout::timeout(timeout, Timeout::Error) do
+          uuid = generate_uuid
+          loop do
+            break if !existing.include?(uuid)
+            uuid = generate_uuid
+          end
+          uuid
+          end
+        rescue Timeout::Error => _
+          raise RuntimeError,
+                "Expected to be able to generate a unique uuid in #{timeout} seconds"
+        end
+      end
 
       def install_new_app
 

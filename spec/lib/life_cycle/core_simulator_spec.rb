@@ -338,6 +338,20 @@ describe RunLoop::LifeCycle::CoreSimulator do
         expect(app.sha1).to be == core_sim.installed_app_sha1
       end
     end
+
+    it '#existing_app_container_uuids' do
+      core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, device_with_app)
+      array = core_sim.send(:existing_app_container_uuids)
+      expect(array.include?('478A57E8-1914-4A67-BABC-8D09FDD0F889')).to be_truthy
+    end
+
+    it '#generate_unique_udid' do
+      core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, device_with_app)
+      array = core_sim.send(:existing_app_container_uuids)
+      expect do
+        core_sim.send(:generate_unique_uuid, array)
+      end.not_to raise_error
+    end
   end
 
   describe '#installed_app_sha1' do
@@ -554,6 +568,31 @@ describe RunLoop::LifeCycle::CoreSimulator do
 
         core_sim.send(:reset_app_sandbox_internal)
       end
+    end
+  end
+
+  it '#generate_uuid' do
+    actual = core_sim.send(:generate_uuid)
+    expect(actual[RunLoop::Regex::CORE_SIMULATOR_UDID_REGEX, 0]).to be_truthy
+  end
+
+  describe '#generate_unique_udid' do
+    it 'keeps trying until unique' do
+      existing = [:a, :b, :c]
+      generated = existing + [:d]
+      expect(core_sim).to receive(:generate_uuid).and_return(*generated)
+
+      actual = core_sim.send(:generate_unique_uuid, existing)
+      expect(actual).to be == :d
+    end
+
+    it 'times out if a uuid cannot be created' do
+      existing = [:a]
+      expect(core_sim).to receive(:generate_uuid).at_least(:once).and_return(:a)
+
+      expect do
+        core_sim.send(:generate_unique_uuid, existing, 0.02)
+      end.to raise_error RuntimeError, /Expected to be able to generate a unique uuid in/
     end
   end
 end
