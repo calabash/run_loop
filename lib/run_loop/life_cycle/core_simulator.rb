@@ -279,7 +279,18 @@ module RunLoop
       end
 
       def install_new_app
+        wait_for_device_state('Shutdown')
 
+        existing = existing_app_container_uuids
+        udid = generate_unique_uuid(existing)
+        directory = File.join(device_applications_dir, udid)
+
+        bundle_name = File.basename(app.path)
+        target = File.join(directory, bundle_name)
+
+        args = ['ditto', app.path, target]
+        RunLoop::Xcrun.new.exec(args)
+        target
       end
 
       def reinstall_existing_app_and_clear_sandbox(installed_app_bundle)
@@ -298,6 +309,7 @@ module RunLoop
 
         args = ['ditto', app.path, target]
         RunLoop::Xcrun.new.exec(args)
+        installed_app_bundle
       end
 
       def uninstall_app_and_sandbox(installed_app_bundle)

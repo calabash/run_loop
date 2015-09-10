@@ -293,6 +293,7 @@ describe RunLoop::LifeCycle::CoreSimulator do
 
         expect(File.exist?(sandbox)).to be_falsey
         expect(File.exist?(container)).to be_falsey
+        expect(core_sim.app_is_installed?).to be_falsey
       end
 
       it 'iOS < 8' do
@@ -310,6 +311,7 @@ describe RunLoop::LifeCycle::CoreSimulator do
 
         expect(File.exist?(sandbox)).to be_falsey
         expect(File.exist?(container)).to be_falsey
+        expect(core_sim.app_is_installed?).to be_falsey
       end
     end
 
@@ -323,6 +325,7 @@ describe RunLoop::LifeCycle::CoreSimulator do
         core_sim.send(:reinstall_existing_app_and_clear_sandbox, installed_app_dir)
 
         expect(File.exist?(core_sim.app_sandbox_dir)).to be_truthy
+        expect(core_sim.app_is_installed?).to be_truthy
         expect(app.sha1).to be == core_sim.installed_app_sha1
       end
 
@@ -335,6 +338,7 @@ describe RunLoop::LifeCycle::CoreSimulator do
         core_sim.send(:reinstall_existing_app_and_clear_sandbox, installed_app_dir)
 
         expect(File.exist?(core_sim.app_sandbox_dir)).to be_truthy
+        expect(core_sim.app_is_installed?).to be_truthy
         expect(app.sha1).to be == core_sim.installed_app_sha1
       end
     end
@@ -351,6 +355,38 @@ describe RunLoop::LifeCycle::CoreSimulator do
       expect do
         core_sim.send(:generate_unique_uuid, array)
       end.not_to raise_error
+    end
+
+    describe '#install_new_app' do
+      it 'iOS >= 8' do
+        app = RunLoop::App.new(Resources.shared.app_bundle_path)
+        core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, device_with_app)
+        expect(core_sim).to receive(:wait_for_device_state).with('Shutdown').and_return true
+
+        uuid = 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA'
+        expect(core_sim).to receive(:generate_unique_uuid).and_return uuid
+
+        actual = core_sim.send(:install_new_app)
+
+        expect(actual[/#{uuid}/, 0]).to be_truthy
+        expect(core_sim.app_is_installed?).to be_truthy
+        expect(app.sha1).to be == core_sim.installed_app_sha1
+      end
+
+      it 'iOS < 8' do
+        app = RunLoop::App.new(Resources.shared.app_bundle_path)
+        core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, sdk_71_device_with_app)
+        expect(core_sim).to receive(:wait_for_device_state).with('Shutdown').and_return true
+
+        uuid = 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA'
+        expect(core_sim).to receive(:generate_unique_uuid).and_return uuid
+
+        actual = core_sim.send(:install_new_app)
+
+        expect(actual[/#{uuid}/, 0]).to be_truthy
+        expect(core_sim.app_is_installed?).to be_truthy
+        expect(app.sha1).to be == core_sim.installed_app_sha1
+      end
     end
   end
 
