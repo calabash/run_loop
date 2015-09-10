@@ -86,15 +86,24 @@ module RunLoop
 
         RunLoop.log_unix_cmd("xcrun #{args.join(' ')}")
 
+        start_time = Time.now
+
         pid = spawn('xcrun', *args)
         Process.detach(pid)
 
         sim_name = sim_control.send(:sim_name)
+
         RunLoop::ProcessWaiter.new(sim_name, WAIT_FOR_SIMULATOR_PROCESSES_OPTS).wait_for_any
         RunLoop::ProcessWaiter.new('SimulatorBridge', WAIT_FOR_SIMULATOR_PROCESSES_OPTS).wait_for_any
-        wait_for_device_state 'Booted'
+
+        device.wait_for_simulator_to_install
         device.wait_for_simulator_log_to_stop_updating(5, 1)
+
         sleep(SIM_POST_LAUNCH_WAIT)
+
+        elapsed = Time.now - start_time
+        RunLoop.log_debug("Took #{elapsed} seconds to launch simulator")
+        true
       end
 
       # @!visibility private
