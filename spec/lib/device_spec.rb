@@ -279,15 +279,6 @@ describe RunLoop::Device do
         expect(actual[/#{simulator.udid}\/device.plist/, 0]).to be_truthy
       end
     end
-
-    it '#simulator_install_state' do
-      pbuddy = RunLoop::PlistBuddy.new
-      expect(simulator).to receive(:pbuddy).and_return pbuddy
-      expect(pbuddy).to receive(:plist_read).with('state', 'device.plist').and_return :state
-      expect(simulator).to receive(:simulator_device_plist).and_return 'device.plist'
-
-      expect(simulator.simulator_install_state).to be == :state
-    end
   end
 
   describe 'updating the device state' do

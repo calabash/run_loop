@@ -287,8 +287,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     #  * -1  # something when wrong while trying to read the state
     #  * 1   # has not been launched
     #  * 3   # has been launched once and is presumably ready
-    #
-    # TODO needs better unit tests.
+    # TODO write a unit test
     def simulator_install_state
       state = SIM_INSTALLED_STATE_UNKNOWN
       begin
