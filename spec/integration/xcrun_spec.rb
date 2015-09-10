@@ -6,7 +6,7 @@ describe RunLoop::Xcrun do
     it 'can call simctl' do
       args = ['simctl', 'list', 'devices']
 
-      hash = xcrun.exec(args)
+      hash = xcrun.exec(args, log_unix_cmd: true, timeout: 2)
 
       expect(hash[:err]).to be == nil
       expect(hash[:out]).to be_truthy
@@ -19,7 +19,7 @@ describe RunLoop::Xcrun do
 
     args = ['xcodebuild', '-version']
 
-    hash = xcrun.exec(args)
+    hash = xcrun.exec(args, log_unix_cmd: true, timeout: 2)
 
     expect(hash[:err]).to be == nil
     expect(hash[:out]).to be_truthy
