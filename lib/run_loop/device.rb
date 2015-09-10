@@ -298,7 +298,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         return 'Unavailable'
       end
 
-      state = line[/(Booted|Shutdown)/,0]
+      state = line[/(Booted|Shutdown|Shutting Down)/,0]
 
       if state.nil?
         RunLoop.log_debug("Simulator state is unknown: #{line}")
