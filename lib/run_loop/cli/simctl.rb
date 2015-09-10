@@ -37,7 +37,7 @@ module RunLoop
         end
       end
 
-      desc 'refresh', 'EXPERIMENTAL: Terminate CoreSimulatorService daemons'
+      desc 'manage-processes', 'Manage CoreSimulator processes by quiting stale processes'
 
       method_option 'debug',
                     :desc => 'Enable debug logging.',
@@ -46,7 +46,7 @@ module RunLoop
                     :default => false,
                     :type => :boolean
 
-      def refresh
+      def manage_processes
         debug = options[:debug]
         original_value = ENV['DEBUG']
 
