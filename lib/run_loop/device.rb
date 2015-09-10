@@ -287,12 +287,60 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       state
     end
 
-    def update_simulator_state
-      if physical_device?
-        raise RuntimeError, 'This method is available only for simulators'
+    # The model name by inspecting the device.plist.
+    #
+    # We will need this value when trying to determine the size of the installed
+    # CoreSimulator.  We cannot rely on the device.name because it might be
+    # simulator created by the user.
+    #
+    # Fall back to `name` if there is an error.
+    #
+    # TODO needs unit tests.
+    def simulator_model_name
+      begin
+        value = pbuddy.plist_read('deviceType', simulator_device_plist)
+        value.split('.').last.tr('-', ' ')
+      rescue StandardError => e
+        RunLoop.log_error(e)
+        name
+      end
+    end
+
+    # The size of the simulator data/ directory.
+    #
+    # TODO needs unit tests.
+    def simulator_data_dir_size
+      path = File.join(simulator_root_dir, 'data')
+      args = ['du', '-m', '-d', '0', path]
+      hash = xcrun.exec(args)
+      hash[:out].split(' ').first.to_i
+    end
+
+    # @!visibility private
+    # TODO needs unit tests.
+    def wait_for_simulator_to_install(timeout=15)
+      target_mb = target_mb_for_install
+      now = Time.now
+      timeout = timeout
+      poll_until = now + timeout
+      delay = 0.1
+      is_installed = false
+
+      while Time.now < poll_until
+        is_installed = simulator_data_dir_size >= target_mb
+        break if is_installed
+        sleep delay
       end
 
-      @state = fetch_simulator_state
+      if is_installed
+        elapsed = Time.now - now
+        RunLoop.log_debug("Waited #{elapsed} seconds for the simulator to install '#{target_mb} MB'")
+      else
+        mb = simulator_data_dir_size
+        RunLoop.log_debug("Simulator did not finish installing after #{timeout} seconds and installing '#{mb} MB'; proceeding regardless")
+      end
+
+      is_installed
     end
 
     # @!visibility private
@@ -409,5 +457,131 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
     # TODO Is this a good idea?  It speeds up rspec tests by a factor of ~2x...
     SIM_CONTROL = RunLoop::SimControl.new
+
+    def target_mb_for_install
+      model_key = simulator_model_name
+      version_key = version.to_s
+
+      version_hash = MB_FOR_SIM_DATA_DIR[version_key]
+
+      if !version_hash
+        value = MB_FOR_SIM_DATA_DIR[model_key]
+      else
+        value = version_hash[model_key]
+      end
+
+      value = 34 if !value
+
+      value * MB_FOR_SIM_DATA_DIR_SCALE
+    end
+
+    # How much to scale the default MB when waiting for install.
+    MB_FOR_SIM_DATA_DIR_SCALE = 0.66
+
+    # This seems like a bad idea...
+    # Typical size for data/ directory by iOS and model.
+    MB_FOR_SIM_DATA_DIR = {
+          '7.1' => {
+                'iPhone 4s' => 12,
+                'iPhone 5' => 12,
+                'iPhone 5s' => 17,
+                'iPad 2' => 10,
+                'iPad Retina' => 14,
+                'iPad Air' => 14
+          },
+
+          '8.0' => {
+                'iPhone 4s' => 23,
+                'iPhone 5' => 25,
+                'iPhone 5s' => 25,
+                'iPhone 6' => 26,
+                'iPhone 6 Plus' => 30,
+                'iPad 2' => 21,
+                'iPad Retina' => 27,
+                'iPad Air' => 27,
+                'Resizable iPhone' => 37,
+                'Resizable iPad' => 34
+          },
+
+          '8.1' => {
+                'iPhone 4s' => 23,
+                'iPhone 5' => 25,
+                'iPhone 5s' => 25,
+                'iPhone 6' => 26,
+                'iPhone 6 Plus' => 30,
+                'iPad 2' => 21,
+                'iPad Retina' => 27,
+                'iPad Air' => 27,
+                'Resizable iPhone' => 37,
+                'Resizable iPad' => 34
+          },
+
+          '8.2' => {
+                'iPhone 4s' => 16,
+                'iPhone 5' => 16,
+                'iPhone 5s' => 16,
+                'iPhone 6' => 25,
+                'iPhone 6 Plus' => 40,
+                'iPad 2' => 21,
+                'iPad Retina' => 35,
+                'iPad Air' => 35,
+                'Resizable iPhone' => 33,
+                'Resizable iPad' => 34
+          },
+
+          '8.3' => {
+                'iPhone 4s' => 32,
+                'iPhone 5' => 33,
+                'iPhone 5s' => 33,
+                'iPhone 6' => 33,
+                'iPhone 6 Plus' => 43,
+                'iPad 2' => 32,
+                'iPad Retina' => 35,
+                'iPad Air' => 35,
+                'Resizable iPhone' => 29,
+                'Resizable iPad' => 30
+          },
+
+          '8.4' => {
+                'iPhone 4s' => 32,
+                'iPhone 5' => 33,
+                'iPhone 5s' => 33,
+                'iPhone 6' => 33,
+                'iPhone 6 Plus' => 43,
+                'iPad 2' => 32,
+                'iPad Retina' => 35,
+                'iPad Air' => 35,
+                'Resizable iPhone' => 26,
+                'Resizable iPad' => 27
+          },
+
+          '9.0' => {
+                'iPhone 4s' => 33,
+                'iPhone 5' => 32,
+                'iPhone 5s' => 27,
+                'iPhone 6' => 27,
+                'iPhone 6 Plus' => 38,
+                'iPhone 6s' => 32,
+                'iPhone 6s Plus' => 39,
+                'iPad 2' => 29,
+                'iPad Retina' => 34,
+                'iPad Air' => 34,
+                'iPad Air 2' => 44
+          },
+
+          # Thinking ahead to iOS 9.*
+          'iPhone 4s' => 34,
+          'iPhone 5' => 34,
+          'iPhone 5s' => 35,
+          'iPhone 6' => 40,
+          'iPhone 6 Plus' => 39,
+          'iPhone 6s' => 40,
+          'iPhone 6s Plus' => 46,
+          'iPad 2' => 31,
+          'iPad Retina' => 35,
+          'iPad Air' => 37,
+          'iPad Air 2' => 53
+    }
+
   end
 end
