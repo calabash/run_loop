@@ -312,6 +312,32 @@ describe RunLoop::LifeCycle::CoreSimulator do
         expect(File.exist?(container)).to be_falsey
       end
     end
+
+    describe '#reinstall_existing_app_and_clear_sandbox' do
+      it 'iOS >= 8' do
+        core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, device_with_app)
+        expect(core_sim).to receive(:wait_for_device_state).with('Shutdown').and_return true
+
+        installed_app_dir = core_sim.installed_app_bundle_dir
+
+        core_sim.send(:reinstall_existing_app_and_clear_sandbox, installed_app_dir)
+
+        expect(File.exist?(core_sim.app_sandbox_dir)).to be_truthy
+        expect(app.sha1).to be == core_sim.installed_app_sha1
+      end
+
+      it 'iOS < 8' do
+        core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, sdk_71_device_with_app)
+        expect(core_sim).to receive(:wait_for_device_state).with('Shutdown').and_return true
+
+        installed_app_dir = core_sim.installed_app_bundle_dir
+
+        core_sim.send(:reinstall_existing_app_and_clear_sandbox, installed_app_dir)
+
+        expect(File.exist?(core_sim.app_sandbox_dir)).to be_truthy
+        expect(app.sha1).to be == core_sim.installed_app_sha1
+      end
+    end
   end
 
   describe '#installed_app_sha1' do

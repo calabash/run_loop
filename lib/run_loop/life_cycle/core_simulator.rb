@@ -257,7 +257,21 @@ module RunLoop
       end
 
       def reinstall_existing_app_and_clear_sandbox(installed_app_bundle)
+        wait_for_device_state('Shutdown')
 
+        reset_app_sandbox_internal
+
+        if File.exist?(installed_app_bundle)
+          FileUtils.rm_rf(installed_app_bundle)
+          RunLoop.log_debug("Deleted app bundle: #{installed_app_bundle}")
+        end
+
+        directory = File.dirname(installed_app_bundle)
+        bundle_name = File.basename(app.path)
+        target = File.join(directory, bundle_name)
+
+        args = ['ditto', app.path, target]
+        RunLoop::Xcrun.new.exec(args)
       end
 
       def uninstall_app_and_sandbox(installed_app_bundle)
