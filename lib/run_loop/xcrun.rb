@@ -18,7 +18,6 @@ module RunLoop
       @stdin, @stdout, out, @stderr, err, process_status, @pid, exit_status = nil
 
       cmd = "xcrun #{args.join(' ')}"
-      RunLoop.log_unix_cmd(cmd)
 
       begin
         Timeout.timeout(timeout, TimeoutError) do
