@@ -103,9 +103,9 @@ Please update your sources.))
     # @!visibility private
     def to_s
       if simulator?
-        "#<Simulator: #{name} #{udid} #{instruction_set}>"
+        "#<Simulator: #{name} (#{version.to_s}) #{udid} #{instruction_set}>"
       else
-        "#<Device: #{name} #{udid}>"
+        "#<Device: #{name} (#{version.to_s}) #{udid}>"
       end
     end
 
