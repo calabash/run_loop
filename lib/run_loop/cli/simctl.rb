@@ -46,15 +46,33 @@ module RunLoop
                     :default => false,
                     :type => :boolean
 
+      method_option 'device',
+                    :desc => 'The simulator UDID or name.',
+                    :aliases => '-d',
+                    :required => false,
+                    :type => :string
+
       def doctor
         debug = options[:debug]
+        device = options[:device]
 
-        if debug
-          RunLoop::Environment.with_debugging do
-            launch_each_simulator
+        if device
+          device = expect_device(options)
+          if debug
+            RunLoop::Environment.with_debugging do
+              launch_simulator(device)
+            end
+          else
+            launch_simulator(device)
           end
         else
-           launch_each_simulator
+          if debug
+            RunLoop::Environment.with_debugging do
+              launch_each_simulator
+            end
+          else
+            launch_each_simulator
+          end
         end
       end
 
@@ -62,13 +80,15 @@ module RunLoop
         def launch_each_simulator
           sim_control = RunLoop::SimControl.new
           sim_control.simulators.each do |simulator|
-            #if simulator.version >= RunLoop::Version.new('9.0')
-              core_sim = RunLoop::LifeCycle::CoreSimulator.new(nil,
-                                                               simulator,
-                                                               sim_control)
-              core_sim.launch_simulator
-            #end
+            launch_simulator(simulator, sim_control)
           end
+        end
+
+        def launch_simulator(simulator, sim_control=RunLoop::SimControl.new)
+          core_sim = RunLoop::LifeCycle::CoreSimulator.new(nil,
+                                                           simulator,
+                                                           sim_control)
+          core_sim.launch_simulator
         end
       end
 
@@ -140,7 +160,7 @@ module RunLoop
                     :type => :string
 
       method_option 'device',
-                    :desc => 'The device UDID or simulator identifier.',
+                    :desc => 'The simulator UDID or name.',
                     :aliases => '-d',
                     :required => false,
                     :type => :string
