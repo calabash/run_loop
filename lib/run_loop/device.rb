@@ -189,6 +189,30 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end
     end
 
+    # The device `state` is reported by the simctl tool.
+    #
+    # The expected values from simctl are:
+    #
+    # * Booted
+    # * Shutdown
+    # * Shutting Down
+    #
+    # To handle exceptional cases, there are these two additional states:
+    #
+    # * Unavailable # Should never occur
+    # * Unknown     # A stub for future changes
+    #
+    # Don't get this confused with the simulator _installed_ state which
+    # indicates whether or not the simulator has been launched once since a
+    # reset or new Simulator installation.
+    def update_simulator_state
+      if physical_device?
+        raise RuntimeError, 'This method is available only for simulators'
+      end
+
+      @state = fetch_simulator_state
+    end
+
     def simulator_root_dir
       @simulator_root_dir ||= lambda {
         return nil if physical_device?
@@ -224,17 +248,33 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end.call
     end
 
-    # The install state of a simulator is an indication of how 'ready' the
-    # simulator is for work.  For example in Xcode 7 on first launch, iOS 9
-    # simulators show a "booting" screen with a progress bar.
+    # The install state of the simulator indicates whether or not the Simulator
+    # has been launched since a reset or new Simulator installation.
     #
-    # Unfortunately, we cannot wait for this state because it changes when the
-    # simulator is launched.
+    # The installation process populates the data/ directory of the Simulator.
     #
-    # '1' => not ready
-    # '3' => ready
+    # The size of the data directory varies with iOS version and model, so the
+    # first launch can sometimes take more than 15 seconds.
+    #
+    # This is particularly true of the iOS 9 simulators which are completely
+    # unresponsive during the "install" process; displaying an Apple logo with
+    # a progress bar.
+    #
+    # Unfortunately, the value of the 'state' key in the device.plist changes
+    # the moment the simulator is launched and so we cannot wait for a good
+    # state.
+    #
+    #  * -1  # something when wrong while trying to read the state
+    #  * 1   # has not been launched
+    #  * 3   # has been launched once and is presumably ready
     def simulator_install_state
-      pbuddy.plist_read('state', simulator_device_plist)
+      state = -1
+      begin
+        state = pbuddy.plist_read('state', simulator_device_plist)
+      rescue StandardError => e
+        RunLoop.log_error(e)
+      end
+      state
     end
 
     def update_simulator_state
