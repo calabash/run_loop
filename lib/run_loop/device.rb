@@ -3,6 +3,19 @@ module RunLoop
 
     include RunLoop::Regex
 
+    # @!visibility private
+    # State from device.plist if simulator has been launched once.
+    SIM_INSTALLED_STATE_YES = 3
+
+    # @!visibility private
+    # State from device.plist if the simulator has not been launched since
+    # a reset or a new Simulator install.
+    SIM_INSTALLED_STATE_NO = 1
+
+    # @!visibility private
+    # The installation state if there is a problem reading the device.plist.
+    SIM_INSTALLED_STATE_UNKNOWN = -1
+
     attr_reader :name
     attr_reader :version
     attr_reader :udid
@@ -11,6 +24,7 @@ module RunLoop
     attr_reader :simulator_accessibility_plist_path
     attr_reader :simulator_preferences_plist_path
     attr_reader :simulator_log_file_path
+    attr_reader :pbuddy
 
     # Create a new device.
     #
@@ -188,6 +202,32 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end
     end
 
+    # @!visibility private
+    # The device `state` is reported by the simctl tool.
+    #
+    # The expected values from simctl are:
+    #
+    # * Booted
+    # * Shutdown
+    # * Shutting Down
+    #
+    # To handle exceptional cases, there are these two additional states:
+    #
+    # * Unavailable # Should never occur
+    # * Unknown     # A stub for future changes
+    #
+    # Don't get this confused with the simulator _installed_ state which
+    # indicates whether or not the simulator has been launched once since a
+    # reset or new Simulator installation.
+    def update_simulator_state
+      if physical_device?
+        raise RuntimeError, 'This method is available only for simulators'
+      end
+
+      @state = fetch_simulator_state
+    end
+
+    # @!visibility private
     def simulator_root_dir
       @simulator_root_dir ||= lambda {
         return nil if physical_device?
@@ -195,6 +235,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_accessibility_plist_path
       @simulator_accessibility_plist_path ||= lambda {
         return nil if physical_device?
@@ -202,6 +243,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_preferences_plist_path
       @simulator_preferences_plist_path ||= lambda {
         return nil if physical_device?
@@ -209,6 +251,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_log_file_path
       @simulator_log_file_path ||= lambda {
         return nil if physical_device?
@@ -216,12 +259,101 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
-    def update_simulator_state
-      if physical_device?
-        raise RuntimeError, 'This method is available only for simulators'
+    # @!visibility private
+    def simulator_device_plist
+      @simulator_device_plist ||= lambda do
+        return nil if physical_device?
+        File.join(simulator_root_dir, 'device.plist')
+      end.call
+    end
+
+    # @!visibility private
+    # The install state of the simulator indicates whether or not the Simulator
+    # has been launched since a reset or new Simulator installation.
+    #
+    # The installation process populates the data/ directory of the Simulator.
+    #
+    # The size of the data directory varies with iOS version and model, so the
+    # first launch can sometimes take more than 15 seconds.
+    #
+    # This is particularly true of the iOS 9 simulators which are completely
+    # unresponsive during the "install" process; displaying an Apple logo with
+    # a progress bar.
+    #
+    # Unfortunately, the value of the 'state' key in the device.plist changes
+    # the moment the simulator is launched and so we cannot wait for a good
+    # state.
+    #
+    #  * -1  # something when wrong while trying to read the state
+    #  * 1   # has not been launched
+    #  * 3   # has been launched once and is presumably ready
+    # TODO write a unit test
+    def simulator_install_state
+      state = SIM_INSTALLED_STATE_UNKNOWN
+      begin
+        state = pbuddy.plist_read('state', simulator_device_plist).to_i
+      rescue StandardError => e
+        RunLoop.log_error(e)
+      end
+      state
+    end
+
+    # @!visibility private
+    # The model name by inspecting the device.plist.
+    #
+    # We will need this value when trying to determine the size of the installed
+    # CoreSimulator.  We cannot rely on the device.name because it might be
+    # simulator created by the user.
+    #
+    # Fall back to `name` if there is an error.
+    #
+    # TODO needs unit tests.
+    def simulator_model_name
+      begin
+        value = pbuddy.plist_read('deviceType', simulator_device_plist)
+        value.split('.').last.tr('-', ' ')
+      rescue StandardError => e
+        RunLoop.log_error(e)
+        name
+      end
+    end
+
+    # @!visibility private
+    # The size of the simulator data/ directory.
+    #
+    # TODO needs unit tests.
+    def simulator_data_dir_size
+      path = File.join(simulator_root_dir, 'data')
+      args = ['du', '-m', '-d', '0', path]
+      hash = xcrun.exec(args)
+      hash[:out].split(' ').first.to_i
+    end
+
+    # @!visibility private
+    # TODO needs unit tests.
+    def wait_for_simulator_to_install(timeout=15)
+      target_mb = target_mb_for_install
+      now = Time.now
+      timeout = timeout
+      poll_until = now + timeout
+      delay = 0.1
+      is_installed = false
+
+      while Time.now < poll_until
+        is_installed = simulator_data_dir_size >= target_mb
+        break if is_installed
+        sleep delay
       end
 
-      @state = fetch_simulator_state
+      if is_installed
+        elapsed = Time.now - now
+        RunLoop.log_debug("Waited #{elapsed} seconds for the simulator to install '#{target_mb} MB'")
+      else
+        mb = simulator_data_dir_size
+        RunLoop.log_debug("Simulator did not finish installing after #{timeout} seconds and installing '#{mb} MB'; proceeding regardless")
+      end
+
+      is_installed
     end
 
     # @!visibility private
@@ -287,10 +419,17 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       line
     end
 
+    # @!visibility private
     def xcrun
       RunLoop::Xcrun.new
     end
 
+    # @!visibility private
+    def pbuddy
+      @pbuddy ||= RunLoop::PlistBuddy.new
+    end
+
+    # @!visibility private
     def detect_state_from_line(line)
 
       if line[/unavailable/, 0]
@@ -308,6 +447,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end
     end
 
+    # @!visibility private
     def fetch_simulator_state
       if physical_device?
         raise RuntimeError, 'This method is available only for simulators'
@@ -329,10 +469,141 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       detect_state_from_line(matched_line)
     end
 
+    # @!visibility private
     CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
+
+    # @!visibility private
     CORE_SIMULATOR_LOGS_DIR = File.expand_path('~/Library/Logs/CoreSimulator')
 
     # TODO Is this a good idea?  It speeds up rspec tests by a factor of ~2x...
     SIM_CONTROL = RunLoop::SimControl.new
+
+    # @!visibility private
+    def target_mb_for_install
+      model_key = simulator_model_name
+      version_key = version.to_s
+
+      version_hash = MB_FOR_SIM_DATA_DIR[version_key]
+
+      if !version_hash
+        value = MB_FOR_SIM_DATA_DIR[model_key]
+      else
+        value = version_hash[model_key]
+      end
+
+      value = 34 if !value
+
+      value * MB_FOR_SIM_DATA_DIR_SCALE
+    end
+
+    # @!visibility private
+    # How much to scale the default MB when waiting for install.
+    MB_FOR_SIM_DATA_DIR_SCALE = 0.66
+
+    # @!visibility private
+    # Typical size for data/ directory by iOS and model.
+    MB_FOR_SIM_DATA_DIR = {
+          '7.1' => {
+                'iPhone 4s' => 12,
+                'iPhone 5' => 12,
+                'iPhone 5s' => 17,
+                'iPad 2' => 10,
+                'iPad Retina' => 14,
+                'iPad Air' => 14
+          },
+
+          '8.0' => {
+                'iPhone 4s' => 23,
+                'iPhone 5' => 25,
+                'iPhone 5s' => 25,
+                'iPhone 6' => 26,
+                'iPhone 6 Plus' => 30,
+                'iPad 2' => 21,
+                'iPad Retina' => 27,
+                'iPad Air' => 27,
+                'Resizable iPhone' => 37,
+                'Resizable iPad' => 34
+          },
+
+          '8.1' => {
+                'iPhone 4s' => 23,
+                'iPhone 5' => 25,
+                'iPhone 5s' => 25,
+                'iPhone 6' => 26,
+                'iPhone 6 Plus' => 30,
+                'iPad 2' => 21,
+                'iPad Retina' => 27,
+                'iPad Air' => 27,
+                'Resizable iPhone' => 37,
+                'Resizable iPad' => 34
+          },
+
+          '8.2' => {
+                'iPhone 4s' => 16,
+                'iPhone 5' => 16,
+                'iPhone 5s' => 16,
+                'iPhone 6' => 25,
+                'iPhone 6 Plus' => 40,
+                'iPad 2' => 21,
+                'iPad Retina' => 35,
+                'iPad Air' => 35,
+                'Resizable iPhone' => 33,
+                'Resizable iPad' => 34
+          },
+
+          '8.3' => {
+                'iPhone 4s' => 32,
+                'iPhone 5' => 33,
+                'iPhone 5s' => 33,
+                'iPhone 6' => 33,
+                'iPhone 6 Plus' => 43,
+                'iPad 2' => 32,
+                'iPad Retina' => 35,
+                'iPad Air' => 35,
+                'Resizable iPhone' => 29,
+                'Resizable iPad' => 30
+          },
+
+          '8.4' => {
+                'iPhone 4s' => 32,
+                'iPhone 5' => 33,
+                'iPhone 5s' => 33,
+                'iPhone 6' => 33,
+                'iPhone 6 Plus' => 43,
+                'iPad 2' => 32,
+                'iPad Retina' => 35,
+                'iPad Air' => 35,
+                'Resizable iPhone' => 26,
+                'Resizable iPad' => 27
+          },
+
+          '9.0' => {
+                'iPhone 4s' => 33,
+                'iPhone 5' => 32,
+                'iPhone 5s' => 27,
+                'iPhone 6' => 27,
+                'iPhone 6 Plus' => 38,
+                'iPhone 6s' => 32,
+                'iPhone 6s Plus' => 39,
+                'iPad 2' => 29,
+                'iPad Retina' => 34,
+                'iPad Air' => 34,
+                'iPad Air 2' => 44
+          },
+
+          # Thinking ahead to iOS 9.*
+          'iPhone 4s' => 34,
+          'iPhone 5' => 34,
+          'iPhone 5s' => 35,
+          'iPhone 6' => 40,
+          'iPhone 6 Plus' => 39,
+          'iPhone 6s' => 40,
+          'iPhone 6s Plus' => 46,
+          'iPad 2' => 31,
+          'iPad Retina' => 35,
+          'iPad Air' => 37,
+          'iPad Air 2' => 53
+    }
+
   end
 end

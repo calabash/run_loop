@@ -268,6 +268,17 @@ describe RunLoop::Device do
         expect(simulator.simulator_log_file_path[/system.log/,0]).to be_truthy
       end
     end
+
+    describe '#simulator_device_plist' do
+      it 'is nil if a simulator' do
+        expect(physical.simulator_device_plist).to be_falsey
+      end
+
+      it 'is non-nil for simulators' do
+        actual = simulator.simulator_device_plist
+        expect(actual[/#{simulator.udid}\/device.plist/, 0]).to be_truthy
+      end
+    end
   end
 
   describe 'updating the device state' do
