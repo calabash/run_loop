@@ -19,6 +19,10 @@ describe RunLoop::XCTools do
     capture_stderr {  expect(xctools.xcode_developer_dir).to be == expected }
   end
 
+  it '#v71' do
+    capture_stderr { expect(xctools.v71).to be == RunLoop::Version.new('7.1') }
+  end
+
   it '#v70' do
     capture_stderr { expect(xctools.v70).to be == RunLoop::Version.new('7.0') }
   end
@@ -56,6 +60,12 @@ describe RunLoop::XCTools do
     expect(xcode).to receive(:version).and_return expected
 
     capture_stderr { expect(xctools.xcode_version).to be == expected }
+  end
+
+  it '#xcode_version_gte_71?' do
+    expect(xcode).to receive(:version_gte_71?).and_return true
+
+    capture_stderr { expect(xctools.xcode_version_gte_71?).to be_truthy }
   end
 
   it '#xcode_version_gte_7?' do
