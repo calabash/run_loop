@@ -68,6 +68,8 @@ module RunLoop
       nil
     end
 
+    # @deprecated 1.5.2 No public replacement.
+    #
     # Raise an error if the application binary is not compatible with the
     # target simulator.
     #
@@ -85,6 +87,7 @@ module RunLoop
     # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
     #  application binary is not compatible with the target simulator.
     def self.expect_compatible_simulator_architecture(launch_options, sim_control)
+      RunLoop.deprecated('1.5.2', 'No public replacement.')
       logger = launch_options[:logger]
       if sim_control.xcode_version_gte_6?
         sim_identifier = launch_options[:udid]
@@ -105,6 +108,30 @@ module RunLoop
         RunLoop::Logging.log_debug(logger, "Xcode #{sim_control.xcode_version} detected; skipping simulator architecture check.")
         false
       end
+    end
+
+    # Raise an error if the application binary is not compatible with the
+    # target simulator.
+    #
+    # @note This method is implemented for CoreSimulator environments only;
+    #  for Xcode < 6.0 this method does nothing.
+    #
+    # @param [RunLoop::Device] device The device to install on.
+    # @param [RunLoop::App] app The app to install.
+    # @param [RunLoop::Xcode] xcode The active Xcode.
+    #
+    # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
+    #  application binary is not compatible with the target simulator.
+    def self.expect_simulator_compatible_arch(device, app, xcode)
+      if !xcode.version_gte_6?
+        RunLoop.log_warn("Checking for compatible arches is only available in CoreSimulator environments")
+        return
+      end
+
+      lipo = RunLoop::Lipo.new(app.path)
+      lipo.expect_compatible_arch(device)
+
+      RunLoop.log_debug("Simulator instruction set '#{device.instruction_set}' is compatible with '#{lipo.info}'")
     end
 
     # Prepares the simulator for running.
@@ -135,6 +162,18 @@ module RunLoop
 
         # CoreSimulator
 
+        app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
+        app = RunLoop::App.new(app_bundle_path)
+
+        unless app.valid?
+          if !File.exist?(app.path)
+            message = "App '#{app_bundle_path}' does not exist."
+          else
+            message = "App '#{app_bundle_path}' is not a valid .app bundle"
+          end
+          raise RuntimeError, message
+        end
+
         udid = launch_options[:udid]
         xcode = sim_control.xcode
 
@@ -143,10 +182,10 @@ module RunLoop
         end
 
         if device.nil?
-          raise "Could not find simulator with name or UDID that matches: '#{udid}'"
+          raise RuntimeError,
+                "Could not find simulator with name or UDID that matches: '#{udid}'"
         end
 
-        app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
         bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
 
         if bridge.app_is_installed?
@@ -170,6 +209,9 @@ before you start cucumber.
 )
           end
         end
+
+        # Validate the architecture.
+        self.expect_simulator_compatible_arch(device, app, xcode)
 
         # Will quit the simulator if it is running.
         # @todo fix accessibility_enabled? so we don't have to quit the sim
@@ -283,7 +325,6 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       merged_options = options.merge(discovered_options)
 
       if self.simulator_target?(merged_options)
-        self.expect_compatible_simulator_architecture(merged_options, sim_control)
         self.prepare_simulator(merged_options, sim_control)
       end
 
