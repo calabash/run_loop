@@ -28,7 +28,9 @@ module RunLoop
 
       cmd = "xcrun #{args.join(' ')}"
 
-      RunLoop.log_unix_cmd(cmd) if merged_options
+      # Don't see your log?
+      # Commands are only logged when debugging.
+      RunLoop.log_unix_cmd(cmd) if merged_options[:log_cmd]
 
       begin
         Timeout.timeout(timeout, TimeoutError) do
