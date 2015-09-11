@@ -99,7 +99,7 @@ module RunLoop
         device.simulator_wait_for_stable_state
 
         elapsed = Time.now - start_time
-        RunLoop.log_debug("Took #{elapsed} seconds to launch")
+        RunLoop.log_debug("Took #{elapsed} seconds to launch the simulator")
 
         true
       end

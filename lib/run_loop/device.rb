@@ -350,7 +350,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         elapsed = Time.now - now
         stabilized = elapsed - quiet_time
         RunLoop.log_debug("Simulator stable after #{stabilized} seconds")
-        RunLoop.log_debug("Waited a total of #{elapsed} seconds to stabilize")
+        RunLoop.log_debug("Waited a total of #{elapsed} seconds for simulator to stabilize")
       else
         RunLoop.log_debug("Timed out: simulator not stable after #{timeout} seconds")
       end

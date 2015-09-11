@@ -331,10 +331,9 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
       uia_timeout = options[:uia_timeout] || RunLoop::Environment.uia_timeout || 10
 
-      after = Time.now
-      RunLoop::Logging.log_debug(logger, "Preparation took #{after-before} seconds")
+      RunLoop::Logging.log_debug(logger, "Preparation took #{Time.now-before} seconds")
 
-      before = Time.now
+      before_instruments_launch = Time.now
       begin
 
         if options[:validate_channel]
@@ -358,7 +357,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         raise RunLoop::TimeoutError, "Time out waiting for UIAutomation run-loop #{e}. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
       end
 
-      RunLoop::Logging.log_debug(logger, "Launching took #{Time.now-before} seconds")
+      RunLoop::Logging.log_debug(logger, "Launching took #{Time.now-before_instruments_launch} seconds")
 
       dylib_path = self.dylib_path_from_options(merged_options)
 
@@ -369,6 +368,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         lldb.retriable_inject_dylib
       end
 
+      RunLoop.log_debug("It took #{Time.now - before} seconds to launch the app")
       run_loop
     end
 
