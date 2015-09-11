@@ -186,9 +186,4 @@ describe RunLoop::Instruments do
       end
     end
   end
-
-  it 'UTF 8 encoding' do
-    stub_env('LC_ALL', 'C')
-    actual = instruments.simulators
-  end
 end

@@ -134,7 +134,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def templates
       @instruments_templates ||= lambda do
         args = ['instruments', '-s', 'templates']
-        hash = xcrun.exec(args, log_unix_cmd: true)
+        hash = xcrun.exec(args, log_cmd: true)
         if xcode.version_gte_6?
           hash[:out].chomp.split("\n").map do |elm|
             stripped = elm.strip.tr('"', '')
@@ -215,7 +215,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def fetch_devices
       @device_hash ||= lambda do
         args = ['instruments', '-s', 'devices']
-        xcrun.exec(args, log_unix_cmd: true)
+        xcrun.exec(args, log_cmd: true)
       end.call
     end
 

@@ -202,7 +202,7 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
 
     let(:args) { ['instruments', '-s', 'templates'] }
 
-    let(:options) { {:log_unix_cmd => true } }
+    let(:options) { {:log_cmd => true } }
 
     let(:xcode) { RunLoop::Xcode.new }
 
@@ -246,7 +246,7 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
   describe 'instruments -s devices' do
     let(:args) { ['instruments', '-s', 'devices'] }
 
-    let(:options) { {:log_unix_cmd => true } }
+    let(:options) { {:log_cmd => true } }
 
     let(:xcode_511_output) do
       {
