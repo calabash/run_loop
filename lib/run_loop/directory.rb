@@ -39,6 +39,8 @@ module RunLoop
         raise ArgumentError, "Expected a non-empty dir at '#{path}' found '#{entries}'"
       end
 
+      debug = RunLoop::Environment.debug?
+
       sha = OpenSSL::Digest::SHA256.new
       self.recursive_glob_for_entries(path).each do |file|
         if File.directory?(file)
@@ -46,7 +48,18 @@ module RunLoop
         elsif !Pathname.new(file).exist?
           # skip broken symlinks
         else
-          sha << File.read(file)
+          case File.ftype(file)
+            when 'fifo'
+              RunLoop.log_warn("SHA1 SKIPPING FIFO #{file}") if debug
+            when 'socket'
+              RunLoop.log_warn("SHA1 SKIPPING SOCKET #{file}") if debug
+            when 'characterSpecial'
+              RunLoop.log_warn("SHA1 SKIPPING CHAR SPECIAL #{file}") if debug
+            when 'blockSpecial'
+              RunLoop.log_warn("SHA1 SKIPPING BLOCK SPECIAL #{file}") if debug
+            else
+              sha << File.read(file)
+          end
         end
       end
       sha.hexdigest
