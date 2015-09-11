@@ -129,7 +129,10 @@ module RunLoop
         # TODO this is duplicated code; extract!
         # https://github.com/calabash/run_loop/issues/225
         def terminate_core_simulator_processes
-          RunLoop::LifeCycle::CoreSimulator::MANAGED_PROCESSES.each do |pair|
+          to_manage = RunLoop::LifeCycle::CoreSimulator::MANAGED_PROCESSES
+          to_manage << ['com.apple.CoreSimulator.CoreSimulatorService', false]
+
+          to_manage.each do |pair|
             name = pair[0]
             send_term = pair[1]
             pids = RunLoop::ProcessWaiter.new(name).pids
