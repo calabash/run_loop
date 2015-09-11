@@ -240,55 +240,125 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     end
   end
 
-  describe '#physical_devices' do
-    it 'Xcode >= 7.0' do
-      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_GTE_70)
-      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
-      yielded = [stdout, stderr, nil]
-      args = ['-s', 'devices']
-      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
+  describe 'instruments -s devices' do
+    let(:args) { ['instruments', '-s', 'devices'] }
 
-      actual = instruments.physical_devices
+    let(:options) { {:log_unix_cmd => true } }
 
-      expect(actual.count).to be == 2
-      expect(actual.first.name).to be == 'mercury'
-      expect(actual.first.version).to be == RunLoop::Version.new('8.4.1')
-      expect(actual.first.udid).to be == '5ddbd7cc1e0894a77811b3f41c8e5caecef3e912'
-      expect(actual.first.physical_device?).to be_truthy
-
-      expect(actual.last.name).to be == 'neptune'
-      expect(actual.last.version).to be == RunLoop::Version.new('9.0')
-      expect(actual.last.udid).to be == '43be3f89d9587e9468c24672777ff6211bd91124'
-      expect(actual.last.physical_device?).to be_truthy
-
-      # Testing memoization
-      expect(instruments.physical_devices).to be == actual
-      expect(instruments.instance_variable_get(:@instruments_physical_devices)).to be == actual
+    let(:xcode_511_output) do
+      {
+            :out => RunLoop::RSpec::Instruments::DEVICES_511,
+            :err => ''
+      }
     end
 
-    it 'Xcode < 7.0' do
-      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_60)
-      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
-      yielded = [stdout, stderr, nil]
-      args = ['-s', 'devices']
-      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
+    let(:xcode_6_output) do
+      {
+            :out => RunLoop::RSpec::Instruments::DEVICES_60,
+            :err => RunLoop::RSpec::Instruments::SPAM_GTE_60,
+      }
+    end
 
-      actual = instruments.physical_devices
+    let(:xcode_7_output) do
+      {
+            :out => RunLoop::RSpec::Instruments::DEVICES_GTE_70,
+            :err => RunLoop::RSpec::Instruments::SPAM_GTE_60
+      }
+    end
 
-      expect(actual.count).to be == 2
-      expect(actual.first.name).to be == 'mercury'
-      expect(actual.first.version).to be == RunLoop::Version.new('8.4.1')
-      expect(actual.first.udid).to be == '5ddbd7cc1e0894a77811b3f41c8e5caecef3e912'
-      expect(actual.first.physical_device?).to be_truthy
+    let(:xcrun) { RunLoop::Xcrun.new }
 
-      expect(actual.last.name).to be == 'neptune'
-      expect(actual.last.version).to be == RunLoop::Version.new('9.0')
-      expect(actual.last.udid).to be == '43be3f89d9587e9468c24672777ff6211bd91124'
-      expect(actual.last.physical_device?).to be_truthy
+    it '#fetch_devices' do
+      hash = { :a => :b }
+      expect(instruments).to receive(:xcrun).and_return xcrun
+      expect(xcrun).to receive(:exec).with(args, options).and_return hash
 
-      # Testing memoization
-      expect(instruments.physical_devices).to be == actual
-      expect(instruments.instance_variable_get(:@instruments_physical_devices)).to be == actual
+      actual = instruments.send(:fetch_devices)
+      expect(actual).to be == hash
+      expect(instruments.instance_variable_get(:@device_hash)).to be == actual
+    end
+
+    describe '#physical_devices' do
+      it 'Xcode >= 7.0' do
+        expect(instruments).to receive(:fetch_devices).and_return xcode_7_output
+
+        actual = instruments.physical_devices
+
+        expect(actual.count).to be == 2
+        expect(actual.first.name).to be == 'mercury'
+        expect(actual.first.version).to be == RunLoop::Version.new('8.4.1')
+        expect(actual.first.udid).to be == '5ddbd7cc1e0894a77811b3f41c8e5caecef3e912'
+        expect(actual.first.physical_device?).to be_truthy
+
+        expect(actual.last.name).to be == 'neptune'
+        expect(actual.last.version).to be == RunLoop::Version.new('9.0')
+        expect(actual.last.udid).to be == '43be3f89d9587e9468c24672777ff6211bd91124'
+        expect(actual.last.physical_device?).to be_truthy
+
+        # Testing memoization
+        expect(instruments.physical_devices).to be == actual
+        expect(instruments.instance_variable_get(:@instruments_physical_devices)).to be == actual
+      end
+
+      it 'Xcode < 7.0' do
+        expect(instruments).to receive(:fetch_devices).and_return xcode_6_output
+
+        actual = instruments.physical_devices
+
+        expect(actual.count).to be == 2
+        expect(actual.first.name).to be == 'mercury'
+        expect(actual.first.version).to be == RunLoop::Version.new('8.4.1')
+        expect(actual.first.udid).to be == '5ddbd7cc1e0894a77811b3f41c8e5caecef3e912'
+        expect(actual.first.physical_device?).to be_truthy
+
+        expect(actual.last.name).to be == 'neptune'
+        expect(actual.last.version).to be == RunLoop::Version.new('9.0')
+        expect(actual.last.udid).to be == '43be3f89d9587e9468c24672777ff6211bd91124'
+        expect(actual.last.physical_device?).to be_truthy
+
+        # Testing memoization
+        expect(instruments.physical_devices).to be == actual
+        expect(instruments.instance_variable_get(:@instruments_physical_devices)).to be == actual
+      end
+    end
+
+    describe '#simulators' do
+      it 'Xcode >= 7.0' do
+        expect(instruments).to receive(:fetch_devices).and_return xcode_7_output
+
+        actual = instruments.simulators
+
+        expect(actual.count).to be == 11
+        actual.map do |device|
+          expect(device.name[/(iPhone|iPad|my simulator)/, 0]).to be_truthy
+          expect(device.udid[RunLoop::Instruments::CORE_SIMULATOR_UDID_REGEX, 0]).to be_truthy
+          expect(device.version).to be_a_kind_of(RunLoop::Version)
+        end
+      end
+
+      it '6.0 <= Xcode < 7.0' do
+        expect(instruments).to receive(:fetch_devices).and_return xcode_6_output
+
+        actual = instruments.simulators
+        expect(actual.count).to be == 12
+        actual.map do |device|
+          expect(device.name[/(iPhone|iPad|my simulator)/, 0]).to be_truthy
+          expect(device.udid[RunLoop::Instruments::CORE_SIMULATOR_UDID_REGEX, 0]).to be_truthy
+          expect(device.version).to be_a_kind_of(RunLoop::Version)
+        end
+      end
+
+      it '5.1.1 <= Xcode < 6.0' do
+        expect(instruments).to receive(:fetch_devices).and_return xcode_511_output
+
+        actual = instruments.simulators
+        expect(actual.count).to be == 21
+        actual.map do |device|
+          expect(device.name[/(iPhone|iPad)/, 0]).to be_truthy
+          expect(device.udid).to be == device.name
+          expect(device.version).to be_a_kind_of(RunLoop::Version)
+        end
+      end
     end
   end
 
@@ -363,57 +433,6 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     context 'has a version' do
       let(:line) { 'neptune (9.0) [43be3f89d9587e9468c24672777ff6211bd91124]' }
       it { is_expected.to be_truthy }
-    end
-  end
-
-  describe '#simulators' do
-    it 'Xcode >= 7.0' do
-      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_GTE_70)
-      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
-      yielded = [stdout, stderr, nil]
-      args = ['-s', 'devices']
-      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
-
-      actual = instruments.simulators
-
-      expect(actual.count).to be == 11
-      actual.map do |device|
-        expect(device.name[/(iPhone|iPad|my simulator)/, 0]).to be_truthy
-        expect(device.udid[RunLoop::Instruments::CORE_SIMULATOR_UDID_REGEX, 0]).to be_truthy
-        expect(device.version).to be_a_kind_of(RunLoop::Version)
-      end
-    end
-
-    it '6.0 <= Xcode < 7.0' do
-      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_60)
-      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
-      yielded = [stdout, stderr, nil]
-      args = ['-s', 'devices']
-      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
-
-      actual = instruments.simulators
-      expect(actual.count).to be == 12
-      actual.map do |device|
-        expect(device.name[/(iPhone|iPad|my simulator)/, 0]).to be_truthy
-        expect(device.udid[RunLoop::Instruments::CORE_SIMULATOR_UDID_REGEX, 0]).to be_truthy
-        expect(device.version).to be_a_kind_of(RunLoop::Version)
-      end
-    end
-
-    it '5.1.1 <= Xcode < 6.0' do
-      stdout = StringIO.new(RunLoop::RSpec::Instruments::DEVICES_511)
-      stderr = StringIO.new('')
-      yielded = [stdout, stderr, nil]
-      args = ['-s', 'devices']
-      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
-
-      actual = instruments.simulators
-      expect(actual.count).to be == 21
-      actual.map do |device|
-        expect(device.name[/(iPhone|iPad)/, 0]).to be_truthy
-        expect(device.udid).to be == device.name
-        expect(device.version).to be_a_kind_of(RunLoop::Version)
-      end
     end
   end
 

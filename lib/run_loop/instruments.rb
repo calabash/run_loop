@@ -13,6 +13,10 @@ module RunLoop
       @xcode ||= RunLoop::Xcode.new
     end
 
+    def xcrun
+      RunLoop::Xcrun.new
+    end
+
     # @!visibility private
     def to_s
       "#<Instruments #{version.to_s}>"
@@ -158,25 +162,22 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end.call
     end
 
-    # Returns an array the available physical devices.
+    # Returns an array of the available physical devices.
     #
     # @return [Array<RunLoop::Device>] All the devices will be physical
     #  devices.
     def physical_devices
       @instruments_physical_devices ||= lambda do
-        execute_command(['-s', 'devices']) do |stdout, stderr, _|
-          filter_stderr_spam(stderr)
-          all = stdout.read.chomp.split("\n")
-          valid = all.select do |device|
-            device =~ DEVICE_UDID_REGEX
-          end
-          valid.map do |device|
-            udid = device[DEVICE_UDID_REGEX, 0]
-            version = device[VERSION_REGEX, 0]
-            name = device.split('(').first.strip
+        fetch_devices[:out].chomp.split("\n").map do |line|
+          udid = line[DEVICE_UDID_REGEX, 0]
+          if udid
+            version = line[VERSION_REGEX, 0]
+            name = line.split('(').first.strip
             RunLoop::Device.new(name, version, udid)
+          else
+            nil
           end
-        end
+        end.compact
       end.call
     end
 
@@ -195,34 +196,38 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @return [Array<RunLoop::Device>] All the devices will be simulators.
     def simulators
       @instruments_simulators ||= lambda do
-        execute_command(['-s', 'devices']) do |stdout, stderr, _|
-          filter_stderr_spam(stderr)
-          lines = stdout.read.chomp.split("\n")
-          lines.map do |line|
-            stripped = line.strip
-            if line_is_simulator?(stripped) &&
-                  !line_is_simulator_paired_with_watch?(stripped)
+        fetch_devices[:out].chomp.split("\n").map do |line|
+          stripped = line.strip
+          if line_is_simulator?(stripped) &&
+                !line_is_simulator_paired_with_watch?(stripped)
 
-              version = stripped[VERSION_REGEX, 0]
+            version = stripped[VERSION_REGEX, 0]
 
-              if line_is_xcode5_simulator?(stripped)
-                name = line
-                udid = line
-              else
-                name = stripped.split('(').first.strip
-                udid = line[CORE_SIMULATOR_UDID_REGEX, 0]
-              end
-
-              RunLoop::Device.new(name, version, udid)
+            if line_is_xcode5_simulator?(stripped)
+              name = line
+              udid = line
             else
-              nil
+              name = stripped.split('(').first.strip
+              udid = line[CORE_SIMULATOR_UDID_REGEX, 0]
             end
-          end.compact
-        end
+
+            RunLoop::Device.new(name, version, udid)
+          else
+            nil
+          end
+        end.compact
       end.call
     end
 
     private
+
+    # @!visibility private
+    def fetch_devices
+      @device_hash ||= lambda do
+        args = ['instruments', '-s', 'devices']
+        xcrun.exec(args, log_unix_cmd: true)
+      end.call
+    end
 
     # @!visibility private
     #
