@@ -133,31 +133,21 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @return [Array<String>] Instruments.app templates.
     def templates
       @instruments_templates ||= lambda do
+        args = ['instruments', '-s', 'templates']
+        hash = xcrun.exec(args, log_unix_cmd: true)
         if xcode.version_gte_6?
-          execute_command(['-s', 'templates']) do |stdout, stderr, _|
-            filter_stderr_spam(stderr)
-            stdout.read.chomp.split("\n").map do |elm|
-              stripped = elm.strip.tr('"', '')
-              if stripped == '' || stripped == 'Known Templates:'
-                nil
-              else
-                stripped
-              end
-            end.compact
-          end
-        elsif xcode.version_gte_51?
-          execute_command(['-s', 'templates']) do |stdout, stderr, _|
-            err = stderr.read
-            if !err.nil? || err != ''
-              $stderr.puts stderr.read
+          hash[:out].chomp.split("\n").map do |elm|
+            stripped = elm.strip.tr('"', '')
+            if stripped == '' || stripped == 'Known Templates:'
+              nil
+            else
+              stripped
             end
-
-            stdout.read.strip.split("\n").delete_if do |path|
-              not path =~ /tracetemplate/
-            end.map { |elm| elm.strip }
-          end
+          end.compact
         else
-          raise "Xcode version '#{xcode.version}' is not supported."
+          hash[:out].strip.split("\n").delete_if do |path|
+            not path =~ /tracetemplate/
+          end.map { |elm| elm.strip }
         end
       end.call
     end

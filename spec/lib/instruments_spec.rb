@@ -197,25 +197,29 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
   end
 
   describe '#templates' do
-    it 'Xcode < 5.1' do
-      xcode = instruments.xcode
-      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v50
+    let(:xcrun) { RunLoop::Xcrun.new }
 
-      expect do
-        instruments.templates
-      end.to raise_error RuntimeError, /Xcode version '5.0' is not supported./
+    let(:args) { ['instruments', '-s', 'templates'] }
+
+    let(:options) { {:log_unix_cmd => true } }
+
+    let(:xcode) { RunLoop::Xcode.new }
+
+    before do
+      expect(instruments).to receive(:xcrun).and_return xcrun
+      expect(instruments).to receive(:xcode).and_return xcode
     end
 
     it 'Xcode >= 6.0' do
-      xcode = instruments.xcode
       expect(xcode).to receive(:version_gte_6?).at_least(:once).and_return true
 
-      stdout = StringIO.new(RunLoop::RSpec::Instruments::TEMPLATES_GTE_60[:output])
-      stderr = StringIO.new(RunLoop::RSpec::Instruments::SPAM_GTE_60)
-      yielded = [stdout, stderr, nil]
-      args = ['-s', 'templates']
-      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
-      expect(instruments).to receive(:filter_stderr_spam).with(stderr).and_call_original
+      hash =
+            {
+                  :out => RunLoop::RSpec::Instruments::TEMPLATES_GTE_60[:output],
+                  :err => RunLoop::RSpec::Instruments::SPAM_GTE_60
+            }
+
+      expect(xcrun).to receive(:exec).with(args, options).and_return hash
 
       expected = RunLoop::RSpec::Instruments::TEMPLATES_GTE_60[:expected]
       expect(instruments.templates).to be == expected
@@ -223,16 +227,14 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     end
 
     it '5.1 <= Xcode < 6.0' do
-      xcode = instruments.xcode
-      expect(xcode).to receive(:version_gte_6?).at_least(:once).and_return false
-      expect(xcode).to receive(:version_gte_51?).at_least(:once).and_return true
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
 
-      stdout = StringIO.new(RunLoop::RSpec::Instruments::TEMPLATES_511[:output])
-      stderr = StringIO.new('')
-
-      yielded = [stdout, stderr, nil]
-      args = ['-s', 'templates']
-      expect(instruments).to receive(:execute_command).with(args).and_yield(*yielded)
+      hash =
+            {
+                  :out => RunLoop::RSpec::Instruments::TEMPLATES_511[:output],
+                  :err => ''
+            }
+      expect(xcrun).to receive(:exec).with(args, options).and_return hash
 
       expected = RunLoop::RSpec::Instruments::TEMPLATES_511[:expected]
       expect(instruments.templates).to be == expected
