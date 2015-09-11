@@ -47,6 +47,21 @@ module RunLoop::Simctl
       terminate_core_simulator_processes
     end
 
+    # The sha1 of the installed app.
+    def installed_app_sha1
+      installed_bundle = fetch_app_dir
+      if installed_bundle
+        RunLoop::Directory.directory_digest(installed_bundle)
+      else
+        nil
+      end
+    end
+
+    # Is the app that is install the same as the one we have in hand?
+    def same_sha1_as_installed?
+      app.sha1 == installed_app_sha1
+    end
+
     # @!visibility private
     def is_sdk_8?
       @is_sdk_8 ||= device.version >= RunLoop::Version.new('8.0')

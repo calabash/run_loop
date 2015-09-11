@@ -146,6 +146,31 @@ module RunLoop
           raise "Could not find simulator with name or UDID that matches: '#{udid}'"
         end
 
+        app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
+        bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
+
+        if bridge.app_is_installed?
+          installed_sha = bridge.installed_app_sha1
+          new_sha = bridge.app.sha1
+
+          if installed_sha != new_sha
+            raise RuntimeError, %Q(
+
+The app you are trying to launch is not the same as the app that is installed.
+
+  Installed app SHA: #{installed_sha}
+  App to launch SHA: #{new_sha}
+
+You can ensure that you are testing the correct .app by running:
+
+  $ run-loop simctl install --app "#{bridge.app.path}" --device "#{device.instruments_identifier(xcode)}"
+
+before you start cucumber.
+
+)
+          end
+        end
+
         # Will quit the simulator if it is running.
         # @todo fix accessibility_enabled? so we don't have to quit the sim
         # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
@@ -158,11 +183,10 @@ module RunLoop
         # https://github.com/calabash/run_loop/issues/167
         sim_control.ensure_software_keyboard(device)
 
+
         # Xcode 6.3 instruments cannot launch an app that is already installed on
         # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
         if sim_control.xcode.version_gte_63?
-          app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
-          bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
 
           if bridge.app_is_installed? && !sim_control.sim_is_running?
             bridge.launch_simulator
