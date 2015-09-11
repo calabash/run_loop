@@ -300,7 +300,7 @@ module RunLoop
         target = File.join(directory, bundle_name)
 
         args = ['ditto', app.path, target]
-        RunLoop::Xcrun.new.exec(args)
+        RunLoop::Xcrun.new.exec(args, log_cmd: true)
         target
       end
 
@@ -319,7 +319,7 @@ module RunLoop
         target = File.join(directory, bundle_name)
 
         args = ['ditto', app.path, target]
-        RunLoop::Xcrun.new.exec(args)
+        RunLoop::Xcrun.new.exec(args, log_cmd: true)
         installed_app_bundle
       end
 
@@ -482,7 +482,7 @@ module RunLoop
         launch_simulator
 
         args = ['simctl', 'launch', device.udid, app.bundle_identifier]
-        hash = RunLoop::Xcrun.new.exec(args, 20)
+        hash = RunLoop::Xcrun.new.exec(args, log_cmd: true, timeout: 20)
 
         exit_status = hash[:exit_status]
 

@@ -1,6 +1,12 @@
 module RunLoop
   class Xcrun
 
+    DEFAULT_OPTIONS =
+          {
+                :timeout => 10,
+                :log_cmd => false
+          }
+
     DEFAULT_TIMEOUT = 10
 
     # Raised when Xcrun fails.
@@ -8,7 +14,10 @@ module RunLoop
 
     attr_reader :stdin, :stdout, :stderr, :pid
 
-    def exec(args, timeout = DEFAULT_TIMEOUT)
+    def exec(args, options={})
+      merged_options = DEFAULT_OPTIONS.merge(options)
+
+      timeout = merged_options[:timeout]
 
       unless args.is_a?(Array)
         raise ArgumentError,
@@ -19,6 +28,8 @@ module RunLoop
 
       cmd = "xcrun #{args.join(' ')}"
 
+      RunLoop.log_unix_cmd(cmd) if merged_options
+
       begin
         Timeout.timeout(timeout, TimeoutError) do
           @stdin, @stdout, @stderr, process_status = Open3.popen3('xcrun', *args)
@@ -26,10 +37,10 @@ module RunLoop
           @pid = process_status.pid
           exit_status = process_status.value.exitstatus
 
-          err = @stderr.read.chomp
+          err = @stderr.read.force_encoding('utf-8').chomp
           err = nil if err == ''
 
-          out = @stdout.read.chomp
+          out = @stdout.read.force_encoding('utf-8').chomp
         end
 
         {
