@@ -280,16 +280,15 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     #
     # Waits for three conditions:
     #
-    # 1. the SHA sum of the simulator data/ directory to be stable
-    # 2. not more log messages are begin generated
+    # 1. The SHA sum of the simulator data/ directory to be stable.
+    # 2. No more log messages are begin generated
     # 3. 1 and 2 must hold for 2 seconds.
     #
     # When the simulator version is >= iOS 9 _and_ it is the first launch of
-    # the simulator after a reset or a new simulator install a fourth condition
+    # the simulator after a reset or a new simulator install, a fourth condition
     # is added:
     #
-    # 4. After a sleep of 1.2 seconds, the first three conditions must be met
-    #    a second time.
+    # 4. The first three conditions must be met a second time.
     def simulator_wait_for_stable_state
       require 'securerandom'
 
