@@ -281,73 +281,42 @@ describe RunLoop::Core do
     end
   end
 
-  describe '.expect_compatible_simulator_architecture' do
+  describe '.expect_simulator_compatible_arch' do
+    let(:xcode) { RunLoop::Xcode.new }
+
+    let(:device) { RunLoop::Device.new('Sim', '8.0', 'UDID') }
+
     it 'is not implemented for Xcode < 6.0' do
-      sim_control = RunLoop::SimControl.new
-      expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-      expect(
-            RunLoop::Core.expect_compatible_simulator_architecture({},
-                                                                   sim_control)
-      ).to be == false
+      expect(xcode).to receive(:version_gte_6?).and_return false
+
+      actual = RunLoop::Core.expect_simulator_compatible_arch(nil, nil, xcode)
+      expect(actual).to be_falsey
     end
 
-    context 'raises error' do
-      it 'when launch_options[:udid] cannot be used to find simulator' do
-       launch_options = {:udid => 'invalid simulator id' }
-       sim_control = RunLoop::SimControl.new
+    describe 'CoreSimulator' do
 
-       if Resources.shared.core_simulator_env?
-         expect {
-           RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                  sim_control)
-         }.to raise_error RuntimeError
-       else
-         expect do
-           RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                  sim_control)
-         end.not_to raise_error
-       end
+      let(:fat_arm_app) { RunLoop::App.new(Resources.shared.app_bundle_path_arm_FAT) }
+      let(:i386_app) { RunLoop::App.new(Resources.shared.app_bundle_path_i386) }
+
+      before do
+        expect(xcode).to receive(:version_gte_6?).and_return true
       end
 
-      it 'when architecture is incompatible with instruction set of target device' do
-        launch_options = {:udid =>  RunLoop::Core.default_simulator,
-                          :bundle_dir_or_bundle_id => Resources.shared.app_bundle_path_arm_FAT }
-        sim_control = RunLoop::SimControl.new
+      it 'raises an error' do
+        expect(device).to receive(:instruction_set).and_return 'nonsense'
 
-        if Resources.shared.core_simulator_env?
-          expect_any_instance_of(RunLoop::Device).to receive(:instruction_set).and_return('nonsense')
-
-          expect do
-            RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                   sim_control)
-          end.to raise_error RunLoop::IncompatibleArchitecture
-        else
-          expect do
-            RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                   sim_control)
-          end.not_to raise_error
-        end
+        expect do
+          RunLoop::Core.expect_simulator_compatible_arch(device, fat_arm_app, xcode)
+        end.to raise_error RunLoop::IncompatibleArchitecture,
+                           /does not contain a compatible architecture for target device/
       end
-    end
 
-    subject {
-      RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                             sim_control)
-    }
+      it 'compatible' do
+        expect(device).to receive(:instruction_set).and_return 'i386'
 
-
-    context 'simulator an binary are compatible' do
-      let(:sim_control) { RunLoop::SimControl.new }
-      let(:launch_options) { { :udid =>  RunLoop::Core.default_simulator,
-                               :bundle_dir_or_bundle_id =>
-                                     Resources.shared.app_bundle_path_i386
-      }}
-      it do
-        if Resources.shared.core_simulator_env?
-          is_expected.to be == true
-        else
-          Luffa.log_warn('Skipping test - Xcode < 6 detected')
-        end
+        expect do
+          RunLoop::Core.expect_simulator_compatible_arch(device, i386_app, xcode)
+        end.not_to raise_error
       end
     end
   end
