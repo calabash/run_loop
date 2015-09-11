@@ -68,6 +68,8 @@ module RunLoop
       nil
     end
 
+    # @deprecated 1.5.2 No public replacement.
+    #
     # Raise an error if the application binary is not compatible with the
     # target simulator.
     #
@@ -85,6 +87,7 @@ module RunLoop
     # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
     #  application binary is not compatible with the target simulator.
     def self.expect_compatible_simulator_architecture(launch_options, sim_control)
+      RunLoop.deprecated('1.5.2', 'No public replacement.')
       logger = launch_options[:logger]
       if sim_control.xcode_version_gte_6?
         sim_identifier = launch_options[:udid]
