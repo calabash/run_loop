@@ -186,32 +186,12 @@ module RunLoop
                 "Could not find simulator with name or UDID that matches: '#{udid}'"
         end
 
-        bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
-
-        if bridge.app_is_installed?
-          installed_sha = bridge.installed_app_sha1
-          new_sha = bridge.app.sha1
-
-          if installed_sha != new_sha
-            raise RuntimeError, %Q(
-
-The app you are trying to launch is not the same as the app that is installed.
-
-  Installed app SHA: #{installed_sha}
-  App to launch SHA: #{new_sha}
-
-You can ensure that you are testing the correct .app by running:
-
-  $ run-loop simctl install --app "#{bridge.app.path}" --device "#{device.instruments_identifier(xcode)}"
-
-before you start cucumber.
-
-)
-          end
-        end
-
         # Validate the architecture.
         self.expect_simulator_compatible_arch(device, app, xcode)
+
+        bridge = RunLoop::LifeCycle::CoreSimulator.new(app, device, sim_control)
+
+        bridge.ensure_app_same
 
         # Will quit the simulator if it is running.
         # @todo fix accessibility_enabled? so we don't have to quit the sim
