@@ -110,10 +110,10 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @return [RunLoop::Version] A version object.
     def version
       @instruments_version ||= lambda do
-        execute_command([]) do |_, stderr, _|
-          version_str = stderr.read[VERSION_REGEX, 0]
-          RunLoop::Version.new(version_str)
-        end
+        args = ['instruments']
+        hash = xcrun.exec(args, log_cmd: true)
+        version_str = hash[:err][VERSION_REGEX, 0]
+        RunLoop::Version.new(version_str)
       end.call
     end
 
@@ -346,18 +346,6 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def execute_command(args)
       Open3.popen3('xcrun', 'instruments', *args) do |_, stdout, stderr, process_status|
         yield stdout, stderr, process_status
-      end
-    end
-
-    # @!visibility private
-    #
-    # Filters `instruments` spam.
-    def filter_stderr_spam(stderr)
-      # Xcode 6 GM is spamming "WebKit Threading Violations"
-      stderr.read.strip.split("\n").each do |line|
-        unless line[/WebKit Threading Violation/, 0]
-          $stderr.puts line
-        end
       end
     end
 

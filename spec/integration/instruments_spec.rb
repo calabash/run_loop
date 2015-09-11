@@ -187,15 +187,8 @@ describe RunLoop::Instruments do
     end
   end
 
-  describe '#execute_command' do
-    it 'yields stdout, stderr, and process_status' do
-      # equivalent to getting the version
-      instruments.send(:execute_command, []) do |stdout, stderr, process_status|
-        expect(stdout.read.strip).to be == ''
-        expect(stderr.read.strip[/instruments, version/, 0]).not_to be == nil
-        expect(process_status).to be_a_kind_of(Process::Waiter)
-        expect(process_status.value.exitstatus).not_to be == 0
-      end
-    end
+  it 'UTF 8 encoding' do
+    stub_env('LC_ALL', 'C')
+    actual = instruments.simulators
   end
 end
