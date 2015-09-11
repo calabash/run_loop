@@ -135,6 +135,18 @@ module RunLoop
 
         # CoreSimulator
 
+        app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
+        app = RunLoop::App.new(app_bundle_path)
+
+        unless app.valid?
+          if File.exist?(app)
+            message = "App '#{app_bundle_path}' does not exist."
+          else
+            message = "App '#{app_bundle_path}' is not a valid .app bundle"
+          end
+          raise RuntimeError, message
+        end
+
         udid = launch_options[:udid]
         xcode = sim_control.xcode
 
@@ -143,10 +155,10 @@ module RunLoop
         end
 
         if device.nil?
-          raise "Could not find simulator with name or UDID that matches: '#{udid}'"
+          raise RuntimeError,
+                "Could not find simulator with name or UDID that matches: '#{udid}'"
         end
 
-        app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
         bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
 
         if bridge.app_is_installed?
