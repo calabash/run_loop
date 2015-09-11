@@ -250,6 +250,50 @@ module RunLoop
         installed_app_bundle
       end
 
+      # @!visibility private
+      #
+      # 1. Does nothing if the app is not installed.
+      # 2. Does nothing if the app the same as the app that is installed
+      # 3. Installs app if it is different from the installed app
+      #
+      # TODO needs unit tests and a better name?
+      def ensure_app_same
+        installed_app_bundle = installed_app_bundle_dir
+
+        if !installed_app_bundle
+          RunLoop.log_debug("App: #{app} is not installed")
+          return true
+        end
+
+        installed_sha = installed_app_sha1
+        app_sha = app.sha1
+
+        if installed_sha == app_sha
+          RunLoop.log_debug("Installed app is the same as #{app}")
+          return true
+        end
+
+        RunLoop.log_debug("The app you are trying to launch is not the same as the app that is installed.")
+        RunLoop.log_debug("  Installed app SHA: #{installed_sha}")
+        RunLoop.log_debug("  App to launch SHA: #{app_sha}")
+        RunLoop.log_debug("Will install #{app}")
+
+
+        FileUtils.rm_rf installed_app_bundle
+        RunLoop.log_debug('Deleted the existing app')
+
+        directory = File.expand_path(File.join(installed_app_bundle, '..'))
+        bundle_name = File.basename(app.path)
+        target = File.join(directory, bundle_name)
+
+        args = ['ditto', app.path, target]
+        RunLoop::Xcrun.new.exec(args, log_cmd: true)
+
+        RunLoop.log_debug("Installed #{app} on CoreSimulator #{device.udid}")
+
+        true
+      end
+
       # Reset app sandbox.
       def reset_app_sandbox
         return true if !app_is_installed?
