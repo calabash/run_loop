@@ -23,6 +23,16 @@ module RunLoop
   class XCTools
 
     # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
+    # Returns a version instance for `Xcode 7.1`; used to check for the
+    # availability of features and paths to various items on the filesystem.
+    #
+    # @return [RunLoop::Version] 7.1
+    def v71
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.v71
+    end
+
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
     # Returns a version instance for `Xcode 7.0`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
@@ -145,6 +155,15 @@ module RunLoop
     def xcode_version_gte_6?
       RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
       xcode.version_gte_6?
+    end
+
+    # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode
+    # Are we running Xcode 7.1 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 7.1
+    def xcode_version_gte_71?
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      xcode.version_gte_71?
     end
 
     # @deprecated Since 1.5.0 - replaced with RunLoop::Xcode

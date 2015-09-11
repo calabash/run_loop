@@ -404,7 +404,9 @@ RunLoop::XCTools has been replaced with RunLoop::Xcode.
 Please update your sources to pass an instance of RunLoop::Xcode))
       end
 
-      if xcode.version_gte_7?
+      if xcode.version_gte_71?
+        'iPhone 6s (9.1)'
+      elsif xcode.version_gte_7?
         'iPhone 5s (9.0)'
       elsif xcode.version_gte_64?
         'iPhone 5s (8.4 Simulator)'
