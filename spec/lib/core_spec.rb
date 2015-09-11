@@ -249,9 +249,29 @@ describe RunLoop::Core do
         end
       end
 
-      it ":device_target => CoreSimulator UDID" do
-        options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
-        expect(RunLoop::Core.simulator_target?(options)).to be == true
+      describe 'CoreSimulator' do
+        let(:xcode) { RunLoop::Xcode.new }
+
+        let(:options) { { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' } }
+
+        let(:device) { RunLoop::Device.new('HATS', '8.4', options[:device_target]) }
+
+        before do
+          expect(xcode).to receive(:version).at_least(:once).and_return xcode.v70
+          allow_any_instance_of(RunLoop::SimControl).to receive(:xcode).and_return xcode
+          allow_any_instance_of(RunLoop::SimControl).to receive(:simulators).and_return [device]
+        end
+
+        it ':device_target => CoreSimulator UDID' do
+          expect(RunLoop::Core.simulator_target?(options)).to be == true
+        end
+
+        it ':device_target => Named simulator' do
+          options[:device_target] = device.instruments_identifier(xcode)
+          device.instance_variable_set(:@uuid, 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA')
+
+          expect(RunLoop::Core.simulator_target?(options)).to be == true
+        end
       end
 
       it 'returns false when target is a physical device' do

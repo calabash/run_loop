@@ -360,133 +360,148 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def self.simulator_target?(run_options, sim_control=nil)
       value = run_options[:device_target]
 
-      # match the behavior of udid_and_bundle_for_launcher
+      # Match the behavior of udid_and_bundle_for_launcher.
       return true if value.nil? or value == ''
 
-      # support for 'simulator' and Xcode >= 5.1 device targets
+      # 5.1 <= Xcode < 7.0
       return true if value.downcase.include?('simulator')
 
-      value[DEVICE_UDID_REGEX, 0] == nil
+      # Not a physical device.
+      return false if value[DEVICE_UDID_REGEX, 0] != nil
+
+      # Check for named simulators and Xcode >= 7.0 simulators.
+      sim_control = run_options[:sim_control] || RunLoop::SimControl.new
+      xcode = sim_control.xcode
+      if xcode.version_gte_6?
+        simulator = sim_control.simulators.find do |sim|
+          sim.instruments_identifier(xcode) == value ||
+                sim.udid == value
+        end
+        !simulator.nil?
+      else
+        false
+      end
     end
 
-    # Extracts the value of :inject_dylib from options Hash.
-    # @param options [Hash] arguments passed to {RunLoop.run}
-    # @return [String, nil] If the options contains :inject_dylibs and it is a
-    #  path to a dylib that exists, return the path.  Otherwise return nil or
-    #  raise an error.
-    # @raise [RuntimeError] If :inject_dylib points to a path that does not exist.
-    # @raise [ArgumentError] If :inject_dylib is not a String.
-    def self.dylib_path_from_options(options)
-      inject_dylib = options.fetch(:inject_dylib, nil)
-      return nil if inject_dylib.nil?
-      unless inject_dylib.is_a? String
-        raise ArgumentError, "Expected :inject_dylib to be a path to a dylib, but found '#{inject_dylib}'"
-      end
-      dylib_path = File.expand_path(inject_dylib)
-      unless File.exist?(dylib_path)
-        raise "Cannot load dylib.  The file '#{dylib_path}' does not exist."
-      end
-      dylib_path
-    end
 
-    # Returns the a default simulator to target.  This default needs to be one
-    # that installed by default in the current Xcode version.
-    #
-    # For historical reasons, the most recent non-64b SDK should be used.
-    #
-    # @param [RunLoop::XCTools, RunLoop::XCode] xcode Used to detect the current xcode
-    #  version.
-    def self.default_simulator(xcode=RunLoop::Xcode.new)
-      if xcode.is_a?(RunLoop::XCTools)
-        RunLoop.deprecated('1.5.0',
-                           %q(
+  # Extracts the value of :inject_dylib from options Hash.
+  # @param options [Hash] arguments passed to {RunLoop.run}
+  # @return [String, nil] If the options contains :inject_dylibs and it is a
+  #  path to a dylib that exists, return the path.  Otherwise return nil or
+  #  raise an error.
+  # @raise [RuntimeError] If :inject_dylib points to a path that does not exist.
+  # @raise [ArgumentError] If :inject_dylib is not a String.
+  def self.dylib_path_from_options(options)
+    inject_dylib = options.fetch(:inject_dylib, nil)
+    return nil if inject_dylib.nil?
+    unless inject_dylib.is_a? String
+      raise ArgumentError, "Expected :inject_dylib to be a path to a dylib, but found '#{inject_dylib}'"
+    end
+    dylib_path = File.expand_path(inject_dylib)
+    unless File.exist?(dylib_path)
+      raise "Cannot load dylib.  The file '#{dylib_path}' does not exist."
+    end
+    dylib_path
+  end
+
+  # Returns the a default simulator to target.  This default needs to be one
+  # that installed by default in the current Xcode version.
+  #
+  # For historical reasons, the most recent non-64b SDK should be used.
+  #
+  # @param [RunLoop::XCTools, RunLoop::XCode] xcode Used to detect the current xcode
+  #  version.
+  def self.default_simulator(xcode=RunLoop::Xcode.new)
+    if xcode.is_a?(RunLoop::XCTools)
+      RunLoop.deprecated('1.5.0',
+                         %q(
 RunLoop::XCTools has been replaced with RunLoop::Xcode.
 Please update your sources to pass an instance of RunLoop::Xcode))
-      end
-
-      if xcode.version_gte_71?
-        'iPhone 6s (9.1)'
-      elsif xcode.version_gte_7?
-        'iPhone 5s (9.0)'
-      elsif xcode.version_gte_64?
-        'iPhone 5s (8.4 Simulator)'
-      elsif xcode.version_gte_63?
-        'iPhone 5s (8.3 Simulator)'
-      elsif xcode.version_gte_62?
-        'iPhone 5s (8.2 Simulator)'
-      elsif xcode.version_gte_61?
-        'iPhone 5s (8.1 Simulator)'
-      elsif xcode.version_gte_6?
-        'iPhone 5s (8.0 Simulator)'
-      else
-        'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-      end
     end
 
-    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
-      xcode = sim_control.xcode
+    if xcode.version_gte_71?
+      'iPhone 6s (9.1)'
+    elsif xcode.version_gte_7?
+      'iPhone 5s (9.0)'
+    elsif xcode.version_gte_64?
+      'iPhone 5s (8.4 Simulator)'
+    elsif xcode.version_gte_63?
+      'iPhone 5s (8.3 Simulator)'
+    elsif xcode.version_gte_62?
+      'iPhone 5s (8.2 Simulator)'
+    elsif xcode.version_gte_61?
+      'iPhone 5s (8.1 Simulator)'
+    elsif xcode.version_gte_6?
+      'iPhone 5s (8.0 Simulator)'
+    else
+      'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+    end
+  end
 
-      bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
+  def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
+    xcode = sim_control.xcode
 
-      unless bundle_dir_or_bundle_id
-        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
+    bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
+
+    unless bundle_dir_or_bundle_id
+      raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
+    end
+
+    udid = nil
+
+    if xcode.version_gte_51?
+      if device_target.nil? || device_target.empty? || device_target == 'simulator'
+        device_target = self.default_simulator(xcode)
       end
+      udid = device_target
 
-      udid = nil
+      unless self.simulator_target?(options)
+        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
+      end
+    else
+      #TODO: this can be removed - Xcode < 5.1.1 not supported.
+      if device_target == 'simulator'
 
-      if xcode.version_gte_51?
-        if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          device_target = self.default_simulator(xcode)
+        unless File.exist?(bundle_dir_or_bundle_id)
+          raise "Unable to find app in directory #{bundle_dir_or_bundle_id} when trying to launch simulator"
         end
-        udid = device_target
-
-        unless self.simulator_target?(options)
-          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-        end
-      else
-        #TODO: this can be removed - Xcode < 5.1.1 not supported.
-        if device_target == 'simulator'
-
-          unless File.exist?(bundle_dir_or_bundle_id)
-            raise "Unable to find app in directory #{bundle_dir_or_bundle_id} when trying to launch simulator"
-          end
 
 
-          device = options[:device] || :iphone
-          device = device && device.to_sym
+        device = options[:device] || :iphone
+        device = device && device.to_sym
 
-          plistbuddy='/usr/libexec/PlistBuddy'
-          plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
-          if device == :iphone
-            uidevicefamily=1
-          else
-            uidevicefamily=2
-          end
-          system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
-          system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
-          system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
+        plistbuddy='/usr/libexec/PlistBuddy'
+        plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
+        if device == :iphone
+          uidevicefamily=1
         else
-          udid = device_target
-          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
+          uidevicefamily=2
         end
+        system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
+        system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
+        system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
+      else
+        udid = device_target
+        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
       end
-      return udid, bundle_dir_or_bundle_id
     end
+    return udid, bundle_dir_or_bundle_id
+  end
 
-    def self.create_uia_pipe(repl_path)
-      begin
-        Timeout::timeout(5, RunLoop::TimeoutError) do
-          loop do
-            begin
-              FileUtils.rm_f(repl_path)
-              return repl_path if system(%Q[mkfifo "#{repl_path}"])
-            rescue Errno::EINTR => e
-              #retry
-              sleep(0.1)
-            end
+  def self.create_uia_pipe(repl_path)
+    begin
+      Timeout::timeout(5, RunLoop::TimeoutError) do
+        loop do
+          begin
+            FileUtils.rm_f(repl_path)
+            return repl_path if system(%Q[mkfifo "#{repl_path}"])
+          rescue Errno::EINTR => e
+            #retry
+            sleep(0.1)
           end
         end
-      rescue RunLoop::TimeoutError => _
+      end
+    rescue RunLoop::TimeoutError => _
         raise RunLoop::TimeoutError, 'Unable to create pipe (mkfifo failed)'
       end
     end
