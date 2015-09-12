@@ -370,13 +370,15 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
       return nil if !File.exist?(file)
 
+      debug = RunLoop::Environment.debug?
+
       begin
         io = File.open(file, 'r')
         io.seek(-100, IO::SEEK_END)
 
         line = io.readline
       rescue StandardError => e
-        RunLoop.log_debug("Caught #{e} while reading simulator log file")
+        RunLoop.log_error("Caught #{e} while reading simulator log file") if debug
       ensure
         io.close if io && !io.closed?
       end
