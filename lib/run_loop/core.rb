@@ -334,6 +334,10 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       RunLoop::Logging.log_debug(logger, "Preparation took #{Time.now-before} seconds")
 
       before_instruments_launch = Time.now
+
+       fifo_retry_on = [RunLoop::Fifo::NoReaderConfiguredError,
+                        RunLoop::Fifo::WriteTimedOut]
+
       begin
 
         if options[:validate_channel]
@@ -343,8 +347,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
           begin
             fifo_timeout = options[:fifo_timeout] || 30
             RunLoop::Fifo.write(repl_path, "0:#{cmd}", timeout: fifo_timeout)
-          rescue RunLoop::Fifo::NoReaderConfiguredError,
-              RunLoop::Fifo::WriteTimedOut => e
+          rescue *fifo_retry_on => e
             RunLoop::Logging.log_debug(logger, "Error while writing to fifo. #{e}")
             raise RunLoop::TimeoutError.new("Error while writing to fifo. #{e}")
           end
