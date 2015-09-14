@@ -224,10 +224,12 @@ module RunLoop
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
 
       if options[:xctools]
-        RunLoop.deprecated('1.5.0', %q(
+        if RunLoop::Environment.debug?
+          RunLoop.deprecated('1.5.0', %q(
 RunLoop::XCTools has been replaced with RunLoop::Xcode.
 The :xctools key will be ignored.  It has been replaced by the :xcode key.
 Please update your sources to pass an instance of RunLoop::Xcode))
+        end
       end
 
       xcode ||= options[:xcode] || sim_control.xcode
@@ -480,10 +482,12 @@ Logfile: #{log_file}
   #  version.
   def self.default_simulator(xcode=RunLoop::Xcode.new)
     if xcode.is_a?(RunLoop::XCTools)
-      RunLoop.deprecated('1.5.0',
-                         %q(
+      if RunLoop::Environment.debug?
+        RunLoop.deprecated('1.5.0',
+                           %q(
 RunLoop::XCTools has been replaced with RunLoop::Xcode.
 Please update your sources to pass an instance of RunLoop::Xcode))
+      end
       ensured_xcode = RunLoop::Xcode.new
     else
       ensured_xcode = xcode
@@ -731,10 +735,12 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
     def self.default_tracetemplate(instruments_arg=RunLoop::Instruments.new)
       if instruments_arg.is_a?(RunLoop::XCTools)
-        RunLoop.deprecated('1.5.0',
-                           %q(
+        if RunLoop::Environment.debug?
+          RunLoop.deprecated('1.5.0',
+                             %q(
 RunLoop::XCTools has been replaced with RunLoop::Xcode.
 Please update your sources to pass an instance of RunLoop::Instruments))
+        end
         instruments = RunLoop::Instruments.new
       else
         instruments = instruments_arg
