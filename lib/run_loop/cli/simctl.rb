@@ -196,6 +196,17 @@ module RunLoop
 
         bridge = RunLoop::Simctl::Bridge.new(device, app.path)
 
+        xcode = bridge.sim_control.xcode
+        if xcode.version >= RunLoop::Version.new('7.0')
+          puts "ERROR: Xcode #{xcode.version.to_s} detected."
+          puts "ERROR: Apple's simctl install/uninstall is broken for this version of Xcode."
+          puts "ERROR: See the following links for details:"
+          puts "ERROR: https://forums.developer.apple.com/message/51922"
+          puts "ERROR: https://github.com/calabash/run_loop/issues/235"
+          puts "ERROR: exiting 1"
+          exit 1
+        end
+
         force_reinstall = options[:force]
 
         before = Time.now
