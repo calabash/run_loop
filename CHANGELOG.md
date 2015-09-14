@@ -1,5 +1,9 @@
 ## Change Log
 
+### 1.5.3
+
+* HOTFIX: backward compatibility for Calabash < 0.16.1 @ark-konopacki
+
 ### 1.5.2
 
 * Use CoreSimulator to ensure target app is the same as installed app #244

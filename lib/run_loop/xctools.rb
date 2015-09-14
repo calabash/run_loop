@@ -28,7 +28,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 7.1
     def v71
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.v71
     end
 
@@ -38,7 +38,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 7.0
     def v70
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.v70
     end
 
@@ -48,7 +48,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.4
     def v64
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.v64
     end
 
@@ -58,7 +58,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.3
     def v63
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.v63
     end
 
@@ -68,7 +68,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.2
     def v62
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.v62
     end
 
@@ -78,7 +78,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.1
     def v61
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.v61
     end
 
@@ -88,7 +88,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 6.0
     def v60
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.v60
     end
 
@@ -98,7 +98,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 5.1
     def v51
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.v51
     end
 
@@ -108,7 +108,7 @@ module RunLoop
     #
     # @return [RunLoop::Version] 5.0
     def v50
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.v50
     end
 
@@ -117,7 +117,7 @@ module RunLoop
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.4
     def xcode_version_gte_64?
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.version_gte_64?
     end
 
@@ -126,7 +126,7 @@ module RunLoop
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.3
     def xcode_version_gte_63?
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.version_gte_63?
     end
 
@@ -135,7 +135,7 @@ module RunLoop
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.2
     def xcode_version_gte_62?
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.version_gte_62?
     end
 
@@ -144,7 +144,7 @@ module RunLoop
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.1
     def xcode_version_gte_61?
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.version_gte_61?
     end
 
@@ -153,7 +153,7 @@ module RunLoop
     #
     # @return [Boolean] `true` if the current Xcode version is >= 6.0
     def xcode_version_gte_6?
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.version_gte_6?
     end
 
@@ -162,7 +162,7 @@ module RunLoop
     #
     # @return [Boolean] `true` if the current Xcode version is >= 7.1
     def xcode_version_gte_71?
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.version_gte_71?
     end
 
@@ -171,7 +171,7 @@ module RunLoop
     #
     # @return [Boolean] `true` if the current Xcode version is >= 7.0
     def xcode_version_gte_7?
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.version_gte_7?
     end
 
@@ -180,7 +180,7 @@ module RunLoop
     #
     # @return [Boolean] `true` if the current Xcode version is >= 5.1
     def xcode_version_gte_51?
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.version_gte_51?
     end
 
@@ -190,7 +190,7 @@ module RunLoop
     # @return [RunLoop::Version] The current version of Xcode as reported by
     #  `xcrun xcodebuild -version`.
     def xcode_version
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.version
     end
 
@@ -209,7 +209,7 @@ module RunLoop
     #
     # @return [String] path to current developer directory
     def xcode_developer_dir
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.developer_dir
     end
 
@@ -219,7 +219,7 @@ module RunLoop
     # @note Relies on Xcode beta versions having and app bundle named Xcode-Beta.app
     # @return [Boolean] True if the Xcode version is beta.
     def xcode_is_beta?
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Xcode') if RunLoop::Environment.debug?
       xcode.beta?
     end
 
@@ -262,7 +262,7 @@ module RunLoop
     #   instruments binary.
     # @raise [ArgumentError] if invalid `cmd` is passed
     def instruments(cmd=nil)
-      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Instruments')
+      RunLoop.deprecated('1.5.0', 'Replaced with RunLoop::Instruments') if RunLoop::Environment.debug?
       instruments = 'xcrun instruments'
       return instruments if cmd == nil
 
@@ -297,7 +297,7 @@ module RunLoop
     #
     # @return [Boolean] true if the version is >= 5.*
     def instruments_supports_hyphen_s?(version=instruments(:version))
-      RunLoop.deprecated('1.5.0', 'Not replaced.')
+      RunLoop.deprecated('1.5.0', 'Not replaced.') if RunLoop::Environment.debug?
       @instruments_supports_hyphen_s ||= lambda {
         if version.is_a? String
           _version = RunLoop::Version.new(version)
