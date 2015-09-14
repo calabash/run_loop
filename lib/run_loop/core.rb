@@ -224,10 +224,12 @@ module RunLoop
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
 
       if options[:xctools]
-        RunLoop.deprecated('1.5.0', %q(
+        if RunLoop::Environment.debug?
+          RunLoop.deprecated('1.5.0', %q(
 RunLoop::XCTools has been replaced with RunLoop::Xcode.
 The :xctools key will be ignored.  It has been replaced by the :xcode key.
 Please update your sources to pass an instance of RunLoop::Xcode))
+        end
       end
 
       xcode ||= options[:xcode] || sim_control.xcode
@@ -476,29 +478,34 @@ Logfile: #{log_file}
   #
   # For historical reasons, the most recent non-64b SDK should be used.
   #
-  # @param [RunLoop::XCTools, RunLoop::XCode] xcode Used to detect the current xcode
+  # @param [RunLoop::XCTools, RunLoop::Xcode] xcode Used to detect the current xcode
   #  version.
   def self.default_simulator(xcode=RunLoop::Xcode.new)
     if xcode.is_a?(RunLoop::XCTools)
-      RunLoop.deprecated('1.5.0',
-                         %q(
+      if RunLoop::Environment.debug?
+        RunLoop.deprecated('1.5.0',
+                           %q(
 RunLoop::XCTools has been replaced with RunLoop::Xcode.
 Please update your sources to pass an instance of RunLoop::Xcode))
+      end
+      ensured_xcode = RunLoop::Xcode.new
+    else
+      ensured_xcode = xcode
     end
 
-    if xcode.version_gte_71?
+    if ensured_xcode.version_gte_71?
       'iPhone 6s (9.1)'
-    elsif xcode.version_gte_7?
+    elsif ensured_xcode.version_gte_7?
       'iPhone 5s (9.0)'
-    elsif xcode.version_gte_64?
+    elsif ensured_xcode.version_gte_64?
       'iPhone 5s (8.4 Simulator)'
-    elsif xcode.version_gte_63?
+    elsif ensured_xcode.version_gte_63?
       'iPhone 5s (8.3 Simulator)'
-    elsif xcode.version_gte_62?
+    elsif ensured_xcode.version_gte_62?
       'iPhone 5s (8.2 Simulator)'
-    elsif xcode.version_gte_61?
+    elsif ensured_xcode.version_gte_61?
       'iPhone 5s (8.1 Simulator)'
-    elsif xcode.version_gte_6?
+    elsif ensured_xcode.version_gte_6?
       'iPhone 5s (8.0 Simulator)'
     else
       'iPhone Retina (4-inch) - Simulator - iOS 7.1'
@@ -728,10 +735,12 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
     def self.default_tracetemplate(instruments_arg=RunLoop::Instruments.new)
       if instruments_arg.is_a?(RunLoop::XCTools)
-        RunLoop.deprecated('1.5.0',
-                           %q(
+        if RunLoop::Environment.debug?
+          RunLoop.deprecated('1.5.0',
+                             %q(
 RunLoop::XCTools has been replaced with RunLoop::Xcode.
 Please update your sources to pass an instance of RunLoop::Instruments))
+        end
         instruments = RunLoop::Instruments.new
       else
         instruments = instruments_arg
