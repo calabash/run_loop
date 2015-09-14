@@ -334,27 +334,49 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       RunLoop::Logging.log_debug(logger, "Preparation took #{Time.now-before} seconds")
 
       before_instruments_launch = Time.now
+
+       fifo_retry_on = [RunLoop::Fifo::NoReaderConfiguredError,
+                        RunLoop::Fifo::WriteTimedOut]
+
       begin
 
         if options[:validate_channel]
           options[:validate_channel].call(run_loop, 0, uia_timeout)
         else
+
           cmd = "UIALogger.logMessage('Listening for run loop commands')"
+
           begin
+
             fifo_timeout = options[:fifo_timeout] || 30
             RunLoop::Fifo.write(repl_path, "0:#{cmd}", timeout: fifo_timeout)
-          rescue RunLoop::Fifo::NoReaderConfiguredError,
-              RunLoop::Fifo::WriteTimedOut => e
-            RunLoop::Logging.log_debug(logger, "Error while writing to fifo. #{e}")
-            raise RunLoop::TimeoutError.new("Error while writing to fifo. #{e}")
+
+          rescue *fifo_retry_on => e
+
+            message = "Error while writing to fifo. #{e}"
+            RunLoop::Logging.log_debug(logger, message)
+            raise RunLoop::TimeoutError.new(message)
+
           end
+
           Timeout::timeout(timeout, RunLoop::TimeoutError) do
             read_response(run_loop, 0, uia_timeout)
           end
+
         end
       rescue RunLoop::TimeoutError => e
         RunLoop::Logging.log_debug(logger, "Failed to launch. #{e}: #{e && e.message}")
-        raise RunLoop::TimeoutError, "Time out waiting for UIAutomation run-loop #{e}. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
+
+        message = %Q(
+
+"Timed out waiting for UIAutomation run-loop #{e}.
+
+Logfile: #{log_file}
+
+#{File.read(log_file)}
+
+)
+        raise RunLoop::TimeoutError, message
       end
 
       RunLoop::Logging.log_debug(logger, "Launching took #{Time.now-before_instruments_launch} seconds")
