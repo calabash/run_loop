@@ -1,5 +1,18 @@
 ## Change Log
 
+### 1.5.2
+
+* Use CoreSimulator to ensure target app is the same as installed app #244
+* Core.prepare_simulator raises an error if app does not exist #236
+* Fixup Core#simulator_target? for Xcode 7 #232
+* Force UTF-8 encoding when reading the output of `instruments` Thanks to Magnús Magnússon
+* Xcode 7.1 beta support
+* CLI: simctl doctor [--device=DEVICE] - tool to prepare CoreSimulator environment EXPERIMENTAL
+* CoreSimulator#launch_simulator waits for the simulator to install
+* CoreSimulator App Life Cycle with direct file IO vs simctl
+* Simulator devices can update their state
+* Xcrun class for safely executing 'xcrun' commands
+
 ### 1.5.1
 
 * Core.simulator\_target? - fixup for Xcode 7 #216
@@ -16,7 +29,7 @@
 * Add Xcode class
 * Deprecate XCTools class
 * Add more privacy alert auto-dismiss regular expressions #199
-* uikit localization lookups in runloop #197 @svevang
+* UIKit localization lookups in runloop #197 @svevang
 
 ### 1.4.1
 
