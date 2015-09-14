@@ -71,9 +71,15 @@ describe RunLoop::Core do
       expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
-    it 'Xcode > 7.0' do
+    it 'Xcode >= 7.0' do
       expected = 'iPhone 5s (9.0)'
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v70
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
+    end
+
+    it 'Xcode > 7.1' do
+      expected = 'iPhone 6s (9.1)'
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v71
       expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
   end
@@ -243,9 +249,29 @@ describe RunLoop::Core do
         end
       end
 
-      it ":device_target => CoreSimulator UDID" do
-        options = { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' }
-        expect(RunLoop::Core.simulator_target?(options)).to be == true
+      describe 'CoreSimulator' do
+        let(:xcode) { RunLoop::Xcode.new }
+
+        let(:options) { { :device_target => '0BF52B67-F8BB-4246-A668-1880237DD17B' } }
+
+        let(:device) { RunLoop::Device.new('HATS', '8.4', options[:device_target]) }
+
+        before do
+          expect(xcode).to receive(:version).at_least(:once).and_return xcode.v70
+          allow_any_instance_of(RunLoop::SimControl).to receive(:xcode).and_return xcode
+          allow_any_instance_of(RunLoop::SimControl).to receive(:simulators).and_return [device]
+        end
+
+        it ':device_target => CoreSimulator UDID' do
+          expect(RunLoop::Core.simulator_target?(options)).to be == true
+        end
+
+        it ':device_target => Named simulator' do
+          options[:device_target] = device.instruments_identifier(xcode)
+          device.instance_variable_set(:@uuid, 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA')
+
+          expect(RunLoop::Core.simulator_target?(options)).to be == true
+        end
       end
 
       it 'returns false when target is a physical device' do
@@ -255,73 +281,42 @@ describe RunLoop::Core do
     end
   end
 
-  describe '.expect_compatible_simulator_architecture' do
+  describe '.expect_simulator_compatible_arch' do
+    let(:xcode) { RunLoop::Xcode.new }
+
+    let(:device) { RunLoop::Device.new('Sim', '8.0', 'UDID') }
+
     it 'is not implemented for Xcode < 6.0' do
-      sim_control = RunLoop::SimControl.new
-      expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-      expect(
-            RunLoop::Core.expect_compatible_simulator_architecture({},
-                                                                   sim_control)
-      ).to be == false
+      expect(xcode).to receive(:version_gte_6?).and_return false
+
+      actual = RunLoop::Core.expect_simulator_compatible_arch(nil, nil, xcode)
+      expect(actual).to be_falsey
     end
 
-    context 'raises error' do
-      it 'when launch_options[:udid] cannot be used to find simulator' do
-       launch_options = {:udid => 'invalid simulator id' }
-       sim_control = RunLoop::SimControl.new
+    describe 'CoreSimulator' do
 
-       if Resources.shared.core_simulator_env?
-         expect {
-           RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                  sim_control)
-         }.to raise_error RuntimeError
-       else
-         expect do
-           RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                  sim_control)
-         end.not_to raise_error
-       end
+      let(:fat_arm_app) { RunLoop::App.new(Resources.shared.app_bundle_path_arm_FAT) }
+      let(:i386_app) { RunLoop::App.new(Resources.shared.app_bundle_path_i386) }
+
+      before do
+        expect(xcode).to receive(:version_gte_6?).and_return true
       end
 
-      it 'when architecture is incompatible with instruction set of target device' do
-        launch_options = {:udid =>  RunLoop::Core.default_simulator,
-                          :bundle_dir_or_bundle_id => Resources.shared.app_bundle_path_arm_FAT }
-        sim_control = RunLoop::SimControl.new
+      it 'raises an error' do
+        expect(device).to receive(:instruction_set).and_return 'nonsense'
 
-        if Resources.shared.core_simulator_env?
-          expect_any_instance_of(RunLoop::Device).to receive(:instruction_set).and_return('nonsense')
-
-          expect do
-            RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                   sim_control)
-          end.to raise_error RunLoop::IncompatibleArchitecture
-        else
-          expect do
-            RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                                   sim_control)
-          end.not_to raise_error
-        end
+        expect do
+          RunLoop::Core.expect_simulator_compatible_arch(device, fat_arm_app, xcode)
+        end.to raise_error RunLoop::IncompatibleArchitecture,
+                           /does not contain a compatible architecture for target device/
       end
-    end
 
-    subject {
-      RunLoop::Core.expect_compatible_simulator_architecture(launch_options,
-                                                             sim_control)
-    }
+      it 'compatible' do
+        expect(device).to receive(:instruction_set).and_return 'i386'
 
-
-    context 'simulator an binary are compatible' do
-      let(:sim_control) { RunLoop::SimControl.new }
-      let(:launch_options) { { :udid =>  RunLoop::Core.default_simulator,
-                               :bundle_dir_or_bundle_id =>
-                                     Resources.shared.app_bundle_path_i386
-      }}
-      it do
-        if Resources.shared.core_simulator_env?
-          is_expected.to be == true
-        else
-          Luffa.log_warn('Skipping test - Xcode < 6 detected')
-        end
+        expect do
+          RunLoop::Core.expect_simulator_compatible_arch(device, i386_app, xcode)
+        end.not_to raise_error
       end
     end
   end

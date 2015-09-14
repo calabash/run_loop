@@ -100,7 +100,6 @@ module RunLoop
 
         ENV['DEBUG'] = '1' if debug
 
-
         begin
           launch_options = {
                 :args => parse_app_launch_args(options),

@@ -37,7 +37,7 @@ module RunLoop
         end
       end
 
-      desc 'refresh', 'EXPERIMENTAL: Terminate CoreSimulatorService daemons'
+      desc 'doctor', 'EXPERIMENTAL: Prepare the CoreSimulator environment for testing'
 
       method_option 'debug',
                     :desc => 'Enable debug logging.',
@@ -46,23 +46,70 @@ module RunLoop
                     :default => false,
                     :type => :boolean
 
-      def refresh
+      method_option 'device',
+                    :desc => 'The simulator UDID or name.',
+                    :aliases => '-d',
+                    :required => false,
+                    :type => :string
+
+      def doctor
+        debug = options[:debug]
+        device = options[:device]
+
+        if device
+          device = expect_device(options)
+          if debug
+            RunLoop::Environment.with_debugging do
+              launch_simulator(device)
+            end
+          else
+            launch_simulator(device)
+          end
+        else
+          if debug
+            RunLoop::Environment.with_debugging do
+              launch_each_simulator
+            end
+          else
+            launch_each_simulator
+          end
+        end
+      end
+
+      no_commands do
+        def launch_each_simulator
+          sim_control = RunLoop::SimControl.new
+          sim_control.simulators.each do |simulator|
+            launch_simulator(simulator, sim_control)
+          end
+        end
+
+        def launch_simulator(simulator, sim_control=RunLoop::SimControl.new)
+          core_sim = RunLoop::LifeCycle::CoreSimulator.new(nil,
+                                                           simulator,
+                                                           sim_control)
+          core_sim.launch_simulator
+        end
+      end
+
+      desc 'manage-processes', 'Manage CoreSimulator processes by quiting stale processes'
+
+      method_option 'debug',
+                    :desc => 'Enable debug logging.',
+                    :aliases => '-v',
+                    :required => false,
+                    :default => false,
+                    :type => :boolean
+
+      def manage_processes
         debug = options[:debug]
         original_value = ENV['DEBUG']
 
         ENV['DEBUG'] = '1' if debug
 
-        RunLoop::SimControl.terminate_all_sims
-
         begin
-          process_name = 'com.apple.CoreSimulator.CoreSimulatorService'
-          pids = RunLoop::ProcessWaiter.new(process_name, {:timeout => 0.2}).pids
-          if debug && pids.empty?
-            puts 'There are no CoreSimulatorServices processes running'
-          end
-          pids.each do |pid|
-            RunLoop::ProcessTerminator.new(pid, 'KILL', process_name).kill_process
-          end
+          RunLoop::SimControl.terminate_all_sims
+          terminate_core_simulator_processes
         ensure
           ENV['DEBUG'] = original_value if debug
         end
@@ -78,6 +125,33 @@ module RunLoop
             device.state == 'Booted'
           end
         end
+
+        # TODO this is duplicated code; extract!
+        # https://github.com/calabash/run_loop/issues/225
+        def terminate_core_simulator_processes
+          to_manage = RunLoop::LifeCycle::CoreSimulator::MANAGED_PROCESSES
+          to_manage << ['com.apple.CoreSimulator.CoreSimulatorService', false]
+
+          to_manage.each do |pair|
+            name = pair[0]
+            send_term = pair[1]
+            pids = RunLoop::ProcessWaiter.new(name).pids
+            pids.each do |pid|
+
+              if send_term
+                term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
+                killed = term.kill_process
+              else
+                killed = false
+              end
+
+              unless killed
+                term = RunLoop::ProcessTerminator.new(pid, 'KILL', name)
+                term.kill_process
+              end
+            end
+          end
+        end
       end
 
       desc 'install --app [OPTIONS]', 'Installs an app on a device'
@@ -89,7 +163,7 @@ module RunLoop
                     :type => :string
 
       method_option 'device',
-                    :desc => 'The device UDID or simulator identifier.',
+                    :desc => 'The simulator UDID or name.',
                     :aliases => '-d',
                     :required => false,
                     :type => :string
@@ -121,6 +195,17 @@ module RunLoop
         app = expect_app(options, device)
 
         bridge = RunLoop::Simctl::Bridge.new(device, app.path)
+
+        xcode = bridge.sim_control.xcode
+        if xcode.version >= RunLoop::Version.new('7.0')
+          puts "ERROR: Xcode #{xcode.version.to_s} detected."
+          puts "ERROR: Apple's simctl install/uninstall is broken for this version of Xcode."
+          puts "ERROR: See the following links for details:"
+          puts "ERROR: https://forums.developer.apple.com/message/51922"
+          puts "ERROR: https://github.com/calabash/run_loop/issues/235"
+          puts "ERROR: exiting 1"
+          exit 1
+        end
 
         force_reinstall = options[:force]
 

@@ -19,7 +19,7 @@ IRB.conf[:PROMPT][:RUN_LOOP] = {
   :PROMPT_N => "run-loop #{RunLoop::VERSION}> ",
   :PROMPT_S => nil,
   :PROMPT_C => "> ",
-  :AUTO_INDENT => true,
+  :AUTO_INDENT => false,
   :RETURN => "%s\n"
 }
 
@@ -61,7 +61,12 @@ def simcontrol
 end
 
 def default_sim
-  @default_sim ||= RunLoop::Core.default_simulator
+  @default_sim ||= lambda do
+    name = RunLoop::Core.default_simulator(xcode)
+    simcontrol.simulators.find do |sim|
+      sim.instruments_identifier(xcode) == name
+    end
+  end.call
 end
 
 motd=["Let's get this done!", 'Ready to rumble.', 'Enjoy.', 'Remember to breathe.',

@@ -13,6 +13,10 @@ module RunLoop
       @xcode ||= RunLoop::Xcode.new
     end
 
+    def xcrun
+      RunLoop::Xcrun.new
+    end
+
     # @!visibility private
     def to_s
       "#<Instruments #{version.to_s}>"
@@ -106,10 +110,10 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @return [RunLoop::Version] A version object.
     def version
       @instruments_version ||= lambda do
-        execute_command([]) do |_, stderr, _|
-          version_str = stderr.read[VERSION_REGEX, 0]
-          RunLoop::Version.new(version_str)
-        end
+        args = ['instruments']
+        hash = xcrun.exec(args, log_cmd: true)
+        version_str = hash[:err][VERSION_REGEX, 0]
+        RunLoop::Version.new(version_str)
       end.call
     end
 
@@ -129,54 +133,41 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @return [Array<String>] Instruments.app templates.
     def templates
       @instruments_templates ||= lambda do
+        args = ['instruments', '-s', 'templates']
+        hash = xcrun.exec(args, log_cmd: true)
         if xcode.version_gte_6?
-          execute_command(['-s', 'templates']) do |stdout, stderr, _|
-            filter_stderr_spam(stderr)
-            stdout.read.chomp.split("\n").map do |elm|
-              stripped = elm.strip.tr('"', '')
-              if stripped == '' || stripped == 'Known Templates:'
-                nil
-              else
-                stripped
-              end
-            end.compact
-          end
-        elsif xcode.version_gte_51?
-          execute_command(['-s', 'templates']) do |stdout, stderr, _|
-            err = stderr.read
-            if !err.nil? || err != ''
-              $stderr.puts stderr.read
+          hash[:out].chomp.split("\n").map do |elm|
+            stripped = elm.strip.tr('"', '')
+            if stripped == '' || stripped == 'Known Templates:'
+              nil
+            else
+              stripped
             end
-
-            stdout.read.strip.split("\n").delete_if do |path|
-              not path =~ /tracetemplate/
-            end.map { |elm| elm.strip }
-          end
+          end.compact
         else
-          raise "Xcode version '#{xcode.version}' is not supported."
+          hash[:out].strip.split("\n").delete_if do |path|
+            not path =~ /tracetemplate/
+          end.map { |elm| elm.strip }
         end
       end.call
     end
 
-    # Returns an array the available physical devices.
+    # Returns an array of the available physical devices.
     #
     # @return [Array<RunLoop::Device>] All the devices will be physical
     #  devices.
     def physical_devices
       @instruments_physical_devices ||= lambda do
-        execute_command(['-s', 'devices']) do |stdout, stderr, _|
-          filter_stderr_spam(stderr)
-          all = stdout.read.chomp.split("\n")
-          valid = all.select do |device|
-            device =~ DEVICE_UDID_REGEX
-          end
-          valid.map do |device|
-            udid = device[DEVICE_UDID_REGEX, 0]
-            version = device[VERSION_REGEX, 0]
-            name = device.split('(').first.strip
+        fetch_devices[:out].chomp.split("\n").map do |line|
+          udid = line[DEVICE_UDID_REGEX, 0]
+          if udid
+            version = line[VERSION_REGEX, 0]
+            name = line.split('(').first.strip
             RunLoop::Device.new(name, version, udid)
+          else
+            nil
           end
-        end
+        end.compact
       end.call
     end
 
@@ -195,34 +186,38 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @return [Array<RunLoop::Device>] All the devices will be simulators.
     def simulators
       @instruments_simulators ||= lambda do
-        execute_command(['-s', 'devices']) do |stdout, stderr, _|
-          filter_stderr_spam(stderr)
-          lines = stdout.read.chomp.split("\n")
-          lines.map do |line|
-            stripped = line.strip
-            if line_is_simulator?(stripped) &&
-                  !line_is_simulator_paired_with_watch?(stripped)
+        fetch_devices[:out].chomp.split("\n").map do |line|
+          stripped = line.strip
+          if line_is_simulator?(stripped) &&
+                !line_is_simulator_paired_with_watch?(stripped)
 
-              version = stripped[VERSION_REGEX, 0]
+            version = stripped[VERSION_REGEX, 0]
 
-              if line_is_xcode5_simulator?(stripped)
-                name = line
-                udid = line
-              else
-                name = stripped.split('(').first.strip
-                udid = line[CORE_SIMULATOR_UDID_REGEX, 0]
-              end
-
-              RunLoop::Device.new(name, version, udid)
+            if line_is_xcode5_simulator?(stripped)
+              name = line
+              udid = line
             else
-              nil
+              name = stripped.split('(').first.strip
+              udid = line[CORE_SIMULATOR_UDID_REGEX, 0]
             end
-          end.compact
-        end
+
+            RunLoop::Device.new(name, version, udid)
+          else
+            nil
+          end
+        end.compact
       end.call
     end
 
     private
+
+    # @!visibility private
+    def fetch_devices
+      @device_hash ||= lambda do
+        args = ['instruments', '-s', 'devices']
+        xcrun.exec(args, log_cmd: true)
+      end.call
+    end
 
     # @!visibility private
     #
@@ -351,18 +346,6 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def execute_command(args)
       Open3.popen3('xcrun', 'instruments', *args) do |_, stdout, stderr, process_status|
         yield stdout, stderr, process_status
-      end
-    end
-
-    # @!visibility private
-    #
-    # Filters `instruments` spam.
-    def filter_stderr_spam(stderr)
-      # Xcode 6 GM is spamming "WebKit Threading Violations"
-      stderr.read.strip.split("\n").each do |line|
-        unless line[/WebKit Threading Violation/, 0]
-          $stderr.puts line
-        end
       end
     end
 

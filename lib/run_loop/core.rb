@@ -68,6 +68,8 @@ module RunLoop
       nil
     end
 
+    # @deprecated 1.5.2 No public replacement.
+    #
     # Raise an error if the application binary is not compatible with the
     # target simulator.
     #
@@ -85,6 +87,7 @@ module RunLoop
     # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
     #  application binary is not compatible with the target simulator.
     def self.expect_compatible_simulator_architecture(launch_options, sim_control)
+      RunLoop.deprecated('1.5.2', 'No public replacement.')
       logger = launch_options[:logger]
       if sim_control.xcode_version_gte_6?
         sim_identifier = launch_options[:udid]
@@ -105,6 +108,30 @@ module RunLoop
         RunLoop::Logging.log_debug(logger, "Xcode #{sim_control.xcode_version} detected; skipping simulator architecture check.")
         false
       end
+    end
+
+    # Raise an error if the application binary is not compatible with the
+    # target simulator.
+    #
+    # @note This method is implemented for CoreSimulator environments only;
+    #  for Xcode < 6.0 this method does nothing.
+    #
+    # @param [RunLoop::Device] device The device to install on.
+    # @param [RunLoop::App] app The app to install.
+    # @param [RunLoop::Xcode] xcode The active Xcode.
+    #
+    # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
+    #  application binary is not compatible with the target simulator.
+    def self.expect_simulator_compatible_arch(device, app, xcode)
+      if !xcode.version_gte_6?
+        RunLoop.log_warn("Checking for compatible arches is only available in CoreSimulator environments")
+        return
+      end
+
+      lipo = RunLoop::Lipo.new(app.path)
+      lipo.expect_compatible_arch(device)
+
+      RunLoop.log_debug("Simulator instruction set '#{device.instruction_set}' is compatible with '#{lipo.info}'")
     end
 
     # Prepares the simulator for running.
@@ -135,16 +162,36 @@ module RunLoop
 
         # CoreSimulator
 
+        app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
+        app = RunLoop::App.new(app_bundle_path)
+
+        unless app.valid?
+          if !File.exist?(app.path)
+            message = "App '#{app_bundle_path}' does not exist."
+          else
+            message = "App '#{app_bundle_path}' is not a valid .app bundle"
+          end
+          raise RuntimeError, message
+        end
+
         udid = launch_options[:udid]
         xcode = sim_control.xcode
 
-        device = sim_control.simulators.detect do |sim|
+        device = sim_control.simulators.find do |sim|
           sim.udid == udid || sim.instruments_identifier(xcode) == udid
         end
 
         if device.nil?
-          raise "Could not find simulator with name or UDID that matches: '#{udid}'"
+          raise RuntimeError,
+                "Could not find simulator with name or UDID that matches: '#{udid}'"
         end
+
+        # Validate the architecture.
+        self.expect_simulator_compatible_arch(device, app, xcode)
+
+        bridge = RunLoop::LifeCycle::CoreSimulator.new(app, device, sim_control)
+
+        bridge.ensure_app_same
 
         # Will quit the simulator if it is running.
         # @todo fix accessibility_enabled? so we don't have to quit the sim
@@ -158,11 +205,10 @@ module RunLoop
         # https://github.com/calabash/run_loop/issues/167
         sim_control.ensure_software_keyboard(device)
 
+
         # Xcode 6.3 instruments cannot launch an app that is already installed on
         # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
         if sim_control.xcode.version_gte_63?
-          app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
-          bridge = RunLoop::Simctl::Bridge.new(device, app_bundle_path)
 
           if bridge.app_is_installed? && !sim_control.sim_is_running?
             bridge.launch_simulator
@@ -259,7 +305,6 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       merged_options = options.merge(discovered_options)
 
       if self.simulator_target?(merged_options)
-        self.expect_compatible_simulator_architecture(merged_options, sim_control)
         self.prepare_simulator(merged_options, sim_control)
       end
 
@@ -286,34 +331,55 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
       uia_timeout = options[:uia_timeout] || RunLoop::Environment.uia_timeout || 10
 
-      after = Time.now
-      RunLoop::Logging.log_debug(logger, "Preparation took #{after-before} seconds")
+      RunLoop::Logging.log_debug(logger, "Preparation took #{Time.now-before} seconds")
 
-      before = Time.now
+      before_instruments_launch = Time.now
+
+       fifo_retry_on = [RunLoop::Fifo::NoReaderConfiguredError,
+                        RunLoop::Fifo::WriteTimedOut]
+
       begin
 
         if options[:validate_channel]
           options[:validate_channel].call(run_loop, 0, uia_timeout)
         else
+
           cmd = "UIALogger.logMessage('Listening for run loop commands')"
+
           begin
+
             fifo_timeout = options[:fifo_timeout] || 30
             RunLoop::Fifo.write(repl_path, "0:#{cmd}", timeout: fifo_timeout)
-          rescue RunLoop::Fifo::NoReaderConfiguredError,
-              RunLoop::Fifo::WriteTimedOut => e
-            RunLoop::Logging.log_debug(logger, "Error while writing to fifo. #{e}")
-            raise RunLoop::TimeoutError.new("Error while writing to fifo. #{e}")
+
+          rescue *fifo_retry_on => e
+
+            message = "Error while writing to fifo. #{e}"
+            RunLoop::Logging.log_debug(logger, message)
+            raise RunLoop::TimeoutError.new(message)
+
           end
+
           Timeout::timeout(timeout, RunLoop::TimeoutError) do
             read_response(run_loop, 0, uia_timeout)
           end
+
         end
       rescue RunLoop::TimeoutError => e
         RunLoop::Logging.log_debug(logger, "Failed to launch. #{e}: #{e && e.message}")
-        raise RunLoop::TimeoutError, "Time out waiting for UIAutomation run-loop #{e}. \n Logfile #{log_file} \n\n #{File.read(log_file)}\n"
+
+        message = %Q(
+
+"Timed out waiting for UIAutomation run-loop #{e}.
+
+Logfile: #{log_file}
+
+#{File.read(log_file)}
+
+)
+        raise RunLoop::TimeoutError, message
       end
 
-      RunLoop::Logging.log_debug(logger, "Launching took #{Time.now-before} seconds")
+      RunLoop::Logging.log_debug(logger, "Launching took #{Time.now-before_instruments_launch} seconds")
 
       dylib_path = self.dylib_path_from_options(merged_options)
 
@@ -324,6 +390,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         lldb.retriable_inject_dylib
       end
 
+      RunLoop.log_debug("It took #{Time.now - before} seconds to launch the app")
       run_loop
     end
 
@@ -360,131 +427,148 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def self.simulator_target?(run_options, sim_control=nil)
       value = run_options[:device_target]
 
-      # match the behavior of udid_and_bundle_for_launcher
+      # Match the behavior of udid_and_bundle_for_launcher.
       return true if value.nil? or value == ''
 
-      # support for 'simulator' and Xcode >= 5.1 device targets
+      # 5.1 <= Xcode < 7.0
       return true if value.downcase.include?('simulator')
 
-      value[DEVICE_UDID_REGEX, 0] == nil
+      # Not a physical device.
+      return false if value[DEVICE_UDID_REGEX, 0] != nil
+
+      # Check for named simulators and Xcode >= 7.0 simulators.
+      sim_control = run_options[:sim_control] || RunLoop::SimControl.new
+      xcode = sim_control.xcode
+      if xcode.version_gte_6?
+        simulator = sim_control.simulators.find do |sim|
+          sim.instruments_identifier(xcode) == value ||
+                sim.udid == value
+        end
+        !simulator.nil?
+      else
+        false
+      end
     end
 
-    # Extracts the value of :inject_dylib from options Hash.
-    # @param options [Hash] arguments passed to {RunLoop.run}
-    # @return [String, nil] If the options contains :inject_dylibs and it is a
-    #  path to a dylib that exists, return the path.  Otherwise return nil or
-    #  raise an error.
-    # @raise [RuntimeError] If :inject_dylib points to a path that does not exist.
-    # @raise [ArgumentError] If :inject_dylib is not a String.
-    def self.dylib_path_from_options(options)
-      inject_dylib = options.fetch(:inject_dylib, nil)
-      return nil if inject_dylib.nil?
-      unless inject_dylib.is_a? String
-        raise ArgumentError, "Expected :inject_dylib to be a path to a dylib, but found '#{inject_dylib}'"
-      end
-      dylib_path = File.expand_path(inject_dylib)
-      unless File.exist?(dylib_path)
-        raise "Cannot load dylib.  The file '#{dylib_path}' does not exist."
-      end
-      dylib_path
-    end
 
-    # Returns the a default simulator to target.  This default needs to be one
-    # that installed by default in the current Xcode version.
-    #
-    # For historical reasons, the most recent non-64b SDK should be used.
-    #
-    # @param [RunLoop::XCTools, RunLoop::XCode] xcode Used to detect the current xcode
-    #  version.
-    def self.default_simulator(xcode=RunLoop::Xcode.new)
-      if xcode.is_a?(RunLoop::XCTools)
-        RunLoop.deprecated('1.5.0',
-                           %q(
+  # Extracts the value of :inject_dylib from options Hash.
+  # @param options [Hash] arguments passed to {RunLoop.run}
+  # @return [String, nil] If the options contains :inject_dylibs and it is a
+  #  path to a dylib that exists, return the path.  Otherwise return nil or
+  #  raise an error.
+  # @raise [RuntimeError] If :inject_dylib points to a path that does not exist.
+  # @raise [ArgumentError] If :inject_dylib is not a String.
+  def self.dylib_path_from_options(options)
+    inject_dylib = options.fetch(:inject_dylib, nil)
+    return nil if inject_dylib.nil?
+    unless inject_dylib.is_a? String
+      raise ArgumentError, "Expected :inject_dylib to be a path to a dylib, but found '#{inject_dylib}'"
+    end
+    dylib_path = File.expand_path(inject_dylib)
+    unless File.exist?(dylib_path)
+      raise "Cannot load dylib.  The file '#{dylib_path}' does not exist."
+    end
+    dylib_path
+  end
+
+  # Returns the a default simulator to target.  This default needs to be one
+  # that installed by default in the current Xcode version.
+  #
+  # For historical reasons, the most recent non-64b SDK should be used.
+  #
+  # @param [RunLoop::XCTools, RunLoop::XCode] xcode Used to detect the current xcode
+  #  version.
+  def self.default_simulator(xcode=RunLoop::Xcode.new)
+    if xcode.is_a?(RunLoop::XCTools)
+      RunLoop.deprecated('1.5.0',
+                         %q(
 RunLoop::XCTools has been replaced with RunLoop::Xcode.
 Please update your sources to pass an instance of RunLoop::Xcode))
-      end
-
-      if xcode.version_gte_7?
-        'iPhone 5s (9.0)'
-      elsif xcode.version_gte_64?
-        'iPhone 5s (8.4 Simulator)'
-      elsif xcode.version_gte_63?
-        'iPhone 5s (8.3 Simulator)'
-      elsif xcode.version_gte_62?
-        'iPhone 5s (8.2 Simulator)'
-      elsif xcode.version_gte_61?
-        'iPhone 5s (8.1 Simulator)'
-      elsif xcode.version_gte_6?
-        'iPhone 5s (8.0 Simulator)'
-      else
-        'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-      end
     end
 
-    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
-      xcode = sim_control.xcode
+    if xcode.version_gte_71?
+      'iPhone 6s (9.1)'
+    elsif xcode.version_gte_7?
+      'iPhone 5s (9.0)'
+    elsif xcode.version_gte_64?
+      'iPhone 5s (8.4 Simulator)'
+    elsif xcode.version_gte_63?
+      'iPhone 5s (8.3 Simulator)'
+    elsif xcode.version_gte_62?
+      'iPhone 5s (8.2 Simulator)'
+    elsif xcode.version_gte_61?
+      'iPhone 5s (8.1 Simulator)'
+    elsif xcode.version_gte_6?
+      'iPhone 5s (8.0 Simulator)'
+    else
+      'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+    end
+  end
 
-      bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
+  def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
+    xcode = sim_control.xcode
 
-      unless bundle_dir_or_bundle_id
-        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
+    bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
+
+    unless bundle_dir_or_bundle_id
+      raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
+    end
+
+    udid = nil
+
+    if xcode.version_gte_51?
+      if device_target.nil? || device_target.empty? || device_target == 'simulator'
+        device_target = self.default_simulator(xcode)
       end
+      udid = device_target
 
-      udid = nil
+      unless self.simulator_target?(options)
+        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
+      end
+    else
+      #TODO: this can be removed - Xcode < 5.1.1 not supported.
+      if device_target == 'simulator'
 
-      if xcode.version_gte_51?
-        if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          device_target = self.default_simulator(xcode)
+        unless File.exist?(bundle_dir_or_bundle_id)
+          raise "Unable to find app in directory #{bundle_dir_or_bundle_id} when trying to launch simulator"
         end
-        udid = device_target
-
-        unless self.simulator_target?(options)
-          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-        end
-      else
-        #TODO: this can be removed - Xcode < 5.1.1 not supported.
-        if device_target == 'simulator'
-
-          unless File.exist?(bundle_dir_or_bundle_id)
-            raise "Unable to find app in directory #{bundle_dir_or_bundle_id} when trying to launch simulator"
-          end
 
 
-          device = options[:device] || :iphone
-          device = device && device.to_sym
+        device = options[:device] || :iphone
+        device = device && device.to_sym
 
-          plistbuddy='/usr/libexec/PlistBuddy'
-          plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
-          if device == :iphone
-            uidevicefamily=1
-          else
-            uidevicefamily=2
-          end
-          system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
-          system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
-          system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
+        plistbuddy='/usr/libexec/PlistBuddy'
+        plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
+        if device == :iphone
+          uidevicefamily=1
         else
-          udid = device_target
-          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
+          uidevicefamily=2
         end
+        system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
+        system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
+        system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
+      else
+        udid = device_target
+        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
       end
-      return udid, bundle_dir_or_bundle_id
     end
+    return udid, bundle_dir_or_bundle_id
+  end
 
-    def self.create_uia_pipe(repl_path)
-      begin
-        Timeout::timeout(5, RunLoop::TimeoutError) do
-          loop do
-            begin
-              FileUtils.rm_f(repl_path)
-              return repl_path if system(%Q[mkfifo "#{repl_path}"])
-            rescue Errno::EINTR => e
-              #retry
-              sleep(0.1)
-            end
+  def self.create_uia_pipe(repl_path)
+    begin
+      Timeout::timeout(5, RunLoop::TimeoutError) do
+        loop do
+          begin
+            FileUtils.rm_f(repl_path)
+            return repl_path if system(%Q[mkfifo "#{repl_path}"])
+          rescue Errno::EINTR => e
+            #retry
+            sleep(0.1)
           end
         end
-      rescue RunLoop::TimeoutError => _
+      end
+    rescue RunLoop::TimeoutError => _
         raise RunLoop::TimeoutError, 'Unable to create pipe (mkfifo failed)'
       end
     end

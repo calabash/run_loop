@@ -1,10 +1,10 @@
-require 'digest'
-require 'openssl'
-
 module RunLoop
 
   # Class for performing operations on directories.
   class Directory
+    require 'digest'
+    require 'openssl'
+    require 'pathname'
 
     # Dir.glob ignores files that start with '.', but we often need to find
     # dotted files and directories.
@@ -39,10 +39,27 @@ module RunLoop
         raise ArgumentError, "Expected a non-empty dir at '#{path}' found '#{entries}'"
       end
 
+      debug = RunLoop::Environment.debug?
+
       sha = OpenSSL::Digest::SHA256.new
       self.recursive_glob_for_entries(path).each do |file|
-        unless File.directory?(file)
-          sha << File.read(file)
+        if File.directory?(file)
+          # skip directories
+        elsif !Pathname.new(file).exist?
+          # skip broken symlinks
+        else
+          case File.ftype(file)
+            when 'fifo'
+              RunLoop.log_warn("SHA1 SKIPPING FIFO #{file}") if debug
+            when 'socket'
+              RunLoop.log_warn("SHA1 SKIPPING SOCKET #{file}") if debug
+            when 'characterSpecial'
+              RunLoop.log_warn("SHA1 SKIPPING CHAR SPECIAL #{file}") if debug
+            when 'blockSpecial'
+              RunLoop.log_warn("SHA1 SKIPPING BLOCK SPECIAL #{file}") if debug
+            else
+              sha << File.read(file)
+          end
         end
       end
       sha.hexdigest

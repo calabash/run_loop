@@ -103,9 +103,9 @@ Please update your sources.))
     # @!visibility private
     def to_s
       if simulator?
-        "#<Simulator: #{name} #{udid} #{instruction_set}>"
+        "#<Simulator: #{name} (#{version.to_s}) #{udid} #{instruction_set}>"
       else
-        "#<Device: #{name} #{udid}>"
+        "#<Device: #{name} (#{version.to_s}) #{udid}>"
       end
     end
 
@@ -188,6 +188,28 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       end
     end
 
+    # @!visibility private
+    # The device `state` is reported by the simctl tool.
+    #
+    # The expected values from simctl are:
+    #
+    # * Booted
+    # * Shutdown
+    # * Shutting Down
+    #
+    # To handle exceptional cases, there are these two additional states:
+    #
+    # * Unavailable # Should never occur
+    # * Unknown     # A stub for future changes
+    def update_simulator_state
+      if physical_device?
+        raise RuntimeError, 'This method is available only for simulators'
+      end
+
+      @state = fetch_simulator_state
+    end
+
+    # @!visibility private
     def simulator_root_dir
       @simulator_root_dir ||= lambda {
         return nil if physical_device?
@@ -195,6 +217,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_accessibility_plist_path
       @simulator_accessibility_plist_path ||= lambda {
         return nil if physical_device?
@@ -202,6 +225,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_preferences_plist_path
       @simulator_preferences_plist_path ||= lambda {
         return nil if physical_device?
@@ -209,6 +233,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
     def simulator_log_file_path
       @simulator_log_file_path ||= lambda {
         return nil if physical_device?
@@ -216,9 +241,200 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       }.call
     end
 
+    # @!visibility private
+    def simulator_device_plist
+      @simulator_device_plist ||= lambda do
+        return nil if physical_device?
+        File.join(simulator_root_dir, 'device.plist')
+      end.call
+    end
+
+    # @!visibility private
+    # Is this the first launch of this Simulator?
+    #
+    # TODO Needs unit and integration tests.
+    def simulator_first_launch?
+      megabytes = simulator_data_dir_size
+
+      if version >= RunLoop::Version.new('9.0')
+        megabytes < 20
+      elsif version >= RunLoop::Version.new('8.0')
+        megabytes < 12
+      else
+        megabytes < 8
+      end
+    end
+
+    # @!visibility private
+    # The size of the simulator data/ directory.
+    #
+    # TODO needs unit tests.
+    def simulator_data_dir_size
+      path = File.join(simulator_root_dir, 'data')
+      args = ['du', '-m', '-d', '0', path]
+      hash = xcrun.exec(args)
+      hash[:out].split(' ').first.to_i
+    end
+
+    # @!visibility private
+    #
+    # Waits for three conditions:
+    #
+    # 1. The SHA sum of the simulator data/ directory to be stable.
+    # 2. No more log messages are begin generated
+    # 3. 1 and 2 must hold for 2 seconds.
+    #
+    # When the simulator version is >= iOS 9 _and_ it is the first launch of
+    # the simulator after a reset or a new simulator install, a fourth condition
+    # is added:
+    #
+    # 4. The first three conditions must be met a second time.
+    def simulator_wait_for_stable_state
+      require 'securerandom'
+
+      quiet_time = 2
+      delay = 0.5
+
+      first_launch = false
+
+      if version >= RunLoop::Version.new('9.0')
+        first_launch = simulator_data_dir_size < 20
+      end
+
+      now = Time.now
+      timeout = 30
+      poll_until = now + timeout
+      quiet = now + quiet_time
+
+      is_stable = false
+
+      path = File.join(simulator_root_dir, 'data')
+      current_sha = nil
+      sha_fn = lambda do |data_dir|
+        begin
+          # Directory.directory_digest has a blocking read.  Typically, it
+          # returns in < 0.3 seconds.
+          Timeout.timeout(2, TimeoutError) do
+            RunLoop::Directory.directory_digest(data_dir)
+          end
+        rescue => e
+          RunLoop.log_error(e) if RunLoop::Environment.debug?
+          SecureRandom.uuid
+        end
+      end
+
+      current_line = nil
+
+      while Time.now < poll_until do
+        latest_sha = sha_fn.call(path)
+        latest_line = last_line_from_simulator_log_file
+
+        is_stable = current_sha == latest_sha && current_line == latest_line
+
+        if is_stable
+          if Time.now > quiet
+            if first_launch
+              RunLoop.log_debug('First launch detected - allowing additional time to stabilize')
+              first_launch = false
+              sleep 1.2
+              quiet = Time.now + quiet_time
+            else
+              break
+            end
+          else
+            quiet = Time.now + quiet_time
+          end
+        end
+
+        current_sha = latest_sha
+        current_line = latest_line
+        sleep delay
+      end
+
+      if is_stable
+        elapsed = Time.now - now
+        stabilized = elapsed - quiet_time
+        RunLoop.log_debug("Simulator stable after #{stabilized} seconds")
+        RunLoop.log_debug("Waited a total of #{elapsed} seconds for simulator to stabilize")
+      else
+        RunLoop.log_debug("Timed out: simulator not stable after #{timeout} seconds")
+      end
+    end
+
     private
 
+    # @!visibility private
+    # TODO write a unit test.
+    def last_line_from_simulator_log_file
+      file = simulator_log_file_path
+
+      return nil if !File.exist?(file)
+
+      debug = RunLoop::Environment.debug?
+
+      begin
+        io = File.open(file, 'r')
+        io.seek(-100, IO::SEEK_END)
+
+        line = io.readline
+      rescue StandardError => e
+        RunLoop.log_error("Caught #{e} while reading simulator log file") if debug
+      ensure
+        io.close if io && !io.closed?
+      end
+
+      line
+    end
+
+    # @!visibility private
+    def xcrun
+      RunLoop::Xcrun.new
+    end
+
+    # @!visibility private
+    def detect_state_from_line(line)
+
+      if line[/unavailable/, 0]
+        RunLoop.log_debug("Simulator state is unavailable: #{line}")
+        return 'Unavailable'
+      end
+
+      state = line[/(Booted|Shutdown|Shutting Down)/,0]
+
+      if state.nil?
+        RunLoop.log_debug("Simulator state is unknown: #{line}")
+        'Unknown'
+      else
+        state
+      end
+    end
+
+    # @!visibility private
+    def fetch_simulator_state
+      if physical_device?
+        raise RuntimeError, 'This method is available only for simulators'
+      end
+
+      args = ['simctl', 'list', 'devices']
+      hash = xcrun.exec(args)
+      out = hash[:out]
+
+      matched_line = out.split("\n").find do |line|
+        line.include?(udid)
+      end
+
+      if matched_line.nil?
+        raise RuntimeError,
+              "Expected a simulator with udid '#{udid}', but found none"
+      end
+
+      detect_state_from_line(matched_line)
+    end
+
+    # @!visibility private
     CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
+
+    # @!visibility private
     CORE_SIMULATOR_LOGS_DIR = File.expand_path('~/Library/Logs/CoreSimulator')
 
     # TODO Is this a good idea?  It speeds up rspec tests by a factor of ~2x...
