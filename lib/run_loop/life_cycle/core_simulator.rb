@@ -453,10 +453,18 @@ module RunLoop
       end
 
       # @!visibility private
+      def csstore_file
+        @csstore_file ||= File.join(device_data_dir, 'Library', 'Caches', 'com.apple.LaunchServices-134.csstore')
+      end
+
+      # @!visibility private
       def reset_app_sandbox_internal_shared
         [app_documents_dir, app_tmp_dir].each do |dir|
           FileUtils.rm_rf dir
           FileUtils.mkdir dir
+        end
+        if File.exist? csstore_file
+          FileUtils.rm_f csstore_file
         end
       end
 
