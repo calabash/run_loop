@@ -143,7 +143,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         end
 
         if xcode.version_gte_7?
-          "#{name} (#{version_part})"
+          udid
         elsif xcode.version_gte_6?
           "#{name} (#{version_part} Simulator)"
         else

@@ -155,13 +155,13 @@ describe RunLoop::Device do
       describe 'Xcode > 7.0' do
         before { expect(xcode).to receive(:version_gte_7?).and_return true }
         context 'with Major.Minor SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (8.1)' }
+          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', '14A15E35-C568-4775-9480-4FC0C2648236', 'Shutdown') }
+          it { is_expected.to be == '14A15E35-C568-4775-9480-4FC0C2648236' }
         end
 
         context 'with Major.Minor.Patch SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (7.0.3)' }
+          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', '14A15E35-C568-4775-9480-4FC0C2648236', 'Shutdown') }
+          it { is_expected.to be == '14A15E35-C568-4775-9480-4FC0C2648236' }
         end
       end
 
