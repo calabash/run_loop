@@ -213,7 +213,11 @@ function isLocationPrompt(alert) {
             ["OK", /Would Like to Access Your Calendar/],
             ["OK", /Would Like to Access Your Reminders/],
             ["OK", /Would Like to Access Your Motion Activity/],
-            ["OK", /Would Like to Access the Camera/]
+            ["OK", /Would Like to Access the Camera/],
+
+            //iOS 9 - English
+            ["OK", /Would Like to Access Your Motion & Fitness Activity/],
+            ["OK", /Would Like Access to Twitter Accounts/]
         ],
         ans, exp,
         txt;

@@ -218,10 +218,10 @@ function isLocationPrompt(alert) {
     var exps = [
             ["OK", /vil bruge din aktuelle placering/],
             ["OK", /Would Like to Use Your Current Location/],
+            ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
             ["OK", /Would Like to Send You Notifications/],
             ["OK", /would like to send you Push Notifications/],
             ["Allow", /access your location/],
-            ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
             ["OK", /Would Like to Access Your Photos/],
             ["OK", /Would Like to Access Your Contacts/],
             ["OK", /Location Accuracy/],
@@ -231,7 +231,11 @@ function isLocationPrompt(alert) {
             ["OK", /Would Like to Access Your Calendar/],
             ["OK", /Would Like to Access Your Reminders/],
             ["OK", /Would Like to Access Your Motion Activity/],
-            ["OK", /Would Like to Access the Camera/]
+            ["OK", /Would Like to Access the Camera/],
+
+            //iOS 9 - English
+            ["OK", /Would Like to Access Your Motion & Fitness Activity/],
+            ["OK", /Would Like Access to Twitter Accounts/]
         ],
         ans, exp,
         txt;
