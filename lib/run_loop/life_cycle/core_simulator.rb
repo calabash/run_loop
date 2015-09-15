@@ -454,7 +454,7 @@ module RunLoop
 
       # @!visibility private
       def device_caches_dir
-        @device_caches_dir ||= File.join(device_data_dir, 'Library', 'Caches', 'com.apple.LaunchServices-134.csstore')
+        @device_caches_dir ||= File.join(device_data_dir, 'Library', 'Caches')
       end
 
       # @!visibility private
