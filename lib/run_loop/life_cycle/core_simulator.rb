@@ -464,8 +464,10 @@ module RunLoop
           FileUtils.mkdir dir
         end
         csstore_regex = File.join(device_caches_dir, "com.apple.LaunchServices-*.csstore")
-        csstore_file = Dir[csstore_regex].first
-        FileUtils.rm_f csstore_file
+        matches = Dir[csstore_regex]
+        if matches.length > 0
+          FileUtils.rm_f matches.first
+        end
       end
 
       # @!visibility private
