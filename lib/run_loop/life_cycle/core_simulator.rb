@@ -453,8 +453,8 @@ module RunLoop
       end
 
       # @!visibility private
-      def csstore_file
-        @csstore_file ||= File.join(device_data_dir, 'Library', 'Caches', 'com.apple.LaunchServices-134.csstore')
+      def device_caches_dir
+        @device_caches_dir ||= File.join(device_data_dir, 'Library', 'Caches', 'com.apple.LaunchServices-134.csstore')
       end
 
       # @!visibility private
@@ -463,9 +463,8 @@ module RunLoop
           FileUtils.rm_rf dir
           FileUtils.mkdir dir
         end
-        if File.exist? csstore_file
-          FileUtils.rm_f csstore_file
-        end
+        csstore_file = Dir[device_caches_dir].select {|x| x =~ /com.apple.LaunchServices-.*csstore/}.first
+        FileUtils.rm_f csstore_file
       end
 
       # @!visibility private
