@@ -458,15 +458,18 @@ module RunLoop
       end
 
       # @!visibility private
+      def clear_device_launch_csstore
+        glob = File.join(device_caches_dir, "com.apple.LaunchServices-*.csstore")
+        Dir.glob(glob) do | ccstore |
+          FileUtils.rm_f ccstore
+        end
+      end
+
+      # @!visibility private
       def reset_app_sandbox_internal_shared
         [app_documents_dir, app_tmp_dir].each do |dir|
           FileUtils.rm_rf dir
           FileUtils.mkdir dir
-        end
-        csstore_regex = File.join(device_caches_dir, "com.apple.LaunchServices-*.csstore")
-        matches = Dir[csstore_regex]
-        if matches.length > 0
-          FileUtils.rm_f matches.first
         end
       end
 
