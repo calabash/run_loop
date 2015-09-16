@@ -161,6 +161,12 @@ describe RunLoop::LifeCycle::CoreSimulator do
       end
     end
 
+    it '#device_library_cache_dir' do
+      expect(core_sim).to receive(:device_data_dir).and_return('/')
+
+      expect(core_sim.send(:device_caches_dir)).to be == '/Library/Caches'
+    end
+
     describe '#app_is_installed?' do
       it 'returns false when app is not installed' do
         expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
