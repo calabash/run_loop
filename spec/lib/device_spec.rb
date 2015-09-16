@@ -31,7 +31,7 @@ describe RunLoop::Device do
     end
   end
 
-  describe '#to_str' do
+  describe '#to_s' do
     it 'physical device' do
       device = RunLoop::Device.new('denis',
                                    '8.3',
@@ -156,12 +156,12 @@ describe RunLoop::Device do
         before { expect(xcode).to receive(:version_gte_7?).and_return true }
         context 'with Major.Minor SDK version' do
           let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', '14A15E35-C568-4775-9480-4FC0C2648236', 'Shutdown') }
-          it { is_expected.to be == '14A15E35-C568-4775-9480-4FC0C2648236' }
+          it { is_expected.to be == 'Form Factor (8.1)' }
         end
 
         context 'with Major.Minor.Patch SDK version' do
           let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', '14A15E35-C568-4775-9480-4FC0C2648236', 'Shutdown') }
-          it { is_expected.to be == '14A15E35-C568-4775-9480-4FC0C2648236' }
+          it { is_expected.to be == 'Form Factor (7.0.3)' }
         end
       end
 
