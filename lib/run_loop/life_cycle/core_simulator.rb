@@ -291,6 +291,8 @@ module RunLoop
 
         RunLoop.log_debug("Installed #{app} on CoreSimulator #{device.udid}")
 
+        clear_device_launch_csstore
+
         true
       end
 
