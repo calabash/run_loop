@@ -1,5 +1,16 @@
 ## Change Log
 
+### 1.5.4
+
+* Xcode 7: launch instruments with simulator UDID to avoid ambiguous
+  matches #253 @sapieneptus
+* Remove CoreSimulator LaunchServices csstore before during simulator
+  preparation #252 @sapieneptus
+* iOS9: dismiss Motion/Activity and Twitter permissions alerts #251
+  @sapieneptus
+* HOTFIX: backward compatibility for Calabash < 0.16.1 #248
+  @ark-konopacki
+
 ### 1.5.3
 
 * HOTFIX: backward compatibility for Calabash < 0.16.1 @ark-konopacki
