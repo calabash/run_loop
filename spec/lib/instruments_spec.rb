@@ -136,38 +136,105 @@ describe RunLoop::Instruments do
   end
 
   describe '#spawn_arguments' do
-    it 'parses options argument to create an array' do
-      automation_template = 'Automation'
-      script = 'run_loop.js'
-      trace = 'trace'
-      bundle = 'MyApp.app'
-      result_dir = 'result'
-      args = ['-NSDoubleLocalizedStrings', 'YES']
-      udid = 'iPhone 5s (8.1 Simulator)'
-      launch_options =
-            {
-                  :app => "/Users/moody/git/run-loop/spec/resources/chou-cal.app",
-                  :script => script,
-                  :udid => udid,
-                  :results_dir_trace => trace,
-                  :bundle_dir_or_bundle_id => bundle,
-                  :results_dir => result_dir,
-                  :args => args
-            }
+    let(:xcode) { instruments.xcode }
+    let(:automation_template) { 'Automation' }
+    let (:launch_options) do
+      {
+            :app => '/path/to/my.app',
+            :script => 'run_loop.js',
+            :udid => 'iPhone 5s (8.1 Simulator)',
+            :results_dir_trace => 'trace',
+            :bundle_dir_or_bundle_id => '/path/to/my.app',
+            :results_dir => 'result',
+            :args => ['-NSDoubleLocalizedStrings', 'YES']
+      }
+    end
+
+    it 'Xcode < 7' do
+      expect(xcode).to receive(:version).at_least(:once).and_return(xcode.v64)
+
       actual = instruments.send(:spawn_arguments, automation_template, launch_options)
       expected =
             [
                   'instruments',
-                  '-w', udid,
-                  '-D', trace,
+                  '-w', launch_options[:udid],
+                  '-D', launch_options[:results_dir_trace],
                   '-t', automation_template,
-                  bundle,
-                  '-e', 'UIARESULTSPATH', result_dir,
-                  '-e', 'UIASCRIPT', script,
-                  args[0],
-                  args[1]
+                  launch_options[:bundle_dir_or_bundle_id],
+                  '-e', 'UIARESULTSPATH', launch_options[:results_dir],
+                  '-e', 'UIASCRIPT', launch_options[:script],
+                  '-NSDoubleLocalizedStrings',
+                  'YES'
             ]
       expect(actual).to be == expected
+    end
+
+    describe 'Xcode > 7.0' do
+      it 'physical device - pass the udid through' do
+        launch_options[:udid] = '43be3f89d9587e9468c24672777ff6211bd91124'
+        launch_options[:bundle_dir_or_bundle_id] = 'sh.calaba.CalSmoke-cal'
+
+
+        expect(xcode).to receive(:version).at_least(:once).and_return(xcode.v70)
+
+        actual = instruments.send(:spawn_arguments, automation_template, launch_options)
+        expected =
+              [
+                    'instruments',
+                    '-w', launch_options[:udid],
+                    '-D', launch_options[:results_dir_trace],
+                    '-t', automation_template,
+                    launch_options[:bundle_dir_or_bundle_id],
+                    '-e', 'UIARESULTSPATH', launch_options[:results_dir],
+                    '-e', 'UIASCRIPT', launch_options[:script],
+                    '-NSDoubleLocalizedStrings',
+                    'YES'
+              ]
+        expect(actual).to be == expected
+      end
+
+      it 'matched simulator - substitute the device udid' do
+        expect(xcode).to receive(:version).at_least(:once).and_return(xcode.v70)
+
+        launch_options[:udid] = 'iPhone 6 (9.0)'
+        device = RunLoop::Device.new('iPhone 6', '9.0', '6E43E3CF-25F5-41CC-A833-588F043AE749')
+        expect(instruments).to receive(:simulators).and_return([device])
+
+        actual = instruments.send(:spawn_arguments, automation_template, launch_options)
+        expected =
+              [
+                    'instruments',
+                    '-w', device.udid,
+                    '-D', launch_options[:results_dir_trace],
+                    '-t', automation_template,
+                    launch_options[:bundle_dir_or_bundle_id],
+                    '-e', 'UIARESULTSPATH', launch_options[:results_dir],
+                    '-e', 'UIASCRIPT', launch_options[:script],
+                    '-NSDoubleLocalizedStrings',
+                    'YES'
+              ]
+        expect(actual).to be == expected
+      end
+
+      it 'unmatched simulator - pass the udid through' do
+        expect(xcode).to receive(:version).at_least(:once).and_return(xcode.v70)
+        expect(instruments).to receive(:simulators).and_return([])
+
+        actual = instruments.send(:spawn_arguments, automation_template, launch_options)
+        expected =
+              [
+                    'instruments',
+                    '-w', launch_options[:udid],
+                    '-D', launch_options[:results_dir_trace],
+                    '-t', automation_template,
+                    launch_options[:bundle_dir_or_bundle_id],
+                    '-e', 'UIARESULTSPATH', launch_options[:results_dir],
+                    '-e', 'UIASCRIPT', launch_options[:script],
+                    '-NSDoubleLocalizedStrings',
+                    'YES'
+              ]
+        expect(actual).to be == expected
+      end
     end
   end
 

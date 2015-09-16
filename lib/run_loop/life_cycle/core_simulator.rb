@@ -291,6 +291,8 @@ module RunLoop
 
         RunLoop.log_debug("Installed #{app} on CoreSimulator #{device.udid}")
 
+        clear_device_launch_csstore
+
         true
       end
 
@@ -450,6 +452,19 @@ module RunLoop
           raise "Expected '#{target_state} but found '#{device.state}' after waiting."
         end
         in_state
+      end
+
+      # @!visibility private
+      def device_caches_dir
+        @device_caches_dir ||= File.join(device_data_dir, 'Library', 'Caches')
+      end
+
+      # @!visibility private
+      def clear_device_launch_csstore
+        glob = File.join(device_caches_dir, "com.apple.LaunchServices-*.csstore")
+        Dir.glob(glob) do | ccstore |
+          FileUtils.rm_f ccstore
+        end
       end
 
       # @!visibility private

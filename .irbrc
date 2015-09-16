@@ -46,6 +46,8 @@ puts '> xcode       => Xcode instance'
 puts '> instruments => Instruments instance'
 puts '> simcontrol  => SimControl instance'
 puts '> default_sim => Default simulator'
+puts '> verbose     => turn on DEBUG logging'
+puts '> quiet       => turn off DEBUG logging'
 puts ''
 
 def xcode
@@ -67,6 +69,14 @@ def default_sim
       sim.instruments_identifier(xcode) == name
     end
   end.call
+end
+
+def verbose
+  ENV['DEBUG'] = '1'
+end
+
+def quiet
+  ENV['DEBUG'] = '1'
 end
 
 motd=["Let's get this done!", 'Ready to rumble.', 'Enjoy.', 'Remember to breathe.',

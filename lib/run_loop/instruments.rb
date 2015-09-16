@@ -241,7 +241,30 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def spawn_arguments(automation_template, options)
       array = ['instruments']
       array << '-w'
-      array << options[:udid]
+
+      # Xcode 7 simulators must be launched with UDID to avoid
+      # Ambiguous device name/identifier errors (from instruments)
+      if xcode.version_gte_7?
+        udid = options[:udid]
+
+        if udid[DEVICE_UDID_REGEX, 0]
+          array << udid
+        else
+          match = simulators.find do |simulator|
+            [simulator.name == udid,
+             simulator.udid == udid,
+             simulator.instruments_identifier(xcode) == udid].any?
+          end
+
+          if match
+            array << match.udid
+          else
+            array << udid
+          end
+        end
+      else
+        array << options[:udid]
+      end
 
       trace = options[:results_dir_trace]
       if trace

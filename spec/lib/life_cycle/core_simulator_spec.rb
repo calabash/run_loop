@@ -161,6 +161,12 @@ describe RunLoop::LifeCycle::CoreSimulator do
       end
     end
 
+    it '#device_library_cache_dir' do
+      expect(core_sim).to receive(:device_data_dir).and_return('/')
+
+      expect(core_sim.send(:device_caches_dir)).to be == '/Library/Caches'
+    end
+
     describe '#app_is_installed?' do
       it 'returns false when app is not installed' do
         expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
@@ -386,6 +392,41 @@ describe RunLoop::LifeCycle::CoreSimulator do
         expect(actual[/#{uuid}/, 0]).to be_truthy
         expect(core_sim.app_is_installed?).to be_truthy
         expect(app.sha1).to be == core_sim.installed_app_sha1
+      end
+    end
+
+    describe '#clear_device_launch_cssstore' do
+
+      let(:counter) do
+        lambda do |path|
+          Dir.glob(File.join(path, "com.apple.LaunchServices-*.csstore")).count
+        end
+      end
+
+      it 'no matching' do
+        core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, device_with_app)
+        device_caches_dir = core_sim.send(:device_caches_dir)
+
+        before_count =  counter.call(device_caches_dir)
+        expect(before_count).to be == 0
+
+        core_sim.send(:clear_device_launch_csstore)
+
+        after_count = counter.call(device_caches_dir)
+        expect(after_count).to be == 0
+      end
+
+      it 'matching' do
+        core_sim = RunLoop::LifeCycle::CoreSimulator.new(app, device_without_app)
+        device_caches_dir = core_sim.send(:device_caches_dir)
+
+        before_count =  counter.call(device_caches_dir)
+        expect(before_count).to be == 4
+
+        core_sim.send(:clear_device_launch_csstore)
+
+        after_count = counter.call(device_caches_dir)
+        expect(after_count).to be == 0
       end
     end
   end
