@@ -18,7 +18,7 @@ module RunLoop
 
     # @deprecated 1.5.0 - replaced by #xcode
     def xctools
-      RunLoop.deprecated('1.5.0', 'Replaced by RunLoop::Xcode')
+      RunLoop.deprecated('1.5.0', 'Replaced by RunLoop::Xcode') if RunLoop::Environment.debug?
       @xctools ||= RunLoop::XCTools.new
     end
 
