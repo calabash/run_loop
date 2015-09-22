@@ -1,7 +1,7 @@
 var target = UIATarget.localTarget(),
     screenshot_count = 0;
 
-<%= render_template("lib/common.js") %>
+<%= render_template("lib/on_alert.js") %>
 
 var alertHandlers = [//run in reverse order of this:
     isLocationPrompt

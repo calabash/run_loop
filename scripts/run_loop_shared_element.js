@@ -9,7 +9,7 @@ var _expectedIndex = 0,//expected index of next command
     _lastResponse=null;
 
 <%= render_template("lib/log.js"); %>
-<%= render_template("lib/common.js"); %>
+<%= render_template("lib/on_alert.js"); %>
 
 UIATarget.onAlert = function (alert) {
     var target = UIATarget.localTarget(),
