@@ -457,7 +457,7 @@ class Resources
     end
   end
 
-  def kill_instruments_app(instruments_obj = RunLoop::Instruments.new)
+  def kill_instruments_app(instruments_obj = self.instruments)
     ps_output = `ps x -o pid,comm | grep Instruments.app | grep -v grep`.strip
     lines = ps_output.lines("\n").map { |line| line.strip }
     lines.each do |line|
