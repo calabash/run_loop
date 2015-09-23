@@ -16,7 +16,6 @@ describe RunLoop::LifeCycle::CoreSimulator do
   end
 
   it '#launch' do
-    pending('Waiting on Apple to respond re: correct simctl usage')
     expect(core_sim.send(:launch)).to be_truthy
   end
 end
