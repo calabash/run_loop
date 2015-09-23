@@ -537,8 +537,12 @@ module RunLoop
       # For testing.
       def launch
 
-        install
         launch_simulator
+
+        args = ['simctl', 'install', device.udid, app.path]
+        RunLoop::Xcrun.new.exec(args, log_cmd: true, timeout: 10)
+
+        device.simulator_wait_for_stable_state
 
         args = ['simctl', 'launch', device.udid, app.bundle_identifier]
         hash = RunLoop::Xcrun.new.exec(args, log_cmd: true, timeout: 20)
@@ -551,7 +555,12 @@ module RunLoop
           raise RuntimeError, "Could not launch #{app.bundle_identifier} on #{device}"
         end
 
-        RunLoop::ProcessWaiter.new(app.executable_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+        RunLoop::ProcessWaiter.new(app.executable_name, {:timeout => 10,
+                                                         :raise_on_timeout => true}).wait_for_any
+
+
+        device.simulator_wait_for_stable_state
+
         true
       end
     end

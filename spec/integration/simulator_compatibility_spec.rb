@@ -21,7 +21,7 @@ if Resources.shared.core_simulator_env?
                     :sim_control => sim_control
               }
 
-        Resources.shared.launch_sim_with_options(options) do |hash|
+        Resources.shared.launch_with_options(options) do |hash|
           expect(hash).not_to be nil
         end
       end
@@ -41,7 +41,7 @@ if Resources.shared.core_simulator_env?
                     :sim_control => sim_control
               }
 
-        Resources.shared.launch_sim_with_options(options) do |hash|
+        Resources.shared.launch_with_options(options) do |hash|
           expect(hash).not_to be nil
         end
       end
