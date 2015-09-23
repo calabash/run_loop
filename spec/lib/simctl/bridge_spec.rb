@@ -13,7 +13,7 @@ else
 
     let (:abp) { Resources.shared.cal_app_bundle_path }
     let (:sim_control) { RunLoop::SimControl.new }
-    let (:device) { Resources.shared.random_simulator_device(sim_control) }
+    let (:device) { Resources.shared.random_simulator_device }
 
     let(:bridge) { RunLoop::Simctl::Bridge.new(device, abp) }
 
