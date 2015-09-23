@@ -37,6 +37,10 @@ module RunLoop
                   # Does not always appear.
                   ['CoreSimulatorBridge', true],
 
+                  # assetsd instances clobber each other and are not properly
+                  # killed when quiting the simulator.
+                  ['assetsd', true],
+
                   # Xcode 7
                   ['ids_simd', true]
             ]
