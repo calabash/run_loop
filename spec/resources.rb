@@ -401,7 +401,10 @@ class Resources
     [(device_version >= RunLoop::Version.new('8.0') and xcode_version < RunLoop::Version.new('6.0')),
      (device_version >= RunLoop::Version.new('8.1') and xcode_version < RunLoop::Version.new('6.1')),
      (device_version >= RunLoop::Version.new('8.2') and xcode_version < RunLoop::Version.new('6.2')),
-     (device_version >= RunLoop::Version.new('8.3') and xcode_version < RunLoop::Version.new('6.3'))].any?
+     (device_version >= RunLoop::Version.new('8.3') and xcode_version < RunLoop::Version.new('6.3')),
+     (device_version >= RunLoop::Version.new('8.4') and xcode_version < RunLoop::Version.new('6.4')),
+     (device_version >= RunLoop::Version.new('9.0') and xcode_version < RunLoop::Version.new('7.0')),
+     (device_version >= RunLoop::Version.new('9.1') and xcode_version < RunLoop::Version.new('7.1'))].any?
   end
 
   def idevice_id_bin_path
@@ -413,22 +416,27 @@ class Resources
     path and File.exist? path
   end
 
-  def physical_devices_for_testing(instruments)
+  def physical_devices_for_testing(instruments = nil)
+
+    if instruments.nil?
+      instruments = self.instruments
+    end
+
     # Xcode 6 + iOS 8 - devices on the same network, whether development or not,
     # appear when calling $ xcrun instruments -s devices. For the purposes of
     # testing, we will only try to connect to devices that are connected via
     # udid.
-    @physical_devices_for_testing ||= lambda {
-      devices = instruments.physical_devices
-      if idevice_id_available?
-        white_list = `#{idevice_id_bin_path} -l`.strip.split("\n")
-        devices.select do | device |
-          white_list.include?(device.udid) && white_list.count(device.udid) == 1
-        end
-      else
-        devices
+    devices = instruments.physical_devices
+    if idevice_id_available?
+      white_list = `#{idevice_id_bin_path} -l`.strip.split("\n")
+      devices.select do | device |
+        white_list.include?(device.udid) &&
+              white_list.count(device.udid) == 1 &&
+              !incompatible_xcode_ios_version(device.version, instruments.xcode.version)
       end
-    }.call
+    else
+      devices
+    end
   end
 
   def launch_instruments_app(xcode = RunLoop::Xcode.new)
