@@ -3,11 +3,9 @@ module RunLoop
 
     DEFAULT_OPTIONS =
           {
-                :timeout => 10,
+                :timeout => 30,
                 :log_cmd => false
           }
-
-    DEFAULT_TIMEOUT = 10
 
     # Raised when Xcrun fails.
     class XcrunError < RuntimeError; end
