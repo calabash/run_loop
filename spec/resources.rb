@@ -37,6 +37,10 @@ class Resources
     @instruments ||= RunLoop::Instruments.new
   end
 
+  def sim_control
+    @sim_control ||= RunLoop::SimControl.new
+  end
+
   def with_debugging(&block)
     original_value = ENV['DEBUG']
     ENV['DEBUG'] = '1'

@@ -267,6 +267,13 @@ describe RunLoop::Core do
         end
 
         it ':device_target => Named simulator' do
+          options[:device_target] = device.name
+          device.instance_variable_set(:@uuid, 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA')
+
+          expect(RunLoop::Core.simulator_target?(options)).to be == true
+        end
+
+        it ':device_target => Instruments identifier' do
           options[:device_target] = device.instruments_identifier(xcode)
           device.instance_variable_set(:@uuid, 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA')
 
