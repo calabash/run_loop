@@ -443,8 +443,11 @@ Logfile: #{log_file}
       xcode = sim_control.xcode
       if xcode.version_gte_6?
         simulator = sim_control.simulators.find do |sim|
-          sim.instruments_identifier(xcode) == value ||
-                sim.udid == value
+          [
+                sim.instruments_identifier(xcode) == value,
+                sim.udid == value,
+                sim.name == value
+          ].any?
         end
         !simulator.nil?
       else
