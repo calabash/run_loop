@@ -239,16 +239,9 @@ describe RunLoop::Instruments do
   end
 
   it '#version' do
-    xcrun = RunLoop::Xcrun.new
-    expect(instruments).to receive(:xcrun).and_return xcrun
-    output = %q(
-instruments, version 7.0 (58143.1)
-usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device] [[-p pid] | [application [-e variable value] [argument ...]]]
-)
-    hash = { :err => output }
-    args = { log_cmd: true }
-
-    expect(xcrun).to receive(:exec).with(['instruments'], args).and_return hash
+    path = instruments.send(:path_to_instruments_app_plist)
+    key = 'CFBundleShortVersionString'
+    expect(instruments.pbuddy).to receive(:plist_read).with(key, path).and_return '7.0'
 
     expected = RunLoop::Version.new('7.0')
     expect(instruments.version).to be == RunLoop::Version.new('7.0')
