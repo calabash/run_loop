@@ -22,7 +22,7 @@ describe RunLoop::Instruments do
 
     describe 'running against simulators' do
       it 'the current Xcode version' do
-        Resources.shared.launch_sim_with_options(options) do |hash|
+        Resources.shared.launch_with_options(options) do |hash|
           expect(hash).not_to be nil
           expect(instruments.instruments_running?).to be == true
           instruments.kill_instruments(sim_control.xcode)
@@ -45,7 +45,7 @@ describe RunLoop::Instruments do
                 options[:instruments] = RunLoop::Instruments.new
                 options[:xcode] = RunLoop::Xcode.new
 
-                Resources.shared.launch_sim_with_options(options) do |hash|
+                Resources.shared.launch_with_options(options) do |hash|
                   expect(hash).not_to be nil
                   expect(instruments.instruments_running?).to be == true
                   instruments.kill_instruments(sim_control.xcode)
@@ -85,7 +85,7 @@ describe RunLoop::Instruments do
                   :sim_control => sim_control
             }
 
-      Resources.shared.launch_sim_with_options(options) do |hash|
+      Resources.shared.launch_with_options(options) do |hash|
         expect(hash).not_to be nil
         expect(instruments.send(:pids_from_ps_output).count).to be == 1
       end

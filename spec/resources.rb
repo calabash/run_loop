@@ -95,7 +95,7 @@ class Resources
     @bundle_id = 'com.xamarin.CalSmoke-cal'
   end
 
-  def launch_sim_with_options(options, tries=self.launch_retries, &block)
+  def launch_with_options(options, tries=self.launch_retries, &block)
     hash = nil
     Retriable.retriable({:tries => tries}) do
       hash = RunLoop.run(options)

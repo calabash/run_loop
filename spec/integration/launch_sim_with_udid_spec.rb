@@ -50,7 +50,7 @@ describe RunLoop do
           it 'works with SDK >= 8.0' do
             udid = random_udid_sdk_8_sim(sim_control)
             options[:device_target] = udid
-            Resources.shared.launch_sim_with_options(options) do |hash|
+            Resources.shared.launch_with_options(options) do |hash|
               expect(hash).to be_truthy
             end
           end
@@ -62,7 +62,7 @@ describe RunLoop do
                 Luffa.log_warn('No simulators with SDK < 8.0 found; skipping test')
               else
                 options[:device_target] = udid
-                Resources.shared.launch_sim_with_options(options) do |hash|
+                Resources.shared.launch_with_options(options) do |hash|
                   expect(hash).to be_truthy
                 end
               end
@@ -92,7 +92,7 @@ describe RunLoop do
           it 'works with SDK > 8.0' do
             udid = random_udid_sdk_8_sim(sim_control)
             options[:device_target] = udid
-            Resources.shared.launch_sim_with_options(options) do |hash|
+            Resources.shared.launch_with_options(options) do |hash|
               expect(hash).to be_truthy
             end
           end
@@ -103,7 +103,7 @@ describe RunLoop do
               Luffa.log_warn('No simulators with SDK < 8.0 found; skipping test')
             else
               options[:device_target] = udid
-              Resources.shared.launch_sim_with_options(options) do |hash|
+              Resources.shared.launch_with_options(options) do |hash|
                 expect(hash).to be_truthy
               end
             end
