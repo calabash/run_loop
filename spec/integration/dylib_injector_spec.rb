@@ -1,54 +1,38 @@
-if Resources.shared.core_simulator_env? && Resources.shared.whoami == 'moody'
+if Resources.shared.core_simulator_env?
 
   describe RunLoop::DylibInjector do
 
-    def select_random_shutdown_sim
-      simctl = RunLoop::SimControl.new
-      simctl.simulators.shuffle.detect do |device|
-        [device.state == 'Shutdown',
-         device.name != 'rspec-test-device',
-         !device.name[/Resizable/,0]].all?
-      end
-    end
+    let(:device) { Resources.shared.random_simulator_device }
+    let(:app_bundle) { Resources.shared.app_bundle_path }
+    let(:app) { RunLoop::App.new(app_bundle) }
+    let(:core_sim) { RunLoop::LifeCycle::CoreSimulator.new(app, device) }
+    let(:dylib) { Resources.shared.sim_dylib_path }
+    let(:injector) { RunLoop::DylibInjector.new(app.executable_name, dylib) }
 
-    before(:each) {
-      RunLoop::SimControl.new.reset_sim_content_and_settings
-    }
+    before do
+      stub_env({'DEBUG' => '1'})
+    end
 
     describe '#inject_dylib_with_timeout' do
       it 'targeting the simulator' do
-        Resources.shared.with_debugging do
-          device = select_random_shutdown_sim
-          abp = Resources.shared.app_bundle_path
-          bridge = RunLoop::Simctl::Bridge.new(device, abp)
-          expect(bridge.launch).to be == true
+        core_sim.send(:launch)
 
-          app = RunLoop::App.new(abp)
-          dylib = Resources.shared.sim_dylib_path
-          injector = RunLoop::DylibInjector.new(app.executable_name, dylib)
-          expect { injector.inject_dylib_with_timeout(1) }.to raise_error RuntimeError
-        end
+        expect do
+          injector.inject_dylib_with_timeout(1)
+        end.to raise_error RuntimeError
       end
     end
 
     describe '#retriable_inject_dylib' do
       it 'targeting the simulator' do
-        Resources.shared.with_debugging do
-          device = select_random_shutdown_sim
-          abp = Resources.shared.app_bundle_path
-          bridge = RunLoop::Simctl::Bridge.new(device, abp)
-          expect(bridge.launch).to be == true
+        core_sim.send(:launch)
 
-          app = RunLoop::App.new(abp)
-          dylib = Resources.shared.sim_dylib_path
-          injector = RunLoop::DylibInjector.new(app.executable_name, dylib)
+        vals = [false, false]
+        options = { retries: vals.count + 1}
+        expect(injector).to receive(:inject_dylib_with_timeout).exactly(vals.count).times.and_return(*vals)
+        expect(injector).to receive(:inject_dylib_with_timeout).and_call_original
 
-          vals = [false, false]
-          options = { retries: vals.count + 1}
-          expect(injector).to receive(:inject_dylib_with_timeout).exactly(vals.count).times.and_return(*vals)
-          expect(injector).to receive(:inject_dylib_with_timeout).and_call_original
-          expect(injector.retriable_inject_dylib(options)).to be == true
-        end
+        expect(injector.retriable_inject_dylib(options)).to be == true
       end
     end
   end
