@@ -31,7 +31,7 @@ module RunLoop
       RunLoop.log_unix_cmd(cmd) if merged_options[:log_cmd]
 
       begin
-        Timeout.timeout(timeout, TimeoutError) do
+        Timeout.timeout(timeout, Timeout::Error) do
           @stdin, @stdout, @stderr, process_status = Open3.popen3('xcrun', *args)
 
           @pid = process_status.pid
@@ -49,6 +49,8 @@ module RunLoop
               :pid => pid,
               :exit_status => exit_status
         }
+      rescue Timeout::Error => _
+        raise XcrunError, "Xcrun.exec timed out after #{timeout} running '#{cmd}'"
       rescue StandardError => e
         raise XcrunError, e
       ensure
