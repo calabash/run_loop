@@ -15,7 +15,7 @@ module RunLoop::Simctl
   # TODO Reinstall if checksum does not match.
   # TODO Analyze terminate_core_simulator_processes.
   # TODO Figure out when CoreSimulator appears and does not appear.
-  class Bridge
+  class Bridge < RunLoop::LifeCycle::CoreSimulator
 
     attr_reader :device
     attr_reader :app
@@ -184,54 +184,6 @@ module RunLoop::Simctl
       # Device#state is immutable
       @device = matching_device
       @device.state
-    end
-
-    def terminate_core_simulator_processes
-      [
-            # Pattern.
-            # [ '< process name >', < send term first > ]
-
-            # No. This process is a daemon, and requires 'KILL' to terminate.
-            # Killing the process is fast, but it takes a long time to restart.
-            # ['com.apple.CoreSimulator.CoreSimulatorService', false],
-
-            # Probably do not need to quit this, but it is tempting to do so.
-            #['com.apple.CoreSimulator.SimVerificationService', false],
-
-            # Started by Xamarin Studio, this is the parent process of the
-            # processes launched by Xamarin's interaction with
-            # CoreSimulatorBridge
-            ['csproxy', true],
-
-            # Yes.
-            ['SimulatorBridge', true],
-            ['configd_sim', true],
-            ['launchd_sim', true],
-
-            # Yes, but does not always appear.
-            ['CoreSimulatorBridge', true],
-
-            # Xcode 7
-            ['ids_simd', true],
-      ].each do |pair|
-        name = pair[0]
-        send_term = pair[1]
-        pids = RunLoop::ProcessWaiter.new(name).pids
-        pids.each do |pid|
-
-          if send_term
-            term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
-            killed = term.kill_process
-          else
-            killed = false
-          end
-
-          unless killed
-            term = RunLoop::ProcessTerminator.new(pid, 'KILL', name)
-            term.kill_process
-          end
-        end
-      end
     end
 
     def wait_for_device_state(target_state)
