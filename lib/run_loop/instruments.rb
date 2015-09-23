@@ -398,5 +398,16 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def line_is_simulator_paired_with_watch?(line)
       line[CORE_SIMULATOR_UDID_REGEX, 0] && line[/Apple Watch/, 0]
     end
+
+    # @!visibility private
+    def path_to_instruments_app_plist
+      @path_to_instruments_app_plist ||=
+            File.expand_path(File.join(xcode.developer_dir,
+                                 '..',
+                                 'Applications',
+                                 'Instruments.app',
+                                 'Contents',
+                                 'Info.plist'))
+    end
   end
 end

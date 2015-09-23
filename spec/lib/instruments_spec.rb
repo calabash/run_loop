@@ -524,4 +524,27 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
       it { is_expected.to be_truthy }
     end
   end
+
+  describe '#path_to_instruments_app_plist' do
+    it 'active Xcode' do
+      path = instruments.send(:path_to_instruments_app_plist)
+
+      expect(File.exist?(path)).to be_truthy
+      memoized = instruments.instance_variable_get(:@path_to_instruments_app_plist)
+      expect(memoized).to be == path
+    end
+
+    describe 'regression' do
+      Resources.shared.alt_xcode_install_paths.each do |developer_dir|
+        Resources.shared.with_developer_dir(developer_dir) do
+          it "#{developer_dir}" do
+            instruments = RunLoop::Instruments.new
+            path = instruments.send(:path_to_instruments_app_plist)
+
+            expect(File.exist?(path)).to be_truthy
+          end
+        end
+      end
+    end
+  end
 end
