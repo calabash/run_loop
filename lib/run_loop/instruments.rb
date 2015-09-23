@@ -9,6 +9,10 @@ module RunLoop
 
     attr_reader :xcode
 
+    def pbuddy
+      @pbuddy ||= RunLoop::PlistBuddy.new
+    end
+
     def xcode
       @xcode ||= RunLoop::Xcode.new
     end
@@ -110,10 +114,9 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @return [RunLoop::Version] A version object.
     def version
       @instruments_version ||= lambda do
-        args = ['instruments']
-        hash = xcrun.exec(args, log_cmd: true)
-        version_str = hash[:err][VERSION_REGEX, 0]
-        RunLoop::Version.new(version_str)
+        version_string = pbuddy.plist_read('CFBundleShortVersionString',
+                                           path_to_instruments_app_plist)
+        RunLoop::Version.new(version_string)
       end.call
     end
 
@@ -397,6 +400,17 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @!visibility private
     def line_is_simulator_paired_with_watch?(line)
       line[CORE_SIMULATOR_UDID_REGEX, 0] && line[/Apple Watch/, 0]
+    end
+
+    # @!visibility private
+    def path_to_instruments_app_plist
+      @path_to_instruments_app_plist ||=
+            File.expand_path(File.join(xcode.developer_dir,
+                                 '..',
+                                 'Applications',
+                                 'Instruments.app',
+                                 'Contents',
+                                 'Info.plist'))
     end
   end
 end
