@@ -8,7 +8,6 @@ describe RunLoop::Xcrun do
 
       hash = xcrun.exec(args, log_cmd: true, timeout: 2)
 
-      expect(hash[:err]).to be == nil
       expect(hash[:out]).to be_truthy
       expect(hash[:exit_status]).to be_truthy
       expect(hash[:pid]).to be_truthy
@@ -21,7 +20,6 @@ describe RunLoop::Xcrun do
 
     hash = xcrun.exec(args, log_cmd: true, timeout: 2)
 
-    expect(hash[:err]).to be == nil
     expect(hash[:out]).to be_truthy
     expect(hash[:exit_status]).to be_truthy
     expect(hash[:pid]).to be_truthy
