@@ -1,6 +1,8 @@
 module RunLoop
   class Xcrun
 
+    require 'command_runner'
+
     DEFAULT_OPTIONS =
           {
                 :timeout => 30,
@@ -8,7 +10,11 @@ module RunLoop
           }
 
     # Raised when Xcrun fails.
-    class XcrunError < RuntimeError; end
+    class Error < RuntimeError; end
+
+
+    # Raised when Xcrun times out.
+    class TimeoutError < RuntimeError; end
 
     attr_reader :stdin, :stdout, :stderr, :pid
 
@@ -22,7 +28,13 @@ module RunLoop
               "Expected args '#{args}' to be an Array, but found '#{args.class}'"
       end
 
-      @stdin, @stdout, out, @stderr, err, process_status, @pid, exit_status = nil
+      args.each do |arg|
+        unless arg.is_a?(String)
+          raise ArgumentError,
+%Q{Expected arg '#{arg}' to be a String, but found '#{arg.class}'
+               IO.popen requires all arguments to be Strings.}
+        end
+      end
 
       cmd = "xcrun #{args.join(' ')}"
 
@@ -30,46 +42,40 @@ module RunLoop
       # Commands are only logged when debugging.
       RunLoop.log_unix_cmd(cmd) if merged_options[:log_cmd]
 
+      hash = {}
+
       begin
-        Timeout.timeout(timeout, Timeout::Error) do
-          @stdin, @stdout, @stderr, process_status = Open3.popen3('xcrun', *args)
+        start_time = Time.now
+        command_output = CommandRunner.run(['xcrun'] + args, timeout: timeout)
 
-          @pid = process_status.pid
-          exit_status = process_status.value.exitstatus
-
-          err = @stderr.read.force_encoding('utf-8').chomp
-          err = nil if err == ''
-
-          out = @stdout.read.force_encoding('utf-8').chomp
+        if command_output[:out]
+          out = command_output[:out].force_encoding('utf-8').chomp
+        else
+          out = ''
         end
 
-        {
-              :err => err,
-              :out => out,
-              :pid => pid,
-              :exit_status => exit_status
-        }
-      rescue Timeout::Error => _
-        raise XcrunError, "Xcrun.exec timed out after #{timeout} running '#{cmd}'"
-      rescue StandardError => e
-        raise XcrunError, e
-      ensure
-        stdin.close if stdin && !stdin.closed?
-        stdout.close if stdout && !stdout.closed?
-        stderr.close if stderr && !stderr.closed?
+        process_status = command_output[:status]
 
-        if pid
-          terminator = RunLoop::ProcessTerminator.new(pid, 'TERM', cmd)
-          unless terminator.kill_process
-            terminator = RunLoop::ProcessTerminator.new(pid, 'KILL', cmd)
-            terminator.kill_process
-          end
-        end
+        hash =
+              {
+                    :out => out,
+                    :pid => process_status.pid,
+                    # nil if process was killed before completion
+                    :exit_status => process_status.exitstatus
+              }
 
-        if process_status
-          process_status.join
-        end
+      rescue => e
+        elapsed = "%0.2f" % (Time.now - start_time)
+        raise Error, "Xcrun encountered an error after #{elapsed} seconds: #{e}"
       end
+
+      if hash[:exit_status].nil?
+        elapsed = "%0.2f" % (Time.now - start_time)
+        raise TimeoutError,
+              "Xcrun timed out after #{elapsed} seconds executing '#{cmd}' with a timeout of #{timeout}"
+      end
+
+      hash
     end
   end
 end
