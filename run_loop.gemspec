@@ -49,6 +49,7 @@ tools like instruments and simctl.}
   s.add_dependency('awesome_print', '~> 1.2')
   s.add_dependency('CFPropertyList','~> 2.2')
   s.add_dependency('thor', '>= 0.18.1', '< 1.0')
+  s.add_dependency('command_runner_ng', '>= 0.0.2')
 
   s.add_development_dependency('luffa', '>= 1.1.0', '< 2.0')
   s.add_development_dependency('bundler', '~> 1.6')
