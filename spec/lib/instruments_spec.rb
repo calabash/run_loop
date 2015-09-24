@@ -274,6 +274,7 @@ describe RunLoop::Instruments do
     it 'Xcode >= 6.0' do
       expect(xcode).to receive(:version_gte_6?).at_least(:once).and_return true
 
+      # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
       hash =
             {
                   :out => RunLoop::RSpec::Instruments::TEMPLATES_GTE_60[:output],
@@ -290,6 +291,7 @@ describe RunLoop::Instruments do
     it '5.1 <= Xcode < 6.0' do
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
 
+      # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
       hash =
             {
                   :out => RunLoop::RSpec::Instruments::TEMPLATES_511[:output],
@@ -308,6 +310,7 @@ describe RunLoop::Instruments do
 
     let(:options) { {:log_cmd => true } }
 
+    # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
     let(:xcode_511_output) do
       {
             :out => RunLoop::RSpec::Instruments::DEVICES_511,
@@ -315,6 +318,7 @@ describe RunLoop::Instruments do
       }
     end
 
+    # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
     let(:xcode_6_output) do
       {
             :out => RunLoop::RSpec::Instruments::DEVICES_60,
@@ -322,6 +326,7 @@ describe RunLoop::Instruments do
       }
     end
 
+    # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
     let(:xcode_7_output) do
       {
             :out => RunLoop::RSpec::Instruments::DEVICES_GTE_70,
