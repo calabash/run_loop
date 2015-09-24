@@ -2,6 +2,7 @@ require 'irb/completion'
 require 'irb/ext/save-history'
 require 'benchmark'
 require 'run_loop'
+require 'command_runner'
 
 AwesomePrint.irb!
 
@@ -77,6 +78,34 @@ end
 
 def quiet
   ENV['DEBUG'] = '1'
+end
+
+def create_simulator(n, options={})
+  default_options = {
+    :name => 'tester',
+    :type => 'iPhone 6',
+    :runtime => 'com.apple.CoreSimulator.SimRuntime.iOS-9-0'
+  }
+
+  merged_options = default_options.merge(options)
+
+  name = merged_options[:name]
+  type = merged_options[:type]
+  runtime = merged_options[:runtime]
+
+  n.times do
+    system('xcrun', 'simctl', 'create', name, type, runtime)
+  end
+end
+
+def delete_simulator(name)
+  simcontrol.simulators.each do |simulator|
+    if simulator.name == name
+      puts "Deleting #{simulator}"
+      system('xcrun', 'simctl', 'delete', simulator.udid)
+    end
+  end
+  true
 end
 
 motd=["Let's get this done!", 'Ready to rumble.', 'Enjoy.', 'Remember to breathe.',
