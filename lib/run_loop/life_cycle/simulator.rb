@@ -38,6 +38,10 @@ module RunLoop
                   # killed when quiting the simulator.
                   ['assetsd', true],
 
+                  # iproxy is started by UITest.  It is not necessary to send
+                  # TERM first.
+                  ['iproxy', false],
+
                   # Xcode 7
                   ['ids_simd', true]
             ]
