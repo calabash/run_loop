@@ -109,7 +109,7 @@ module RunLoop
 
         begin
           RunLoop::SimControl.terminate_all_sims
-          terminate_core_simulator_processes
+          RunLoop::LifeCycle::Simulator.new.terminate_core_simulator_processes
         ensure
           ENV['DEBUG'] = original_value if debug
         end
@@ -123,33 +123,6 @@ module RunLoop
         def booted_device
           sim_control.simulators.detect(nil) do |device|
             device.state == 'Booted'
-          end
-        end
-
-        # TODO this is duplicated code; extract!
-        # https://github.com/calabash/run_loop/issues/225
-        def terminate_core_simulator_processes
-          to_manage = RunLoop::LifeCycle::CoreSimulator::MANAGED_PROCESSES
-          to_manage << ['com.apple.CoreSimulator.CoreSimulatorService', false]
-
-          to_manage.each do |pair|
-            name = pair[0]
-            send_term = pair[1]
-            pids = RunLoop::ProcessWaiter.new(name).pids
-            pids.each do |pid|
-
-              if send_term
-                term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
-                killed = term.kill_process
-              else
-                killed = false
-              end
-
-              unless killed
-                term = RunLoop::ProcessTerminator.new(pid, 'KILL', name)
-                term.kill_process
-              end
-            end
           end
         end
       end

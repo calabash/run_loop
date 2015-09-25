@@ -239,16 +239,9 @@ describe RunLoop::Instruments do
   end
 
   it '#version' do
-    xcrun = RunLoop::Xcrun.new
-    expect(instruments).to receive(:xcrun).and_return xcrun
-    output = %q(
-instruments, version 7.0 (58143.1)
-usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device] [[-p pid] | [application [-e variable value] [argument ...]]]
-)
-    hash = { :err => output }
-    args = { log_cmd: true }
-
-    expect(xcrun).to receive(:exec).with(['instruments'], args).and_return hash
+    path = instruments.send(:path_to_instruments_app_plist)
+    key = 'CFBundleShortVersionString'
+    expect(instruments.pbuddy).to receive(:plist_read).with(key, path).and_return '7.0'
 
     expected = RunLoop::Version.new('7.0')
     expect(instruments.version).to be == RunLoop::Version.new('7.0')
@@ -281,6 +274,7 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     it 'Xcode >= 6.0' do
       expect(xcode).to receive(:version_gte_6?).at_least(:once).and_return true
 
+      # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
       hash =
             {
                   :out => RunLoop::RSpec::Instruments::TEMPLATES_GTE_60[:output],
@@ -297,6 +291,7 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     it '5.1 <= Xcode < 6.0' do
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
 
+      # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
       hash =
             {
                   :out => RunLoop::RSpec::Instruments::TEMPLATES_511[:output],
@@ -315,6 +310,7 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
 
     let(:options) { {:log_cmd => true } }
 
+    # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
     let(:xcode_511_output) do
       {
             :out => RunLoop::RSpec::Instruments::DEVICES_511,
@@ -322,6 +318,7 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
       }
     end
 
+    # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
     let(:xcode_6_output) do
       {
             :out => RunLoop::RSpec::Instruments::DEVICES_60,
@@ -329,6 +326,7 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
       }
     end
 
+    # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
     let(:xcode_7_output) do
       {
             :out => RunLoop::RSpec::Instruments::DEVICES_GTE_70,
@@ -522,6 +520,29 @@ usage: instruments [-t template] [-D document] [-l timeLimit] [-i #] [-w device]
     context 'Simulator paired with watch' do
       let(:line) { 'iPhone 6 Plus (9.0) + Apple Watch - 42mm (2.0) [8002F486-CF21-4DA0-8CDE-17B3D054C4DE]' }
       it { is_expected.to be_truthy }
+    end
+  end
+
+  describe '#path_to_instruments_app_plist' do
+    it 'active Xcode' do
+      path = instruments.send(:path_to_instruments_app_plist)
+
+      expect(File.exist?(path)).to be_truthy
+      memoized = instruments.instance_variable_get(:@path_to_instruments_app_plist)
+      expect(memoized).to be == path
+    end
+
+    describe 'regression' do
+      Resources.shared.alt_xcode_install_paths.each do |developer_dir|
+        Resources.shared.with_developer_dir(developer_dir) do
+          it "#{developer_dir}" do
+            instruments = RunLoop::Instruments.new
+            path = instruments.send(:path_to_instruments_app_plist)
+
+            expect(File.exist?(path)).to be_truthy
+          end
+        end
+      end
     end
   end
 end

@@ -10,8 +10,6 @@ describe RunLoop::CLI::Instruments do
 
     it 'can quit instruments' do
       sim_control = RunLoop::SimControl.new
-      sim_control.reset_sim_content_and_settings
-
       options =
             {
                   :app => Resources.shared.cal_app_bundle_path,

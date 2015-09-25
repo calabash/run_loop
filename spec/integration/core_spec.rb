@@ -32,7 +32,7 @@ describe RunLoop::Core do
 
         after(:each) do
           pid = fork do
-            local_sim_control = RunLoop::SimControl.new
+            local_sim_control = Resources.shared.sim_control
             simulators = local_sim_control.simulators
             simulators.each do |device|
               if device.name == 'rspec-test-device'
@@ -47,13 +47,22 @@ describe RunLoop::Core do
         end
 
         it ":device_target => 'rspec-test-device'" do
-          pending('Bad test!  Needs to grab an existing runtime!')
-          device_type_id = 'iPhone 5s'
-          if RunLoop::Xcode.new.version_gte_61?
-            runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-1'
+          xcode = Resources.shared.xcode
+          if xcode.version < xcode.v64
+            Luffa.log_warn("Skipping test: Xcode < 6.4 detected (#{version.to_s}")
           else
-            runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-0'
+
+            device_type_id = 'iPhone 5s'
+
+            if xcode.version_gte_71?
+              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-9-1'
+            elsif xcode.version_gte_7?
+              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-9-0'
+            else
+              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-4'
+            end
           end
+
           cmd = "xcrun simctl create rspec-test-device \"#{device_type_id}\" \"#{runtime_id}\""
           udid = `#{cmd}`.strip
           sleep 2

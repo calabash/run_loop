@@ -37,6 +37,10 @@ class Resources
     @instruments ||= RunLoop::Instruments.new
   end
 
+  def sim_control
+    @sim_control ||= RunLoop::SimControl.new
+  end
+
   def with_debugging(&block)
     original_value = ENV['DEBUG']
     ENV['DEBUG'] = '1'
@@ -91,7 +95,7 @@ class Resources
     @bundle_id = 'com.xamarin.CalSmoke-cal'
   end
 
-  def launch_sim_with_options(options, tries=self.launch_retries, &block)
+  def launch_with_options(options, tries=self.launch_retries, &block)
     hash = nil
     Retriable.retriable({:tries => tries}) do
       hash = RunLoop.run(options)
@@ -143,11 +147,9 @@ class Resources
     end
   end
 
-  def random_simulator_device(sim_control)
-    @random_simulator_device ||= sim_control.simulators.shuffle.detect do |device|
-      [device.state == 'Shutdown',
-         device.name != 'rspec-test-device',
-         !device.name[/Resizable/,0]].all?
+  def random_simulator_device
+    sim_control.simulators.shuffle.detect do |device|
+      device.name[/Resizable/,0] == nil
     end
   end
 
@@ -164,10 +166,14 @@ class Resources
 
   def alt_xcode_install_paths
     @alt_xcode_install_paths ||= lambda {
-      min_xcode_version = RunLoop::Version.new('5.1.1')
+      min_xcode_version = RunLoop::Version.new('6.3.2')
       Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
         xcode_version = path[VERSION_REGEX, 0]
-        if RunLoop::Version.new(xcode_version) >= min_xcode_version
+
+        include = [RunLoop::Version.new(xcode_version) >= min_xcode_version,
+                   RunLoop::Version.new(xcode_version) != current_xcode_version].all?
+
+        if include
           path
         else
           nil
@@ -395,7 +401,10 @@ class Resources
     [(device_version >= RunLoop::Version.new('8.0') and xcode_version < RunLoop::Version.new('6.0')),
      (device_version >= RunLoop::Version.new('8.1') and xcode_version < RunLoop::Version.new('6.1')),
      (device_version >= RunLoop::Version.new('8.2') and xcode_version < RunLoop::Version.new('6.2')),
-     (device_version >= RunLoop::Version.new('8.3') and xcode_version < RunLoop::Version.new('6.3'))].any?
+     (device_version >= RunLoop::Version.new('8.3') and xcode_version < RunLoop::Version.new('6.3')),
+     (device_version >= RunLoop::Version.new('8.4') and xcode_version < RunLoop::Version.new('6.4')),
+     (device_version >= RunLoop::Version.new('9.0') and xcode_version < RunLoop::Version.new('7.0')),
+     (device_version >= RunLoop::Version.new('9.1') and xcode_version < RunLoop::Version.new('7.1'))].any?
   end
 
   def idevice_id_bin_path
@@ -407,22 +416,27 @@ class Resources
     path and File.exist? path
   end
 
-  def physical_devices_for_testing(instruments)
+  def physical_devices_for_testing(instruments = nil)
+
+    if instruments.nil?
+      instruments = self.instruments
+    end
+
     # Xcode 6 + iOS 8 - devices on the same network, whether development or not,
     # appear when calling $ xcrun instruments -s devices. For the purposes of
     # testing, we will only try to connect to devices that are connected via
     # udid.
-    @physical_devices_for_testing ||= lambda {
-      devices = instruments.physical_devices
-      if idevice_id_available?
-        white_list = `#{idevice_id_bin_path} -l`.strip.split("\n")
-        devices.select do | device |
-          white_list.include?(device.udid) && white_list.count(device.udid) == 1
-        end
-      else
-        devices
+    devices = instruments.physical_devices
+    if idevice_id_available?
+      white_list = `#{idevice_id_bin_path} -l`.strip.split("\n")
+      devices.select do | device |
+        white_list.include?(device.udid) &&
+              white_list.count(device.udid) == 1 &&
+              !incompatible_xcode_ios_version(device.version, instruments.xcode.version)
       end
-    }.call
+    else
+      devices
+    end
   end
 
   def launch_instruments_app(xcode = RunLoop::Xcode.new)
@@ -443,7 +457,7 @@ class Resources
     end
   end
 
-  def kill_instruments_app(instruments_obj = RunLoop::Instruments.new)
+  def kill_instruments_app(instruments_obj = self.instruments)
     ps_output = `ps x -o pid,comm | grep Instruments.app | grep -v grep`.strip
     lines = ps_output.lines("\n").map { |line| line.strip }
     lines.each do |line|

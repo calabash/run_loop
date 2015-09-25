@@ -1,7 +1,7 @@
 module RunLoop
   module LifeCycle
 
-    class CoreSimulator
+    class CoreSimulator < Simulator
 
       require 'securerandom'
 
@@ -10,36 +10,6 @@ module RunLoop
 
       # @!visibility private
       CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
-
-      # @!visibility private
-      # Pattern.
-      # [ '< process name >', < send term first > ]
-      MANAGED_PROCESSES =
-            [
-                  # This process is a daemon, and requires 'KILL' to terminate.
-                  # Killing the process is fast, but it takes a long time to
-                  # restart.
-                  # ['com.apple.CoreSimulator.CoreSimulatorService', false],
-
-                  # Probably do not need to quit this, but it is tempting to do so.
-                  #['com.apple.CoreSimulator.SimVerificationService', false],
-
-                  # Started by Xamarin Studio, this is the parent process of the
-                  # processes launched by Xamarin's interaction with
-                  # CoreSimulatorBridge.
-                  ['csproxy', true],
-
-                  # Yes.
-                  ['SimulatorBridge', true],
-                  ['configd_sim', true],
-                  ['launchd_sim', true],
-
-                  # Does not always appear.
-                  ['CoreSimulatorBridge', true],
-
-                  # Xcode 7
-                  ['ids_simd', true]
-            ]
 
       # @!visibility private
       # How long to wait after the simulator has launched.
@@ -410,29 +380,6 @@ module RunLoop
       end
 
       # @!visibility private
-      def terminate_core_simulator_processes
-        MANAGED_PROCESSES.each do |pair|
-          name = pair[0]
-          send_term = pair[1]
-          pids = RunLoop::ProcessWaiter.new(name).pids
-          pids.each do |pid|
-
-            if send_term
-              term = RunLoop::ProcessTerminator.new(pid, 'TERM', name)
-              killed = term.kill_process
-            else
-              killed = false
-            end
-
-            unless killed
-              term = RunLoop::ProcessTerminator.new(pid, 'KILL', name)
-              term.kill_process
-            end
-          end
-        end
-      end
-
-      # @!visibility private
       def wait_for_device_state(target_state)
         now = Time.now
         timeout = WAIT_FOR_DEVICE_STATE_OPTS[:timeout]
@@ -537,8 +484,12 @@ module RunLoop
       # For testing.
       def launch
 
-        install
         launch_simulator
+
+        args = ['simctl', 'install', device.udid, app.path]
+        RunLoop::Xcrun.new.exec(args, log_cmd: true, timeout: 10)
+
+        device.simulator_wait_for_stable_state
 
         args = ['simctl', 'launch', device.udid, app.bundle_identifier]
         hash = RunLoop::Xcrun.new.exec(args, log_cmd: true, timeout: 20)
@@ -551,7 +502,12 @@ module RunLoop
           raise RuntimeError, "Could not launch #{app.bundle_identifier} on #{device}"
         end
 
-        RunLoop::ProcessWaiter.new(app.executable_name, WAIT_FOR_APP_LAUNCH_OPTS).wait_for_any
+        RunLoop::ProcessWaiter.new(app.executable_name, {:timeout => 10,
+                                                         :raise_on_timeout => true}).wait_for_any
+
+
+        device.simulator_wait_for_stable_state
+
         true
       end
     end

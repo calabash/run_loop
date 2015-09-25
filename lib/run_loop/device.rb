@@ -282,23 +282,27 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     #
     # 1. The SHA sum of the simulator data/ directory to be stable.
     # 2. No more log messages are begin generated
-    # 3. 1 and 2 must hold for 2 seconds.
+    # 3. 1 and 2 must hold for 1 seconds.
     #
     # When the simulator version is >= iOS 9 _and_ it is the first launch of
     # the simulator after a reset or a new simulator install, a fourth condition
     # is added:
     #
     # 4. The first three conditions must be met a second time.
+    #
+    # and the quiet time is increased to 2.0.
     def simulator_wait_for_stable_state
       require 'securerandom'
 
-      quiet_time = 2
       delay = 0.5
 
       first_launch = false
 
       if version >= RunLoop::Version.new('9.0')
         first_launch = simulator_data_dir_size < 20
+        quiet_time = 2
+      else
+        quiet_time = 1
       end
 
       now = Time.now

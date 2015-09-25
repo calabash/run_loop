@@ -9,8 +9,7 @@
 
 ### Supported Xcode Versions
 
-* Xcode 5 and 6.
-* Experimental support for Xcode 7.
+* Xcode 6 and 7.
 
 ### License
 
