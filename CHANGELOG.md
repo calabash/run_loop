@@ -1,5 +1,20 @@
 ## Change Log
 
+### 1.5.5
+
+Many thanks to everyone who filed issues.  We really appreciate it.  If
+I missed an attribution, let me know. -jjm
+
+* Simulator: should manage the 'iproxy' process #279 @cryophobia
+* Gem: ruby_files glob should catch only ruby files #274 @svevang
+* Fix blocking reads in Xcrun when consuming large output of commands #270
+  - @kennethjiang, @kamstrup
+* Instruments#version extracts version from Instruments.app Info.plist #269 @gdknutel
+* Increase the default timeout for Xcrun.exec #268 @gdknutel
+* Manage assetsd process #267
+* Improve integration examples: part 1 #266
+* Core.simulator_target? should match simulators created by users #262
+
 ### 1.5.4
 
 * Xcode 7: launch instruments with simulator UDID to avoid ambiguous
