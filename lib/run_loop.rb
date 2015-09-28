@@ -59,13 +59,13 @@ module RunLoop
   def self.run(options={})
 
     if RunLoop::Instruments.new.instruments_app_running?
-      msg =
-          [
-              "Please quit the Instruments.app.",
-              "If Instruments.app is open, the instruments command line",
-              "tool cannot take control of your application."
-          ]
-      raise msg.join("\n")
+      raise %q(The Instruments.app is open.
+
+If the Instruments.app is open, the instruments command line tool cannot take
+control of your application.
+
+Please quit the Instruments.app and try again.)
+
     end
 
     uia_strategy = options[:uia_strategy]
