@@ -192,7 +192,8 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         fetch_devices[:out].chomp.split("\n").map do |line|
           stripped = line.strip
           if line_is_simulator?(stripped) &&
-                !line_is_simulator_paired_with_watch?(stripped)
+                !line_is_simulator_paired_with_watch?(stripped) &&
+                !line_is_apple_tv?(stripped)
 
             version = stripped[VERSION_REGEX, 0]
 
@@ -400,6 +401,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # @!visibility private
     def line_is_simulator_paired_with_watch?(line)
       line[CORE_SIMULATOR_UDID_REGEX, 0] && line[/Apple Watch/, 0]
+    end
+
+    # @!visibility private
+    def line_is_apple_tv?(line)
+      line[/Apple TV/, 0]
     end
 
     # @!visibility private
