@@ -297,6 +297,19 @@ describe RunLoop::SimControl do
   end
 
   describe '#simctl_list' do
+    let(:xcrun) { sim_control.xcrun }
+
+    let(:devices_out) do
+      {
+            :out => RunLoop::RSpec::Simctl::SIMCTL_DEVICE_XCODE_71
+      }
+    end
+
+    let(:runtimes_out) do
+      {
+            :out => RunLoop::RSpec::Simctl::SIMCTL_RUNTIMES_XCODE_71
+      }
+    end
     describe 'raises an error when' do
       it 'Xcode < 6' do
         expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
@@ -316,21 +329,51 @@ describe RunLoop::SimControl do
     end
 
     describe 'valid arguments' do
-      it ':devices' do
-        if Resources.shared.core_simulator_env?
-          expect(sim_control.send(:simctl_list, :devices)).to be_a Hash
-        else
-          Luffa.log_warn("Skipping test; Xcode < 6 detected")
-        end
+
+      before do
+       expect(sim_control).to receive(:xcrun).and_return xcrun
       end
 
+      # it ':devices' do
+      #   args = ['simctl' 'list', 'devices']
+      #   expect(xcrun).to receive(:exec).with(args).and_return(devices_out)
+      #
+      #   actual = sim_control.send(:simctl_list, :devices)
+      #
+      #   ap actual
+      #
+      #   expect(actual).to be_a Hash
+      #   expect(actual.length).to be == 12
+      #
+      # end
+
       it ':runtimes' do
-        if Resources.shared.core_simulator_env?
-          actual = sim_control.send(:simctl_list, :runtimes)
-          expect(actual).to be_a Hash
-        else
-          Luffa.log_warn("Skipping test; Xcode < 6 detcted")
-        end
+        args = ['simctl', 'list', 'runtimes']
+        expect(xcrun).to receive(:exec).with(args).and_return(runtimes_out)
+
+        actual = sim_control.send(:simctl_list, :runtimes)
+
+        ap actual
+
+        expect(actual).to be_a Hash
+        expect(actual.length).to be == 3
+
+        expect(actual[:iOS]).to be_truthy
+        expect(actual[:tvOS]).to be_truthy
+        expect(actual[:watchOS]).to be_truthy
+
+
+        expect(actual[:iOS][RunLoop::Version.new('8.1')]).to be_truthy
+        expect(actual[:iOS][RunLoop::Version.new('8.2')]).to be_truthy
+        expect(actual[:iOS][RunLoop::Version.new('8.3')]).to be_truthy
+        expect(actual[:iOS][RunLoop::Version.new('8.4')]).to be_truthy
+
+        v91 = RunLoop::Version.new('9.1')
+        expect(actual[:iOS][v91]).to be_truthy
+
+        expect(actual[:iOS][v91][:runtime]).to be == 'com.apple.CoreSimulator.SimRuntime.iOS-9-1'
+        expect(actual[:iOS][v91][:name]).to be == 'iOS'
+        expect(actual[:iOS][v91][:complete]).to be_truthy
       end
     end
   end
