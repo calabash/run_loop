@@ -44,7 +44,7 @@ module RunLoop
     #  version.minor       => 10
     #  version.patch       => 1
     #  version.pre         => false
-    #  version.pre_release => nil
+    #  version.pre_version => nil
     #
     # @example
     #  version = Version.new(1.6.3.pre5)
@@ -52,7 +52,7 @@ module RunLoop
     #  version.minor       => 6
     #  version.patch       => 3
     #  version.pre         => true
-    #  version.pre_release => 5
+    #  version.pre_version => 5
     #
     # @param [String] version the version string to parse.
     # @raise [ArgumentError] if version is not in the form 5, 6.1, 7.1.2, 8.2.3.pre1
@@ -86,6 +86,18 @@ module RunLoop
 
     def inspect
       "#<Version #{to_s}>"
+    end
+
+    # Compare this version to another for _object_ equality.  This allows
+    # Version instances to be used as Hash keys.
+    # @param [Version] other the version to compare against.
+    def eql?(other)
+      hash == other.hash
+    end
+
+    # The hash method for this instance.
+    def hash
+      to_s.hash
     end
 
     # Compare this version to another for equality.
