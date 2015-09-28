@@ -88,6 +88,18 @@ module RunLoop
       "#<Version #{to_s}>"
     end
 
+    # Compare this version to another for _object_ equality.  This allows
+    # Version instances to be used as Hash keys.
+    # @param [Version] other the version to compare against.
+    def eql?(other)
+      hash == other.hash
+    end
+
+    # The hash method for this instance.
+    def hash
+      to_s.hash
+    end
+
     # Compare this version to another for equality.
     # @param [Version] other the version to compare against
     # @return [Boolean] true if this Version is the same as `other`

@@ -30,6 +30,90 @@ describe RunLoop::Version do
     end
   end
 
+  describe '#hash' do
+    it '0.9.5.pre1' do
+      str = '0.9.5.pre1'
+      version = RunLoop::Version.new(str)
+      expect(str.hash).to be == version.hash
+    end
+
+    it '0.9.5.pre' do
+      str = '0.9.5.pre'
+      version = RunLoop::Version.new(str)
+      expect(str.hash).to be == version.hash
+    end
+
+    it '0.9.5' do
+      str = '0.9.5'
+      version = RunLoop::Version.new(str)
+      expect(str.hash).to be == version.hash
+    end
+
+    it '0.9' do
+      str = '0.9'
+      version = RunLoop::Version.new(str)
+      expect(str.hash).to be == version.hash
+    end
+
+    it '0' do
+      str = '0'
+      version = RunLoop::Version.new(str)
+      expect(str.hash).to be == version.hash
+    end
+  end
+
+  describe '#eql?' do
+    it 'mocked' do
+      a = RunLoop::Version.new('9.9.9')
+      b = RunLoop::Version.new('0.0.0')
+
+      expect(a).to receive(:hash).and_return(-1, -1)
+      expect(b).to receive(:hash).and_return(-1, 0)
+
+      expect(a.eql?(b)).to be == true
+      expect(a.eql?(b)).to be == false
+    end
+
+    it 'are equal' do
+
+      a = RunLoop::Version.new('0.0.0')
+      b = RunLoop::Version.new('0.0.0')
+
+      expect(a.eql?(b)).to be == true
+    end
+
+    it 'are not equal' do
+
+      a = RunLoop::Version.new('9.9.9')
+      b = RunLoop::Version.new('0.0.0')
+
+      expect(a.eql?(b)).to be == false
+    end
+  end
+
+  describe 'instance as a hash key' do
+    it 'keys match' do
+      a = RunLoop::Version.new('0.0.0')
+      b = RunLoop::Version.new('0.0.0')
+
+      hash = { a => 'before!' }
+
+      hash[b] = 'after!'
+      expect(hash[a]) == 'after!'
+    end
+
+    it 'keys do not match' do
+      a = RunLoop::Version.new('0.0.0')
+      b = RunLoop::Version.new('9.9.9')
+
+      hash = { a => 'before!' }
+
+      hash[b] = 'after!'
+      expect(hash[a]) == 'before!'
+      expect(hash[b]) == 'after!'
+    end
+  end
+
   describe '==' do
     it 'tests equality' do
       a = RunLoop::Version.new('0.9.5')
