@@ -452,6 +452,11 @@ describe RunLoop::Instruments do
   describe '#line_is_core_simulator?' do
     subject { instruments.send(:line_is_core_simulator?, line) }
 
+    context 'Apple TV' do
+      let(:line) { 'Apple TV 1080p (9.0) [7F01721F-B916-4608-8DCB-4AB164D48A1A]' }
+      it { is_expected.to be_truthy }
+    end
+
     context 'Xcode 7 simulator' do
       let(:line) { 'iPhone 6 (8.4) [AFD41B4D-AAB8-4FFD-A80D-7B32DE8EC01C]' }
       it { is_expected.to be_truthy }
@@ -520,6 +525,30 @@ describe RunLoop::Instruments do
     context 'Simulator paired with watch' do
       let(:line) { 'iPhone 6 Plus (9.0) + Apple Watch - 42mm (2.0) [8002F486-CF21-4DA0-8CDE-17B3D054C4DE]' }
       it { is_expected.to be_truthy }
+    end
+  end
+
+  describe '#line_is_apple_tv?' do
+    subject { instruments.send(:line_is_apple_tv?, line) }
+
+    context 'Apple TV' do
+      let(:line) { 'Apple TV 1080p (9.0) [7F01721F-B916-4608-8DCB-4AB164D48A1A]' }
+      it { is_expected.to be_truthy }
+    end
+
+    context 'Xcode 7 simulator' do
+      let(:line) { 'iPhone 6 (8.4) [AFD41B4D-AAB8-4FFD-A80D-7B32DE8EC01C]' }
+      it { is_expected.to be_falsey }
+    end
+
+    context 'Xcode 6 simulator' do
+      let(:line) { 'iPhone 5 (8.4 Simulator) [72EBC8B1-E76F-48D8-9586-D179A68EB2B7]' }
+      it { is_expected.to be_falsey }
+    end
+
+    context 'Simulator paired with watch' do
+      let(:line) { 'iPhone 6 Plus (9.0) + Apple Watch - 42mm (2.0) [8002F486-CF21-4DA0-8CDE-17B3D054C4DE]' }
+      it { is_expected.to be_falsey }
     end
   end
 

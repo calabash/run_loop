@@ -52,6 +52,10 @@ module RunLoop
       xcode.developer_dir
     end
 
+    def xcrun
+      @xcrun ||= RunLoop::Xcrun.new
+    end
+
     # Return an instance of PlistBuddy.
     # @return [RunLoop::PlistBuddy] The plist buddy instance that is used internally.
     def pbuddy
@@ -1137,55 +1141,61 @@ module RunLoop
     #  base sdk version.
     # @see #simctl_list
     def simctl_list_devices
-      args = 'simctl list devices'.split(' ')
-      Open3.popen3('xcrun', *args) do  |_, stdout,  stderr, _|
-        out = stdout.read.strip
-        err = stderr.read.strip
-        if ENV['DEBUG_UNIX_CALLS'] == '1'
-          cmd = "xcrun #{args.join(' ')}"
-          puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
+      args = ['simctl', 'list', 'devices']
+      hash = xcrun.exec(args)
+
+      current_sdk = nil
+      simulators = {}
+
+      out = hash[:out]
+
+      out.split("\n").each do |line|
+
+        possible_sdk = line[VERSION_REGEX,0]
+        if possible_sdk
+          current_sdk = possible_sdk
+          simulators[current_sdk] = []
+          next
         end
 
-        current_sdk = nil
-        res = {}
-        out.split("\n").each do |line|
+        unavailable_sdk = line[/Unavailable/, 0]
+        if unavailable_sdk
+          current_sdk = nil
+          next
+        end
 
-          possible_sdk = line[VERSION_REGEX,0]
-          if possible_sdk
-            current_sdk = possible_sdk
-            res[current_sdk] = []
-            next
-          end
+        watch_os = line[/watchOS/, 0]
+        if watch_os
+          current_sdk = nil
+          next
+        end
 
-          unavailable_sdk = line[/Unavailable/, 0]
-          if unavailable_sdk
-            current_sdk = nil
-            next
-          end
+        watch = line[/Apple Watch/, 0]
+        if watch
+          current_sdk = nil
+          next
+        end
 
-          watch_os = line[/watchOS/, 0]
-          if watch_os
-            current_sdk = nil
-            next
-          end
+        tv = line[/Apple TV/, 0]
+        if tv
+          current_sdk = nil
+          next
+        end
 
-          watch = line[/Apple Watch/, 0]
-          if watch
-            current_sdk = nil
-            next
-          end
-
-          if current_sdk
-            unless line[/unavailable/,0]
-              name = line.split('(').first.strip
-              udid = line[CORE_SIMULATOR_UDID_REGEX,0]
-              state = line[/(Booted|Shutdown)/,0]
-              res[current_sdk] << {:name => name, :udid => udid, :state => state}
-            end
+        if current_sdk
+          unless line[/unavailable/,0]
+            name = line.split('(').first.strip
+            udid = line[CORE_SIMULATOR_UDID_REGEX,0]
+            state = line[/(Booted|Shutdown)/,0]
+            simulators[current_sdk] << {
+                  :name => name,
+                  :udid => udid,
+                  :state => state
+            }
           end
         end
-        res
       end
+      simulators
     end
 
     # @!visibility private
@@ -1193,48 +1203,75 @@ module RunLoop
     #
     # @example
     #  RunLoop::SimControl.new.simctl_list :runtimes
-    #  {
-    #        "7.0" => {
-    #              :sdk => "7.0.3",
-    #              :runtime => "com.apple.CoreSimulator.SimRuntime.iOS-7-0"
+    #    :iOS => {
+    #       <Version 8.1> => {
+    #         :name => "iOS",
+    #         :runtime => "com.apple.CoreSimulator.SimRuntime.iOS-8-1",
+    #         :complete => "iOS 8.1 (8.1 - 12B411) (com.apple.CoreSimulator.SimRuntime.iOS-8-1)"
     #        },
-    #        "7.1" => {
-    #              :sdk => "7.1",
-    #              :runtime => "com.apple.CoreSimulator.SimRuntime.iOS-7-1"
-    #        },
-    #        "8.0" => {
-    #              :sdk => "8.0",
-    #              :runtime => "com.apple.CoreSimulator.SimRuntime.iOS-8-0"
-    #        }
-    #  }
+    #       ...
+    #    },
+    #
+    #   :tvOS => {
+    #      <Version 9.0> => {
+    #       :name => "tvOS",
+    #       :runtime => "com.apple.CoreSimulator.SimRuntime.tvOS-9-0",
+    #       :complete => "tvOS 9.0 (9.0 - 13T5365h) (com.apple.CoreSimulator.SimRuntime.tvOS-9-0)"
+    #      },
+    #     ...
+    #   },
+    #
+    #   :watchOS => {
+    #      <Version 2.0> => {
+    #       :name => "watchOS",
+    #       :runtime => "com.apple.CoreSimulator.SimRuntime.watchOS-2-0",
+    #       :complete => "watchOS 2.0 (2.0 - 13S343) (com.apple.CoreSimulator.SimRuntime.watchOS-2-0)"
+    #      },
+    #     ...
+    #   }
+    #
     # @see #simctl_list
     def simctl_list_runtimes
-      # The 'com.apple.CoreSimulator.SimRuntime.iOS-7-0' is the runtime-id,
-      # which can be used to create devices.
-      args = 'simctl list runtimes'.split(' ')
-      Open3.popen3('xcrun', *args) do  |_, stdout,  stderr, _|
-        out = stdout.read.strip
-        err = stderr.read.strip
-        if ENV['DEBUG_UNIX_CALLS'] == '1'
-          cmd = "xcrun #{args.join(' ')}"
-          puts "#{cmd}  => stdout: '#{out}' | stderr: '#{err}'"
+      args = ['simctl', 'list', 'runtimes']
+      hash = xcrun.exec(args)
+
+      # Ex.
+      # == Runtimes ==
+      # iOS 7.0 (7.0.3 - 11B507) (com.apple.CoreSimulator.SimRuntime.iOS-7-0)
+      # iOS 7.1 (7.1 - 11D167) (com.apple.CoreSimulator.SimRuntime.iOS-7-1)
+      # iOS 8.0 (8.0 - 12A4331d) (com.apple.CoreSimulator.SimRuntime.iOS-8-0)
+
+      out = hash[:out]
+
+      runtimes = {}
+
+      out.split("\n").each do |line|
+        next if line[/unavailable/, 0]
+        next if !line[/com.apple.CoreSimulator.SimRuntime/,0]
+
+        tokens = line.split(' ')
+
+        name = tokens.first
+
+        key = name.to_sym
+
+        unless runtimes[key]
+          runtimes[key] = {}
         end
-        # Ex.
-        # == Runtimes ==
-        # iOS 7.0 (7.0.3 - 11B507) (com.apple.CoreSimulator.SimRuntime.iOS-7-0)
-        # iOS 7.1 (7.1 - 11D167) (com.apple.CoreSimulator.SimRuntime.iOS-7-1)
-        # iOS 8.0 (8.0 - 12A4331d) (com.apple.CoreSimulator.SimRuntime.iOS-8-0)
-        lines = out.split("\n").delete_if { |line| not line =~ /com.apple.CoreSimulator.SimRuntime/ }
-        res = {}
-        lines.each do |line|
-          key = line[/iOS (\d.\d)/,1]
-          sdk_version = line[/(\d.\d)(.\d)?\s-/, 0].tr(' -','')
-          runtime = line[/com.apple.CoreSimulator.SimRuntime.iOS-\d-\d/,0]
-          value = {:sdk => sdk_version,  :runtime => runtime}
-          res[key] = value
-        end
-        res
+
+        version_str = tokens[1]
+        version = RunLoop::Version.new(version_str)
+
+        runtime = line[/com.apple.CoreSimulator.SimRuntime.*/, 0].chomp(')')
+
+        runtimes[key][version] =
+              {
+                    :name => name,
+                    :runtime => runtime,
+                    :complete => line
+              }
       end
+      runtimes
     end
   end
 end

@@ -47,6 +47,14 @@ describe RunLoop::SimControl do
     end
   end
 
+  it '#xcrun' do
+    xcrun = sim_control.xcrun
+
+    expect(xcrun).to be_a_kind_of(RunLoop::Xcrun)
+    expect(sim_control.xcrun).to be == xcrun
+    expect(sim_control.instance_variable_get(:@xcrun)).to be == xcrun
+  end
+
   describe '#sim_name' do
     it 'Xcode >= 7.0' do
       expect(sim_control).to receive(:xcode_version_gte_7?).and_return true
@@ -289,6 +297,19 @@ describe RunLoop::SimControl do
   end
 
   describe '#simctl_list' do
+    let(:xcrun) { sim_control.xcrun }
+
+    let(:devices_out) do
+      {
+            :out => RunLoop::RSpec::Simctl::SIMCTL_DEVICE_XCODE_71
+      }
+    end
+
+    let(:runtimes_out) do
+      {
+            :out => RunLoop::RSpec::Simctl::SIMCTL_RUNTIMES_XCODE_71
+      }
+    end
     describe 'raises an error when' do
       it 'Xcode < 6' do
         expect(sim_control).to receive(:xcode_version_gte_6?).and_return(false)
@@ -308,21 +329,66 @@ describe RunLoop::SimControl do
     end
 
     describe 'valid arguments' do
+
+      before do
+       expect(sim_control).to receive(:xcrun).and_return xcrun
+      end
+
       it ':devices' do
-        if Resources.shared.core_simulator_env?
-          expect(sim_control.send(:simctl_list, :devices)).to be_a Hash
-        else
-          Luffa.log_warn("Skipping test; Xcode < 6 detected")
-        end
+        args = ['simctl', 'list', 'devices']
+        expect(xcrun).to receive(:exec).with(args).and_return(devices_out)
+
+        actual = sim_control.send(:simctl_list, :devices)
+
+        ap actual
+
+        expect(actual).to be_a Hash
+        expect(actual.length).to be == 8
+
+        expect(actual['7.1']).to be == []
+        expect(actual['9.0']).to be == []
+        expect(actual['2.0']).to be == []
+
+        # Has an extra 'TEST' device
+        expect(actual['8.1'].length).to be == 9
+        expect(actual['8.2'].length).to be == 8
+        expect(actual['8.3'].length).to be == 8
+        expect(actual['8.4'].length).to be == 8
+        expect(actual['9.1'].length).to be == 12
+
+        expect(actual['9.1'][0][:name]).to be == 'iPhone 4s'
+        expect(actual['9.1'][0][:udid]).to be == '719F922C-C5F0-44F3-AB37-14CD0FFFB67D'
+        expect(actual['9.1'][0][:state]).to be == 'Shutdown'
+
       end
 
       it ':runtimes' do
-        if Resources.shared.core_simulator_env?
-          actual = sim_control.send(:simctl_list, :runtimes)
-          expect(actual).to be_a Hash
-        else
-          Luffa.log_warn("Skipping test; Xcode < 6 detcted")
-        end
+        args = ['simctl', 'list', 'runtimes']
+        expect(xcrun).to receive(:exec).with(args).and_return(runtimes_out)
+
+        actual = sim_control.send(:simctl_list, :runtimes)
+
+        ap actual
+
+        expect(actual).to be_a Hash
+        expect(actual.length).to be == 3
+
+        expect(actual[:iOS]).to be_truthy
+        expect(actual[:tvOS]).to be_truthy
+        expect(actual[:watchOS]).to be_truthy
+
+
+        expect(actual[:iOS][RunLoop::Version.new('8.1')]).to be_truthy
+        expect(actual[:iOS][RunLoop::Version.new('8.2')]).to be_truthy
+        expect(actual[:iOS][RunLoop::Version.new('8.3')]).to be_truthy
+        expect(actual[:iOS][RunLoop::Version.new('8.4')]).to be_truthy
+
+        v91 = RunLoop::Version.new('9.1')
+        expect(actual[:iOS][v91]).to be_truthy
+
+        expect(actual[:iOS][v91][:runtime]).to be == 'com.apple.CoreSimulator.SimRuntime.iOS-9-1'
+        expect(actual[:iOS][v91][:name]).to be == 'iOS'
+        expect(actual[:iOS][v91][:complete]).to be_truthy
       end
     end
   end
@@ -339,7 +405,7 @@ describe RunLoop::SimControl do
         expect(sims).to be_a Array
         expect(sims.empty?).to be == false
       else
-        Luffa.log_warn("Skipping test; Xcode < 6 detcted")
+        Luffa.log_warn('Skipping test; Xcode < 6 detected')
       end
     end
   end
