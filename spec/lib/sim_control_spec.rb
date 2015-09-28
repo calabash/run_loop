@@ -334,18 +334,33 @@ describe RunLoop::SimControl do
        expect(sim_control).to receive(:xcrun).and_return xcrun
       end
 
-      # it ':devices' do
-      #   args = ['simctl' 'list', 'devices']
-      #   expect(xcrun).to receive(:exec).with(args).and_return(devices_out)
-      #
-      #   actual = sim_control.send(:simctl_list, :devices)
-      #
-      #   ap actual
-      #
-      #   expect(actual).to be_a Hash
-      #   expect(actual.length).to be == 12
-      #
-      # end
+      it ':devices' do
+        args = ['simctl', 'list', 'devices']
+        expect(xcrun).to receive(:exec).with(args).and_return(devices_out)
+
+        actual = sim_control.send(:simctl_list, :devices)
+
+        ap actual
+
+        expect(actual).to be_a Hash
+        expect(actual.length).to be == 8
+
+        expect(actual['7.1']).to be == []
+        expect(actual['9.0']).to be == []
+        expect(actual['2.0']).to be == []
+
+        # Has an extra 'TEST' device
+        expect(actual['8.1'].length).to be == 9
+        expect(actual['8.2'].length).to be == 8
+        expect(actual['8.3'].length).to be == 8
+        expect(actual['8.4'].length).to be == 8
+        expect(actual['9.1'].length).to be == 12
+
+        expect(actual['9.1'][0][:name]).to be == 'iPhone 4s'
+        expect(actual['9.1'][0][:udid]).to be == '719F922C-C5F0-44F3-AB37-14CD0FFFB67D'
+        expect(actual['9.1'][0][:state]).to be == 'Shutdown'
+
+      end
 
       it ':runtimes' do
         args = ['simctl', 'list', 'runtimes']
@@ -390,7 +405,7 @@ describe RunLoop::SimControl do
         expect(sims).to be_a Array
         expect(sims.empty?).to be == false
       else
-        Luffa.log_warn("Skipping test; Xcode < 6 detcted")
+        Luffa.log_warn('Skipping test; Xcode < 6 detected')
       end
     end
   end

@@ -1141,55 +1141,61 @@ module RunLoop
     #  base sdk version.
     # @see #simctl_list
     def simctl_list_devices
-      args = 'simctl list devices'.split(' ')
-      Open3.popen3('xcrun', *args) do  |_, stdout,  stderr, _|
-        out = stdout.read.strip
-        err = stderr.read.strip
-        if ENV['DEBUG_UNIX_CALLS'] == '1'
-          cmd = "xcrun #{args.join(' ')}"
-          puts "#{cmd} => stdout: '#{out}' | stderr: '#{err}'"
+      args = ['simctl', 'list', 'devices']
+      hash = xcrun.exec(args)
+
+      current_sdk = nil
+      simulators = {}
+
+      out = hash[:out]
+
+      out.split("\n").each do |line|
+
+        possible_sdk = line[VERSION_REGEX,0]
+        if possible_sdk
+          current_sdk = possible_sdk
+          simulators[current_sdk] = []
+          next
         end
 
-        current_sdk = nil
-        res = {}
-        out.split("\n").each do |line|
+        unavailable_sdk = line[/Unavailable/, 0]
+        if unavailable_sdk
+          current_sdk = nil
+          next
+        end
 
-          possible_sdk = line[VERSION_REGEX,0]
-          if possible_sdk
-            current_sdk = possible_sdk
-            res[current_sdk] = []
-            next
-          end
+        watch_os = line[/watchOS/, 0]
+        if watch_os
+          current_sdk = nil
+          next
+        end
 
-          unavailable_sdk = line[/Unavailable/, 0]
-          if unavailable_sdk
-            current_sdk = nil
-            next
-          end
+        watch = line[/Apple Watch/, 0]
+        if watch
+          current_sdk = nil
+          next
+        end
 
-          watch_os = line[/watchOS/, 0]
-          if watch_os
-            current_sdk = nil
-            next
-          end
+        tv = line[/Apple TV/, 0]
+        if tv
+          current_sdk = nil
+          next
+        end
 
-          watch = line[/Apple Watch/, 0]
-          if watch
-            current_sdk = nil
-            next
-          end
-
-          if current_sdk
-            unless line[/unavailable/,0]
-              name = line.split('(').first.strip
-              udid = line[CORE_SIMULATOR_UDID_REGEX,0]
-              state = line[/(Booted|Shutdown)/,0]
-              res[current_sdk] << {:name => name, :udid => udid, :state => state}
-            end
+        if current_sdk
+          unless line[/unavailable/,0]
+            name = line.split('(').first.strip
+            udid = line[CORE_SIMULATOR_UDID_REGEX,0]
+            state = line[/(Booted|Shutdown)/,0]
+            simulators[current_sdk] << {
+                  :name => name,
+                  :udid => udid,
+                  :state => state
+            }
           end
         end
-        res
       end
+      simulators
     end
 
     # @!visibility private
