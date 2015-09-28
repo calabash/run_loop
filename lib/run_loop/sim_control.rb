@@ -52,6 +52,10 @@ module RunLoop
       xcode.developer_dir
     end
 
+    def xcrun
+      @xcrun ||= RunLoop::Xcrun.new
+    end
+
     # Return an instance of PlistBuddy.
     # @return [RunLoop::PlistBuddy] The plist buddy instance that is used internally.
     def pbuddy

@@ -47,6 +47,14 @@ describe RunLoop::SimControl do
     end
   end
 
+  it '#xcrun' do
+    xcrun = sim_control.xcrun
+
+    expect(xcrun).to be_a_kind_of(RunLoop::Xcrun)
+    expect(sim_control.xcrun).to be == xcrun
+    expect(sim_control.instance_variable_get(:@xcrun)).to be == xcrun
+  end
+
   describe '#sim_name' do
     it 'Xcode >= 7.0' do
       expect(sim_control).to receive(:xcode_version_gte_7?).and_return true
