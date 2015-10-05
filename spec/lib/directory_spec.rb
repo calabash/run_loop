@@ -1,5 +1,9 @@
 describe RunLoop::Directory do
 
+  before do
+    stub_env({'DEBUG' => '1'})
+  end
+
   it '.recursive_glob_for_entries' do
     base_dir = Dir.mktmpdir
     dotfile_path = File.join(base_dir, '.a-dot-file')
@@ -10,7 +14,7 @@ describe RunLoop::Directory do
     expect(RunLoop::Directory.recursive_glob_for_entries(base_dir)) == expected
   end
 
-  describe '#directory_digest' do
+  describe '.directory_digest' do
     it 'returns the same value for a copy of the same directory' do
       original_path = Resources.shared.app_bundle_path
       tmp_dir = Dir.mktmpdir

@@ -42,27 +42,46 @@ module RunLoop
       debug = RunLoop::Environment.debug?
 
       sha = OpenSSL::Digest::SHA256.new
-      self.recursive_glob_for_entries(path).each do |file|
-        if File.directory?(file)
-          # skip directories
-        elsif !Pathname.new(file).exist?
-          # skip broken symlinks
-        else
-          case File.ftype(file)
-            when 'fifo'
-              RunLoop.log_warn("SHA1 SKIPPING FIFO #{file}") if debug
-            when 'socket'
-              RunLoop.log_warn("SHA1 SKIPPING SOCKET #{file}") if debug
-            when 'characterSpecial'
-              RunLoop.log_warn("SHA1 SKIPPING CHAR SPECIAL #{file}") if debug
-            when 'blockSpecial'
-              RunLoop.log_warn("SHA1 SKIPPING BLOCK SPECIAL #{file}") if debug
-            else
-              sha << File.read(file)
-          end
+      entries.each do |file|
+        unless self.skip_file?(file, 'SHA1', debug)
+          sha << File.read(file)
         end
       end
       sha.hexdigest
+    end
+
+    private
+
+    def self.skip_file?(file, task, debug)
+      skip = false
+      if File.directory?(file)
+        # Skip directories
+        skip = true
+      elsif !Pathname.new(file).exist?
+        # Skip broken symlinks
+        skip = true
+      elsif !File.exist?(file)
+        # Skip files that don't exist
+        skip = true
+      else
+        case File.ftype(file)
+          when 'fifo'
+            RunLoop.log_warn("#{task} IS SKIPPING FIFO #{file}") if debug
+            skip = true
+          when 'socket'
+            RunLoop.log_warn("#{task} IS SKIPPING SOCKET #{file}") if debug
+            skip = true
+          when 'characterSpecial'
+            RunLoop.log_warn("#{task} IS SKIPPING CHAR SPECIAL #{file}") if debug
+            skip = true
+          when 'blockSpecial'
+            skip = true
+            RunLoop.log_warn("#{task} SKIPPING BLOCK SPECIAL #{file}") if debug
+          else
+
+        end
+      end
+      skip
     end
   end
 end
