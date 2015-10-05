@@ -340,8 +340,6 @@ describe RunLoop::SimControl do
 
         actual = sim_control.send(:simctl_list, :devices)
 
-        ap actual
-
         expect(actual).to be_a Hash
         expect(actual.length).to be == 8
 
@@ -367,8 +365,6 @@ describe RunLoop::SimControl do
         expect(xcrun).to receive(:exec).with(args).and_return(runtimes_out)
 
         actual = sim_control.send(:simctl_list, :runtimes)
-
-        ap actual
 
         expect(actual).to be_a Hash
         expect(actual.length).to be == 3
