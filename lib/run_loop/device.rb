@@ -271,9 +271,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # TODO needs unit tests.
     def simulator_data_dir_size
       path = File.join(simulator_root_dir, 'data')
-      args = ['du', '-m', '-d', '0', path]
-      hash = xcrun.exec(args)
-      hash[:out].split(' ').first.to_i
+      RunLoop::Directory.size(path, :mb)
     end
 
     # @!visibility private
