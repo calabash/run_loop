@@ -50,6 +50,44 @@ module RunLoop
       sha.hexdigest
     end
 
+    def self.size(path, format)
+
+      allowed_formats = [:bytes, :kb, :mb, :gb]
+      unless allowed_formats.include?(format)
+        raise ArgumentError, "Expected '#{format}' to be one of #{allowed_formats.join(', ')}"
+      end
+
+      unless File.exist?(path)
+        raise ArgumentError, "Expected '#{path}' to exist"
+      end
+
+      unless File.directory?(path)
+        raise ArgumentError, "Expected '#{path}' to be a directory"
+      end
+
+      entries = self.recursive_glob_for_entries(path)
+
+      if entries.empty?
+        raise ArgumentError, "Expected a non-empty dir at '#{path}' found '#{entries}'"
+      end
+
+      size = self.iterate_for_size(entries)
+
+      case format
+        when :bytes
+          size
+        when :kb
+          size/1000.0
+        when :mb
+          size/1000.0/1000.0
+        when :gb
+          size/1000.0/1000.0/1000.0
+        else
+          # Not expected to reach this.
+          size
+      end
+    end
+
     private
 
     def self.skip_file?(file, task, debug)
@@ -82,6 +120,17 @@ module RunLoop
         end
       end
       skip
+    end
+
+    def self.iterate_for_size(entries)
+      debug = RunLoop::Environment.debug?
+      size = 0
+      entries.each do |file|
+        unless self.skip_file?(file, "SIZE", debug)
+          size = size + File.size(file)
+        end
+      end
+      size
     end
   end
 end

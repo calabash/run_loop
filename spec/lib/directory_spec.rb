@@ -60,4 +60,75 @@ describe RunLoop::Directory do
       end
     end
   end
+
+  describe '.size' do
+    let(:format) { :mb }
+    let(:path) { Resources.shared.app_bundle_path }
+
+    describe 'format' do
+      it ':bytes' do
+        expect(RunLoop::Directory).to receive(:iterate_for_size).and_return 12
+
+        expect(RunLoop::Directory.size(path, :bytes)).to be == 12
+      end
+
+      it ':kb' do
+        expect(RunLoop::Directory).to receive(:iterate_for_size).and_return 12 * 1000
+        expect(RunLoop::Directory.size(path, :kb)).to be == 12.0
+      end
+
+      it ':mb' do
+        expect(RunLoop::Directory).to receive(:iterate_for_size).and_return 12 * 1000 * 1000
+
+        expect(RunLoop::Directory.size(path, :mb)).to be == 12.0
+      end
+
+      it ':gb' do
+        expect(RunLoop::Directory).to receive(:iterate_for_size).and_return 12 * 1000 * 1000 * 1000
+
+        expect(RunLoop::Directory.size(path, :gb)).to be == 12.0
+      end
+    end
+
+    it 'returns the same when run 2x' do
+      first = RunLoop::Directory.size(path, :bytes)
+      second = RunLoop::Directory.size(path, :bytes)
+      expect(first).to be == second
+    end
+
+    describe 'raises error' do
+      it 'unrecognized format arg' do
+         expect do
+           RunLoop::Directory.size('./', :unknown)
+         end.to raise_error ArgumentError, /Expected 'unknown' to be one of/
+      end
+
+      it 'path does not exist' do
+        expect do
+          RunLoop::Directory.size('/does/not/exist', format)
+        end.to raise_error ArgumentError, /Expected '(.*)' to exist/
+      end
+
+      it 'path not a directory' do
+        path = '/is/a/file.txt'
+        allow(File).to receive(:exist?).with(path).and_return true
+        allow(File).to receive(:directory?).with(path).and_return false
+
+        expect do
+          RunLoop::Directory.size(path, format)
+        end.to raise_error ArgumentError, /Expected '(.*)' to be a directory/
+      end
+
+      it 'directory is not empty' do
+        path = '/is/a/file.txt'
+        allow(File).to receive(:exist?).with(path).and_return true
+        allow(File).to receive(:directory?).with(path).and_return true
+        expect(RunLoop::Directory).to receive(:recursive_glob_for_entries).and_return []
+
+        expect do
+          RunLoop::Directory.size(path, format)
+        end.to raise_error ArgumentError, /Expected a non-empty dir at '(.*)'/
+      end
+    end
+  end
 end
