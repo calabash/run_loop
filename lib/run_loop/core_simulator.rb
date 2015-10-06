@@ -201,14 +201,12 @@ class RunLoop::CoreSimulator
 
     # App is not installed. Use simctl interface to install.
     if !installed_app_bundle
-      launch_simulator
-      args = ['simctl', 'install', device.udid, app.path]
-      xcrun.exec(args, log_cmd: true, timeout: 20)
-
-      device.simulator_wait_for_stable_state
+      installed_app_bundle = install_app_with_simctl
     else
       ensure_app_same
     end
+
+    installed_app_bundle
   end
 
   # Is this app installed?
@@ -304,6 +302,16 @@ class RunLoop::CoreSimulator
   def sim_pid
     process_name = "MacOS/#{sim_name}"
     `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split(' ').first
+  end
+
+  # @!visibility private
+  def install_app_with_simctl
+    launch_simulator
+    args = ['simctl', 'install', device.udid, app.path]
+    xcrun.exec(args, log_cmd: true, timeout: 20)
+
+    device.simulator_wait_for_stable_state
+    installed_app_bundle_dir
   end
 
   # @!visibility private

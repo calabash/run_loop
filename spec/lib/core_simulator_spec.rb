@@ -364,4 +364,64 @@ describe RunLoop::CoreSimulator do
       end
     end
   end
+
+  describe '#installed_app_sha1' do
+    it 'returns nil if app is not installed' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
+
+      expect(core_sim.send(:installed_app_sha1)).to be == nil
+    end
+
+    it 'returns the sha1 of the installed app' do
+      path = '/path/to/installed.app'
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return path
+      expect(RunLoop::Directory).to receive(:directory_digest).with(path).and_return 'sha1'
+
+      expect(core_sim.send(:installed_app_sha1)).to be == 'sha1'
+    end
+  end
+
+  describe '#same_sha1_as_installed?' do
+    it 'returns false if they are different' do
+      expect(app).to receive(:sha1).and_return 'a'
+      expect(core_sim).to receive(:installed_app_sha1).and_return 'b'
+
+      expect(core_sim.send(:same_sha1_as_installed?)).to be_falsey
+    end
+
+    it 'returns true if they are the same' do
+      expect(app).to receive(:sha1).and_return 'a'
+      expect(core_sim).to receive(:installed_app_sha1).and_return 'a'
+
+      expect(core_sim.send(:same_sha1_as_installed?)).to be_truthy
+    end
+  end
+
+  describe '#install' do
+    it 'when app is already installed and sha1 is the same' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return '/path'
+      expect(core_sim).to receive(:ensure_app_same).and_return true
+
+      expect(core_sim.install).to be == '/path'
+    end
+
+    it 'when the app is not installed' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
+      expect(core_sim).to receive(:install_app_with_simctl).and_return '/new/path'
+
+      expect(core_sim.install).to be == '/new/path'
+    end
+
+    it '#install_app_with_simctl' do
+      expect(core_sim).to receive(:launch_simulator).and_return true
+      args = ['simctl', 'install', device.udid, app.path]
+      options = { :log_cmd => true, :timeout => 20 }
+      expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return({})
+      expect(core_sim.device).to receive(:simulator_wait_for_stable_state).and_return true
+
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return('/new/path')
+
+      expect(core_sim.send(:install_app_with_simctl)).to be == '/new/path'
+    end
+  end
 end
