@@ -48,29 +48,34 @@ class RunLoop::CoreSimulator
   # [ '< process name >', < send term first > ]
   SIMULATOR_QUIT_PROCESSES =
         [
+              # Xcode 7 start throwing this error.
+              ['splashboardd', false],
+
               # Xcode < 5.1
-              'iPhone Simulator.app',
+              ['iPhone Simulator.app', true],
+
               # 7.0 < Xcode <= 6.0
-              'iOS Simulator.app',
+              ['iOS Simulator.app', true],
+
               # Xcode >= 7.0
-              'Simulator.app',
+              ['Simulator.app', true],
 
               # Multiple launchd_sim processes have been causing problems.  This
               # is a first pass at investigating what it would mean to kill the
               # launchd_sim process.
-              'launchd_sim',
+              ['launchd_sim', false],
 
               # assetsd instances clobber each other and are not properly
               # killed when quiting the simulator.
-              'assetsd',
+              ['assetsd', false],
 
               # iproxy is started by UITest.
-              'iproxy',
+              ['iproxy', false],
 
               # Started by Xamarin Studio, this is the parent process of the
               # processes launched by Xamarin's interaction with
               # CoreSimulatorBridge.
-              'csproxy'
+              ['csproxy', false],
         ]
 
   # @!visibility private
@@ -82,15 +87,18 @@ class RunLoop::CoreSimulator
     self.quit_simulator
 
     MANAGED_PROCESSES.each do |process_name|
-      self.term_or_kill(process_name)
+      send_term_first = false
+      self.term_or_kill(process_name, send_term_first)
     end
   end
 
   # @!visibility private
   # Quit any Simulator.app or iOS Simulator.app
   def self.quit_simulator
-    SIMULATOR_QUIT_PROCESSES.each do |process_name|
-      self.term_or_kill(process_name)
+    SIMULATOR_QUIT_PROCESSES.each do |process_details|
+      process_name = process_details[0]
+      send_term_first = process_details[1]
+      self.term_or_kill(process_name, send_term_first)
     end
   end
 
@@ -227,13 +235,19 @@ class RunLoop::CoreSimulator
   private
 
   # Send 'TERM' then 'KILL' to allow processes to quit cleanly.
-  def self.term_or_kill(process_name)
+  def self.term_or_kill(process_name, send_term_first)
     term_options = { :timeout => 0.5 }
     kill_options = { :timeout => 0.5 }
 
     RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
-      term = RunLoop::ProcessTerminator.new(pid, 'TERM', process_name, term_options)
-      unless term.kill_process
+      killed = false
+
+      if send_term_first
+        term = RunLoop::ProcessTerminator.new(pid, 'TERM', process_name, term_options)
+        killed = term.kill_process
+      end
+
+      unless killed
         RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
       end
     end
