@@ -15,7 +15,7 @@ module RunLoop::Simctl
   # TODO Reinstall if checksum does not match.
   # TODO Analyze terminate_core_simulator_processes.
   # TODO Figure out when CoreSimulator appears and does not appear.
-  class Bridge < RunLoop::LifeCycle::CoreSimulator
+  class Bridge
 
     attr_reader :device
     attr_reader :app
