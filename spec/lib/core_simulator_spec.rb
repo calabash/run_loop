@@ -424,4 +424,32 @@ describe RunLoop::CoreSimulator do
       expect(core_sim.send(:install_app_with_simctl)).to be == '/new/path'
     end
   end
+
+  describe '#wait_for_device_state' do
+    it 'times out if state is never reached' do
+      if Resources.shared.travis_ci?
+        options = { :timeout => 0.2, :interval => 0.01 }
+      else
+        options = { :timeout => 0.02, :interval => 0.01 }
+      end
+
+      stub_const('RunLoop::CoreSimulator::WAIT_FOR_DEVICE_STATE_OPTS',
+                 options)
+      expect(device).to receive(:update_simulator_state).at_least(:once).and_return 'Undesired'
+
+      expect do
+        core_sim.send(:wait_for_device_state, 'Desired')
+      end.to raise_error RuntimeError, /Expected/
+    end
+
+    it 'waits for a state' do
+      options = { :timeout => 0.1, :interval => 0.01 }
+      stub_const('RunLoop::CoreSimulator::WAIT_FOR_DEVICE_STATE_OPTS',
+                 options)
+      values = ['Undesired', 'Undesired', 'Desired']
+      expect(device).to receive(:update_simulator_state).at_least(:once).and_return(*values)
+
+      expect(core_sim.send(:wait_for_device_state, 'Desired')).to be_truthy
+    end
+  end
 end

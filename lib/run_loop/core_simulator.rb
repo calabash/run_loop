@@ -23,6 +23,12 @@ class RunLoop::CoreSimulator
   CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
 
   # @!visibility private
+  WAIT_FOR_DEVICE_STATE_OPTS = {
+        interval: 0.1,
+        timeout: 5
+  }
+
+  # @!visibility private
   MANAGED_PROCESSES =
         [
               # This process is a daemon, and requires 'KILL' to terminate.
