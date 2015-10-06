@@ -227,4 +227,141 @@ describe RunLoop::CoreSimulator do
       end
     end
   end
+
+  describe 'Canned file system' do
+
+    let(:tmp_dir) { Dir.mktmpdir }
+    let(:directory) { File.join(tmp_dir, 'CoreSimulator') }
+
+    let(:device_with_app) do
+      RunLoop::Device.new('iPhone 5s', '9.0', '69BD76CA-415A-4981-81AC-2CC9EE4FC177')
+    end
+
+    let(:device_without_app) do
+      RunLoop::Device.new('iPhone 5s', '8.4', '6386C48A-E029-4C1A-932D-355F652F66B9')
+    end
+
+    let(:sdk_71_device_with_app) do
+      RunLoop::Device.new('iPhone 5s', '7.1', 'B88A172B-CF92-4D3A-8A88-96FF4A6303D3')
+    end
+
+    let(:sdk_71_device_without_app) do
+      RunLoop::Device.new('iPhone 5', '7.1', '8DE4DF9B-09A4-4CFF-88E1-C62C88DD1503')
+    end
+
+    before do
+      source = File.join(Resources.shared.resources_dir, 'CoreSimulator')
+      FileUtils.cp_r(source, tmp_dir)
+      stub_const('RunLoop::CoreSimulator::CORE_SIMULATOR_DEVICE_DIR',
+                 directory)
+    end
+
+    describe '#installed_app_bundle_dir' do
+      describe 'iOS >= 8' do
+        it 'app is installed' do
+          core_sim = RunLoop::CoreSimulator.new(device_with_app, app)
+
+          actual = core_sim.send(:installed_app_bundle_dir)
+          expect(actual).to be_truthy
+          expect(File.exist?(actual)).to be_truthy
+        end
+
+        it 'app is not installed' do
+          core_sim = RunLoop::CoreSimulator.new(device_without_app, app)
+
+          actual = core_sim.send(:installed_app_bundle_dir)
+          expect(actual).to be_falsey
+        end
+      end
+
+      describe 'iOS < 8' do
+        it 'app is installed' do
+          core_sim = RunLoop::CoreSimulator.new(sdk_71_device_with_app, app)
+
+          actual = core_sim.send(:installed_app_bundle_dir)
+          expect(actual).to be_truthy
+          expect(File.exist?(actual)).to be_truthy
+        end
+
+        it 'app is not installed' do
+          core_sim = RunLoop::CoreSimulator.new(sdk_71_device_without_app, app)
+
+          actual = core_sim.send(:installed_app_bundle_dir)
+          expect(actual).to be_falsey
+        end
+      end
+    end
+
+    describe '#app_sandbox_dir' do
+
+      describe 'iOS >= 8' do
+        it 'app is installed' do
+          core_sim = RunLoop::CoreSimulator.new(device_with_app, app)
+
+          actual = core_sim.send(:app_sandbox_dir)
+          expect(actual).to be_truthy
+          expect(File.exist?(actual)).to be_truthy
+        end
+
+        it 'app is not installed' do
+          core_sim = RunLoop::CoreSimulator.new(device_without_app, app)
+
+          actual = core_sim.send(:app_sandbox_dir)
+          expect(actual).to be_falsey
+        end
+      end
+
+      describe 'iOS < 8' do
+        it 'app is installed' do
+          core_sim = RunLoop::CoreSimulator.new(sdk_71_device_with_app, app)
+
+          actual = core_sim.send(:app_sandbox_dir)
+          expect(actual).to be_truthy
+          expect(File.exist?(actual)).to be_truthy
+        end
+
+        it 'app is not installed' do
+          core_sim = RunLoop::CoreSimulator.new(sdk_71_device_without_app, app)
+
+          actual = core_sim.send(:app_sandbox_dir)
+          expect(actual).to be_falsey
+        end
+      end
+    end
+
+    describe '#clear_device_launch_cssstore' do
+
+      let(:counter) do
+        lambda do |path|
+          Dir.glob(File.join(path, "com.apple.LaunchServices-*.csstore")).count
+        end
+      end
+
+      it 'no matching' do
+        core_sim = RunLoop::CoreSimulator.new(device_with_app, app)
+        device_caches_dir = core_sim.send(:device_caches_dir)
+
+        before_count =  counter.call(device_caches_dir)
+        expect(before_count).to be == 0
+
+        core_sim.send(:clear_device_launch_csstore)
+
+        after_count = counter.call(device_caches_dir)
+        expect(after_count).to be == 0
+      end
+
+      it 'matching' do
+        core_sim = RunLoop::CoreSimulator.new(device_without_app, app)
+        device_caches_dir = core_sim.send(:device_caches_dir)
+
+        before_count =  counter.call(device_caches_dir)
+        expect(before_count).to be == 4
+
+        core_sim.send(:clear_device_launch_csstore)
+
+        after_count = counter.call(device_caches_dir)
+        expect(after_count).to be == 0
+      end
+    end
+  end
 end
