@@ -108,14 +108,16 @@ class RunLoop::CoreSimulator
   # @option options :quit_sim_on_init (true) If true, quit any running
   # @option options :xcode An instance of Xcode to use
   #  simulators in the initialize method.
-  def initialize(device, app, options = { :quit_sim_on_init => true })
+  def initialize(device, app, options={})
+    defaults = { :quit_sim_on_init => true }
+    merged = defaults.merge(options)
 
     @app = app
     @device = device
 
-    @xcode = options[:xcode]
+    @xcode = merged[:xcode]
 
-    if options[:quit_sim_on_init]
+    if merged[:quit_sim_on_init]
       RunLoop::CoreSimulator.quit_simulator
     end
   end
@@ -364,6 +366,19 @@ class RunLoop::CoreSimulator
       app_sandbox_dir_sdk_gte_8
     else
       app_install_dir
+    end
+  end
+
+  def app_sandbox_dir_sdk_gte_8
+    containers_data_dir = File.join(device_data_dir, 'Containers', 'Data', 'Application')
+    apps = Dir.glob("#{containers_data_dir}/**/#{METADATA_PLIST}")
+    match = apps.find do |metadata_plist|
+      pbuddy.plist_read('MCMMetadataIdentifier', metadata_plist) == app.bundle_identifier
+    end
+    if match
+      File.dirname(match)
+    else
+      nil
     end
   end
 
