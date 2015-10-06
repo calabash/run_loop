@@ -55,32 +55,22 @@ module RunLoop
     def kill_process
       return true unless process_alive?
 
-      debug_logging = RunLoop::Environment.debug?
       begin
-        if debug_logging
-          puts "Sending '#{kill_signal}' to #{display_name} process '#{pid}'"
-        end
+        RunLoop.log_debug("Sending '#{kill_signal}' to #{display_name} process '#{pid}'")
         Process.kill(kill_signal, pid.to_i)
         # Don't wait.
         # We might not own this process and a WNOHANG would be a nop.
         # Process.wait(pid, Process::WNOHANG)
       rescue Errno::ESRCH
-        if debug_logging
-          puts "Process with pid '#{pid}' does not exist; nothing to do."
-        end
+        RunLoop.log_debug("Process with pid '#{pid}' does not exist; nothing to do.")
         # Return early; there is no need to wait if the process does not exist.
         return true
       rescue Errno::EPERM
-        if debug_logging
-          puts "Cannot kill process '#{pid}' with '#{kill_signal}'; not a child of this process"
-        end
+        RunLoop.log_debug("Cannot kill process '#{pid}' with '#{kill_signal}'; not a child of this process")
       rescue SignalException => e
         raise e.message
       end
-
-      if debug_logging
-        puts "Waiting for #{display_name} '#{pid}' to terminate"
-      end
+      RunLoop.log_debug("Waiting for #{display_name} '#{pid}' to terminate")
       wait_for_process_to_terminate
     end
 
@@ -127,9 +117,7 @@ module RunLoop
         sleep delay
       end
 
-      if RunLoop::Environment.debug?
-        puts "Waited for #{Time.now - now} seconds for #{display_name} with '#{pid}' to terminate"
-      end
+      RunLoop.log_debug("Waited for #{Time.now - now} seconds for #{display_name} with '#{pid}' to terminate")
 
       if @options[:raise_on_no_terminate] and !has_terminated
         raise "Waited #{options[:timeout]} seconds for #{display_name} (#{ps_details}) to terminate"
