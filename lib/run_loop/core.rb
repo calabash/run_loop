@@ -189,9 +189,10 @@ module RunLoop
         # Validate the architecture.
         self.expect_simulator_compatible_arch(device, app, xcode)
 
-        bridge = RunLoop::LifeCycle::CoreSimulator.new(app, device, sim_control)
+        # Quits the simulator.
+        bridge = RunLoop::CoreSimulator.new(device, app)
 
-        bridge.ensure_app_same
+        bridge.install
 
         # Will quit the simulator if it is running.
         # @todo fix accessibility_enabled? so we don't have to quit the sim
@@ -204,7 +205,6 @@ module RunLoop
         # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
         # https://github.com/calabash/run_loop/issues/167
         sim_control.ensure_software_keyboard(device)
-
 
         # Xcode 6.3 instruments cannot launch an app that is already installed on
         # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
