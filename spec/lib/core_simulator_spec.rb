@@ -116,7 +116,7 @@ describe RunLoop::CoreSimulator do
     end
 
     it '#device_data_dir' do
-      base = RunLoop::LifeCycle::CoreSimulator::CORE_SIMULATOR_DEVICE_DIR
+      base = RunLoop::CoreSimulator::CORE_SIMULATOR_DEVICE_DIR
       expected = File.join(base, device.udid, 'data')
 
       actual = core_sim.send(:device_data_dir)
