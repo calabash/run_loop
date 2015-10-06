@@ -584,19 +584,22 @@ class RunLoop::CoreSimulator
     end
   end
 
+  # Not yet.  Failing on Travis and this is not a feature yet.
+  #
+  # There is a spec that has been commented out.
   # @!visibility private
   # TODO Command line tool
-  def app_uia_crash_logs
-    base_dir = app_library_dir
-    if base_dir.nil?
-      nil
-    else
-      dir = File.join(base_dir, 'CrashReporter', 'UIALogs')
-      if Dir.exist?(dir)
-        Dir.glob("#{dir}/*.plist")
-      else
-        nil
-      end
-    end
-  end
+  # def app_uia_crash_logs
+  #   base_dir = app_library_dir
+  #   if base_dir.nil?
+  #     nil
+  #   else
+  #     dir = File.join(base_dir, 'CrashReporter', 'UIALogs')
+  #     if Dir.exist?(dir)
+  #       Dir.glob("#{dir}/*.plist")
+  #     else
+  #       nil
+  #     end
+  #   end
+  # end
 end
