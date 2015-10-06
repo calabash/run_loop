@@ -70,7 +70,7 @@ module RunLoop
       rescue SignalException => e
         raise e.message
       end
-      RunLoop.log_debug("Waiting for #{display_name} '#{pid}' to terminate")
+      RunLoop.log_debug("Waiting for #{display_name} with pid '#{pid}' to terminate")
       wait_for_process_to_terminate
     end
 
@@ -117,7 +117,7 @@ module RunLoop
         sleep delay
       end
 
-      RunLoop.log_debug("Waited for #{Time.now - now} seconds for #{display_name} with '#{pid}' to terminate")
+      RunLoop.log_debug("Waited for #{Time.now - now} seconds for #{display_name} with pid '#{pid}' to terminate")
 
       if @options[:raise_on_no_terminate] and !has_terminated
         raise "Waited #{options[:timeout]} seconds for #{display_name} (#{ps_details}) to terminate"
