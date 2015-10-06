@@ -566,4 +566,37 @@ describe RunLoop::CoreSimulator do
       end
     end
   end
+
+  describe '#ensure_app_same' do
+    it 'does nothing if app is not installed' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
+
+      expect(core_sim.send(:ensure_app_same)).to be_truthy
+    end
+
+    it 'does nothing if the app is the same' do
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return '/some/path'
+      expect(core_sim.app).to receive(:sha1).and_return :sha1
+      expect(core_sim).to receive(:installed_app_sha1).and_return :sha1
+
+      expect(core_sim.send(:ensure_app_same)).to be_truthy
+    end
+
+    it 'installs the new app' do
+      path = '/some/path'
+      expect(core_sim).to receive(:installed_app_bundle_dir).and_return '/some/path'
+      expect(core_sim.app).to receive(:sha1).and_return :a
+      expect(core_sim).to receive(:installed_app_sha1).and_return :b
+
+      allow(FileUtils).to receive(:rm_rf).with(path).and_return true
+
+      args = ['ditto', app.path, '/some/CalSmoke-cal.app']
+      options = {:log_cmd => true}
+      expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return({})
+
+      expect(core_sim).to receive(:clear_device_launch_csstore).and_return true
+
+      expect(core_sim.send(:ensure_app_same)).to be_truthy
+    end
+  end
 end

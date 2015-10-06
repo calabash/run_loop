@@ -508,7 +508,7 @@ class RunLoop::CoreSimulator
     target = File.join(directory, bundle_name)
 
     args = ['ditto', app.path, target]
-    RunLoop::Xcrun.new.exec(args, log_cmd: true)
+    xcrun.exec(args, log_cmd: true)
 
     RunLoop.log_debug("Installed #{app} on CoreSimulator #{device.udid}")
 
