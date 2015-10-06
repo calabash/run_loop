@@ -1,6 +1,7 @@
 describe RunLoop::CoreSimulator do
   let(:simulator) { RunLoop::SimControl.new.simulators.sample }
   let(:app) { RunLoop::App.new(Resources.shared.cal_app_bundle_path) }
+  let(:xcrun) { RunLoop::Xcrun.new }
 
   let(:core_sim) do
     RunLoop::CoreSimulator.new(simulator, app)
@@ -16,5 +17,16 @@ describe RunLoop::CoreSimulator do
 
   it '#launch' do
     expect(core_sim.launch).to be_truthy
+  end
+
+  it 'install with simctl' do
+    args = ['simctl', 'erase', simulator.udid]
+    xcrun.exec(args, {:log_cmd => true })
+
+    simulator.simulator_wait_for_stable_state
+
+    expect(core_sim.install)
+
+    expect(core_sim.launch)
   end
 end
