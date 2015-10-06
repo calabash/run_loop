@@ -256,6 +256,25 @@ describe RunLoop::CoreSimulator do
                  directory)
     end
 
+    it '#app_uia_crash_logs' do
+      core_sim = RunLoop::CoreSimulator.new(device_with_app, app)
+
+      lib_dir = core_sim.send(:app_library_dir)
+      expect(lib_dir).not_to be == nil
+      expect(File.exist?(lib_dir)).to be_truthy
+
+      logs_dir = File.join(lib_dir, 'CrashReporter', 'UIALogs')
+      FileUtils.mkdir_p(logs_dir)
+      FileUtils.touch(File.join(logs_dir, 'a.plist'))
+      FileUtils.touch(File.join(logs_dir, 'a.png'))
+      FileUtils.touch(File.join(logs_dir, 'b.plist'))
+
+      logs = core_sim.send(:app_uia_crash_logs)
+      expect(logs).not_to be == nil
+      expect(logs.count).to be == 2
+    end
+
+
     describe '#installed_app_bundle_dir' do
       describe 'iOS >= 8' do
         it 'app is installed' do

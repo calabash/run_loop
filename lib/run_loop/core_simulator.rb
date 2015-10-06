@@ -586,11 +586,11 @@ class RunLoop::CoreSimulator
   # @!visibility private
   # TODO Command line tool
   def app_uia_crash_logs
-    base_dir = app_data_dir
+    base_dir = app_library_dir
     if base_dir.nil?
       nil
     else
-      dir = File.join(base_dir, 'Library', 'CrashReporter', 'UIALogs')
+      dir = File.join(base_dir, 'CrashReporter', 'UIALogs')
       if Dir.exist?(dir)
         Dir.glob("#{dir}/*.plist")
       else
