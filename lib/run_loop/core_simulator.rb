@@ -106,14 +106,17 @@ class RunLoop::CoreSimulator
   # @param [RunLoop::App] app The application.
   # @param [Hash] options Controls the behavior of this class.
   # @option options :quit_sim_on_init (true) If true, quit any running
+  # @option options :xcode An instance of Xcode to use
   #  simulators in the initialize method.
   def initialize(device, app, options = { :quit_sim_on_init => true })
 
     @app = app
     @device = device
 
+    @xcode = options[:xcode]
+
     if options[:quit_sim_on_init]
-      self.quit_simulator
+      RunLoop::CoreSimulator.quit_simulator
     end
   end
 
@@ -134,7 +137,7 @@ class RunLoop::CoreSimulator
 
   # Launch the simulator indicated by device.
   def launch_simulator
-    args = ['open', '-g', '-a', sim_path, '--args', '-CurrentDeviceUDID', device.udid]
+    args = ['open', '-g', '-a', sim_app_path, '--args', '-CurrentDeviceUDID', device.udid]
 
     RunLoop.log_debug("Launching #{device} with:")
     RunLoop.log_unix_cmd("xcrun #{args.join(' ')}")
@@ -144,7 +147,8 @@ class RunLoop::CoreSimulator
     pid = spawn('xcrun', *args)
     Process.detach(pid)
 
-    RunLoop::ProcessWaiter.new(sim_name, WAIT_FOR_SIMULATOR_PROCESSES_OPTS).wait_for_any
+    options = { :timeout => 5, :raise_on_timeout => true }
+    RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
 
     device.simulator_wait_for_stable_state
 
@@ -159,7 +163,7 @@ class RunLoop::CoreSimulator
   # 1. If the app is not installed, it is installed.
   # 2. If the app is different from the app that is installed, it is installed.
   def launch
-    install_app
+    install
 
     args = ['simctl', 'launch', device.udid, app.bundle_identifier]
     hash = xcrun.exec(args, log_cmd: true, timeout: 20)
@@ -180,6 +184,7 @@ class RunLoop::CoreSimulator
     RunLoop::ProcessWaiter.new(app.executable_name, options).wait_for_any
 
     device.simulator_wait_for_stable_state
+    true
   end
 
   # Install the app.
@@ -258,9 +263,9 @@ class RunLoop::CoreSimulator
   #  launching the current simulator.
   def sim_name
     @sim_name ||= lambda {
-      if xcode_version_gte_7?
+      if xcode.version_gte_7?
         'Simulator'
-      elsif xcode_version_gte_6?
+      elsif xcode.version_gte_6?
         'iOS Simulator'
       else
         'iPhone Simulator'
@@ -276,9 +281,9 @@ class RunLoop::CoreSimulator
   def sim_app_path
     @sim_app_path ||= lambda {
       dev_dir = xcode.developer_dir
-      if xcode_version_gte_7?
+      if xcode.version_gte_7?
         "#{dev_dir}/Applications/Simulator.app"
-      elsif xcode_version_gte_6?
+      elsif xcode.version_gte_6?
         "#{dev_dir}/Applications/iOS Simulator.app"
       else
         "#{dev_dir}/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app"
