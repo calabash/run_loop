@@ -80,6 +80,27 @@ describe RunLoop::CoreSimulator do
                                      'A08334BE-77BD-4A2F-BA25-A0E8251A1A80') }
   let(:core_sim) { RunLoop::CoreSimulator.new(device, app) }
 
+  describe '#uninstall_app_and_sandbox' do
+    it 'does nothing if the app is not installed' do
+      expect(core_sim).to receive(:app_is_installed?).and_return false
+
+      expect(core_sim.uninstall_app_and_sandbox).to be_truthy
+    end
+
+    it 'launches the simulator and installs the app with simctl' do
+      expect(core_sim).to receive(:app_is_installed?).and_return true
+      expect(core_sim).to receive(:launch_simulator).and_return true
+
+      args = ['simctl', 'uninstall', device.udid, app.bundle_identifier]
+      options = { log_cmd: true, timeout: 20 }
+      expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return true
+
+      expect(core_sim.device).to receive(:simulator_wait_for_stable_state).and_return true
+
+      expect(core_sim.uninstall_app_and_sandbox).to be_truthy
+    end
+  end
+
   describe 'Mocked file system' do
 
     describe '#sdk_gte_8?' do

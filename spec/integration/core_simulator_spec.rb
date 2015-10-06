@@ -26,7 +26,11 @@ describe RunLoop::CoreSimulator do
     simulator.simulator_wait_for_stable_state
 
     expect(core_sim.install)
-
     expect(core_sim.launch)
+  end
+
+  it 'uninstall app and sandbox with simctl' do
+    expect(core_sim.uninstall_app_and_sandbox)
+    expect(core_sim.app_is_installed?).to be_falsey
   end
 end

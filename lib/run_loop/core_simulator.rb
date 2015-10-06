@@ -232,7 +232,7 @@ class RunLoop::CoreSimulator
   end
 
   # Uninstalls the app and clears the sandbox.
-  def clear_app
+  def uninstall_app_and_sandbox
     return true if !app_is_installed?
 
     launch_simulator
@@ -241,6 +241,7 @@ class RunLoop::CoreSimulator
     xcrun.exec(args, log_cmd: true, timeout: 20)
 
     device.simulator_wait_for_stable_state
+    true
   end
 
   private
