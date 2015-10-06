@@ -27,6 +27,7 @@ require 'run_loop/patches/retriable'
 require 'run_loop/life_cycle/simulator'
 require 'run_loop/life_cycle/core_simulator'
 require 'run_loop/simctl/bridge'
+require 'run_loop/core_simulator'
 require 'run_loop/simctl/plists'
 
 module RunLoop
