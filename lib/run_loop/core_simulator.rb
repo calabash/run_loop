@@ -195,6 +195,25 @@ class RunLoop::CoreSimulator
     true
   end
 
+  def booted_and_open?
+    return false if !sim_pid
+
+    state = device.update_simulator_state
+
+    return false if state != 'Booted'
+
+    args = ['simctl', 'getenv', 'booted', 'HOME']
+    hash = xcrun.exec(args, {:log_cmd => true})
+
+    out = hash[:out]
+
+    if out[/#{device.udid}/, 0] == nil
+      false
+    else
+      true
+    end
+  end
+
   # Install the app.
   #
   # 1. If the app is not installed, it is installed.
