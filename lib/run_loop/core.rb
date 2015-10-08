@@ -138,22 +138,16 @@ module RunLoop
     #
     # 1. enabling accessibility and software keyboard
     # 2. installing / uninstalling apps
-    # 3. @todo resetting the app sandbox
-    #
-    # `Bridge#launch_simulator` launches the targeted iOS Simulator.  The
-    # simulator itself has several async tasks that must be completed before
-    # we start interacting with it.  If your simulator ends up in a bad state,
-    # you can increase the post-launch wait time by setting the
-    # `CAL_SIM_POST_LAUNCH_WAIT` environment variable.  The default wait time
-    # is 1.0.  This was arrived at through testing.
     def self.prepare_simulator(launch_options, sim_control)
+
+      xcode = sim_control.xcode
 
       # Respect option passed from Calabash
       if launch_options[:relaunch_simulator]
         sim_control.quit_sim
       end
 
-      if !sim_control.xcode_version_gte_6?
+      if !xcode.version_gte_6?
         # Xcode 5.1.1
 
         # Will quit the simulator!
@@ -175,7 +169,6 @@ module RunLoop
         end
 
         udid = launch_options[:udid]
-        xcode = sim_control.xcode
 
         device = sim_control.simulators.find do |sim|
           sim.udid == udid || sim.instruments_identifier(xcode) == udid
@@ -190,9 +183,9 @@ module RunLoop
         self.expect_simulator_compatible_arch(device, app, xcode)
 
         # Quits the simulator.
-        bridge = RunLoop::CoreSimulator.new(device, app)
+        core_sim = RunLoop::CoreSimulator.new(device, app)
 
-        bridge.install
+        core_sim.install
 
         # Will quit the simulator if it is running.
         # @todo fix accessibility_enabled? so we don't have to quit the sim
@@ -208,10 +201,10 @@ module RunLoop
 
         # Xcode 6.3 instruments cannot launch an app that is already installed on
         # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
-        if sim_control.xcode.version_gte_63?
+        if xcode.version_gte_63?
 
-          if bridge.app_is_installed? && !sim_control.sim_is_running?
-            bridge.launch_simulator
+          if core_sim.app_is_installed? && !sim_control.sim_is_running?
+            core_sim.launch_simulator
           end
         end
       end
