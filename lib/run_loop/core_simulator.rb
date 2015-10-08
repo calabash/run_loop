@@ -106,6 +106,8 @@ class RunLoop::CoreSimulator
       send_term_first = process_details[1]
       self.term_or_kill(process_name, send_term_first)
     end
+
+    self.shutdown_all_booted
   end
 
   # @param [RunLoop::Device] device The device.
@@ -148,8 +150,6 @@ class RunLoop::CoreSimulator
 
   # Launch the simulator indicated by device.
   def launch_simulator
-
-    return true if booted_and_open?
 
     args = ['open', '-g', '-a', sim_app_path, '--args', '-CurrentDeviceUDID', device.udid]
 
@@ -282,6 +282,62 @@ class RunLoop::CoreSimulator
         RunLoop.log_debug("Deleting #{file}")
         FileUtils.rm_rf(file)
       end
+    end
+  end
+
+  def self.shutdown_all_booted(options = {})
+    xcrun = RunLoop::Xcrun.new
+    return true if self.shutdown_with_simctl(xcrun) == :none
+
+    defaults = {
+          :timeout => 10,
+          :delay => 0.1
+    }
+
+    merged = defaults.merge(options)
+
+    timeout = merged[:timeout]
+    delay = merged[:delay]
+
+    now = Time.now
+    poll_until = now + timeout
+    counter = 1
+
+    done = false
+    while Time.now < poll_until
+      done = self.shutdown_with_simctl(xcrun) == :none
+      counter += 1
+      break if done
+      sleep delay
+    end
+
+    elapsed = Time.now - now
+    if done
+      RunLoop.log_debug("Shutdown #{counter} booted simulators in '#{elapsed}'")
+    else
+      RunLoop.log_debug("Timed out shutting down booted simulators; shutdown #{counter} in #{elapsed} seconds")
+    end
+
+    done
+  end
+
+  def self.shutdown_with_simctl(xcrun)
+    args = ['simctl', 'shutdown', 'booted']
+    hash = xcrun.exec(args, {:log_cmd => true })
+    out = hash[:out]
+    exit_status = hash[:exit_status]
+
+    if [# Typical output for Xcode >= 6
+          out == 'No devices are booted.',
+
+          # Xcode 6
+          exit_status == 145,
+
+          # Xcode 7
+          exit_status == 158].any?
+     :none
+    else
+     :shutdown
     end
   end
 
