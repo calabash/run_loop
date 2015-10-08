@@ -126,7 +126,7 @@ module RunLoop
         end
       end
 
-      desc 'install --app [OPTIONS]', 'Installs an app on a device'
+      desc 'install --app [OPTIONS]', 'Installs an app on a device.'
 
       method_option 'app',
                     :desc => 'Path to a .app bundle to launch on simulator.',
