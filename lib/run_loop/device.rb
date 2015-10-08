@@ -383,7 +383,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         io.close if io && !io.closed?
       end
 
-      line
+      if line
+        line.chomp
+      else
+        line
+      end
     end
 
     # @!visibility private
