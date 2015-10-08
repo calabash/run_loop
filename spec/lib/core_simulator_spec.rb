@@ -4,63 +4,8 @@ describe RunLoop::CoreSimulator do
     allow(RunLoop::Environment).to receive(:debug?).and_return true
   end
 
-  describe '.shutdown_all_booted' do
-    let(:sim_control) { Resources.shared.sim_control }
-    let(:xcrun) { RunLoop::Xcrun.new }
-
-    let(:simulator) do
-      Class.new do
-        def state; 'Booted'; end
-        def udid; 'udid'; end
-      end
-    end
-
-    let(:simulators) do
-      [
-        simulator.new,
-        simulator.new,
-        simulator.new,
-        simulator.new,
-        simulator.new
-      ]
-    end
-
-    let(:options) do
-      {
-            :sim_control => sim_control,
-            :xcrun => xcrun,
-            :timeout => 0.5,
-            :delay => 0.1
-      }
-    end
-
-    before do
-      expect(sim_control).to receive(:simulators).and_return(simulators)
-    end
-
-    it 'shuts down booted simulators' do
-      last = simulators.last
-      expect(last).to receive(:state).and_return('Shutdown')
-
-      values = [true, true, true, true]
-      expect(RunLoop::CoreSimulator).to receive(:shutdown_with_simctl).exactly(4).times.and_return(*values)
-
-      expect(RunLoop::CoreSimulator.shutdown_all_booted(options)).to be_truthy
-    end
-
-    it 'times out without an error' do
-      expect(RunLoop::CoreSimulator).to receive(:shutdown_with_simctl).at_least(:once).and_return true
-
-      options[:timeout] = 0.01
-      options[:delay] = 0.05
-
-      expect(RunLoop::CoreSimulator.shutdown_all_booted(options)).to be_truthy
-    end
-  end
-
   it '.quit_simulator' do
     expect(RunLoop::CoreSimulator).to receive(:term_or_kill).at_least(:once).and_return true
-    expect(RunLoop::CoreSimulator).to receive(:shutdown_all_booted).and_return true
 
     RunLoop::CoreSimulator.quit_simulator
   end

@@ -109,8 +109,6 @@ class RunLoop::CoreSimulator
       send_term_first = process_details[1]
       self.term_or_kill(process_name, send_term_first)
     end
-
-    self.shutdown_all_booted
   end
 
   # @param [RunLoop::Device] device The device.
@@ -288,66 +286,6 @@ class RunLoop::CoreSimulator
         FileUtils.rm_rf(file)
       end
     end
-  end
-
-  # @!visibility private
-  #
-  # Timing out because there might be thousands of simulators and we don't
-  # want to wait forever.
-  #
-  # We have to make sure we are shutting down just the iOS Simulators; we can't
-  # quit the Watch or TV simulators.
-  #
-  # The :sim_control option should only be used for testing because we actually
-  # want to get a fresh, not a cached, list of booted simulators.
-  def self.shutdown_all_booted(options = {})
-
-    defaults = {
-          :timeout => 10,
-          :delay => 0.1,
-    }
-
-    merged = defaults.merge(options)
-
-    timeout = merged[:timeout]
-    delay = merged[:delay]
-
-    xcrun = merged.fetch(:xcrun, RunLoop::Xcrun.new)
-    sim_control = merged.fetch(:sim_control, RunLoop::SimControl.new)
-
-    start = Time.now
-    counter = 0
-    begin
-
-      Timeout.timeout(timeout) do
-        sim_control.simulators.each do |simulator|
-          if simulator.state == 'Booted'
-            self.shutdown_with_simctl(simulator.udid, xcrun)
-            counter += 1
-            sleep(delay)
-          end
-        end
-      end
-
-      elapsed = Time.now - start
-      if counter == 0
-        RunLoop.log_debug("Took #{elapsed} to check there were no simulators booted")
-      else
-        RunLoop.log_debug("Shutdown #{counter} booted simulators in '#{elapsed}'")
-      end
-    rescue Timeout::Error => _
-      elapsed = Time.now - start
-      RunLoop.log_debug("Timed out shutting down booted simulators; shutdown #{counter} in #{elapsed} seconds")
-    end
-    true
-  end
-
-  # @!visibility private
-  #
-  # @todo extract to Simctl class
-  def self.shutdown_with_simctl(udid, xcrun)
-    args = ['simctl', 'shutdown', udid]
-    xcrun.exec(args, {:log_cmd => true })
   end
 
   # Send 'TERM' then 'KILL' to allow processes to quit cleanly.
