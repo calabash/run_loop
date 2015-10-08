@@ -17,6 +17,9 @@ class RunLoop::CoreSimulator
   attr_reader :xcrun
 
   # @!visibility private
+  attr_reader :simulator_pid
+
+  # @!visibility private
   METADATA_PLIST = '.com.apple.mobile_container_manager.metadata.plist'
 
   # @!visibility private
@@ -148,8 +151,26 @@ class RunLoop::CoreSimulator
     @xcrun ||= RunLoop::Xcrun.new
   end
 
+  # @!visibility private
+  def simulator_pid
+    @simulator_pid
+  end
+
   # Launch the simulator indicated by device.
   def launch_simulator
+
+    if sim_pid != nil
+      # There is a running simulator.
+
+      # Did we launch it?
+      if sim_pid == simulator_pid
+        # Nothing to do, we already launched the simulator.
+        return
+      else
+        # We did not launch this simulator; quit it.
+        RunLoop::CoreSimulator.quit_simulator
+      end
+    end
 
     args = ['open', '-g', '-a', sim_app_path, '--args', '-CurrentDeviceUDID', device.udid]
 
@@ -160,6 +181,9 @@ class RunLoop::CoreSimulator
 
     pid = spawn('xcrun', *args)
     Process.detach(pid)
+
+    # Keep track of the pid so we can know if we have already launched this sim.
+    @simulator_pid = pid
 
     options = { :timeout => 5, :raise_on_timeout => true }
     RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
@@ -199,25 +223,6 @@ class RunLoop::CoreSimulator
 
     device.simulator_wait_for_stable_state
     true
-  end
-
-  def booted_and_open?
-    return false if !sim_pid
-
-    state = device.update_simulator_state
-
-    return false if state != 'Booted'
-
-    args = ['simctl', 'getenv', 'booted', 'HOME']
-    hash = xcrun.exec(args, {:log_cmd => true})
-
-    out = hash[:out]
-
-    if out[/#{device.udid}/, 0] == nil
-      false
-    else
-      true
-    end
   end
 
   # Install the app.

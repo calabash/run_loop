@@ -174,47 +174,6 @@ describe RunLoop::CoreSimulator do
       end
     end
 
-    describe '#booted_and_open?' do
-      describe 'false' do
-        it 'simulator is not open at all' do
-          expect(core_sim).to receive(:sim_pid).and_return nil
-
-          expect(core_sim.booted_and_open?).to be_falsey
-        end
-
-        it 'state is not booted' do
-          expect(core_sim).to receive(:sim_pid).and_return 123
-          expect(core_sim.device).to receive(:update_simulator_state).and_return 'Shutdown'
-
-          expect(core_sim.booted_and_open?).to be_falsey
-        end
-
-        it 'booted device is not the right simulator' do
-          expect(core_sim).to receive(:sim_pid).and_return 123
-          expect(core_sim.device).to receive(:update_simulator_state).and_return 'Booted'
-
-          args = ['simctl', 'getenv', 'booted', 'HOME']
-          options = {:log_cmd => true }
-          hash = { :out => 'Unable to getenv("STATE") in current state: Shutdown' }
-          expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return(hash)
-
-          expect(core_sim.booted_and_open?).to be_falsey
-        end
-      end
-
-      it 'true' do
-        expect(core_sim).to receive(:sim_pid).and_return 123
-        expect(core_sim.device).to receive(:update_simulator_state).and_return 'Booted'
-
-        args = ['simctl', 'getenv', 'booted', 'HOME']
-        options = {:log_cmd => true }
-        hash = { :out => "/path/Devices/#{core_sim.device}/data" }
-        expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return(hash)
-
-        expect(core_sim.booted_and_open?).to be_truthy
-      end
-    end
-
     describe 'Mocked file system' do
 
       describe '#sdk_gte_8?' do
