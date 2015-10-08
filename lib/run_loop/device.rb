@@ -314,13 +314,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       current_sha = nil
       sha_fn = lambda do |data_dir|
         begin
-          # Directory.directory_digest has a blocking read.  Typically, it
-          # returns in < 0.3 seconds.
+          # Typically, this returns in < 0.3 seconds.
           Timeout.timeout(2, TimeoutError) do
             RunLoop::Directory.directory_digest(data_dir)
           end
-        rescue => e
-          RunLoop.log_error(e) if RunLoop::Environment.debug?
+        rescue => _
           SecureRandom.uuid
         end
       end
@@ -385,7 +383,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         io.close if io && !io.closed?
       end
 
-      line
+      if line
+        line.chomp
+      else
+        line
+      end
     end
 
     # @!visibility private

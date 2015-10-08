@@ -44,7 +44,26 @@ module RunLoop
       sha = OpenSSL::Digest::SHA256.new
       entries.each do |file|
         unless self.skip_file?(file, 'SHA1', debug)
-          sha << File.read(file)
+          begin
+            sha << File.read(file)
+          rescue => e
+            if debug
+              RunLoop.log_warn(%Q{
+RunLoop::Directory.directory_digest raised an error:
+
+#{e}
+
+while trying to find the SHA of this file:
+
+#{file}
+
+Please report this here:
+
+https://github.com/calabash/run_loop/issues
+
+})
+            end
+          end
         end
       end
       sha.hexdigest
