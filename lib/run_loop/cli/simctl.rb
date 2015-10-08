@@ -111,6 +111,14 @@ module RunLoop
           @sim_control ||= RunLoop::SimControl.new
         end
 
+        def xcode
+          @xcode ||= RunLoop::Xcode.new
+        end
+
+        def xcrun
+          @xcrun ||= RunLoop::Xcrun.new
+        end
+
         def booted_device
           sim_control.simulators.detect(nil) do |device|
             device.state == 'Booted'
