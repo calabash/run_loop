@@ -285,13 +285,21 @@ class RunLoop::CoreSimulator
     end
   end
 
+  # @!visibility private
+  #
+  # Timing out because there might be thousands of simulators and we don't
+  # want to wait forever.
+  #
+  # We have to make sure we are shutting down just the iOS Simulators; we can't
+  # quit the Watch or TV simulators.
+  #
+  # The :sim_control option should only be used for testing because we actually
+  # want to get a fresh, not a cached, list of booted simulators.
   def self.shutdown_all_booted(options = {})
-    xcrun = RunLoop::Xcrun.new
-    return true if self.shutdown_with_simctl(xcrun) == :none
 
     defaults = {
           :timeout => 10,
-          :delay => 0.1
+          :delay => 0.1,
     }
 
     merged = defaults.merge(options)
@@ -299,46 +307,42 @@ class RunLoop::CoreSimulator
     timeout = merged[:timeout]
     delay = merged[:delay]
 
-    now = Time.now
-    poll_until = now + timeout
-    counter = 1
+    xcrun = merged.fetch(:xcrun, RunLoop::Xcrun.new)
+    sim_control = merged.fetch(:sim_control, RunLoop::SimControl.new)
 
-    done = false
-    while Time.now < poll_until
-      done = self.shutdown_with_simctl(xcrun) == :none
-      counter += 1
-      break if done
-      sleep delay
-    end
+    start = Time.now
+    counter = 0
+    begin
 
-    elapsed = Time.now - now
-    if done
-      RunLoop.log_debug("Shutdown #{counter} booted simulators in '#{elapsed}'")
-    else
+      Timeout.timeout(timeout) do
+        sim_control.simulators.each do |simulator|
+          if simulator.state == 'Booted'
+            self.shutdown_with_simctl(simulator.udid, xcrun)
+            counter += 1
+            sleep(delay)
+          end
+        end
+      end
+
+      elapsed = Time.now - start
+      if counter == 0
+        RunLoop.log_debug("Took #{elapsed} to check there were no simulators booted")
+      else
+        RunLoop.log_debug("Shutdown #{counter} booted simulators in '#{elapsed}'")
+      end
+    rescue Timeout::Error => _
+      elapsed = Time.now - start
       RunLoop.log_debug("Timed out shutting down booted simulators; shutdown #{counter} in #{elapsed} seconds")
     end
-
-    done
+    true
   end
 
-  def self.shutdown_with_simctl(xcrun)
-    args = ['simctl', 'shutdown', 'booted']
-    hash = xcrun.exec(args, {:log_cmd => true })
-    out = hash[:out]
-    exit_status = hash[:exit_status]
-
-    if [# Typical output for Xcode >= 6
-          out == 'No devices are booted.',
-
-          # Xcode 6
-          exit_status == 145,
-
-          # Xcode 7
-          exit_status == 158].any?
-     :none
-    else
-     :shutdown
-    end
+  # @!visibility private
+  #
+  # @todo extract to Simctl class
+  def self.shutdown_with_simctl(udid, xcrun)
+    args = ['simctl', 'shutdown', udid]
+    xcrun.exec(args, {:log_cmd => true })
   end
 
   # Send 'TERM' then 'KILL' to allow processes to quit cleanly.

@@ -1,67 +1,60 @@
 describe RunLoop::CoreSimulator do
 
-  describe '.shutdown_with_simctl' do
+  before do
+    allow(RunLoop::Environment).to receive(:debug?).and_return true
+  end
+
+  describe '.shutdown_all_booted' do
+    let(:sim_control) { Resources.shared.sim_control }
     let(:xcrun) { RunLoop::Xcrun.new }
-    let(:hash) do
+
+    let(:simulator) do
+      Class.new do
+        def state; 'Booted'; end
+        def udid; 'udid'; end
+      end
+    end
+
+    let(:simulators) do
+      [
+        simulator.new,
+        simulator.new,
+        simulator.new,
+        simulator.new,
+        simulator.new
+      ]
+    end
+
+    let(:options) do
       {
-            :exit_status => 0,
-            :out => nil
+            :sim_control => sim_control,
+            :xcrun => xcrun,
+            :timeout => 0.5,
+            :delay => 0.1
       }
     end
 
-
-    describe 'returns :none' do
-      it 'exit code is 145' do
-        hash[:exit_status] = 145
-        expect(xcrun).to receive(:exec).and_return(hash)
-
-        expect(RunLoop::CoreSimulator.shutdown_with_simctl(xcrun)).to be == :none
-      end
-
-      it 'exit code is 158' do
-        hash[:exit_status] = 158
-        expect(xcrun).to receive(:exec).and_return(hash)
-
-        expect(RunLoop::CoreSimulator.shutdown_with_simctl(xcrun)).to be == :none
-      end
-
-      it 'no booted devices' do
-        hash[:out] = 'No devices are booted.'
-        expect(xcrun).to receive(:exec).and_return(hash)
-
-        expect(RunLoop::CoreSimulator.shutdown_with_simctl(xcrun)).to be == :none
-      end
+    before do
+      expect(sim_control).to receive(:simulators).and_return(simulators)
     end
 
-    it 'returns :shutdown' do
-      expect(xcrun).to receive(:exec).and_return(hash)
+    it 'shuts down booted simulators' do
+      last = simulators.last
+      expect(last).to receive(:state).and_return('Shutdown')
 
-      expect(RunLoop::CoreSimulator.shutdown_with_simctl(xcrun)).to be == :shutdown
-    end
-  end
+      values = [true, true, true, true]
+      expect(RunLoop::CoreSimulator).to receive(:shutdown_with_simctl).exactly(4).times.and_return(*values)
 
-
-  describe '.shutdown_all_booted' do
-    it 'returns true if no devices are booted' do
-      expect(RunLoop::CoreSimulator).to receive(:shutdown_with_simctl).and_return :none
-
-      expect(RunLoop::CoreSimulator.shutdown_all_booted).to be_truthy
+      expect(RunLoop::CoreSimulator.shutdown_all_booted(options)).to be_truthy
     end
 
-    it 'calls shutdown until timeout' do
-      expect(RunLoop::CoreSimulator).to receive(:shutdown_with_simctl).at_least(:twice).and_return :shutdown
+    it 'times out without an error' do
+      expect(RunLoop::CoreSimulator).to receive(:shutdown_with_simctl).at_least(:once).and_return true
 
-      start = Time.now
-      timeout = 0.1
+      options[:timeout] = 0.01
+      options[:delay] = 0.05
 
-      options =
-            {
-                  :timeout => timeout,
-                  :delay => 0
-            }
-      expect(RunLoop::CoreSimulator.shutdown_all_booted(options)).to be_falsey
-      elapsed = Time.now - start
-      expect(elapsed).to be < timeout + 0.1
+      expect(RunLoop::CoreSimulator.shutdown_all_booted(options)).to be_truthy
     end
   end
 
@@ -82,12 +75,9 @@ describe RunLoop::CoreSimulator do
   describe 'instance methods' do
     before do
       allow(RunLoop::CoreSimulator).to receive(:terminate_core_simulator_processes).and_return true
-      allow(RunLoop::Environment).to receive(:debug?).and_return true
       allow(RunLoop::CoreSimulator).to receive(:term_or_kill).and_return true
       allow_any_instance_of(RunLoop::CoreSimulator).to receive(:rm_instruments_pipe).and_return true
     end
-
-
 
     describe '.new' do
 
