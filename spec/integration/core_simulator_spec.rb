@@ -11,8 +11,27 @@ describe RunLoop::CoreSimulator do
     allow(RunLoop::Environment).to receive(:debug?).and_return true
   end
 
-  it '#launch_simulator' do
-    expect(core_sim.launch_simulator).to be_truthy
+  after do
+    RunLoop::CoreSimulator.terminate_core_simulator_processes
+    sleep 2
+  end
+
+  describe '#launch_simulator' do
+    it 'can launch the simulator' do
+      expect(core_sim.launch_simulator).to be_truthy
+    end
+
+    it 'it does not relaunch if the simulator is already running' do
+      core_sim.launch_simulator
+
+      expect(Process).not_to receive(:spawn)
+
+      core_sim.launch_simulator
+    end
+
+    it 'quits the simulator if it is not the same' do
+
+    end
   end
 
   it '#launch' do
