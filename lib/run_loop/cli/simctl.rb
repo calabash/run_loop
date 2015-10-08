@@ -232,8 +232,8 @@ module RunLoop
           simulators = sim_control.simulators
           if device_from_options.nil?
             default_name = RunLoop::Core.default_simulator
-            device = simulators.detect do |sim|
-              sim.instruments_identifier == default_name
+            device = simulators.find do |sim|
+              sim.instruments_identifier(xcode) == default_name
             end
 
             if device.nil?
@@ -241,9 +241,9 @@ module RunLoop
                     "Could not find a simulator with name that matches '#{device_from_options}'"
             end
           else
-            device = simulators.detect do |sim|
+            device = simulators.find do |sim|
               sim.udid == device_from_options ||
-                    sim.instruments_identifier == device_from_options
+                    sim.instruments_identifier(xcode) == device_from_options
             end
 
             if device.nil?
