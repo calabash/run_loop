@@ -4,6 +4,7 @@ describe RunLoop::CoreSimulator do
     allow(RunLoop::CoreSimulator).to receive(:terminate_core_simulator_processes).and_return true
     allow(RunLoop::Environment).to receive(:debug?).and_return true
     allow(RunLoop::CoreSimulator).to receive(:term_or_kill).and_return true
+    allow_any_instance_of(RunLoop::CoreSimulator).to receive(:rm_instruments_pipe).and_return true
   end
 
   describe '.new' do
