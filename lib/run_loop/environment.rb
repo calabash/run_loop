@@ -96,13 +96,19 @@ module RunLoop
       end
     end
 
-    def self.with_debugging(&block)
-      original_value = ENV['DEBUG']
-      ENV['DEBUG'] = '1'
-      begin
+    def self.with_debugging(debug, &block)
+      if debug
+        original_value = ENV['DEBUG']
+
+        begin
+          ENV['DEBUG'] = '1'
+          block.call
+        ensure
+          ENV['DEBUG'] = original_value
+        end
+
+      else
         block.call
-      ensure
-        ENV['DEBUG'] = original_value
       end
     end
   end

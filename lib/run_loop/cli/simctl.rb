@@ -57,23 +57,14 @@ module RunLoop
         device = options[:device]
 
         if device
-          device = expect_device(options)
-          if debug
-            RunLoop::Environment.with_debugging do
-              launch_simulator(device)
-            end
-          else
+          RunLoop::Environment.with_debugging(debug) do
             launch_simulator(device)
           end
         else
-          if debug
-            RunLoop::Environment.with_debugging do
-              launch_each_simulator
-            end
-          else
-            launch_each_simulator
-          end
+          launch_each_simulator
         end
+
+        manage_processes
       end
 
       no_commands do
