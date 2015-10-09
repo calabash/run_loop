@@ -57,7 +57,7 @@ module RunLoop
 
     # Returns the value of DEVELOPER_DIR
     #
-    # @note Never call this directly.  Always create an XCTool instance
+    # @note Never call this directly.  Always create an Xcode instance
     #   and allow it to derive the path to the Xcode toolchain.
     def self.developer_dir
       value = ENV['DEVELOPER_DIR']
@@ -96,13 +96,19 @@ module RunLoop
       end
     end
 
-    def self.with_debugging(&block)
-      original_value = ENV['DEBUG']
-      ENV['DEBUG'] = '1'
-      begin
+    def self.with_debugging(debug, &block)
+      if debug
+        original_value = ENV['DEBUG']
+
+        begin
+          ENV['DEBUG'] = '1'
+          block.call
+        ensure
+          ENV['DEBUG'] = original_value
+        end
+
+      else
         block.call
-      ensure
-        ENV['DEBUG'] = original_value
       end
     end
   end

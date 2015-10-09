@@ -17,6 +17,9 @@ class RunLoop::CoreSimulator
   attr_reader :xcrun
 
   # @!visibility private
+  attr_reader :simulator_pid
+
+  # @!visibility private
   METADATA_PLIST = '.com.apple.mobile_container_manager.metadata.plist'
 
   # @!visibility private
@@ -126,6 +129,9 @@ class RunLoop::CoreSimulator
     if merged[:quit_sim_on_init]
       RunLoop::CoreSimulator.quit_simulator
     end
+
+    # stdio.pipe - can cause problems finding the SHA or size data dir
+    rm_instruments_pipe
   end
 
   # @!visibility private
@@ -143,8 +149,27 @@ class RunLoop::CoreSimulator
     @xcrun ||= RunLoop::Xcrun.new
   end
 
+  # @!visibility private
+  def simulator_pid
+    @simulator_pid
+  end
+
   # Launch the simulator indicated by device.
   def launch_simulator
+
+    if sim_pid != nil
+      # There is a running simulator.
+
+      # Did we launch it?
+      if sim_pid == simulator_pid
+        # Nothing to do, we already launched the simulator.
+        return
+      else
+        # We did not launch this simulator; quit it.
+        RunLoop::CoreSimulator.quit_simulator
+      end
+    end
+
     args = ['open', '-g', '-a', sim_app_path, '--args', '-CurrentDeviceUDID', device.udid]
 
     RunLoop.log_debug("Launching #{device} with:")
@@ -154,6 +179,9 @@ class RunLoop::CoreSimulator
 
     pid = spawn('xcrun', *args)
     Process.detach(pid)
+
+    # Keep track of the pid so we can know if we have already launched this sim.
+    @simulator_pid = pid
 
     options = { :timeout => 5, :raise_on_timeout => true }
     RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
@@ -246,6 +274,20 @@ class RunLoop::CoreSimulator
 
   private
 
+  # @!visibility private
+  #
+  # This stdio.pipe file causes problems when checking the size and taking the
+  # checksum of the core simulator directory.
+  def rm_instruments_pipe
+    device_tmp_dir = File.join(device_data_dir, 'tmp')
+    Dir.glob("#{device_tmp_dir}/instruments_*/stdio.pipe") do |file|
+      if File.exist?(file)
+        RunLoop.log_debug("Deleting #{file}")
+        FileUtils.rm_rf(file)
+      end
+    end
+  end
+
   # Send 'TERM' then 'KILL' to allow processes to quit cleanly.
   def self.term_or_kill(process_name, send_term_first)
     term_options = { :timeout => 0.5 }
@@ -314,6 +356,7 @@ class RunLoop::CoreSimulator
   # @!visibility private
   def install_app_with_simctl
     launch_simulator
+
     args = ['simctl', 'install', device.udid, app.path]
     xcrun.exec(args, log_cmd: true, timeout: 20)
 
