@@ -96,6 +96,7 @@ module RunLoop
       end
     end
 
+    # !@visibility private
     def self.with_debugging(debug, &block)
       if debug
         original_value = ENV['DEBUG']
