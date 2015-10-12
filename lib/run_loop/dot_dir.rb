@@ -11,11 +11,14 @@ module RunLoop::DotDir
   end
 
   def self.make_results_dir
-    results_dir = File.join(self.directory, 'results')
-    next_results_dir = self.next_timestamped_dirname(results_dir)
+    if RunLoop::Environment.xtc?
+      next_results_dir = Dir.mktmpdir("run_loop")
+    else
+      results_dir = File.join(self.directory, 'results')
+      next_results_dir = self.next_timestamped_dirname(results_dir)
+    end
 
     FileUtils.mkdir_p(next_results_dir)
-
     next_results_dir
   end
 

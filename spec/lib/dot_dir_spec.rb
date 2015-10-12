@@ -40,6 +40,15 @@ describe RunLoop::DotDir do
      expect(actual).to be == expected
      expect(File.exist?(actual)).to be_truthy
    end
+
+   it "on the XTC it uses a var directory" do
+     expect(RunLoop::Environment).to receive(:xtc?).and_return true
+     expected = "./tmp/private/var/db/run_loop-abc"
+     expect(Dir).to receive(:mktmpdir).with("run_loop").and_return expected
+
+     expect(RunLoop::DotDir.make_results_dir).to be == expected
+     expect(File.exist?(expected)).to be_truthy
+   end
  end
 
  it ".timestamped_dirname" do
