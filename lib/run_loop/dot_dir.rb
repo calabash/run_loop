@@ -11,19 +11,12 @@ module RunLoop::DotDir
   end
 
   def self.make_results_dir
-    dot_dir = self.directory
-    results_dir = File.join(dot_dir, 'results', self.timestamped_dirname)
+    results_dir = File.join(self.directory, 'results')
+    next_results_dir = self.next_timestamped_dirname(results_dir)
 
-    # Rather than wait, just increment the second.  Per-second accuracy is not
-    # important; uniqueness is.
-    if File.exist?(results_dir)
-       next_second = results_dir[-1].to_i + 1
-       results_dir = "#{results_dir[0...-1]}#{next_second}"
-    end
+    FileUtils.mkdir_p(next_results_dir)
 
-    FileUtils.mkdir_p(results_dir)
-
-    results_dir
+    next_results_dir
   end
 
   def self.logs_dir
@@ -82,6 +75,27 @@ module RunLoop::DotDir
     tokens = now.split(' ')[0...-1]
     timestamp = tokens.join('_')
     timestamp.gsub!(':', '-')
+  end
+
+  def self.next_timestamped_dirname(base_dir)
+    dir = File.join(base_dir, self.timestamped_dirname)
+
+    # Rather than wait, just increment the second.  Per-second accuracy
+    # is not important; uniqueness is.
+    counter = 0
+    loop do
+      break if !File.exist?(dir)
+      break if counter == 3
+      next_second = dir[-1].to_i + 1
+      dir = "#{dir[0...-1]}#{next_second}"
+      counter = counter + 1
+    end
+
+    # If all else fails, just return a unique UUID
+    if File.exist?(dir)
+      dir = File.join(base_dir, SecureRandom.uuid)
+    end
+    dir
   end
 
   def self.log_to_file(file, message)

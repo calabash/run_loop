@@ -49,6 +49,53 @@ describe RunLoop::DotDir do
    expect(dirname).to be == "2015-10-09_18-56-42"
  end
 
+ describe ".next_timestamped_dir" do
+   let(:base_dir) { File.join(dot_dir, "results") }
+
+   it "increments the second to find unique dirname" do
+     timestamp = "2015-10-09_18-56-42"
+     next_timestamp = "2015-10-09_18-56-43"
+
+     expect(RunLoop::DotDir).to receive(:timestamped_dirname).and_return(timestamp)
+
+     FileUtils.mkdir_p(File.join(dot_dir, "results", timestamp))
+
+     expected = File.join(dot_dir, "results", next_timestamp)
+     actual = RunLoop::DotDir.next_timestamped_dirname(base_dir)
+
+     expect(actual).to be == expected
+     expect(File.exist?(actual)).to be_falsey
+   end
+
+   it "tries 5 times to find unique timestamp then generates a UUID dir" do
+     timestamp = "2015-10-09_18-56-42"
+
+     expect(RunLoop::DotDir).to receive(:timestamped_dirname).once.and_return(timestamp)
+     expect(SecureRandom).to receive(:uuid).and_return("UUID")
+
+     first = File.join(base_dir, timestamp)
+     expect(File).to receive(:exist?).with(first).and_return true
+
+     [
+       "2015-10-09_18-56-43",
+       "2015-10-09_18-56-43",
+       "2015-10-09_18-56-44",
+       "2015-10-09_18-56-45"
+     ].each do |name|
+       candidate = File.join(base_dir, name)
+         allow(File).to receive(:exist?).with(candidate).and_return true
+     end
+
+     expected = File.join(dot_dir, "results", "UUID")
+
+     allow(File).to receive(:exist?).with(expected).and_call_original
+     actual = RunLoop::DotDir.next_timestamped_dirname(base_dir)
+
+     expect(actual).to be == expected
+     expect(File.exist?(actual)).to be_falsey
+   end
+ end
+
  it ".logs_dir" do
    expected = File.join(dot_dir, 'logs')
    actual = RunLoop::DotDir.logs_dir
