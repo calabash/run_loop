@@ -43,6 +43,8 @@ module RunLoop::DotDir
   end
 
   def self.rotate_result_directories
+    return :xtc if RunLoop::Environment.xtc?
+
     start = Time.now
 
     glob = "#{self.directory}/results/*"

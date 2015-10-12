@@ -113,14 +113,14 @@ describe RunLoop::DotDir do
    expect(File.exist?(actual)).to be_truthy
  end
 
- it '.logfile_for_rotate_results' do
+ it ".logfile_for_rotate_results" do
    log = RunLoop::DotDir.logfile_for_rotate_results
 
    expect(File.exist?(log)).to be_truthy
  end
 
- it '.log_to_file' do
-   file = File.join(RunLoop::DotDir.logs_dir, 'some.log')
+ it ".log_to_file" do
+   file = File.join(RunLoop::DotDir.logs_dir, "some.log")
    message = "Hey!"
 
    timestamp = "2015-10-09 15:04:06 +0200"
@@ -134,7 +134,7 @@ describe RunLoop::DotDir do
    expect(actual).to be == expected
  end
 
- describe '.rotate_result_directories' do
+ describe ".rotate_result_directories" do
    let(:generator) do
      Class.new do
        def initialize(dot_dir)
@@ -155,7 +155,7 @@ describe RunLoop::DotDir do
      end.new(dot_dir)
    end
 
-   it 'leaves 5 most recent results' do
+   it "leaves 5 most recent results" do
      generated = generator.generate(10)
 
      counter = 1
@@ -174,6 +174,12 @@ describe RunLoop::DotDir do
      end.sort_by { |f| File.mtime(f) }
 
      expect(actual).to be == generated
+   end
+
+   it "does nothing on the XTC" do
+     expect(RunLoop::Environment).to receive(:xtc?).and_return true
+
+     expect(RunLoop::DotDir.rotate_result_directories).to be == :xtc
    end
  end
 end
