@@ -213,6 +213,8 @@ module RunLoop
     def self.run_with_options(options)
       before = Time.now
 
+      self.prepare(options)
+
       logger = options[:logger]
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
 
@@ -812,6 +814,12 @@ Please update your sources to pass an instance of RunLoop::Instruments))
     # @deprecated 1.0.5
     def self.pids_for_run_loop(run_loop, &block)
       RunLoop::Instruments.new.instruments_pids(&block)
+    end
+
+    private
+
+    def self.prepare(run_options)
+      RunLoop::DotDir.rotate_result_directories
     end
   end
 end
