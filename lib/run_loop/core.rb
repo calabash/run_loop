@@ -238,7 +238,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       log_file = options[:log_path]
       timeout = options[:timeout] || 30
 
-      results_dir = options[:results_dir] || Dir.mktmpdir('run_loop')
+      results_dir = options[:results_dir] || RunLoop::DotDir.make_results_dir
       results_dir_trace = File.join(results_dir, 'trace')
       FileUtils.mkdir_p(results_dir_trace)
 
