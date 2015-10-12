@@ -574,4 +574,28 @@ describe RunLoop::Instruments do
       end
     end
   end
+
+  describe "clearing the /Library cache" do
+    let(:path) { "/Library/Caches/com.apple.dt.instruments" }
+
+    describe ".library_cache_dir" do
+      it "returns the dir path if it exist" do
+        expect(File).to receive(:exist?).with(path).and_return true
+
+        actual = RunLoop::Instruments.send(:library_cache_dir)
+        expect(actual).to be == path
+      end
+
+      it "returns nil otherwise" do
+        expect(File).to receive(:exist?).with(path).and_return false
+
+        actual = RunLoop::Instruments.send(:library_cache_dir)
+        expect(actual).to be_falsey
+      end
+    end
+
+    describe ".instrument_cache_cleanup_lock" do
+
+    end
+  end
 end

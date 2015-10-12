@@ -418,5 +418,18 @@ Please update your sources to pass an instance of RunLoop::Xcode))
                                  'Contents',
                                  'Info.plist'))
     end
+
+    # @!visibility private
+    # Instruments caches files in this directory and it can become quite large
+    # over time; particularly on CI system.
+    def self.library_cache_dir
+      path = "/Library/Caches/com.apple.dt.instruments"
+
+      if File.exist?(path)
+        path
+      else
+        nil
+      end
+    end
   end
 end
