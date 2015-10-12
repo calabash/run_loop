@@ -77,5 +77,48 @@ describe RunLoop::DotDir do
    actual = File.open(file, "r") { |log| log.read }
    expect(actual).to be == expected
  end
+
+ describe '.rotate_result_directories' do
+   let(:generator) do
+     Class.new do
+       def initialize(dot_dir)
+         @dot_dir = dot_dir
+       end
+
+       def generate(n)
+         FileUtils.rm_rf(File.join(@dot_dir, "results"))
+         generated = []
+
+         n.times do
+           file = File.join(@dot_dir, "results", SecureRandom.uuid)
+           FileUtils.mkdir_p(file)
+           generated << file
+         end
+         generated
+       end
+     end.new(dot_dir)
+   end
+
+   it 'leaves 5 most recent results' do
+     generated = generator.generate(10)
+
+     counter = 1
+     generated.each do |dir|
+       new_time =  Time.now + counter
+       expect(File).to receive(:mtime).with(dir).at_least(:once).and_return(new_time)
+       counter = counter + 1
+     end
+
+     generated.shift(5)
+
+     RunLoop::DotDir.rotate_result_directories
+
+     actual = Dir.glob("#{dot_dir}/results/*").select do |entry|
+       !(entry.end_with?('..') || entry.end_with?('.'))
+     end.sort_by { |f| File.mtime(f) }
+
+     expect(actual).to be == generated
+   end
+ end
 end
 

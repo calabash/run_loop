@@ -46,6 +46,35 @@ module RunLoop::DotDir
     logfile
   end
 
+  def self.rotate_result_directories
+    start = Time.now
+
+    glob = "#{self.directory}/results/*"
+
+    RunLoop.log_debug("Searching for run-loop results with glob: #{glob}")
+
+    directories = Dir.glob(glob).select do |path|
+      File.directory?(path)
+    end
+
+    oldest_first = directories.sort_by { |f| File.mtime(f) }
+
+    RunLoop.log_debug("Found #{oldest_first.count} previous run-loop results")
+    oldest_first.pop(5)
+
+    RunLoop.log_debug("Will delete #{oldest_first.count} previous run-loop results")
+
+    oldest_first.each do |path|
+      FileUtils.rm_rf(path)
+    end
+
+    elapsed = Time.now - start
+
+    RunLoop.log_debug("Deleted #{oldest_first.count} previous results in #{elapsed} seconds")
+  rescue StandardError => e
+    RunLoop.log_error("While rotating previous results, encounterd: #{e}")
+  end
+
   private
 
   def self.timestamped_dirname
