@@ -3,8 +3,14 @@ module RunLoop
 
     # Returns the user home directory
     def self.user_home_directory
-      require 'etc'
-      Etc.getpwuid.dir
+      if self.xtc?
+         home = File.join("./", "tmp", "home")
+         FileUtils.mkdir_p(home)
+         home
+      else
+        require 'etc'
+        Etc.getpwuid.dir
+      end
     end
 
     # Returns true if debugging is enabled.
