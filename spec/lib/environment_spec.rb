@@ -2,6 +2,10 @@ describe RunLoop::Environment do
 
   let(:environment) { RunLoop::Environment.new }
 
+  it '.user_home_directory' do
+    expect(File.exist?(RunLoop::Environment.user_home_directory)).to be_truthy
+  end
+
   describe '.debug?' do
     it "returns true when DEBUG == '1'" do
       stub_env('DEBUG', '1')

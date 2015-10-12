@@ -213,6 +213,8 @@ module RunLoop
     def self.run_with_options(options)
       before = Time.now
 
+      self.prepare(options)
+
       logger = options[:logger]
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
 
@@ -238,7 +240,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       log_file = options[:log_path]
       timeout = options[:timeout] || 30
 
-      results_dir = options[:results_dir] || Dir.mktmpdir('run_loop')
+      results_dir = options[:results_dir] || RunLoop::DotDir.make_results_dir
       results_dir_trace = File.join(results_dir, 'trace')
       FileUtils.mkdir_p(results_dir_trace)
 
@@ -812,6 +814,12 @@ Please update your sources to pass an instance of RunLoop::Instruments))
     # @deprecated 1.0.5
     def self.pids_for_run_loop(run_loop, &block)
       RunLoop::Instruments.new.instruments_pids(&block)
+    end
+
+    private
+
+    def self.prepare(run_options)
+      RunLoop::DotDir.rotate_result_directories
     end
   end
 end

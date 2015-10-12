@@ -1,6 +1,12 @@
 module RunLoop
   class Environment
 
+    # Returns the user home directory
+    def self.user_home_directory
+      require 'etc'
+      Etc.getpwuid.dir
+    end
+
     # Returns true if debugging is enabled.
     def self.debug?
       ENV['DEBUG'] == '1'
