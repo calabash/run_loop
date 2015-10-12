@@ -576,9 +576,10 @@ describe RunLoop::Instruments do
   end
 
   describe "clearing the /Library cache" do
-    let(:path) { "/Library/Caches/com.apple.dt.instruments" }
 
     describe ".library_cache_dir" do
+      let(:path) { "/Library/Caches/com.apple.dt.instruments" }
+
       it "returns the dir path if it exist" do
         expect(File).to receive(:exist?).with(path).and_return true
 
@@ -594,8 +595,28 @@ describe RunLoop::Instruments do
       end
     end
 
-    describe ".instrument_cache_cleanup_lock" do
+    describe ".instruments_cache_rotate_lock" do
 
+      let(:dir) { "tmp/.run-loop/locks" }
+      let(:path) { File.join(dir, "instruments_cache_rotate.lock") }
+
+      before do
+        expect(RunLoop::DotDir).to receive(:locks_dir).and_return(dir)
+      end
+
+      it "returns path to the lock file" do
+        expect(File).to receive(:exist?).with(path).and_return true
+
+        actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock)
+        expect(actual).to be_truthy
+      end
+
+      it "returns nil otherwise" do
+        expect(File).to receive(:exist?).with(path).and_return false
+
+        actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock)
+        expect(actual).to be_falsey
+      end
     end
   end
 end

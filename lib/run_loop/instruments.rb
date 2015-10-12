@@ -431,5 +431,19 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         nil
       end
     end
+
+    # @!visibility private
+    #
+    # Cleaning the instruments cache file is an async operation.  Whether
+    # or not a new operation is forked is controlled by a lock file.
+    def self.instruments_cache_rotate_lock
+      lock = File.join(RunLoop::DotDir.locks_dir, "instruments_cache_rotate.lock")
+
+      if File.exist?(lock)
+        lock
+      else
+        nil
+      end
+    end
   end
 end
