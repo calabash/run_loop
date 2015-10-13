@@ -33,8 +33,9 @@ module RunLoop
 
       log_progress = false
       if directories.count > 25
-        RunLoop.log_info2("Found #{directories.count} instruments caches")
+        RunLoop.log_info2("Found #{directories.count} instruments caches: ~#{20 * directories.count} Mb")
         RunLoop.log_info2("Deleting them could take a long time.")
+        RunLoop.log_info2("This delay will only happen once!")
         RunLoop.log_info2("Please be patient and allow the directories to be deleted")
         log_progress = true
       else
