@@ -45,5 +45,10 @@ describe RunLoop do
     it '.log_error' do
       RunLoop.log_error('error')
     end
+
+    # .log_info is already taken by the XTC logger. (>_O)
+    it '.log_info2' do
+      RunLoop.log_info2("info")
+    end
   end
 end
