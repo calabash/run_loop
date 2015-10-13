@@ -420,6 +420,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     end
 
     # @!visibility private
+    #
     # Instruments caches files in this directory and it can become quite large
     # over time; particularly on CI system.
     def self.library_cache_dir
@@ -445,5 +446,17 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         nil
       end
     end
+
+    # @!visibility private
+    #
+    # We don't want to run more than 1 time per-day.
+    def self.instruments_cache_rotate_lock_stale?
+      lock = self.instruments_cache_rotate_lock
+      return true if !lock
+
+      mtime = File.mtime(lock)
+      mtime < (DateTime.now - 1).to_time
+    end
   end
 end
+

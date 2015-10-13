@@ -618,5 +618,43 @@ describe RunLoop::Instruments do
         expect(actual).to be_falsey
       end
     end
+
+    describe ".instruments_cache_rotate_lock_stale?" do
+      let(:dir) { "tmp/.run-loop/locks" }
+      let(:path) { File.join(dir, "instruments_cache_rotate.lock") }
+
+      it "returns true if lock does not exist" do
+        expect(RunLoop::Instruments).to receive(:instruments_cache_rotate_lock).and_return nil
+
+        actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock_stale?)
+        expect(actual).to be_truthy
+      end
+
+      describe "lock file exists" do
+
+        before do
+          FileUtils.rm_rf(dir)
+          FileUtils.mkdir_p(dir)
+          FileUtils.touch(path)
+          expect(RunLoop::Instruments).to receive(:instruments_cache_rotate_lock).and_return path
+        end
+
+        it "returns true if the lock is less than a day old" do
+          yesterday = (DateTime.now - 1).to_time - 10 # seconds
+          expect(File).to receive(:mtime).with(path).and_return yesterday
+
+          actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock_stale?)
+          expect(actual).to be_truthy
+        end
+
+        it "returns false if the lock exists and in younger that a day old" do
+          an_hour_ago = Time.now - (60*60)
+          expect(File).to receive(:mtime).with(path).and_return an_hour_ago
+
+          actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock_stale?)
+          expect(actual).to be_falsey
+        end
+      end
+    end
   end
 end
