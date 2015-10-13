@@ -16,9 +16,9 @@ module RunLoop::DotDir
     else
       results_dir = File.join(self.directory, 'results')
       next_results_dir = self.next_timestamped_dirname(results_dir)
+      FileUtils.mkdir_p(next_results_dir)
     end
 
-    FileUtils.mkdir_p(next_results_dir)
     next_results_dir
   end
 
