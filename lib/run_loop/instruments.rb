@@ -7,6 +7,92 @@ module RunLoop
 
     include RunLoop::Regex
 
+    # @!visibility private
+    #
+    # EXPERIMENTAL - this might not stick around.
+    #
+    # Rotates xrtmp__ directories in /Library/Caches/com.apple.dt.instruments
+    # keeping the last 5.  On CI systems these can be hundreds of gigabytes.
+    def self.rotate_cache_directories(options={})
+
+      # Never run on the XTC
+      return :xtc if RunLoop::Environment.xtc?
+
+      # Some other process is already trying to clean these directories
+      return :locked if !self.instruments_cache_rotate_lock_stale?
+
+      defaults = { :forked => true }
+      merged = defaults.merge(options)
+
+      rotate = lambda do |was_forked|
+        start = Time.now
+        lock_file_owned = false
+
+        begin
+
+          lock_file = self.instruments_cache_rotate_lock
+
+          if !lock_file
+            lock_file = File.join(RunLoop::DotDir.locks_dir, "instruments_cache_rotate.lock")
+          end
+
+          FileUtils.touch(lock_file)
+
+          # If the touch does not raise an exception, we own the lock
+          lock_file_owned = true
+
+          glob = "#{self.library_cache_dir}/xrtmp__*"
+
+          self.log_instruments_cache_rotate("Searching for instruments caches with glob: #{glob}")
+
+          directories = Dir.glob(glob).select do |path|
+            File.directory?(path)
+          end
+
+          oldest_first = directories.sort_by { |f| File.mtime(f) }
+
+          self.log_instruments_cache_rotate("Found #{oldest_first.count} instruments caches")
+          oldest_first.pop(5)
+
+          self.log_instruments_cache_rotate("Will delete #{oldest_first.count} instruments caches")
+
+          oldest_first.each do |path|
+            FileUtils.rm_rf(path)
+          end
+
+          elapsed = Time.now - start
+
+          self.log_instruments_cache_rotate("Deleted #{oldest_first.count} instruments caches in #{elapsed} seconds")
+        rescue StandardError => e
+          self.log_instruments_cache_rotate("While rotating instruments caches, encounterd: #{e}")
+          stack = Kernel.caller[0..6].join("\n")
+          stack.split("\n").each do |line|
+            self.log_instruments_cache_rotate(line)
+          end
+        ensure
+          # We touched the lock file, so we are responsible for deleting it.
+          if lock_file_owned
+            FileUtils.rm_rf(self.instruments_cache_rotate_lock)
+          end
+
+          if was_forked
+            exit!(true)
+          end
+        end
+      end
+
+      if merged[:forked]
+        pid = Process.fork do
+          rotate.call(true)
+        end
+        Process.detach(pid)
+        pid
+      else
+        rotate.call(false)
+        :not_forked
+      end
+    end
+
     attr_reader :xcode
 
     def pbuddy
@@ -477,7 +563,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
 
     # @!visibility private
     #
-    # Cleaning the instruments cache file is an asynch operation.  We need
+    # Cleaning the instruments cache file is an async operation.  We need
     # to do blocking writes.
     def self.log_instruments_cache_rotate(message)
 
