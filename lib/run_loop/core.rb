@@ -820,6 +820,8 @@ Please update your sources to pass an instance of RunLoop::Instruments))
 
     def self.prepare(run_options)
       RunLoop::DotDir.rotate_result_directories
+      RunLoop::Instruments.rotate_cache_directories
+      true
     end
   end
 end
