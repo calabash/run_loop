@@ -2,8 +2,18 @@ describe RunLoop::Environment do
 
   let(:environment) { RunLoop::Environment.new }
 
-  it '.user_home_directory' do
-    expect(File.exist?(RunLoop::Environment.user_home_directory)).to be_truthy
+  describe ".user_home_directory" do
+    it "always returns a directory that exists" do
+      expect(File.exist?(RunLoop::Environment.user_home_directory)).to be_truthy
+    end
+
+    it "returns local ./tmp/home on the XTC" do
+      expect(RunLoop::Environment).to receive(:xtc?).and_return true
+
+      expected = File.join("./", "tmp", "home")
+      expect(RunLoop::Environment.user_home_directory).to be == expected
+      expect(File.exist?(expected)).to be_truthy
+    end
   end
 
   describe '.debug?' do
