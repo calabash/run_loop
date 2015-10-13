@@ -26,21 +26,6 @@ describe RunLoop::DotDir do
      expect(File.exist?(actual)).to be_truthy
    end
 
-   it "returns a unique timestamped directory" do
-     timestamp = "2015-10-09_18-56-42"
-     next_timestamp = "2015-10-09_18-56-43"
-
-     expect(RunLoop::DotDir).to receive(:timestamped_dirname).and_return(timestamp)
-
-     FileUtils.mkdir_p(File.join(dot_dir, 'results', timestamp))
-
-     expected = File.join(dot_dir, 'results', next_timestamp)
-     actual = RunLoop::DotDir.make_results_dir
-
-     expect(actual).to be == expected
-     expect(File.exist?(actual)).to be_truthy
-   end
-
    it "on the XTC it uses a var directory" do
      expect(RunLoop::Environment).to receive(:xtc?).and_return true
 
@@ -54,11 +39,25 @@ describe RunLoop::DotDir do
    end
  end
 
- it ".timestamped_dirname" do
-   expect(Time).to receive(:now).and_return "2015-10-09 18:56:42 +0200"
+ describe ".timestamped_dirname" do
+   let(:now) { Time.now }
+   let(:future) { now + 1 }
 
-   dirname = RunLoop::DotDir.send(:timestamped_dirname)
-   expect(dirname).to be == "2015-10-09_18-56-42"
+   it "returns a human readable timestamp" do
+     expected = now.strftime("%Y-%m-%d_%H-%M-%S")
+     expect(Time).to receive(:now).and_return(now)
+
+     dirname = RunLoop::DotDir.send(:timestamped_dirname)
+     expect(dirname).to be == expected
+   end
+
+   it "adds seconds based on the argument" do
+     expected = future.strftime("%Y-%m-%d_%H-%M-%S")
+     expect(Time).to receive(:now).and_return(now)
+
+     dirname = RunLoop::DotDir.send(:timestamped_dirname, 1)
+     expect(dirname).to be == expected
+   end
  end
 
  describe ".next_timestamped_dir" do
@@ -67,10 +66,10 @@ describe RunLoop::DotDir do
    it "increments the second to find unique dirname" do
      timestamp = "2015-10-09_18-56-42"
      next_timestamp = "2015-10-09_18-56-43"
-
-     expect(RunLoop::DotDir).to receive(:timestamped_dirname).and_return(timestamp)
-
      FileUtils.mkdir_p(File.join(dot_dir, "results", timestamp))
+
+     expect(RunLoop::DotDir).to receive(:timestamped_dirname).once.and_return(timestamp)
+     expect(RunLoop::DotDir).to receive(:timestamped_dirname).with(1).once.and_return(next_timestamp)
 
      expected = File.join(dot_dir, "results", next_timestamp)
      actual = RunLoop::DotDir.next_timestamped_dirname(base_dir)
@@ -80,27 +79,23 @@ describe RunLoop::DotDir do
    end
 
    it "tries 5 times to find unique timestamp then generates a UUID dir" do
-     timestamp = "2015-10-09_18-56-42"
-
-     expect(RunLoop::DotDir).to receive(:timestamped_dirname).once.and_return(timestamp)
-     expect(SecureRandom).to receive(:uuid).and_return("UUID")
-
-     first = File.join(base_dir, timestamp)
-     expect(File).to receive(:exist?).with(first).and_return true
-
-     [
-       "2015-10-09_18-56-43",
+     values = [
+       "2015-10-09_18-56-42",
        "2015-10-09_18-56-43",
        "2015-10-09_18-56-44",
-       "2015-10-09_18-56-45"
-     ].each do |name|
-       candidate = File.join(base_dir, name)
-         allow(File).to receive(:exist?).with(candidate).and_return true
+       "2015-10-09_18-56-45",
+       "2015-10-09_18-56-46"
+     ]
+
+     expect(RunLoop::DotDir).to receive(:timestamped_dirname).and_return(*values)
+
+     values.each do |name|
+       FileUtils.mkdir_p(File.join(dot_dir, "results", name))
      end
 
+     expect(SecureRandom).to receive(:uuid).and_return("UUID")
      expected = File.join(dot_dir, "results", "UUID")
 
-     allow(File).to receive(:exist?).with(expected).and_call_original
      actual = RunLoop::DotDir.next_timestamped_dirname(base_dir)
 
      expect(actual).to be == expected

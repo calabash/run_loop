@@ -75,25 +75,22 @@ module RunLoop::DotDir
 
   private
 
-  def self.timestamped_dirname
-    now = Time.now.to_s
-    tokens = now.split(' ')[0...-1]
-    timestamp = tokens.join('_')
-    timestamp.gsub!(':', '-')
+  def self.timestamped_dirname(plus_seconds = 0)
+    (Time.now + plus_seconds).strftime("%Y-%m-%d_%H-%M-%S")
   end
 
   def self.next_timestamped_dirname(base_dir)
     dir = File.join(base_dir, self.timestamped_dirname)
+    return dir if !File.exist?(dir)
 
     # Rather than wait, just increment the second.  Per-second accuracy
     # is not important; uniqueness is.
     counter = 0
     loop do
       break if !File.exist?(dir)
-      break if counter == 3
-      next_second = dir[-1].to_i + 1
-      dir = "#{dir[0...-1]}#{next_second}"
+      break if counter == 4
       counter = counter + 1
+      dir = File.join(base_dir, self.timestamped_dirname(counter))
     end
 
     # If all else fails, just return a unique UUID
