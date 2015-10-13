@@ -22,26 +22,6 @@ module RunLoop::DotDir
     next_results_dir
   end
 
-  def self.logs_dir
-   log_dir = File.join(self.directory, 'logs')
-
-   if !File.exist?(log_dir)
-     FileUtils.mkdir_p(log_dir)
-   end
-
-   log_dir
-  end
-
-  def self.logfile_for_rotate_results
-    logfile = File.join(self.logs_dir, 'rotate-results.log')
-
-    if !File.exist?(logfile)
-      FileUtils.touch(logfile)
-    end
-
-    logfile
-  end
-
   def self.rotate_result_directories
     return :xtc if RunLoop::Environment.xtc?
 
@@ -98,21 +78,6 @@ module RunLoop::DotDir
       dir = File.join(base_dir, SecureRandom.uuid)
     end
     dir
-  end
-
-  def self.log_to_file(file, message)
-
-    timestamp = Time.now
-    dated = "#{timestamp} #{message}"
-
-    File.open(file, "a") do |log|
-      begin
-        log.write("#{dated}\n")
-        log.flush
-      rescue StandardError => e
-        RunLoop.log_error("Writing to #{file} generated this error: #{e}")
-      end
-    end
   end
 end
 

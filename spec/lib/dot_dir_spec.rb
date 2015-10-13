@@ -103,35 +103,6 @@ describe RunLoop::DotDir do
    end
  end
 
- it ".logs_dir" do
-   expected = File.join(dot_dir, 'logs')
-   actual = RunLoop::DotDir.logs_dir
-
-   expect(actual).to be == expected
-   expect(File.exist?(actual)).to be_truthy
- end
-
- it ".logfile_for_rotate_results" do
-   log = RunLoop::DotDir.logfile_for_rotate_results
-
-   expect(File.exist?(log)).to be_truthy
- end
-
- it ".log_to_file" do
-   file = File.join(RunLoop::DotDir.logs_dir, "some.log")
-   message = "Hey!"
-
-   timestamp = "2015-10-09 15:04:06 +0200"
-   expect(Time).to receive(:now).and_return(timestamp)
-
-   expected = "#{timestamp} #{message}\n"
-
-   RunLoop::DotDir.log_to_file(file, message)
-
-   actual = File.open(file, "r") { |log| log.read }
-   expect(actual).to be == expected
- end
-
  describe ".rotate_result_directories" do
    let(:generator) do
      Class.new do
