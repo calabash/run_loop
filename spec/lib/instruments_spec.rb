@@ -11,6 +11,86 @@ describe RunLoop::Instruments do
     Resources.shared.kill_fake_instruments_process
   }
 
+  describe ".rotate_cache_directories" do
+    let(:cache_dir) { "./tmp/cache" }
+
+    let(:generator) do
+      Class.new do
+        def initialize(cache_dir)
+          @cache_dir = cache_dir
+        end
+
+        def generate(n)
+          FileUtils.rm_rf(@cache_dir)
+          FileUtils.mkdir_p(@cache_dir)
+          generated = []
+
+          n.times do
+            file = File.join(@cache_dir, "xrtmp__#{SecureRandom.uuid}")
+            FileUtils.mkdir_p(file)
+            generated << file
+
+            # Make some other directories because we only match on xrtmp__
+            file = File.join(@cache_dir, SecureRandom.uuid)
+            FileUtils.mkdir_p(file)
+          end
+          generated
+        end
+      end.new(cache_dir)
+    end
+
+    it "does nothing on the XTC" do
+      expect(RunLoop::Environment).to receive(:xtc?).and_return true
+
+      expect(RunLoop::Instruments.rotate_cache_directories).to be == :xtc
+    end
+
+    it "does nothing if the cache directory does not exist" do
+      expect(RunLoop::Instruments).to receive(:library_cache_dir).and_return nil
+
+      expect(RunLoop::Instruments.rotate_cache_directories).to be == :no_cache
+    end
+
+    it "leaves 5 most recent results" do
+      allow(RunLoop::Environment).to receive(:debug?).and_return true
+      expect(RunLoop::Instruments).to receive(:library_cache_dir).and_return cache_dir
+      generated = generator.generate(10)
+
+      counter = 1
+      generated.each do |dir|
+        new_time =  Time.now + counter
+        expect(File).to receive(:mtime).with(dir).at_least(:once).and_return(new_time)
+        counter = counter + 1
+      end
+
+      generated.shift(5)
+
+      actual = RunLoop::Instruments.rotate_cache_directories
+      expect(actual).to be_truthy
+
+      actual = Dir.glob("#{cache_dir}/xrtmp__*").select do |entry|
+        !(entry.end_with?('..') || entry.end_with?('.'))
+      end.sort_by { |f| File.mtime(f) }
+
+      expect(actual).to be == generated
+
+      actual = Dir.entries(cache_dir).select do |entry|
+        !(entry.end_with?('..') || entry.end_with?('.'))
+      end
+
+      expect(actual.count).to be == 15
+    end
+
+    it "does extra, non-optional, logging if > 25 directories are found" do
+      allow(RunLoop::Environment).to receive(:debug?).and_return true
+      expect(RunLoop::Instruments).to receive(:library_cache_dir).and_return cache_dir
+      generator.generate(100)
+
+      actual = RunLoop::Instruments.rotate_cache_directories
+      expect(actual).to be_truthy
+    end
+  end
+
   describe '.new' do
     it 'creates a new RunLoop::Instruments instance' do
       expect(RunLoop::Instruments.new).to be_a RunLoop::Instruments
@@ -574,4 +654,23 @@ describe RunLoop::Instruments do
       end
     end
   end
+
+  describe ".library_cache_dir" do
+    let(:path) { "/Library/Caches/com.apple.dt.instruments" }
+
+    it "returns the dir path if it exist" do
+      expect(File).to receive(:exist?).with(path).and_return true
+
+      actual = RunLoop::Instruments.send(:library_cache_dir)
+      expect(actual).to be == path
+    end
+
+    it "returns nil otherwise" do
+      expect(File).to receive(:exist?).with(path).and_return false
+
+      actual = RunLoop::Instruments.send(:library_cache_dir)
+      expect(actual).to be_falsey
+    end
+  end
 end
+
