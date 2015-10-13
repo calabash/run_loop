@@ -656,5 +656,109 @@ describe RunLoop::Instruments do
         end
       end
     end
+
+    describe "Logging instruments cache rotate" do
+      let(:logs_dir) { "./tmp/logs" }
+      let(:log_file) { File.join(logs_dir, "instruments-cache-rotate.log") }
+      let(:pids) { [] }
+
+      before do
+        FileUtils.rm_rf(logs_dir)
+        FileUtils.mkdir_p(logs_dir)
+        allow(RunLoop::DotDir).to receive(:logs_dir).and_return(logs_dir)
+      end
+
+      after do
+        pids.each do |pid|
+          begin
+            Process.kill("TERM", pid)
+          rescue Errno::ESRCH => _
+            # No pid found
+          rescue Errno::EPERM => _
+            # Don't have permission
+          rescue SignalException => _
+            # Anything else?
+          end
+        end
+      end
+
+      it ".instruments_cache_rotate_log_file" do
+
+        actual = RunLoop::Instruments.send(:instruments_cache_rotate_log)
+        expect(actual).to be == log_file
+        expect(File.exist?(actual)).to be_truthy
+      end
+
+      describe ".log_instruments_cache_rotate" do
+
+        it "logs messages" do
+          expect(Time).to receive(:now).and_return "< timestamp >"
+          RunLoop::Instruments.send(:log_instruments_cache_rotate, "Hey!")
+
+          expected = "< timestamp > Hey!\n"
+          actual = File.read(log_file)
+          expect(actual).to be == expected
+        end
+
+        it "can handle async writes" do
+
+          write = lambda do |pid_list, message|
+            pid = Process.fork do
+              begin
+                RunLoop::Instruments.send(:log_instruments_cache_rotate, message)
+              rescue => e
+                # Don't fail silently during testing!
+                RunLoop.log_error("Caught #{e} trying an async write in rspec test")
+              ensure
+                exit!(true)
+              end
+            end
+            Process.detach(pid)
+            pid_list << pid
+          end
+
+          write.call(pids, "Hey!")
+          write.call(pids, "You!")
+          write.call(pids, "Get off of my cloud!")
+
+          tries = 100
+          log = nil
+          contents = nil
+          begin
+
+            if !File.exist?(log_file)
+              raise "Log file does not exist yet!"
+            end
+
+            log = File.open(log_file, "r")
+
+            if !log.flock(File::LOCK_NB|File::LOCK_EX)
+              raise "File locked!"
+            else
+              contents = log.read
+              if contents[/Get off of my cloud/, 0]
+                RunLoop.log_debug("Found it!")
+              else
+                raise "Last line not logged yet!"
+              end
+            end
+          rescue => e
+            RunLoop.log_error("Async logging test raised '#{e}'")
+            tries -= 1
+            log.close if log && !log.closed?
+            if tries > 0
+              sleep(0.05)
+              retry
+            end
+          ensure
+            log.close if log && !log.closed?
+          end
+
+          expect(contents).not_to be == nil
+          expect(contents.split("\n").last[/Get off of my cloud/, 0]).to be_truthy
+        end
+      end
+    end
   end
 end
+

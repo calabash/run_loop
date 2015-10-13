@@ -457,6 +457,54 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       mtime = File.mtime(lock)
       mtime < (DateTime.now - 1).to_time
     end
+
+    # @!visibility private
+    #
+    # Cleaning the instruments cache file is an async operation.  We will log
+    # results to a file.
+    def self.instruments_cache_rotate_log
+      log = File.join(RunLoop::DotDir.logs_dir, "instruments-cache-rotate.log")
+
+      begin
+        FileUtils.touch(log)
+      rescue StandardError => e
+        # File might be locked
+        RunLoop.log_error("Touching file generated: #{e}")
+        puts.flush
+      end
+      log
+    end
+
+    # @!visibility private
+    #
+    # Cleaning the instruments cache file is an asynch operation.  We need
+    # to do blocking writes.
+    def self.log_instruments_cache_rotate(message)
+
+      log_file = self.instruments_cache_rotate_log
+
+      timestamp = Time.now
+      dated = "#{timestamp} #{message}"
+
+      file = nil
+      tries = 100
+      begin
+        file = File.open(log_file, "a")
+        file.flock(File::LOCK_EX)
+        file.write("#{dated}\n")
+        file.flush
+      rescue => _
+        file.close if file && !file.closed?
+
+        tries -= 1
+        if tries > 0
+          sleep(0.01)
+          retry
+        end
+      ensure
+        file.close if file && !file.closed?
+      end
+    end
   end
 end
 
