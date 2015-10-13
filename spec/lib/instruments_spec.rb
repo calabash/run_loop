@@ -39,38 +39,20 @@ describe RunLoop::Instruments do
       end.new(cache_dir)
     end
 
-    let(:options) { { :forked => false } }
-
-    let(:pid) { nil }
-
-    after do
-     if pid
-       begin
-         Process.kill("TERM", pid)
-       rescue Errno::ESRCH => _
-         # No pid found
-       rescue Errno::EPERM => _
-         # Don't have permission
-       rescue SignalException => _
-         # Anything else?
-       end
-     end
-    end
-
     it "does nothing on the XTC" do
       expect(RunLoop::Environment).to receive(:xtc?).and_return true
 
-      expect(RunLoop::Instruments.rotate_cache_directories(options)).to be == :xtc
+      expect(RunLoop::Instruments.rotate_cache_directories).to be == :xtc
     end
 
-    it "does nothing if the lock file is not stale" do
-      method = :instruments_cache_rotate_lock_stale?
-      expect(RunLoop::Instruments).to receive(method).and_return false
+    it "does nothing if the cache directory does not exist" do
+      expect(RunLoop::Instruments).to receive(:library_cache_dir).and_return nil
 
-      expect(RunLoop::Instruments.rotate_cache_directories(options)).to be == :locked
+      expect(RunLoop::Instruments.rotate_cache_directories).to be == :no_cache
     end
 
     it "leaves 5 most recent results" do
+      allow(RunLoop::Environment).to receive(:debug?).and_return true
       expect(RunLoop::Instruments).to receive(:library_cache_dir).and_return cache_dir
       generated = generator.generate(10)
 
@@ -83,8 +65,8 @@ describe RunLoop::Instruments do
 
       generated.shift(5)
 
-      actual = RunLoop::Instruments.rotate_cache_directories(options)
-      expect(actual).to be == :not_forked
+      actual = RunLoop::Instruments.rotate_cache_directories
+      expect(actual).to be_truthy
 
       actual = Dir.glob("#{cache_dir}/xrtmp__*").select do |entry|
         !(entry.end_with?('..') || entry.end_with?('.'))
@@ -99,12 +81,13 @@ describe RunLoop::Instruments do
       expect(actual.count).to be == 15
     end
 
-    it "forks by default" do
+    it "does extra, non-optional, logging if > 25 directories are found" do
+      allow(RunLoop::Environment).to receive(:debug?).and_return true
       expect(RunLoop::Instruments).to receive(:library_cache_dir).and_return cache_dir
-      generator.generate(10)
+      generator.generate(100)
 
-      pid = RunLoop::Instruments.rotate_cache_directories
-      expect(pid).to be_truthy
+      actual = RunLoop::Instruments.rotate_cache_directories
+      expect(actual).to be_truthy
     end
   end
 
@@ -672,189 +655,21 @@ describe RunLoop::Instruments do
     end
   end
 
-  describe "clearing the /Library cache" do
+  describe ".library_cache_dir" do
+    let(:path) { "/Library/Caches/com.apple.dt.instruments" }
 
-    describe ".library_cache_dir" do
-      let(:path) { "/Library/Caches/com.apple.dt.instruments" }
+    it "returns the dir path if it exist" do
+      expect(File).to receive(:exist?).with(path).and_return true
 
-      it "returns the dir path if it exist" do
-        expect(File).to receive(:exist?).with(path).and_return true
-
-        actual = RunLoop::Instruments.send(:library_cache_dir)
-        expect(actual).to be == path
-      end
-
-      it "returns nil otherwise" do
-        expect(File).to receive(:exist?).with(path).and_return false
-
-        actual = RunLoop::Instruments.send(:library_cache_dir)
-        expect(actual).to be_falsey
-      end
+      actual = RunLoop::Instruments.send(:library_cache_dir)
+      expect(actual).to be == path
     end
 
-    describe ".instruments_cache_rotate_lock" do
+    it "returns nil otherwise" do
+      expect(File).to receive(:exist?).with(path).and_return false
 
-      let(:dir) { "tmp/.run-loop/locks" }
-      let(:path) { File.join(dir, "instruments_cache_rotate.lock") }
-
-      before do
-        expect(RunLoop::DotDir).to receive(:locks_dir).and_return(dir)
-      end
-
-      it "returns path to the lock file" do
-        expect(File).to receive(:exist?).with(path).and_return true
-
-        actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock)
-        expect(actual).to be_truthy
-      end
-
-      it "returns nil otherwise" do
-        expect(File).to receive(:exist?).with(path).and_return false
-
-        actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock)
-        expect(actual).to be_falsey
-      end
-    end
-
-    describe ".instruments_cache_rotate_lock_stale?" do
-      let(:dir) { "tmp/.run-loop/locks" }
-      let(:path) { File.join(dir, "instruments_cache_rotate.lock") }
-
-      it "returns true if lock does not exist" do
-        expect(RunLoop::Instruments).to receive(:instruments_cache_rotate_lock).and_return nil
-
-        actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock_stale?)
-        expect(actual).to be_truthy
-      end
-
-      describe "lock file exists" do
-
-        before do
-          FileUtils.rm_rf(dir)
-          FileUtils.mkdir_p(dir)
-          FileUtils.touch(path)
-          expect(RunLoop::Instruments).to receive(:instruments_cache_rotate_lock).and_return path
-        end
-
-        it "returns true if the lock is less than a day old" do
-          yesterday = (DateTime.now - 1).to_time - 10 # seconds
-          expect(File).to receive(:mtime).with(path).and_return yesterday
-
-          actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock_stale?)
-          expect(actual).to be_truthy
-        end
-
-        it "returns false if the lock exists and in younger that a day old" do
-          an_hour_ago = Time.now - (60*60)
-          expect(File).to receive(:mtime).with(path).and_return an_hour_ago
-
-          actual = RunLoop::Instruments.send(:instruments_cache_rotate_lock_stale?)
-          expect(actual).to be_falsey
-        end
-      end
-    end
-
-    describe "Logging instruments cache rotate" do
-      let(:logs_dir) { "./tmp/logs" }
-      let(:log_file) { File.join(logs_dir, "instruments-cache-rotate.log") }
-      let(:pids) { [] }
-
-      before do
-        FileUtils.rm_rf(logs_dir)
-        FileUtils.mkdir_p(logs_dir)
-        allow(RunLoop::DotDir).to receive(:logs_dir).and_return(logs_dir)
-      end
-
-      after do
-        pids.each do |pid|
-          begin
-            Process.kill("TERM", pid)
-          rescue Errno::ESRCH => _
-            # No pid found
-          rescue Errno::EPERM => _
-            # Don't have permission
-          rescue SignalException => _
-            # Anything else?
-          end
-        end
-      end
-
-      it ".instruments_cache_rotate_log_file" do
-
-        actual = RunLoop::Instruments.send(:instruments_cache_rotate_log)
-        expect(actual).to be == log_file
-        expect(File.exist?(actual)).to be_truthy
-      end
-
-      describe ".log_instruments_cache_rotate" do
-
-        it "logs messages" do
-          expect(Time).to receive(:now).and_return "< timestamp >"
-          RunLoop::Instruments.send(:log_instruments_cache_rotate, "Hey!")
-
-          expected = "< timestamp > Hey!\n"
-          actual = File.read(log_file)
-          expect(actual).to be == expected
-        end
-
-        it "can handle async writes" do
-
-          write = lambda do |pid_list, message|
-            pid = Process.fork do
-              begin
-                RunLoop::Instruments.send(:log_instruments_cache_rotate, message)
-              rescue => e
-                # Don't fail silently during testing!
-                RunLoop.log_error("Caught #{e} trying an async write in rspec test")
-              ensure
-                exit!(true)
-              end
-            end
-            Process.detach(pid)
-            pid_list << pid
-          end
-
-          write.call(pids, "Hey!")
-          write.call(pids, "You!")
-          write.call(pids, "Get off of my cloud!")
-
-          tries = 100
-          log = nil
-          contents = nil
-          begin
-
-            if !File.exist?(log_file)
-              raise "Log file does not exist yet!"
-            end
-
-            log = File.open(log_file, "r")
-
-            if !log.flock(File::LOCK_NB|File::LOCK_EX)
-              raise "File locked!"
-            else
-              contents = log.read
-              if contents[/Get off of my cloud/, 0]
-                RunLoop.log_debug("Found it!")
-              else
-                raise "Last line not logged yet!"
-              end
-            end
-          rescue => e
-            RunLoop.log_error("Async logging test raised '#{e}'")
-            tries -= 1
-            log.close if log && !log.closed?
-            if tries > 0
-              sleep(0.05)
-              retry
-            end
-          ensure
-            log.close if log && !log.closed?
-          end
-
-          expect(contents).not_to be == nil
-          expect(contents.split("\n").last[/Get off of my cloud/, 0]).to be_truthy
-        end
-      end
+      actual = RunLoop::Instruments.send(:library_cache_dir)
+      expect(actual).to be_falsey
     end
   end
 end

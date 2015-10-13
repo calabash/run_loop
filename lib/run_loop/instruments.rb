@@ -9,88 +9,68 @@ module RunLoop
 
     # @!visibility private
     #
-    # EXPERIMENTAL - this might not stick around.
-    #
     # Rotates xrtmp__ directories in /Library/Caches/com.apple.dt.instruments
     # keeping the last 5.  On CI systems these can be hundreds of gigabytes.
-    def self.rotate_cache_directories(options={})
+    def self.rotate_cache_directories
 
       # Never run on the XTC
       return :xtc if RunLoop::Environment.xtc?
 
-      # Some other process is already trying to clean these directories
-      return :locked if !self.instruments_cache_rotate_lock_stale?
+      cache = self.library_cache_dir
 
-      defaults = { :forked => true }
-      merged = defaults.merge(options)
+      # If the directory does not exist, do nothing.
+      return :no_cache if !cache || !File.exist?(cache)
 
-      rotate = lambda do |was_forked|
-        start = Time.now
-        lock_file_owned = false
+      start = Time.now
 
-        begin
+      glob = "#{cache}/xrtmp__*"
 
-          lock_file = self.instruments_cache_rotate_lock
+      RunLoop.log_debug("Searching for instruments caches with glob: #{glob}")
 
-          if !lock_file
-            lock_file = File.join(RunLoop::DotDir.locks_dir, "instruments_cache_rotate.lock")
-          end
-
-          FileUtils.touch(lock_file)
-
-          # If the touch does not raise an exception, we own the lock
-          lock_file_owned = true
-
-          glob = "#{self.library_cache_dir}/xrtmp__*"
-
-          self.log_instruments_cache_rotate("Searching for instruments caches with glob: #{glob}")
-
-          directories = Dir.glob(glob).select do |path|
-            File.directory?(path)
-          end
-
-          oldest_first = directories.sort_by { |f| File.mtime(f) }
-
-          self.log_instruments_cache_rotate("Found #{oldest_first.count} instruments caches")
-          oldest_first.pop(5)
-
-          self.log_instruments_cache_rotate("Will delete #{oldest_first.count} instruments caches")
-
-          oldest_first.each do |path|
-            FileUtils.rm_rf(path)
-          end
-
-          elapsed = Time.now - start
-
-          self.log_instruments_cache_rotate("Deleted #{oldest_first.count} instruments caches in #{elapsed} seconds")
-        rescue StandardError => e
-          self.log_instruments_cache_rotate("While rotating instruments caches, encounterd: #{e}")
-          stack = Kernel.caller[0..6].join("\n")
-          stack.split("\n").each do |line|
-            self.log_instruments_cache_rotate(line)
-          end
-        ensure
-          # We touched the lock file, so we are responsible for deleting it.
-          if lock_file_owned
-            FileUtils.rm_rf(self.instruments_cache_rotate_lock)
-          end
-
-          if was_forked
-            exit!(true)
-          end
-        end
+      directories = Dir.glob(glob).select do |path|
+        File.directory?(path)
       end
 
-      if merged[:forked]
-        pid = Process.fork do
-          rotate.call(true)
-        end
-        Process.detach(pid)
-        pid
+      log_progress = false
+      if directories.count > 25
+        RunLoop.log_info2("Found #{directories.count} instruments caches")
+        RunLoop.log_info2("Deleting them could take a long time.")
+        RunLoop.log_info2("Please be patient and allow the directories to be deleted")
+        log_progress = true
       else
-        rotate.call(false)
-        :not_forked
+        RunLoop.log_debug("Found #{directories.count} instruments caches")
       end
+
+      if log_progress
+        RunLoop.log_info2("Sorting instruments caches by modification time...")
+      end
+
+      oldest_first = directories.sort_by { |f| File.mtime(f) }
+
+      oldest_first.pop(5)
+
+      if log_progress
+        RunLoop.log_info2("Will delete #{oldest_first.count} instruments caches...")
+      else
+        RunLoop.log_debug("Will delete #{oldest_first.count} instruments caches")
+      end
+
+      oldest_first.each do |path|
+        FileUtils.rm_rf(path)
+        if log_progress
+          printf "."
+        end
+      end
+
+      elapsed = Time.now - start
+
+      if log_progress
+        puts ""
+        RunLoop.log_info2("Deleted #{oldest_first.count} instruments caches in #{elapsed} seconds")
+      else
+        RunLoop.log_debug("Deleted #{oldest_first.count} instruments caches in #{elapsed} seconds")
+      end
+      true
     end
 
     attr_reader :xcode
@@ -516,79 +496,6 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         path
       else
         nil
-      end
-    end
-
-    # @!visibility private
-    #
-    # Cleaning the instruments cache file is an async operation.  Whether
-    # or not a new operation is forked is controlled by a lock file.
-    def self.instruments_cache_rotate_lock
-      lock = File.join(RunLoop::DotDir.locks_dir, "instruments_cache_rotate.lock")
-
-      if File.exist?(lock)
-        lock
-      else
-        nil
-      end
-    end
-
-    # @!visibility private
-    #
-    # We don't want to run more than 1 time per-day.
-    def self.instruments_cache_rotate_lock_stale?
-      lock = self.instruments_cache_rotate_lock
-      return true if !lock
-
-      mtime = File.mtime(lock)
-      mtime < (DateTime.now - 1).to_time
-    end
-
-    # @!visibility private
-    #
-    # Cleaning the instruments cache file is an async operation.  We will log
-    # results to a file.
-    def self.instruments_cache_rotate_log
-      log = File.join(RunLoop::DotDir.logs_dir, "instruments-cache-rotate.log")
-
-      begin
-        FileUtils.touch(log)
-      rescue StandardError => e
-        # File might be locked
-        RunLoop.log_error("Touching file generated: #{e}")
-        puts.flush
-      end
-      log
-    end
-
-    # @!visibility private
-    #
-    # Cleaning the instruments cache file is an async operation.  We need
-    # to do blocking writes.
-    def self.log_instruments_cache_rotate(message)
-
-      log_file = self.instruments_cache_rotate_log
-
-      timestamp = Time.now
-      dated = "#{timestamp} #{message}"
-
-      file = nil
-      tries = 100
-      begin
-        file = File.open(log_file, "a")
-        file.flock(File::LOCK_EX)
-        file.write("#{dated}\n")
-        file.flush
-      rescue => _
-        file.close if file && !file.closed?
-
-        tries -= 1
-        if tries > 0
-          sleep(0.01)
-          retry
-        end
-      ensure
-        file.close if file && !file.closed?
       end
     end
   end
