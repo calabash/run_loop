@@ -118,10 +118,10 @@ describe RunLoop::Environment do
       end
 
       it 'APP' do
+        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return(nil)
         allow(ENV).to receive(:[]).with('APP').and_return('')
-        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
       end
 
       it 'both' do
@@ -130,6 +130,15 @@ describe RunLoop::Environment do
         allow(ENV).to receive(:[]).with('APP').and_return('')
         expect(RunLoop::Environment.path_to_app_bundle).to be == nil
       end
+    end
+
+    it "expands relative paths" do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return("./CalSmoke-cal.app")
+
+      dirname = File.dirname(__FILE__)
+      expected = File.expand_path(File.join(dirname, '..', '..', "CalSmoke-cal.app"))
+      expect(RunLoop::Environment.path_to_app_bundle).to be == expected
     end
   end
 

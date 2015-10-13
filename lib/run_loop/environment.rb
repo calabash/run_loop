@@ -63,7 +63,7 @@ module RunLoop
       if !value || value == ''
         nil
       else
-        value
+        File.expand_path(value)
       end
     end
 
