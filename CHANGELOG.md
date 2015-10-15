@@ -1,19 +1,40 @@
 ## Change Log
 
+### 1.5.6
+
+Many thanks to everyone who filed issues for this release.
+
+* Rotate /Library/Cache/com.app.dt.instruments directories #304
+* By default, run-loop writes results to ~/.run-loop/results and manages
+  these directories #299
+* Fix CLI simctl install/uninstall: CoreSim manages stdio.pipe and
+  'remembers' that it already launched the simulator #297
+* Improve Directory.directory\_digest and
+  Device#simulator\_wait\_for\_stable\_state interaction #296
+* Xcode 7: command line tools that use Simctl::Bridge are broken
+  (blocking) #289
+* Device#simulator\_data\_dir\_size is timing out #287 @carmbruster
+* Xcode 7.1 beta 2: instruments and simctl need to filter out Apple TV
+  from known simulators #283
+* Running out of disk space because of cached instruments files #276
+  - @nfrydenholm, @TeresaP, @mholtman
+* Expand APP (and APP\_BUNDLE\_PATH) path before launching instruments
+  #255 @ark-konopacki
+
 ### 1.5.5
 
 Many thanks to everyone who filed issues.  We really appreciate it.  If
 I missed an attribution, let me know. -jjm
 
 * Simulator: should manage the 'iproxy' process #279 @cryophobia
-* Gem: ruby_files glob should catch only ruby files #274 @svevang
+* Gem: ruby\_files glob should catch only ruby files #274 @svevang
 * Fix blocking reads in Xcrun when consuming large output of commands #270
   - @kennethjiang, @kamstrup
 * Instruments#version extracts version from Instruments.app Info.plist #269 @gdknutel
 * Increase the default timeout for Xcrun.exec #268 @gdknutel
 * Manage assetsd process #267
 * Improve integration examples: part 1 #266
-* Core.simulator_target? should match simulators created by users #262
+* Core.simulator\_target? should match simulators created by users #262
 
 ### 1.5.4
 
