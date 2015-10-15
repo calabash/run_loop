@@ -58,7 +58,7 @@ module RunLoop
 
         if device
           RunLoop::Environment.with_debugging(debug) do
-            launch_simulator(device)
+            launch_simulator(device, xcode)
           end
         else
           launch_each_simulator
@@ -69,16 +69,14 @@ module RunLoop
 
       no_commands do
         def launch_each_simulator
-          sim_control = RunLoop::SimControl.new
           sim_control.simulators.each do |simulator|
-            launch_simulator(simulator, sim_control)
+            launch_simulator(simulator, xcode)
           end
         end
 
-        def launch_simulator(simulator, sim_control=RunLoop::SimControl.new)
-          core_sim = RunLoop::LifeCycle::CoreSimulator.new(nil,
-                                                           simulator,
-                                                           sim_control)
+        def launch_simulator(simulator, xcode)
+          core_sim = RunLoop::CoreSimulator.new(simulator, nil,
+                                                           {:xcode => xcode})
           core_sim.launch_simulator
         end
       end
