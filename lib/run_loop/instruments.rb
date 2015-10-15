@@ -7,6 +7,73 @@ module RunLoop
 
     include RunLoop::Regex
 
+    # @!visibility private
+    #
+    # Rotates xrtmp__ directories in /Library/Caches/com.apple.dt.instruments
+    # keeping the last 5.  On CI systems these can be hundreds of gigabytes.
+    def self.rotate_cache_directories
+
+      # Never run on the XTC
+      return :xtc if RunLoop::Environment.xtc?
+
+      cache = self.library_cache_dir
+
+      # If the directory does not exist, do nothing.
+      return :no_cache if !cache || !File.exist?(cache)
+
+      start = Time.now
+
+      glob = "#{cache}/xrtmp__*"
+
+      RunLoop.log_debug("Searching for instruments caches with glob: #{glob}")
+
+      directories = Dir.glob(glob).select do |path|
+        File.directory?(path)
+      end
+
+      log_progress = false
+      if directories.count > 25
+        RunLoop.log_info2("Found #{directories.count} instruments caches: ~#{20 * directories.count} Mb")
+        RunLoop.log_info2("Deleting them could take a long time.")
+        RunLoop.log_info2("This delay will only happen once!")
+        RunLoop.log_info2("Please be patient and allow the directories to be deleted")
+        log_progress = true
+      else
+        RunLoop.log_debug("Found #{directories.count} instruments caches")
+      end
+
+      if log_progress
+        RunLoop.log_info2("Sorting instruments caches by modification time...")
+      end
+
+      oldest_first = directories.sort_by { |f| File.mtime(f) }
+
+      oldest_first.pop(5)
+
+      if log_progress
+        RunLoop.log_info2("Will delete #{oldest_first.count} instruments caches...")
+      else
+        RunLoop.log_debug("Will delete #{oldest_first.count} instruments caches")
+      end
+
+      oldest_first.each do |path|
+        FileUtils.rm_rf(path)
+        if log_progress
+          printf "."
+        end
+      end
+
+      elapsed = Time.now - start
+
+      if log_progress
+        puts ""
+        RunLoop.log_info2("Deleted #{oldest_first.count} instruments caches in #{elapsed} seconds")
+      else
+        RunLoop.log_debug("Deleted #{oldest_first.count} instruments caches in #{elapsed} seconds")
+      end
+      true
+    end
+
     attr_reader :xcode
 
     def pbuddy
@@ -192,7 +259,8 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         fetch_devices[:out].chomp.split("\n").map do |line|
           stripped = line.strip
           if line_is_simulator?(stripped) &&
-                !line_is_simulator_paired_with_watch?(stripped)
+                !line_is_simulator_paired_with_watch?(stripped) &&
+                !line_is_apple_tv?(stripped)
 
             version = stripped[VERSION_REGEX, 0]
 
@@ -403,6 +471,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     end
 
     # @!visibility private
+    def line_is_apple_tv?(line)
+      line[/Apple TV/, 0]
+    end
+
+    # @!visibility private
     def path_to_instruments_app_plist
       @path_to_instruments_app_plist ||=
             File.expand_path(File.join(xcode.developer_dir,
@@ -412,5 +485,20 @@ Please update your sources to pass an instance of RunLoop::Xcode))
                                  'Contents',
                                  'Info.plist'))
     end
+
+    # @!visibility private
+    #
+    # Instruments caches files in this directory and it can become quite large
+    # over time; particularly on CI system.
+    def self.library_cache_dir
+      path = "/Library/Caches/com.apple.dt.instruments"
+
+      if File.exist?(path)
+        path
+      else
+        nil
+      end
+    end
   end
 end
+

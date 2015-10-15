@@ -271,9 +271,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     # TODO needs unit tests.
     def simulator_data_dir_size
       path = File.join(simulator_root_dir, 'data')
-      args = ['du', '-m', '-d', '0', path]
-      hash = xcrun.exec(args)
-      hash[:out].split(' ').first.to_i
+      RunLoop::Directory.size(path, :mb)
     end
 
     # @!visibility private
@@ -316,13 +314,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       current_sha = nil
       sha_fn = lambda do |data_dir|
         begin
-          # Directory.directory_digest has a blocking read.  Typically, it
-          # returns in < 0.3 seconds.
+          # Typically, this returns in < 0.3 seconds.
           Timeout.timeout(2, TimeoutError) do
             RunLoop::Directory.directory_digest(data_dir)
           end
-        rescue => e
-          RunLoop.log_error(e) if RunLoop::Environment.debug?
+        rescue => _
           SecureRandom.uuid
         end
       end
@@ -387,7 +383,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
         io.close if io && !io.closed?
       end
 
-      line
+      if line
+        line.chomp
+      else
+        line
+      end
     end
 
     # @!visibility private

@@ -1,6 +1,18 @@
 module RunLoop
   class Environment
 
+    # Returns the user home directory
+    def self.user_home_directory
+      if self.xtc?
+         home = File.join("./", "tmp", "home")
+         FileUtils.mkdir_p(home)
+         home
+      else
+        require 'etc'
+        Etc.getpwuid.dir
+      end
+    end
+
     # Returns true if debugging is enabled.
     def self.debug?
       ENV['DEBUG'] == '1'
@@ -51,13 +63,13 @@ module RunLoop
       if !value || value == ''
         nil
       else
-        value
+        File.expand_path(value)
       end
     end
 
     # Returns the value of DEVELOPER_DIR
     #
-    # @note Never call this directly.  Always create an XCTool instance
+    # @note Never call this directly.  Always create an Xcode instance
     #   and allow it to derive the path to the Xcode toolchain.
     def self.developer_dir
       value = ENV['DEVELOPER_DIR']
@@ -96,13 +108,20 @@ module RunLoop
       end
     end
 
-    def self.with_debugging(&block)
-      original_value = ENV['DEBUG']
-      ENV['DEBUG'] = '1'
-      begin
+    # !@visibility private
+    def self.with_debugging(debug, &block)
+      if debug
+        original_value = ENV['DEBUG']
+
+        begin
+          ENV['DEBUG'] = '1'
+          block.call
+        ensure
+          ENV['DEBUG'] = original_value
+        end
+
+      else
         block.call
-      ensure
-        ENV['DEBUG'] = original_value
       end
     end
   end

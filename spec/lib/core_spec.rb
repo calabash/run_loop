@@ -6,6 +6,13 @@ describe RunLoop::Core do
   let(:xcode) { sim_control.xcode }
   let(:instruments) { RunLoop::Instruments.new }
 
+  it '.prepare' do
+    # Rotates results directories
+    expect(RunLoop::DotDir).to receive(:rotate_result_directories).and_return true
+
+    expect(RunLoop::Core.send(:prepare, {})).to be == true
+  end
+
   describe '.automation_template' do
 
     it 'respects the TRACE_TEMPLATE env var if the tracetemplate exists' do

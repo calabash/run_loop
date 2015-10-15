@@ -2,6 +2,20 @@ describe RunLoop::Environment do
 
   let(:environment) { RunLoop::Environment.new }
 
+  describe ".user_home_directory" do
+    it "always returns a directory that exists" do
+      expect(File.exist?(RunLoop::Environment.user_home_directory)).to be_truthy
+    end
+
+    it "returns local ./tmp/home on the XTC" do
+      expect(RunLoop::Environment).to receive(:xtc?).and_return true
+
+      expected = File.join("./", "tmp", "home")
+      expect(RunLoop::Environment.user_home_directory).to be == expected
+      expect(File.exist?(expected)).to be_truthy
+    end
+  end
+
   describe '.debug?' do
     it "returns true when DEBUG == '1'" do
       stub_env('DEBUG', '1')
@@ -104,10 +118,10 @@ describe RunLoop::Environment do
       end
 
       it 'APP' do
+        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return(nil)
         allow(ENV).to receive(:[]).with('APP').and_return('')
-        expect(RunLoop::Environment.path_to_app_bundle).to be == nil
       end
 
       it 'both' do
@@ -116,6 +130,15 @@ describe RunLoop::Environment do
         allow(ENV).to receive(:[]).with('APP').and_return('')
         expect(RunLoop::Environment.path_to_app_bundle).to be == nil
       end
+    end
+
+    it "expands relative paths" do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('APP_BUNDLE_PATH').and_return("./CalSmoke-cal.app")
+
+      dirname = File.dirname(__FILE__)
+      expected = File.expand_path(File.join(dirname, '..', '..', "CalSmoke-cal.app"))
+      expect(RunLoop::Environment.path_to_app_bundle).to be == expected
     end
   end
 
@@ -152,20 +175,6 @@ describe RunLoop::Environment do
 
       stub_env('CAL_SIM_POST_LAUNCH_WAIT', true)
       expect(RunLoop::Environment.sim_post_launch_wait).to be == nil
-    end
-  end
-
-  describe '.with_debugging' do
-    it 'respects the original value of DEBUG' do
-      stub_env('DEBUG', '10')
-      begin
-        Luffa::Debug.with_debugging do
-          raise 'Ack!'
-        end
-      rescue RuntimeError => _
-
-      end
-      expect(ENV['DEBUG']).to be == '10'
     end
   end
 end

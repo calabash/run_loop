@@ -59,6 +59,12 @@ module RunLoop
     end
   end
 
+  # .log_info is already taken by the XTC logger. (>_O)
+  # green
+  def self.log_info2(msg)
+    puts self.green(" INFO: #{msg}") if msg
+  end
+
   # red
   def self.log_error(msg)
     puts self.red("ERROR: #{msg}") if msg
@@ -100,5 +106,10 @@ module RunLoop
   # @!visibility private
   def self.cyan(string)
     colorize(string, 36)
+  end
+
+  # @!visibility private
+  def self.green(string)
+    colorize(string, 32)
   end
 end

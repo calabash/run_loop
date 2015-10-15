@@ -57,37 +57,26 @@ module RunLoop
         device = options[:device]
 
         if device
-          device = expect_device(options)
-          if debug
-            RunLoop::Environment.with_debugging do
-              launch_simulator(device)
-            end
-          else
-            launch_simulator(device)
+          RunLoop::Environment.with_debugging(debug) do
+            launch_simulator(device, xcode)
           end
         else
-          if debug
-            RunLoop::Environment.with_debugging do
-              launch_each_simulator
-            end
-          else
-            launch_each_simulator
-          end
+          launch_each_simulator
         end
+
+        manage_processes
       end
 
       no_commands do
         def launch_each_simulator
-          sim_control = RunLoop::SimControl.new
           sim_control.simulators.each do |simulator|
-            launch_simulator(simulator, sim_control)
+            launch_simulator(simulator, xcode)
           end
         end
 
-        def launch_simulator(simulator, sim_control=RunLoop::SimControl.new)
-          core_sim = RunLoop::LifeCycle::CoreSimulator.new(nil,
-                                                           simulator,
-                                                           sim_control)
+        def launch_simulator(simulator, xcode)
+          core_sim = RunLoop::CoreSimulator.new(simulator, nil,
+                                                           {:xcode => xcode})
           core_sim.launch_simulator
         end
       end
@@ -120,6 +109,14 @@ module RunLoop
           @sim_control ||= RunLoop::SimControl.new
         end
 
+        def xcode
+          @xcode ||= RunLoop::Xcode.new
+        end
+
+        def xcrun
+          @xcrun ||= RunLoop::Xcrun.new
+        end
+
         def booted_device
           sim_control.simulators.detect(nil) do |device|
             device.state == 'Booted'
@@ -127,7 +124,7 @@ module RunLoop
         end
       end
 
-      desc 'install --app [OPTIONS]', 'Installs an app on a device'
+      desc 'install --app [OPTIONS]', 'Installs an app on a device.'
 
       method_option 'app',
                     :desc => 'Path to a .app bundle to launch on simulator.',
@@ -141,13 +138,6 @@ module RunLoop
                     :required => false,
                     :type => :string
 
-      method_option 'force',
-                    :desc => 'Force a re-install the existing app.',
-                    :aliases => '-f',
-                    :required => false,
-                    :default => false,
-                    :type => :boolean
-
       method_option 'debug',
                     :desc => 'Enable debug logging.',
                     :aliases => '-v',
@@ -155,75 +145,38 @@ module RunLoop
                     :default => false,
                     :type => :boolean
 
+      method_option 'reset-app-sandbox',
+                    :desc => 'If the app is already installed, erase the app data.',
+                    :aliases => '-r',
+                    :default => false,
+                    :type => :boolean
+
+      method_option 'force',
+                    :desc => 'Force a re-install the existing app. Deprecated 1.5.6.',
+                    :aliases => '-f',
+                    :required => false,
+                    :default => false,
+                    :type => :boolean
+
       def install
         debug = options[:debug]
-
-        if debug
-          ENV['DEBUG'] = '1'
-        end
-
-        debug_logging = RunLoop::Environment.debug?
 
         device = expect_device(options)
         app = expect_app(options, device)
 
-        bridge = RunLoop::Simctl::Bridge.new(device, app.path)
+        core_sim = RunLoop::CoreSimulator.new(device, app)
 
-        xcode = bridge.sim_control.xcode
-        if xcode.version >= RunLoop::Version.new('7.0')
-          puts "ERROR: Xcode #{xcode.version.to_s} detected."
-          puts "ERROR: Apple's simctl install/uninstall is broken for this version of Xcode."
-          puts "ERROR: See the following links for details:"
-          puts "ERROR: https://forums.developer.apple.com/message/51922"
-          puts "ERROR: https://github.com/calabash/run_loop/issues/235"
-          puts "ERROR: exiting 1"
-          exit 1
-        end
+        RunLoop::Environment.with_debugging(debug) do
+          if options['reset-app-sandbox']
 
-        force_reinstall = options[:force]
-
-        before = Time.now
-
-        if bridge.app_is_installed?
-          if debug_logging
-            puts "App with bundle id '#{app.bundle_identifier}' is already installed."
-          end
-
-          if force_reinstall
-            if debug_logging
-              puts 'Will force a re-install.'
-            end
-            bridge.uninstall
-            bridge.install
-          else
-            new_digest = RunLoop::Directory.directory_digest(app.path)
-            if debug_logging
-              puts "      New app has SHA: '#{new_digest}'."
-            end
-            installed_app_bundle = bridge.fetch_app_dir
-            old_digest = RunLoop::Directory.directory_digest(installed_app_bundle)
-            if debug_logging
-              puts "Installed app has SHA: '#{old_digest}'."
-            end
-            if new_digest != old_digest
-              if debug_logging
-                puts "Will re-install '#{app.bundle_identifier}' because the SHAs don't match."
-              end
-              bridge.uninstall
-              bridge.install
+            if core_sim.app_is_installed?
+              RunLoop.log_debug('Resetting the app sandbox')
+              core_sim.uninstall_app_and_sandbox
             else
-              if debug_logging
-                puts "Will not re-install '#{app.bundle_identifier}' because the SHAs match."
-              end
+              RunLoop.log_debug('App is not installed; skipping sandbox reset')
             end
           end
-        else
-          bridge.install
-        end
-
-        if debug_logging
-          "Launching took #{Time.now-before} seconds"
-          puts "Installed '#{app.bundle_identifier}' on #{device} in #{Time.now-before} seconds."
+          core_sim.install
         end
       end
 
@@ -233,8 +186,8 @@ module RunLoop
           simulators = sim_control.simulators
           if device_from_options.nil?
             default_name = RunLoop::Core.default_simulator
-            device = simulators.detect do |sim|
-              sim.instruments_identifier == default_name
+            device = simulators.find do |sim|
+              sim.instruments_identifier(xcode) == default_name
             end
 
             if device.nil?
@@ -242,9 +195,9 @@ module RunLoop
                     "Could not find a simulator with name that matches '#{device_from_options}'"
             end
           else
-            device = simulators.detect do |sim|
+            device = simulators.find do |sim|
               sim.udid == device_from_options ||
-                    sim.instruments_identifier == device_from_options
+                    sim.instruments_identifier(xcode) == device_from_options
             end
 
             if device.nil?

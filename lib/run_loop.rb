@@ -2,6 +2,7 @@ require 'run_loop/regex'
 require 'run_loop/directory'
 require 'run_loop/environment'
 require 'run_loop/logging'
+require 'run_loop/dot_dir'
 require 'run_loop/xcrun'
 require 'run_loop/xcode'
 require 'run_loop/l10n'
@@ -24,9 +25,7 @@ require 'run_loop/cache/cache'
 require 'run_loop/host_cache'
 require 'run_loop/patches/awesome_print'
 require 'run_loop/patches/retriable'
-require 'run_loop/life_cycle/simulator'
-require 'run_loop/life_cycle/core_simulator'
-require 'run_loop/simctl/bridge'
+require 'run_loop/core_simulator'
 require 'run_loop/simctl/plists'
 
 module RunLoop
@@ -59,13 +58,13 @@ module RunLoop
   def self.run(options={})
 
     if RunLoop::Instruments.new.instruments_app_running?
-      msg =
-          [
-              "Please quit the Instruments.app.",
-              "If Instruments.app is open, the instruments command line",
-              "tool cannot take control of your application."
-          ]
-      raise msg.join("\n")
+      raise %q(The Instruments.app is open.
+
+If the Instruments.app is open, the instruments command line tool cannot take
+control of your application.
+
+Please quit the Instruments.app and try again.)
+
     end
 
     uia_strategy = options[:uia_strategy]
