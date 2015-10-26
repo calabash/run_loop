@@ -30,8 +30,7 @@ module RunLoop
 
     # Injects a dylib into a a currently running process.
     def inject_dylib
-      debug_logging = RunLoop::Environment.debug?
-      puts "Starting lldb." if debug_logging
+      RunLoop.log_debug("Starting lldb.")
 
       stderr_output = nil
       lldb_status = nil
@@ -45,7 +44,7 @@ module RunLoop
         stdin.puts 'EOF'
         stdin.close
 
-        puts "#{stdout.read}" if debug_logging
+        puts "#{stdout.read}"
 
         lldb_status = process_status
         stderr_output = stderr.read.strip
@@ -54,17 +53,12 @@ module RunLoop
       pid = lldb_status.pid
       exit_status = lldb_status.value.exitstatus
 
+      RunLoop.log_debug("lldb '#{pid}' exited with value '#{exit_status}'.")
       if stderr_output == ''
-        if debug_logging
-          puts "lldb '#{pid}' exited with value '#{exit_status}'."
-          puts "Took #{Time.now-lldb_start_time} for lldb to inject calabash dylib."
-        end
+        RunLoop.log_debug("Took #{Time.now-lldb_start_time} for lldb to inject calabash dylib.")
       else
         puts "#{stderr_output}"
-        if debug_logging
-          puts "lldb '#{pid}' exited with value '#{exit_status}'."
-          puts "lldb tried for  #{Time.now-lldb_start_time} to inject calabash dylib before giving up."
-        end
+        RunLoop.log_debug("lldb tried for  #{Time.now-lldb_start_time} to inject calabash dylib before giving up.")
       end
 
       stderr_output == ''
