@@ -18,6 +18,9 @@ module RunLoop
     # @return [String] The dylib_path
     attr_reader :dylib_path
 
+    # @!visibility private
+    attr_reader :xcrun
+
     # Create a new dylib injector.
     # @param [String] process_name The name of the process to inject the dylib
     #  into.  This should be obtained by inspecting the Info.plist in the app
@@ -28,40 +31,36 @@ module RunLoop
       @dylib_path = dylib_path
     end
 
+    def xcrun
+      @xcrun ||= RunLoop::Xcrun.new
+    end
+
     # Injects a dylib into a a currently running process.
     def inject_dylib
       RunLoop.log_debug("Starting lldb.")
 
-      stderr_output = nil
-      lldb_status = nil
-      lldb_start_time = Time.now
-      Open3.popen3('sh') do |stdin, stdout, stderr, process_status|
-        stdin.puts 'xcrun lldb --no-lldbinit<<EOF'
-        stdin.puts "process attach -n '#{@process_name}'"
-        stdin.puts "expr (void*)dlopen(\"#{@dylib_path}\", 0x2)"
-        stdin.puts 'detach'
-        stdin.puts 'exit'
-        stdin.puts 'EOF'
-        stdin.close
+      script_path = write_script
 
-        puts "#{stdout.read.force_encoding("utf-8")}"
+      start = Time.now
+      args = ["lldb", "--no-lldbinit", "--source", script_path]
+      hash = xcrun.exec(args, {:log_cmd => true})
 
-        lldb_status = process_status
-        stderr_output = stderr.read.force_encoding("utf-8").strip
-      end
+      puts hash[:out]
 
-      pid = lldb_status.pid
-      exit_status = lldb_status.value.exitstatus
+      pid = hash[:pid]
+      exit_status = hash[:exit_status]
 
       RunLoop.log_debug("lldb '#{pid}' exited with value '#{exit_status}'.")
-      if stderr_output == ''
-        RunLoop.log_debug("Took #{Time.now-lldb_start_time} for lldb to inject calabash dylib.")
+
+      success = exit_status == 0
+      elapsed = Time.now - start
+      if success
+        RunLoop.log_debug("Took #{elapsed} seconds for lldb to inject calabash dylib.")
       else
-        puts "#{stderr_output}"
-        RunLoop.log_debug("lldb tried for  #{Time.now-lldb_start_time} to inject calabash dylib before giving up.")
+        RunLoop.log_debug("lldb tried for #{elapsed} seconds to inject calabash dylib before giving up.")
       end
 
-      stderr_output == ''
+      success
     end
 
     def inject_dylib_with_timeout(timeout)
