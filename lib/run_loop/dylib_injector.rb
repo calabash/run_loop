@@ -44,10 +44,10 @@ module RunLoop
         stdin.puts 'EOF'
         stdin.close
 
-        puts "#{stdout.read}"
+        puts "#{stdout.read.force_encoding("utf-8")}"
 
         lldb_status = process_status
-        stderr_output = stderr.read.strip
+        stderr_output = stderr.read.force_encoding("utf-8").strip
       end
 
       pid = lldb_status.pid
