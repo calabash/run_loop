@@ -106,5 +106,24 @@ module RunLoop
       end
       true
     end
+
+    private
+
+    def write_script
+      script = File.join(DotDir.directory, "inject-dylib.lldb")
+
+      if File.exist?(script)
+        FileUtils.rm_rf(script)
+      end
+
+      File.open(script, "w") do |file|
+        file.write("process attach -n \"#{process_name}\"\n")
+        file.write("expr (void*)dlopen(\"#{dylib_path}\", 0x2)\n")
+        file.write("detach\n")
+        file.write("exit\n")
+      end
+
+      script
+    end
   end
 end
