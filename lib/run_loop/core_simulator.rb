@@ -207,8 +207,7 @@ class RunLoop::CoreSimulator
     exit_status = hash[:exit_status]
 
     if exit_status != 0
-      err = hash[:err]
-      RunLoop.log_error(err)
+      RunLoop.log_error(hash[:out])
       raise RuntimeError, "Could not launch #{app.bundle_identifier} on #{device}"
     end
 
