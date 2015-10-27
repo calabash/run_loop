@@ -1,8 +1,8 @@
 describe RunLoop do
 
-  before(:each) {
-    RunLoop::SimControl.terminate_all_sims
-  }
+  before(:each) do
+    RunLoop::CoreSimulator.quit_simulator
+  end
 
   describe 'run on simulator' do
     it "Xcode #{Resources.shared.current_xcode_version}" do
