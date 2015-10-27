@@ -35,71 +35,87 @@ module RunLoop
       @xcrun ||= RunLoop::Xcrun.new
     end
 
+    def lldb_process(script_path)
+
+      cmd = ["xcrun", "lldb", "--no-lldbinit",
+             "--source", script_path]
+      if RunLoop::Environment.debug?
+        RunLoop.log_unix_cmd(cmd.join(" "))
+      end
+      process = ChildProcess.build(*cmd)
+      process.leader = true
+
+      process.io.inherit!
+
+      process
+    end
+
     # Injects a dylib into a a currently running process.
-    def inject_dylib
-      RunLoop.log_debug("Starting lldb.")
+    def inject_dylib(timeout)
+      RunLoop.log_debug("Starting lldb injection with a timeout of #{timeout} seconds")
 
       script_path = write_script
 
       start = Time.now
-      args = ["lldb", "--no-lldbinit", "--source", script_path]
-      hash = xcrun.exec(args, {:log_cmd => true})
 
-      puts hash[:out]
+      options = {
+        :timeout => timeout,
+        :log_cmd => true
+      }
 
-      pid = hash[:pid]
-      exit_status = hash[:exit_status]
+      hash = nil
+      success = false
+      begin
+        hash = xcrun.exec(["lldb", "--no-lldbinit", "--source", script_path], options)
+        pid = hash[:pid]
+        exit_status = hash[:exit_status]
+        success = exit_status == 0
 
-      RunLoop.log_debug("lldb '#{pid}' exited with value '#{exit_status}'.")
+        RunLoop.log_debug("lldb '#{pid}' exited with value '#{exit_status}'.")
 
-      success = exit_status == 0
-      elapsed = Time.now - start
-      if success
-        RunLoop.log_debug("Took #{elapsed} seconds for lldb to inject calabash dylib.")
-      else
+        success = exit_status == 0
+        elapsed = Time.now - start
+
+        if success
+          RunLoop.log_debug("Took #{elapsed} seconds for lldb to inject calabash dylib.")
+        else
+          RunLoop.log_debug("Could not inject dylib after #{elapsed} seconds.")
+          if hash[:out]
+            hash[:out].split("\n").each do |line|
+              RunLoop.log_debug(line)
+            end
+          else
+            RunLoop.log_debug("lldb returned no output to stdout or stderr")
+          end
+        end
+      rescue RunLoop::Xcrun::TimeoutError
         RunLoop.log_debug("lldb tried for #{elapsed} seconds to inject calabash dylib before giving up.")
       end
 
       success
     end
 
-    def inject_dylib_with_timeout(timeout)
-      success = false
-      Timeout.timeout(timeout) do
-        success = inject_dylib
-      end
-      success
-    end
-
     def retriable_inject_dylib(options={})
       default_options = {:tries => 3,
-                         :interval => 5,
-                         :timeout => 10}
+                         # interval is retriable 2.0 for :timeout
+                         :interval => 20}
       merged_options = default_options.merge(options)
 
-      debug_logging = RunLoop::Environment.debug?
-
       on_retry = Proc.new do |_, try, elapsed_time, next_interval|
-        if debug_logging
-          # Retriable 2.0
-          if elapsed_time && next_interval
-            puts "LLDB: attempt #{try} failed in '#{elapsed_time}'; will retry in '#{next_interval}'"
-          else
-            puts "LLDB: attempt #{try} failed; will retry in #{merged_options[:interval]}"
-          end
+        # Retriable 2.0
+        if elapsed_time && next_interval
+          RunLoop.log_debug("LLDB: attempt #{try} failed in '#{elapsed_time}'; will retry in '#{next_interval}'")
+        else
+          RunLoop.log_debug("LLDB: attempt #{try} failed; will retry in #{merged_options[:interval]}")
         end
-        RunLoop::LLDB.kill_lldb_processes
-        RunLoop::ProcessWaiter.new('lldb').wait_for_none
       end
 
       tries = merged_options[:tries]
       interval = merged_options[:interval]
       retry_opts = RunLoop::RetryOpts.tries_and_interval(tries, interval, {:on_retry => on_retry})
 
-      # For some reason, :timeout does not work here;
-      # the lldb process can hang indefinitely.
       Retriable.retriable(retry_opts) do
-        unless inject_dylib_with_timeout merged_options[:timeout]
+        unless inject_dylib(interval)
           raise RuntimeError, "Could not inject dylib"
         end
       end
