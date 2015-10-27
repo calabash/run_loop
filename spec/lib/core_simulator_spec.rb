@@ -4,6 +4,19 @@ describe RunLoop::CoreSimulator do
     allow(RunLoop::Environment).to receive(:debug?).and_return true
   end
 
+  describe ".simulator_pid" do
+
+    after do
+      RunLoop::CoreSimulator.class_variable_set(:@@simulator_pid, nil)
+    end
+
+    it "sets the class variable" do
+      RunLoop::CoreSimulator.simulator_pid = :foo
+      expect(RunLoop::CoreSimulator.class_variable_get(:@@simulator_pid)).to be == :foo
+      expect(RunLoop::CoreSimulator.simulator_pid).to be == :foo
+    end
+  end
+
   it '.quit_simulator' do
     expect(RunLoop::CoreSimulator).to receive(:term_or_kill).at_least(:once).and_return true
 

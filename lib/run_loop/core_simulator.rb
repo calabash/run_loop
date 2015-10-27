@@ -2,6 +2,9 @@
 class RunLoop::CoreSimulator
 
   # @!visibility private
+  @@simulator_pid = nil
+
+  # @!visibility private
   attr_reader :app
 
   # @!visibility private
@@ -15,9 +18,6 @@ class RunLoop::CoreSimulator
 
   # @!visibility private
   attr_reader :xcrun
-
-  # @!visibility private
-  attr_reader :simulator_pid
 
   # @!visibility private
   METADATA_PLIST = '.com.apple.mobile_container_manager.metadata.plist'
@@ -111,6 +111,16 @@ class RunLoop::CoreSimulator
     end
   end
 
+  # @!visibility private
+  def self.simulator_pid
+    @@simulator_pid
+  end
+
+  # @!visibility private
+  def self.simulator_pid=(pid)
+    @@simulator_pid = pid
+  end
+
   # @param [RunLoop::Device] device The device.
   # @param [RunLoop::App] app The application.
   # @param [Hash] options Controls the behavior of this class.
@@ -149,11 +159,6 @@ class RunLoop::CoreSimulator
     @xcrun ||= RunLoop::Xcrun.new
   end
 
-  # @!visibility private
-  def simulator_pid
-    @simulator_pid
-  end
-
   # Launch the simulator indicated by device.
   def launch_simulator
 
@@ -181,7 +186,7 @@ class RunLoop::CoreSimulator
     Process.detach(pid)
 
     # Keep track of the pid so we can know if we have already launched this sim.
-    @simulator_pid = pid
+    self.simulator_pid = pid
 
     options = { :timeout => 5, :raise_on_timeout => true }
     RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
