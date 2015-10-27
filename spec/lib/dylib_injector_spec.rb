@@ -1,15 +1,16 @@
 describe RunLoop::DylibInjector do
 
   let(:executable) { "app name" }
-  let(:dylib) { "/some/path" }
+  let(:dylib) { "/some/path with spaces/lib.dylib" }
+  let(:escaped) { Shellwords.shellescape(dylib) }
   let(:lldb) { RunLoop::DylibInjector.new(executable, dylib) }
 
   it '.new' do
     expect(lldb.process_name).to be == executable
     expect(lldb.instance_variable_get(:@process_name)).to be == executable
 
-    expect(lldb.dylib_path).to be == dylib
-    expect(lldb.instance_variable_get(:@dylib_path)).to be == dylib
+    expect(lldb.dylib_path).to be == escaped
+    expect(lldb.instance_variable_get(:@dylib_path)).to be == escaped
   end
 
   it "#xcrun" do
@@ -23,7 +24,7 @@ describe RunLoop::DylibInjector do
     script = File.join(RunLoop::DotDir.directory, "inject-dylib.lldb")
 
     line0 = "process attach -n \"#{executable}\""
-    line1 = "expr (void*)dlopen(\"#{dylib}\", 0x2)"
+    line1 = "expr (void*)dlopen(\"#{escaped}\", 0x2)"
     line2 = "detach"
     line3 = "exit"
 

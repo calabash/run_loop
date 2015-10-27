@@ -38,7 +38,7 @@ module RunLoop
     # @param [String] dylib_path The path the dylib to inject.
     def initialize(process_name, dylib_path)
       @process_name = process_name
-      @dylib_path = dylib_path
+      @dylib_path = Shellwords.shellescape(dylib_path)
     end
 
     def xcrun
