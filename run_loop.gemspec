@@ -54,6 +54,7 @@ tools like instruments and simctl.}
     s.add_dependency('command_runner_ng', '>= 0.0.2')
   end
 
+  s.add_development_dependency("ci_reporter_rspec", "~> 1.0")
   s.add_development_dependency('luffa', '>= 1.1.0', '< 2.0')
   s.add_development_dependency('bundler', '~> 1.6')
   s.add_development_dependency('travis', '~> 1.8')
