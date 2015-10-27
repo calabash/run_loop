@@ -7,6 +7,16 @@ module RunLoop
   # Injects dylibs into running executables using lldb.
   class DylibInjector
 
+    # Options for controlling how often to retry dylib injection.
+    #
+    # Try 3 times for 10 seconds each try with a sleep of 2 seconds
+    # between tries.
+    RETRY_OPTIONS = {
+      :tries => 3,
+      :interval => 2,
+      :timeout => 10
+    }
+
     # @!attribute [r] process_name
     # The name of the process to inject the dylib into.  This should be obtained
     #  by inspecting the Info.plist in the app bundle.
@@ -81,30 +91,26 @@ module RunLoop
     end
 
     def retriable_inject_dylib(options={})
-      default_options = {:tries => 3,
-                         # interval is retriable 2.0 for :timeout
-                         :interval => 20}
-      merged_options = default_options.merge(options)
-
-      on_retry = Proc.new do |_, try, elapsed_time, next_interval|
-        # Retriable 2.0
-        if elapsed_time && next_interval
-          RunLoop.log_debug("LLDB: attempt #{try} failed in '#{elapsed_time}'; will retry in '#{next_interval}'")
-        else
-          RunLoop.log_debug("LLDB: attempt #{try} failed; will retry in #{merged_options[:interval]}")
-        end
-      end
+      merged_options = RETRY_OPTIONS.merge(options)
 
       tries = merged_options[:tries]
+      timeout = merged_options[:timeout]
       interval = merged_options[:interval]
-      retry_opts = RunLoop::RetryOpts.tries_and_interval(tries, interval, {:on_retry => on_retry})
 
-      Retriable.retriable(retry_opts) do
-        unless inject_dylib(interval)
-          raise RuntimeError, "Could not inject dylib"
-        end
+      success = false
+
+      tries.times do
+
+        success = inject_dylib(timeout)
+        break if success
+
+        sleep(interval)
       end
-      true
+
+      if !success
+        raise RuntimeError, "Could not inject dylib"
+      end
+      success
     end
 
     private

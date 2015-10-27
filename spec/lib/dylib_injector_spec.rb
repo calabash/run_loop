@@ -37,4 +37,95 @@ describe RunLoop::DylibInjector do
 
     expect(path).to be == script
   end
+
+  describe "#inject_dylib" do
+    let(:timeout) { 1 }
+    let(:options) do
+      {
+        :timeout => 1,
+        :log_cmd => true
+      }
+    end
+
+    let(:script) { "/path/to/script.lldb" }
+    let(:xcrun) { RunLoop::Xcrun.new }
+
+    let(:hash) do
+      {
+
+        :pid => 1,
+        :exit_status => 0,
+        :out => ""
+      }
+    end
+
+    before do
+      allow(lldb).to receive(:xcrun).and_return(xcrun)
+    end
+
+    it "returns true" do
+      expect(lldb).to receive(:write_script).and_return script
+      cmd = ["lldb", "--no-lldbinit", "--source", script]
+
+      expect(xcrun).to receive(:exec).with(cmd, options).and_return(hash)
+
+      expect(lldb.inject_dylib(timeout)).to be_truthy
+    end
+
+    describe "returns false" do
+      it "when xcrun times out" do
+        expect(xcrun).to receive(:exec).and_raise RunLoop::Xcrun::TimeoutError
+
+        expect(lldb.inject_dylib(timeout)).to be_falsey
+      end
+
+      it "when xcrun exits non-zero" do
+        hash[:exit_status] = 1
+        hash[:out] = "Line 0\nLine 1\nLine 2"
+
+        expect(xcrun).to receive(:exec).and_return(hash)
+
+        expect(lldb.inject_dylib(timeout)).to be_falsey
+      end
+    end
+  end
+
+  describe "#retriable_inject_dylib" do
+    describe "options" do
+      it "respects the options args and raises an error" do
+
+        options = {
+          :tries => 5,
+          :interval => 2,
+          :timeout => 3
+        }
+
+        expect(lldb).to receive(:inject_dylib).with(3).exactly(5).times.and_return false
+        expect(lldb).to receive(:sleep).with(2).exactly(5).times.and_return true
+
+        expect do
+          lldb.retriable_inject_dylib(options)
+        end.to raise_error RuntimeError, /Could not inject dylib/
+      end
+
+      it "has default options" do
+        tries = RunLoop::DylibInjector::RETRY_OPTIONS[:tries]
+        interval = RunLoop::DylibInjector::RETRY_OPTIONS[:interval]
+        timeout = RunLoop::DylibInjector::RETRY_OPTIONS[:timeout]
+
+        expect(lldb).to receive(:inject_dylib).with(timeout).exactly(tries).times.and_return false
+        expect(lldb).to receive(:sleep).with(interval).exactly(tries).times.and_return true
+
+        expect do
+          lldb.retriable_inject_dylib
+        end.to raise_error RuntimeError, /Could not inject dylib/
+      end
+    end
+
+    it "returns true if dylib was injected" do
+      expect(lldb).to receive(:inject_dylib).and_return true
+      expect(lldb.retriable_inject_dylib).to be_truthy
+    end
+  end
 end
+
