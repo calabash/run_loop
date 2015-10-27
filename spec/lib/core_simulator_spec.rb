@@ -21,6 +21,7 @@ describe RunLoop::CoreSimulator do
     expect(RunLoop::CoreSimulator).to receive(:term_or_kill).at_least(:once).and_return true
 
     RunLoop::CoreSimulator.quit_simulator
+    expect(RunLoop::CoreSimulator.class_variable_get(:@@simulator_pid)).to be == nil
   end
 
   it '.terminate_core_simulator_processes' do

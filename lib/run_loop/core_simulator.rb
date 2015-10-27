@@ -109,6 +109,8 @@ class RunLoop::CoreSimulator
       send_term_first = process_details[1]
       self.term_or_kill(process_name, send_term_first)
     end
+
+    self.simulator_pid = nil
   end
 
   # @!visibility private
