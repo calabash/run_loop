@@ -44,7 +44,8 @@ module RunLoop
 
     # @!visibility private
     def self.kill_with_signal(pid, signal)
-      RunLoop::ProcessTerminator.new(pid, signal, 'lldb').kill_process
+      options = {:timeout => 1.0, :delay => 0.1}
+      RunLoop::ProcessTerminator.new(pid, signal, 'lldb', options).kill_process
     end
 
   end
