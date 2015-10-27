@@ -7,6 +7,5 @@ rm -rf spec/reports
 rbenv exec \
   bundle exec \
   rspec \
-  spec/lib \
-  spec/integration/dylib_injector_spec.rb
+  spec/lib
 
