@@ -164,11 +164,11 @@ class RunLoop::CoreSimulator
   # Launch the simulator indicated by device.
   def launch_simulator
 
-    if sim_pid != nil
+    if running_simulator_pid != nil
       # There is a running simulator.
 
       # Did we launch it?
-      if sim_pid == simulator_pid
+      if running_simulator_pid == self.simulator_pid
         # Nothing to do, we already launched the simulator.
         return
       else
@@ -354,7 +354,7 @@ class RunLoop::CoreSimulator
   # @return [String, nil] The pid as a String or nil if no process is found.
   #
   # @todo Convert this to force UTF8
-  def sim_pid
+  def running_simulator_pid
     process_name = "MacOS/#{sim_name}"
     `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split(' ').first
   end
