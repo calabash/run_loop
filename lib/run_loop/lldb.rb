@@ -33,9 +33,7 @@ module RunLoop
     # Attempts to gracefully kill all running lldb processes.
     def self.kill_lldb_processes
       self.lldb_pids.each do |pid|
-        unless self.kill_with_signal(pid, 'TERM')
-          self.kill_with_signal(pid, 'KILL')
-        end
+        self.kill_with_signal(pid, 'KILL')
       end
     end
 
@@ -46,7 +44,8 @@ module RunLoop
 
     # @!visibility private
     def self.kill_with_signal(pid, signal)
-      RunLoop::ProcessTerminator.new(pid, signal, 'lldb').kill_process
+      options = {:timeout => 1.0, :delay => 0.1}
+      RunLoop::ProcessTerminator.new(pid, signal, 'lldb', options).kill_process
     end
 
   end
