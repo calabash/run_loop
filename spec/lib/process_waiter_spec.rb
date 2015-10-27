@@ -1,5 +1,9 @@
 describe RunLoop::ProcessWaiter do
 
+  before(:each) do
+    allow(RunLoop::Environment).to receive(:debug?).and_return true
+  end
+
   context '.new' do
     describe 'sets the process name' do
       subject { RunLoop::ProcessWaiter.new('process').process_name }

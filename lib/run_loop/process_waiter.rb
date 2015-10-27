@@ -48,10 +48,8 @@ module RunLoop
         sleep delay
       end
 
-      if RunLoop::Environment.debug?
-        plural = n > 1 ? "es" : ''
-        puts "Waited for #{Time.now - now} seconds for #{n} '#{process_name}' process#{plural} to start."
-      end
+      plural = n > 1 ? "es" : ''
+      RunLoop.log_debug("Waited for #{Time.now - now} seconds for #{n} '#{process_name}' process#{plural} to start.")
 
       if @options[:raise_on_timeout] and !there_are_n
         plural = n > 1 ? "es" : ''
@@ -75,9 +73,7 @@ module RunLoop
         sleep delay
       end
 
-      if RunLoop::Environment.debug?
-        puts "Waited for #{Time.now - now} seconds for '#{process_name}' to start."
-      end
+      RunLoop.log_debug("Waited for #{Time.now - now} seconds for '#{process_name}' to start.")
 
       if @options[:raise_on_timeout] and !is_alive
         raise "Waited #{@options[:timeout]} seconds for '#{process_name}' to start."
@@ -99,9 +95,7 @@ module RunLoop
         sleep delay
       end
 
-      if RunLoop::Environment.debug?
-        puts "Waited for #{Time.now - now} seconds for '#{process_name}' to die."
-      end
+      RunLoop.log_debug("Waited for #{Time.now - now} seconds for '#{process_name}' to die.")
 
       if @options[:raise_on_timeout] and !has_terminated
         raise "Waited #{@options[:timeout]} seconds for '#{process_name}' to die."
