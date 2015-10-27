@@ -130,7 +130,7 @@ class RunLoop::CoreSimulator
       RunLoop::CoreSimulator.quit_simulator
     end
 
-    # stdio.pipe - can cause problems finding the SHA or size data dir
+    # stdio.pipe - can cause problems finding the SHA of a simulator
     rm_instruments_pipe
   end
 
