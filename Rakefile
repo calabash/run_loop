@@ -2,8 +2,8 @@ require 'bundler'
 Bundler::GemHelper.install_tasks
 
 begin
-
   require 'rspec/core/rake_task'
+
   RSpec::Core::RakeTask.new(:spec) do |task|
     task.pattern = 'spec/lib/**{,/*/**}/*_spec.rb'
   end
@@ -12,10 +12,20 @@ begin
     task.pattern = 'spec/lib/**{,/*/**}/*_spec.rb'
   end
 
+  RSpec::Core::RakeTask.new(:rspec_junit_out) do |task|
+    task.pattern = 'spec/lib/**{,/*/**}/*_spec.rb'
+  end
+
   RSpec::Core::RakeTask.new(:integration) do |task|
     task.pattern = 'spec/integration/**{,/*/**}/*_spec.rb'
   end
 
+rescue LoadError => _
+end
+
+begin
+  require "ci/reporter/rake/rspec"
+  task :rspec_junit_out => "ci:setup:rspec"
 rescue LoadError => _
 end
 
