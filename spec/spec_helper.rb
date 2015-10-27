@@ -8,7 +8,7 @@ require 'tmpdir'
 require 'fileutils'
 require 'luffa'
 require 'digest/sha2'
-require 'command_runner' if RUBY_VERSION >= '2.0'
+require 'command_runner'
 
 require File.join(File.dirname(__FILE__), 'resources/instruments_output')
 require File.join(File.dirname(__FILE__), 'resources/simctl_output')
