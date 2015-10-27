@@ -436,7 +436,7 @@ class Resources
   def fork_fake_instruments_process
     pid = Process.fork
     if pid.nil?
-      exec("#{path_to_fake_instruments}")
+      exec("\"#{path_to_fake_instruments}\"")
     else
       @fake_instruments_pids ||= []
       @fake_instruments_pids << pid
@@ -500,7 +500,7 @@ class Resources
     instruments_app = File.join(dev_dir, '..', 'Applications', 'Instruments.app')
     pid = Process.fork
     if pid.nil?
-      exec "open #{instruments_app}"
+      exec "open \"#{instruments_app}\""
     else
       Process.detach pid
       poll_until = Time.now + 5

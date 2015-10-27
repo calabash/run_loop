@@ -1,8 +1,8 @@
 describe RunLoop do
 
-  before(:each) {
-    RunLoop::SimControl.terminate_all_sims
-  }
+  before(:each) do
+    RunLoop::CoreSimulator.quit_simulator
+  end
 
   def random_udid_sdk_8_sim(sim_control)
     candidates = sim_control.simulators.select do |device|

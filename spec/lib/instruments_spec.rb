@@ -3,7 +3,7 @@ describe RunLoop::Instruments do
   let (:instruments) { RunLoop::Instruments.new }
 
   before(:each) {
-    RunLoop::SimControl.terminate_all_sims
+    RunLoop::CoreSimulator.quit_simulator
     Resources.shared.kill_fake_instruments_process
   }
 
