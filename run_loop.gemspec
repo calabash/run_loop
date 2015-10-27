@@ -42,17 +42,14 @@ tools like instruments and simctl.}
   s.licenses    = ['MIT']
   s.executables = 'run-loop'
 
-  s.required_ruby_version = '>= 1.9'
+  s.required_ruby_version = '>= 2.0'
 
   s.add_dependency('json', '~> 1.8')
   s.add_dependency 'retriable', '>= 1.3.3.1', '< 2.1'
   s.add_dependency('awesome_print', '~> 1.2')
   s.add_dependency('CFPropertyList','~> 2.2')
   s.add_dependency('thor', '>= 0.18.1', '< 1.0')
-
-  if RUBY_VERSION >= '2.0'
-    s.add_dependency('command_runner_ng', '>= 0.0.2')
-  end
+  s.add_dependency('command_runner_ng', '>= 0.0.2')
 
   s.add_development_dependency('luffa', '>= 1.1.0', '< 2.0')
   s.add_development_dependency('bundler', '~> 1.6')
