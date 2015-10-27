@@ -33,9 +33,7 @@ module RunLoop
     # Attempts to gracefully kill all running lldb processes.
     def self.kill_lldb_processes
       self.lldb_pids.each do |pid|
-        unless self.kill_with_signal(pid, 'TERM')
-          self.kill_with_signal(pid, 'KILL')
-        end
+        self.kill_with_signal(pid, 'KILL')
       end
     end
 
