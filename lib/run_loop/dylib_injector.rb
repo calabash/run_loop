@@ -35,21 +35,6 @@ module RunLoop
       @xcrun ||= RunLoop::Xcrun.new
     end
 
-    def lldb_process(script_path)
-
-      cmd = ["xcrun", "lldb", "--no-lldbinit",
-             "--source", script_path]
-      if RunLoop::Environment.debug?
-        RunLoop.log_unix_cmd(cmd.join(" "))
-      end
-      process = ChildProcess.build(*cmd)
-      process.leader = true
-
-      process.io.inherit!
-
-      process
-    end
-
     # Injects a dylib into a a currently running process.
     def inject_dylib(timeout)
       RunLoop.log_debug("Starting lldb injection with a timeout of #{timeout} seconds")
