@@ -84,6 +84,7 @@ module RunLoop
           end
         end
       rescue RunLoop::Xcrun::TimeoutError
+        elapsed = Time.now - start
         RunLoop.log_debug("lldb tried for #{elapsed} seconds to inject calabash dylib before giving up.")
       end
 
