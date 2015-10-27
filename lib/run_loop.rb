@@ -37,11 +37,7 @@ module RunLoop
   # @return [void]
   def self.deprecated(version, msg)
 
-    if RUBY_VERSION < '2.0'
-      stack = Kernel.caller[1..6].join("\n")
-    else
-      stack = Kernel.caller(0, 6)[1..-1].join("\n")
-    end
+    stack = Kernel.caller(0, 6)[1..-1].join("\n")
 
     msg = "deprecated '#{version}' - #{msg}\n#{stack}"
 
