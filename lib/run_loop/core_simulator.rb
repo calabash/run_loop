@@ -168,7 +168,7 @@ class RunLoop::CoreSimulator
       # There is a running simulator.
 
       # Did we launch it?
-      if running_simulator_pid == self.simulator_pid
+      if running_simulator_pid == RunLoop::CoreSimulator.simulator_pid
         # Nothing to do, we already launched the simulator.
         return
       else
@@ -184,11 +184,8 @@ class RunLoop::CoreSimulator
 
     start_time = Time.now
 
-    pid = spawn('xcrun', *args)
+    pid = Process.spawn('xcrun', *args)
     Process.detach(pid)
-
-    # Keep track of the pid so we can know if we have already launched this sim.
-    self.simulator_pid = pid
 
     options = { :timeout => 5, :raise_on_timeout => true }
     RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
@@ -197,6 +194,9 @@ class RunLoop::CoreSimulator
 
     elapsed = Time.now - start_time
     RunLoop.log_debug("Took #{elapsed} seconds to launch the simulator")
+
+    # Keep track of the pid so we can know if we have already launched this sim.
+    RunLoop::CoreSimulator.simulator_pid = running_simulator_pid
 
     true
   end
@@ -207,6 +207,12 @@ class RunLoop::CoreSimulator
   # 2. If the app is different from the app that is installed, it is installed.
   def launch
     install
+
+    # If the app is the same, install will not launch the simulator.
+    # In order to launch the app, the simulator needs to be running.
+    # launch_simulator ensures that the sim is launched and will not
+    # relaunch it.
+    launch_simulator
 
     args = ['simctl', 'launch', device.udid, app.bundle_identifier]
     hash = xcrun.exec(args, log_cmd: true, timeout: 20)
