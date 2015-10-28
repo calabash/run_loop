@@ -3,6 +3,24 @@ module RunLoop
 
     include RunLoop::Regex
 
+    # Controls the behavior of Device#simulator_wait_for_stable_state.
+    #
+    # You can override these values if they do not work in your environment.
+    #
+    # For cucumber users, the best place to override would be in your
+    # features/support/env.rb.
+    #
+    # For example:
+    #
+    # RunLoop::Device::SIM_STABLE_STATE_OPTIONS[:timeout] = 60
+    SIM_STABLE_STATE_OPTIONS = {
+      # The maximum amount of time to wait for the simulator
+      # to stabilize.  No errors are raised if this timeout is
+      # exceeded - if the default 30 seconds has passed, the
+      # simulator is probably stable.
+      :timeout => 30
+    }
+
     attr_reader :name
     attr_reader :version
     attr_reader :udid
@@ -292,19 +310,27 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def simulator_wait_for_stable_state
       require 'securerandom'
 
+      # How long to wait between stability checks.
       delay = 0.5
 
       first_launch = false
 
+      # At launch there is a brief moment when the SHA and
+      # the log file are are stable.  Then a bunch of activity
+      # occurs.  This is the quiet time.
+      #
+      # Starting in iOS 9, simulators display at _booting_ screen
+      # at first launch.  At first launch, these simulators need
+      # a much longer quiet time.
       if version >= RunLoop::Version.new('9.0')
         first_launch = simulator_data_dir_size < 20
-        quiet_time = 2
+        quiet_time = 2.0
       else
-        quiet_time = 1
+        quiet_time = 1.0
       end
 
       now = Time.now
-      timeout = 30
+      timeout = SIM_STABLE_STATE_OPTIONS[:timeout]
       poll_until = now + timeout
       quiet = now + quiet_time
 
@@ -315,12 +341,17 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       sha_fn = lambda do |data_dir|
         begin
           # Typically, this returns in < 0.3 seconds.
-          Timeout.timeout(2, TimeoutError) do
+          Timeout.timeout(10, TimeoutError) do
             RunLoop::Directory.directory_digest(data_dir)
           end
         rescue => _
           SecureRandom.uuid
         end
+      end
+
+      RunLoop.log_debug("Waiting for simulator to stabilize with timeout: #{timeout}")
+      if first_launch
+        RunLoop.log_debug("Detected the first launch of an iOS >= 9.0 Simulator")
       end
 
       current_line = nil
