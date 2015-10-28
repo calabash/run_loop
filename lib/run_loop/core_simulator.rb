@@ -215,7 +215,7 @@ class RunLoop::CoreSimulator
     launch_simulator
 
     args = ['simctl', 'launch', device.udid, app.bundle_identifier]
-    hash = xcrun.exec(args, log_cmd: true, timeout: 20)
+    hash = xcrun.exec(args, log_cmd: true, timeout: 30)
 
     exit_status = hash[:exit_status]
 
