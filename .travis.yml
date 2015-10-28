@@ -7,7 +7,6 @@ before_script:
 script:
   - scripts/ci/travis/install-gem-ci.rb
   - scripts/ci/travis/rspec-ci.rb
-  - bundle exec rspec spec/integration/core_simulator_spec.rb
 
 rvm:
   - 2.0.0
