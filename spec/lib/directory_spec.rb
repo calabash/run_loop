@@ -59,6 +59,26 @@ describe RunLoop::Directory do
         }.to raise_error ArgumentError
       end
     end
+
+    it "logs read errors" do
+      tmp_dir = Dir.mktmpdir
+      path = File.join(tmp_dir, "foo.txt")
+      FileUtils.touch(path)
+
+      error = RuntimeError.new("My runtime error")
+      expect(File).to receive(:read).with(path).and_raise error
+
+      out = Kernel.capture_stdout do
+        RunLoop::Directory.directory_digest(tmp_dir)
+      end.string
+
+      puts out
+
+      expect(out[/directory_digest raised an error:/, 0]).to be_truthy
+      expect(out[/My runtime error/, 0]).to be_truthy
+      expect(out[/#{path}/, 0]).to be_truthy
+      expect(out[/This is not a fatal error; it can be ignored/, 0]).to be_truthy
+    end
   end
 
   describe '.size' do

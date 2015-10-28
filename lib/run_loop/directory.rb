@@ -47,21 +47,14 @@ module RunLoop
           begin
             sha << File.read(file)
           rescue => e
-            if debug
-              RunLoop.log_warn(%Q{
-RunLoop::Directory.directory_digest raised an error:
-
-#{e}
-
-while trying to find the SHA of this file:
-
-#{file}
-
-Please report this here:
-
-https://github.com/calabash/run_loop/issues
-
-})
+            [
+                 "RunLoop::Directory.directory_digest raised an error:",
+                 e,
+                 "while trying to find the SHA of this file:",
+                 file,
+                 "This is not a fatal error; it can be ignored."
+            ].each do |line|
+              RunLoop.log_debug(line)
             end
           end
         end
