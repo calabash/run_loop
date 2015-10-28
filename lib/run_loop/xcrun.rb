@@ -3,11 +3,20 @@ module RunLoop
 
     require 'command_runner'
 
-    DEFAULT_OPTIONS =
-          {
-                :timeout => 30,
-                :log_cmd => false
-          }
+    # Controls the behavior of Xcrun#exec.
+    #
+    # You can override these values if they do not work in your environment.
+    #
+    # For cucumber users, the best place to override would be in your
+    # features/support/env.rb.
+    #
+    # For example:
+    #
+    # RunLoop::Xcrun::DEFAULT_OPTIONS[:timeout] = 60
+    DEFAULT_OPTIONS = {
+      :timeout => 30,
+      :log_cmd => false
+    }
 
     # Raised when Xcrun fails.
     class Error < RuntimeError; end
