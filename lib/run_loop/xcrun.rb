@@ -31,7 +31,8 @@ module RunLoop
         unless arg.is_a?(String)
           raise ArgumentError,
 %Q{Expected arg '#{arg}' to be a String, but found '#{arg.class}'
-               IO.popen requires all arguments to be Strings.}
+IO.popen requires all arguments to be Strings.
+}
         end
       end
 
@@ -66,13 +67,26 @@ module RunLoop
 
       rescue => e
         elapsed = "%0.2f" % (Time.now - start_time)
-        raise Error, "Xcrun encountered an error after #{elapsed} seconds: #{e}"
+        raise Error,
+%Q{Xcrun encountered an error after #{elapsed} seconds:
+
+#{e}
+
+executing this command:
+
+#{cmd}
+}
       end
 
       if hash[:exit_status].nil?
         elapsed = "%0.2f" % (Time.now - start_time)
         raise TimeoutError,
-              "Xcrun timed out after #{elapsed} seconds executing '#{cmd}' with a timeout of #{timeout}"
+%Q{Xcrun timed out after #{elapsed} seconds executing
+
+#{cmd}
+
+with a timeout of #{timeout}
+}
       end
 
       hash
