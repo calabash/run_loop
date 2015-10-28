@@ -4,10 +4,24 @@ describe RunLoop::CoreSimulator do
     allow(RunLoop::Environment).to receive(:debug?).and_return true
   end
 
+  describe ".simulator_pid" do
+
+    after do
+      RunLoop::CoreSimulator.class_variable_set(:@@simulator_pid, nil)
+    end
+
+    it "sets the class variable" do
+      RunLoop::CoreSimulator.simulator_pid = :foo
+      expect(RunLoop::CoreSimulator.class_variable_get(:@@simulator_pid)).to be == :foo
+      expect(RunLoop::CoreSimulator.simulator_pid).to be == :foo
+    end
+  end
+
   it '.quit_simulator' do
     expect(RunLoop::CoreSimulator).to receive(:term_or_kill).at_least(:once).and_return true
 
     RunLoop::CoreSimulator.quit_simulator
+    expect(RunLoop::CoreSimulator.class_variable_get(:@@simulator_pid)).to be == nil
   end
 
   it '.terminate_core_simulator_processes' do
@@ -116,6 +130,78 @@ describe RunLoop::CoreSimulator do
         expect(core_sim.device).to receive(:simulator_wait_for_stable_state).and_return true
 
         expect(core_sim.uninstall_app_and_sandbox).to be_truthy
+      end
+    end
+
+    describe "#running_simulator_pid" do
+      let(:xcrun) { RunLoop::Xcrun.new }
+      let(:hash) do
+        {
+          :exit_status => 0,
+          :out => "something, anything"
+        }
+      end
+
+      before do
+        allow(core_sim).to receive(:xcrun).and_return xcrun
+      end
+
+      it "xcrun exit status is non-zero" do
+        hash[:exit_status] = 1
+        expect(xcrun).to receive(:exec).and_return(hash)
+
+        expect do
+          core_sim.send(:running_simulator_pid)
+        end.to raise_error RuntimeError, /Command exited with status/
+      end
+
+      describe "xcrun returns no :out" do
+        it "out is nil" do
+          hash[:out] = nil
+          expect(xcrun).to receive(:exec).and_return(hash)
+
+          expect do
+            core_sim.send(:running_simulator_pid)
+          end.to raise_error RuntimeError, /Command had no output/
+        end
+
+        it "out is empty string" do
+          hash[:out] = ""
+          expect(xcrun).to receive(:exec).and_return(hash)
+
+          expect do
+            core_sim.send(:running_simulator_pid)
+          end.to raise_error RuntimeError, /Command had no output/
+        end
+      end
+
+      it "no matching process is found" do
+       hash[:out] =
+%Q{
+27247 login -pf moody
+46238 tmate
+31098 less run_loop.out
+32976 vim lib/run_loop/xcrun.rb
+7656 /bin/ps x -o pid,command
+}
+        expect(xcrun).to receive(:exec).and_return(hash)
+
+        expect(core_sim.send(:running_simulator_pid)).to be == nil
+      end
+
+      it "returns integer pid" do
+        hash[:out] =
+%Q{
+27247 login -pf moody
+46238 tmate
+31098 less run_loop.out
+32976 MacOS/Simulator
+7656 /MacOS/SillySim
+}
+        expect(core_sim).to receive(:sim_name).and_return("SillySim")
+        expect(xcrun).to receive(:exec).and_return(hash)
+
+        expect(core_sim.send(:running_simulator_pid)).to be == 7656
       end
     end
 

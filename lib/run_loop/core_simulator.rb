@@ -2,6 +2,9 @@
 class RunLoop::CoreSimulator
 
   # @!visibility private
+  @@simulator_pid = nil
+
+  # @!visibility private
   attr_reader :app
 
   # @!visibility private
@@ -15,9 +18,6 @@ class RunLoop::CoreSimulator
 
   # @!visibility private
   attr_reader :xcrun
-
-  # @!visibility private
-  attr_reader :simulator_pid
 
   # @!visibility private
   METADATA_PLIST = '.com.apple.mobile_container_manager.metadata.plist'
@@ -109,6 +109,18 @@ class RunLoop::CoreSimulator
       send_term_first = process_details[1]
       self.term_or_kill(process_name, send_term_first)
     end
+
+    self.simulator_pid = nil
+  end
+
+  # @!visibility private
+  def self.simulator_pid
+    @@simulator_pid
+  end
+
+  # @!visibility private
+  def self.simulator_pid=(pid)
+    @@simulator_pid = pid
   end
 
   # @param [RunLoop::Device] device The device.
@@ -149,19 +161,14 @@ class RunLoop::CoreSimulator
     @xcrun ||= RunLoop::Xcrun.new
   end
 
-  # @!visibility private
-  def simulator_pid
-    @simulator_pid
-  end
-
   # Launch the simulator indicated by device.
   def launch_simulator
 
-    if sim_pid != nil
+    if running_simulator_pid != nil
       # There is a running simulator.
 
       # Did we launch it?
-      if sim_pid == simulator_pid
+      if running_simulator_pid == RunLoop::CoreSimulator.simulator_pid
         # Nothing to do, we already launched the simulator.
         return
       else
@@ -177,11 +184,8 @@ class RunLoop::CoreSimulator
 
     start_time = Time.now
 
-    pid = spawn('xcrun', *args)
+    pid = Process.spawn('xcrun', *args)
     Process.detach(pid)
-
-    # Keep track of the pid so we can know if we have already launched this sim.
-    @simulator_pid = pid
 
     options = { :timeout => 5, :raise_on_timeout => true }
     RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
@@ -190,6 +194,9 @@ class RunLoop::CoreSimulator
 
     elapsed = Time.now - start_time
     RunLoop.log_debug("Took #{elapsed} seconds to launch the simulator")
+
+    # Keep track of the pid so we can know if we have already launched this sim.
+    RunLoop::CoreSimulator.simulator_pid = running_simulator_pid
 
     true
   end
@@ -201,8 +208,14 @@ class RunLoop::CoreSimulator
   def launch
     install
 
+    # If the app is the same, install will not launch the simulator.
+    # In order to launch the app, the simulator needs to be running.
+    # launch_simulator ensures that the sim is launched and will not
+    # relaunch it.
+    launch_simulator
+
     args = ['simctl', 'launch', device.udid, app.bundle_identifier]
-    hash = xcrun.exec(args, log_cmd: true, timeout: 20)
+    hash = xcrun.exec(args, log_cmd: true, timeout: 30)
 
     exit_status = hash[:exit_status]
 
@@ -344,12 +357,46 @@ class RunLoop::CoreSimulator
   #
   # @note Will only search for the current Xcode simulator.
   #
-  # @return [String, nil] The pid as a String or nil if no process is found.
+  # @return [Integer, nil] The pid as a String or nil if no process is found.
   #
   # @todo Convert this to force UTF8
-  def sim_pid
+  def running_simulator_pid
     process_name = "MacOS/#{sim_name}"
-    `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split(' ').first
+
+    args = ["xcrun", "ps", "x", "-o", "pid,command"]
+    hash = xcrun.exec(args)
+
+    exit_status = hash[:exit_status]
+    if exit_status != 0
+      raise RuntimeError,
+%Q{Could not find the pid of #{sim_name} with:
+
+#{args.join(" ")}
+
+Command exited with status #{exit_status}
+Message: '#{hash[:out]}'
+}
+    end
+
+    if hash[:out].nil? || hash[:out] == ""
+       raise RuntimeError,
+%Q{Could not find the pid of #{sim_name} with:
+
+#{args.join(" ")}
+
+Command had no output
+}
+    end
+
+    lines = hash[:out].split("\n")
+
+    match = lines.detect do |line|
+      line[/#{process_name}/, 0]
+    end
+
+    return nil if match.nil?
+
+    match.split(" ").first.to_i
   end
 
   # @!visibility private

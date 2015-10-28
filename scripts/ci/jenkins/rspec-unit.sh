@@ -7,5 +7,6 @@ rm -rf spec/reports
 rbenv exec \
   bundle exec \
   rspec \
-  spec/lib
+  spec/lib \
+  spec/integration/core_simulator_spec.rb
 
