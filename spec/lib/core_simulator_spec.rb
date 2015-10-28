@@ -135,25 +135,48 @@ describe RunLoop::CoreSimulator do
 
     describe "#running_simulator_pid" do
       let(:xcrun) { RunLoop::Xcrun.new }
+      let(:hash) do
+        {
+          :exit_status => 0,
+          :out => "something, anything"
+        }
+      end
 
       before do
         allow(core_sim).to receive(:xcrun).and_return xcrun
       end
 
-      it "xcrun returns a nil hash" do
-        expect(xcrun).to receive(:exec).and_return nil
+      it "xcrun exit status is non-zero" do
+        hash[:exit_status] = 1
+        expect(xcrun).to receive(:exec).and_return(hash)
 
-        expect(core_sim.send(:running_simulator_pid)).to be == nil
+        expect do
+          core_sim.send(:running_simulator_pid)
+        end.to raise_error RuntimeError, /Command exited with status/
       end
 
-      it "xcrun returns no :out" do
-        expect(xcrun).to receive(:exec).and_return({:out => nil})
+      describe "xcrun returns no :out" do
+        it "out is nil" do
+          hash[:out] = nil
+          expect(xcrun).to receive(:exec).and_return(hash)
 
-        expect(core_sim.send(:running_simulator_pid)).to be == nil
+          expect do
+            core_sim.send(:running_simulator_pid)
+          end.to raise_error RuntimeError, /Command had no output/
+        end
+
+        it "out is empty string" do
+          hash[:out] = ""
+          expect(xcrun).to receive(:exec).and_return(hash)
+
+          expect do
+            core_sim.send(:running_simulator_pid)
+          end.to raise_error RuntimeError, /Command had no output/
+        end
       end
 
       it "no matching process is found" do
-        out =
+       hash[:out] =
 %Q{
 27247 login -pf moody
 46238 tmate
@@ -161,13 +184,13 @@ describe RunLoop::CoreSimulator do
 32976 vim lib/run_loop/xcrun.rb
 7656 /bin/ps x -o pid,command
 }
-        expect(xcrun).to receive(:exec).and_return({:out => out})
+        expect(xcrun).to receive(:exec).and_return(hash)
 
         expect(core_sim.send(:running_simulator_pid)).to be == nil
       end
 
       it "returns integer pid" do
-        out =
+        hash[:out] =
 %Q{
 27247 login -pf moody
 46238 tmate
@@ -176,7 +199,7 @@ describe RunLoop::CoreSimulator do
 7656 /MacOS/SillySim
 }
         expect(core_sim).to receive(:sim_name).and_return("SillySim")
-        expect(xcrun).to receive(:exec).and_return({:out => out})
+        expect(xcrun).to receive(:exec).and_return(hash)
 
         expect(core_sim.send(:running_simulator_pid)).to be == 7656
       end

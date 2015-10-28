@@ -363,9 +363,30 @@ class RunLoop::CoreSimulator
   def running_simulator_pid
     process_name = "MacOS/#{sim_name}"
 
-    hash = xcrun.exec(["xcrun", "ps", "x", "-o" "pid,command"])
+    args = ["xcrun", "ps", "x", "-o", "pid,command"]
+    hash = xcrun.exec(args)
 
-    return nil if hash.nil? || hash[:out].nil?
+    exit_status = hash[:exit_status]
+    if exit_status != 0
+      raise RuntimeError,
+%Q{Could not find the pid of #{sim_name} with:
+
+#{args.join(" ")}
+
+Command exited with status #{exit_status}
+Message: '#{hash[:out]}'
+}
+    end
+
+    if hash[:out].nil? || hash[:out] == ""
+       raise RuntimeError,
+%Q{Could not find the pid of #{sim_name} with:
+
+#{args.join(" ")}
+
+Command had no output
+}
+    end
 
     lines = hash[:out].split("\n")
 
