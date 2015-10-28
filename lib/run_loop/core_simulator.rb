@@ -351,12 +351,25 @@ class RunLoop::CoreSimulator
   #
   # @note Will only search for the current Xcode simulator.
   #
-  # @return [String, nil] The pid as a String or nil if no process is found.
+  # @return [Integer, nil] The pid as a String or nil if no process is found.
   #
   # @todo Convert this to force UTF8
   def running_simulator_pid
     process_name = "MacOS/#{sim_name}"
-    `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split(' ').first
+
+    hash = xcrun.exec(["xcrun", "ps", "x", "-o" "pid,command"])
+
+    return nil if hash.nil? || hash[:out].nil?
+
+    lines = hash[:out].split("\n")
+
+    match = lines.detect do |line|
+      line[/#{process_name}/, 0]
+    end
+
+    return nil if match.nil?
+
+    match.split(" ").first.to_i
   end
 
   # @!visibility private

@@ -133,6 +133,55 @@ describe RunLoop::CoreSimulator do
       end
     end
 
+    describe "#running_simulator_pid" do
+      let(:xcrun) { RunLoop::Xcrun.new }
+
+      before do
+        allow(core_sim).to receive(:xcrun).and_return xcrun
+      end
+
+      it "xcrun returns a nil hash" do
+        expect(xcrun).to receive(:exec).and_return nil
+
+        expect(core_sim.send(:running_simulator_pid)).to be == nil
+      end
+
+      it "xcrun returns no :out" do
+        expect(xcrun).to receive(:exec).and_return({:out => nil})
+
+        expect(core_sim.send(:running_simulator_pid)).to be == nil
+      end
+
+      it "no matching process is found" do
+        out =
+%Q{
+27247 login -pf moody
+46238 tmate
+31098 less run_loop.out
+32976 vim lib/run_loop/xcrun.rb
+7656 /bin/ps x -o pid,command
+}
+        expect(xcrun).to receive(:exec).and_return({:out => out})
+
+        expect(core_sim.send(:running_simulator_pid)).to be == nil
+      end
+
+      it "returns integer pid" do
+        out =
+%Q{
+27247 login -pf moody
+46238 tmate
+31098 less run_loop.out
+32976 MacOS/Simulator
+7656 /MacOS/SillySim
+}
+        expect(core_sim).to receive(:sim_name).and_return("SillySim")
+        expect(xcrun).to receive(:exec).and_return({:out => out})
+
+        expect(core_sim.send(:running_simulator_pid)).to be == 7656
+      end
+    end
+
     describe 'Mocked file system' do
 
       describe '#sdk_gte_8?' do
