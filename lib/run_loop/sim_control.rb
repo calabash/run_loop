@@ -1143,34 +1143,23 @@ module RunLoop
 
       out.split("\n").each do |line|
 
-        possible_sdk = line[VERSION_REGEX,0]
-        if possible_sdk
-          current_sdk = possible_sdk
+        not_ios = [
+          line[/Unavailable/, 0], # Unavailable SDK
+          line[/Apple Watch/, 0],
+          line[/watchOS/, 0],
+          line[/Apple TV/, 0],
+          line[/tvOS/, 0]
+        ].any?
+
+        if not_ios
+          current_sdk = nil
+          next
+        end
+
+        ios_sdk = line[VERSION_REGEX,0]
+        if ios_sdk
+          current_sdk = ios_sdk
           simulators[current_sdk] = []
-          next
-        end
-
-        unavailable_sdk = line[/Unavailable/, 0]
-        if unavailable_sdk
-          current_sdk = nil
-          next
-        end
-
-        watch_os = line[/watchOS/, 0]
-        if watch_os
-          current_sdk = nil
-          next
-        end
-
-        watch = line[/Apple Watch/, 0]
-        if watch
-          current_sdk = nil
-          next
-        end
-
-        tv = line[/Apple TV/, 0]
-        if tv
-          current_sdk = nil
           next
         end
 
@@ -1180,9 +1169,9 @@ module RunLoop
             udid = line[CORE_SIMULATOR_UDID_REGEX,0]
             state = line[/(Booted|Shutdown)/,0]
             simulators[current_sdk] << {
-                  :name => name,
-                  :udid => udid,
-                  :state => state
+              :name => name,
+              :udid => udid,
+              :state => state
             }
           end
         end
