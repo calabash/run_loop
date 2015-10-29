@@ -16,12 +16,6 @@ module RunLoop
 
     include RunLoop::Regex
 
-    # @deprecated 1.5.0 - replaced by #xcode
-    def xctools
-      RunLoop.deprecated('1.5.0', 'Replaced by RunLoop::Xcode') if RunLoop::Environment.debug?
-      @xctools ||= RunLoop::XCTools.new
-    end
-
     # @!visibility private
     def xcode
       @xcode ||= RunLoop::Xcode.new
@@ -74,7 +68,7 @@ module RunLoop
     # @option opts [Float] :post_quit_wait (1.0) How long to sleep after the
     #  simulator has quit.
     #
-    # @todo Consider migrating apple script call to xctools.
+    # @todo Consider migrating AppleScript calls to separate class
     def quit_sim(opts={})
       if sim_is_running?
         default_opts = {:post_quit_wait => 1.0 }
@@ -91,8 +85,6 @@ module RunLoop
     # @param [Hash] opts Optional controls.
     # @option opts [Float] :post_launch_wait (2.0) How long to sleep after the
     #  simulator has launched.
-    #
-    # @todo Consider migrating apple script call to xctools.
     def launch_sim(opts={})
       unless sim_is_running?
         default_opts = {:post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0}
