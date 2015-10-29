@@ -32,10 +32,8 @@ unless Resources.shared.travis_ci?
                     }
               expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
 
-              hash = nil
-              Retriable.retriable({:tries => 2}) do
-                hash = RunLoop.run(options)
-              end
+              hash = Resources.shared.launch_with_options(options)
+
               expect(hash).not_to be nil
             end
           end
@@ -70,10 +68,9 @@ unless Resources.shared.travis_ci?
 
                         }
                   expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
-                  hash = nil
-                  Retriable.retriable({:tries => 2}) do
-                    hash = RunLoop.run(options)
-                  end
+
+                  hash = Resources.shared.launch_with_options(options)
+
                   expect(hash).not_to be nil
                 end
               end
