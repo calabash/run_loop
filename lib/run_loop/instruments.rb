@@ -125,16 +125,9 @@ module RunLoop
     #
     # Only one instruments process can be running at any one time.
     #
-    # @param [RunLoop::Xcode, RunLoop::XCTools] xcode Used to make check the
+    # @param [RunLoop::Xcode] xcode Used to make check the
     #  active Xcode version.
     def kill_instruments(xcode = RunLoop::Xcode.new)
-      if xcode.is_a?(RunLoop::XCTools)
-        RunLoop.deprecated('1.5.0',
-                         %q(
-RunLoop::XCTools has been replaced with RunLoop::Xcode.
-Please update your sources to pass an instance of RunLoop::Xcode))
-      end
-
       kill_signal = kill_signal(xcode)
       instruments_pids.each do |pid|
         terminator = RunLoop::ProcessTerminator.new(pid, kill_signal, 'instruments')
@@ -419,17 +412,11 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     #
     # @see https://github.com/calabash/run_loop/issues/34
     #
-    # @param [RunLoop::Xcode, RunLoop::XCTools] xcode The Xcode tools to use to determine
+    # @param [RunLoop::Xcode] xcode The Xcode tools to use to determine
     #  what version of Xcode is active.
     # @return [String] Either 'QUIT' or 'TERM', depending on the Xcode
     #  version.
     def kill_signal(xcode = RunLoop::Xcode.new)
-      if xcode.is_a?(RunLoop::XCTools)
-        RunLoop.deprecated('1.5.0',
-                           %q(
-RunLoop::XCTools has been replaced with RunLoop::Xcode.
-Please update your sources to pass an instance of RunLoop::Xcode))
-      end
       xcode.version_gte_6? ? 'QUIT' : 'TERM'
     end
 

@@ -28,15 +28,15 @@ effort.  Use `"` always.
 ```
 # Incorrect
 it '#xcode_version_gte_63?' do
- expect(xcode).to receive(:version_gte_63?).and_return true
- expect(xctools.xcode_version_gte_63?).to be_truthy
+  expect(xcode).to receive(:version?).and_return RunLoop::Version.new("6.3"))
+  expect(xcode.version_gte_63?).to be_truthy
 end
 
 # Correct
 it '#xcode_version_gte_63?' do
-  expect(xcode).to receive(:version_gte_63?).and_return true
+  expect(xcode).to receive(:version?).and_return RunLoop::Version.new("6.3"))
 
-  expect(xctools.xcode_version_gte_63?).to be_truthy
+  expect(xcode.version_gte_63?).to be_truthy
 end
 ```
 

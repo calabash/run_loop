@@ -1,5 +1,11 @@
 ## Change Log
 
+### 2.0
+
+The following have been removed from RunLoop in 2.0:
+
+* RunLoop::XCTools; replaced with Xcode and Instruments
+
 ### 1.5.6
 
 Many thanks to everyone who filed issues for this release.
