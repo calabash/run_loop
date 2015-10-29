@@ -355,16 +355,10 @@ class Resources
     case cmd
       when :install
         ipa = merged[:ipa]
-        Retriable.retriable do
-          uninstall device_udid, bundle_id, bin_path
-        end
-        Retriable.retriable do
-          install device_udid, ipa, bundle_id, bin_path
-        end
+        uninstall device_udid, bundle_id, bin_path
+        install device_udid, ipa, bundle_id, bin_path
       when :uninstall
-        Retriable.retriable do
-          uninstall device_udid, bundle_id, bin_path
-        end
+        uninstall device_udid, bundle_id, bin_path
       else
         cmds = [:install, :uninstall]
         raise ArgumentError, "expected '#{cmd}' to be one of '#{cmds}'"
