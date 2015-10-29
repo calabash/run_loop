@@ -2,6 +2,10 @@ require 'run_loop/cli/instruments'
 
 describe RunLoop::CLI::Instruments do
 
+  before do
+    allow(RunLoop::Environment).to receive(:debug?).and_return true
+  end
+
   context 'quit' do
     it 'has help' do
       expect(Luffa.unix_command('run-loop instruments help quit',
