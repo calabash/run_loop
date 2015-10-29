@@ -135,22 +135,12 @@ Please update your sources.))
     # Returns and instruments-ready device identifier that is a suitable value
     # for DEVICE_TARGET environment variable.
     #
-    # @note As of 1.5.0, the XCTools optional argument has become a non-optional
-    #  Xcode argument.
-    #
-    # @param [RunLoop::Xcode, RunLoop::XCTools] xcode The version of the active
+    # @param [RunLoop::Xcode] xcode The version of the active
     #  Xcode.
     # @return [String] An instruments-ready device identifier.
     # @raise [RuntimeError] If trying to obtain a instruments-ready identifier
     #  for a simulator when Xcode < 6.
     def instruments_identifier(xcode=SIM_CONTROL.xcode)
-      if xcode.is_a?(RunLoop::XCTools)
-        RunLoop.deprecated('1.5.0',
-                           %q(
-RunLoop::XCTools has been replaced with a non-optional RunLoop::Xcode argument.
-Please update your sources to pass an instance of RunLoop::Xcode))
-      end
-
       if physical_device?
         udid
       else
