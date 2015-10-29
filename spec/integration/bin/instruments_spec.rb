@@ -21,10 +21,8 @@ describe RunLoop::CLI::Instruments do
                   :sim_control => sim_control
             }
 
-      hash = nil
-      Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-        hash = RunLoop.run(options)
-      end
+      hash = Resources.shared.launch_with_options(options)
+
       expect(hash).not_to be nil
 
       instruments = RunLoop::Instruments.new
