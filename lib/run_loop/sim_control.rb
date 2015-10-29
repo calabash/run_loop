@@ -87,7 +87,7 @@ module RunLoop
     #  simulator has launched.
     def launch_sim(opts={})
       unless sim_is_running?
-        default_opts = {:post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0}
+        default_opts = {:post_launch_wait => 2.0}
         merged_opts = default_opts.merge(opts)
         `xcrun open -g -a "#{sim_app_path}"`
         sleep(merged_opts[:post_launch_wait]) if merged_opts[:post_launch_wait]
@@ -104,7 +104,7 @@ module RunLoop
     #  simulator has launched.
     def relaunch_sim(opts={})
       default_opts = {:post_quit_wait => 1.0,
-                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0}
+                      :post_launch_wait =>  2.0}
       merged_opts = default_opts.merge(opts)
       quit_sim(merged_opts)
       launch_sim(merged_opts)
@@ -196,7 +196,7 @@ module RunLoop
     #  **NOTE:** This option is ignored in Xcode < 6.
     def reset_sim_content_and_settings(opts={})
       default_opts = {:post_quit_wait => 1.0,
-                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 3.0,
+                      :post_launch_wait =>  3.0,
                       :sim_udid => nil}
       merged_opts = default_opts.merge(opts)
 
