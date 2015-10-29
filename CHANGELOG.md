@@ -5,6 +5,8 @@
 The following have been removed from RunLoop in 2.0:
 
 * RunLoop::XCTools; replaced with Xcode and Instruments
+* RunLoop::Environment.sim_post_launch_wait; no replacement.
+  Additionally, run-loop no longer responds to CAL_SIM_POST_LAUNCH_WAIT
 
 ### 1.5.6
 

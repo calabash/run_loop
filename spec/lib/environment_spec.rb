@@ -153,29 +153,4 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment.developer_dir).to be == nil
     end
   end
-
-  describe '.sim_post_launch_wait' do
-    it 'returns float value' do
-      stub_env('CAL_SIM_POST_LAUNCH_WAIT', '1.0')
-      expect(RunLoop::Environment.sim_post_launch_wait).to be == 1.0
-
-      stub_env('CAL_SIM_POST_LAUNCH_WAIT', 1.0)
-      expect(RunLoop::Environment.sim_post_launch_wait).to be == 1.0
-
-      stub_env('CAL_SIM_POST_LAUNCH_WAIT', '1')
-      expect(RunLoop::Environment.sim_post_launch_wait).to be == 1.0
-    end
-
-    it 'returns nil if the value cannot be converted to non-zero float' do
-      stub_env('CAL_SIM_POST_LAUNCH_WAIT', '')
-      expect(RunLoop::Environment.sim_post_launch_wait).to be == nil
-
-      stub_env({'CAL_SIM_POST_LAUNCH_WAIT' => nil})
-      expect(RunLoop::Environment.sim_post_launch_wait).to be == nil
-
-      stub_env('CAL_SIM_POST_LAUNCH_WAIT', true)
-      expect(RunLoop::Environment.sim_post_launch_wait).to be == nil
-    end
-  end
 end
-
