@@ -217,7 +217,9 @@ function isLocationPrompt(alert) {
 
             //iOS 9 - English
             ["OK", /Would Like to Access Your Motion & Fitness Activity/],
-            ["OK", /Would Like Access to Twitter Accounts/]
+            ["OK", /Would Like Access to Twitter Accounts/],
+
+            ["OK", /data available to nearby bluetooth devices/]
         ],
         ans, exp,
         txt;
