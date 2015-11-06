@@ -40,7 +40,6 @@ print "require '#{spec_resources}'..."
 require spec_resources
 puts 'done!'
 
-
 puts ''
 puts '#       =>  Useful Methods  <=          #'
 puts '> xcode       => Xcode instance'
