@@ -558,11 +558,9 @@ describe RunLoop::CoreSimulator do
       end
 
       it '#install_app_with_simctl' do
-        expect(core_sim).to receive(:launch_simulator).and_return true
         args = ['simctl', 'install', device.udid, app.path]
         options = { :log_cmd => true, :timeout => 20 }
         expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return({})
-        expect(core_sim.device).to receive(:simulator_wait_for_stable_state).and_return true
 
         expect(core_sim).to receive(:installed_app_bundle_dir).and_return('/new/path')
 
