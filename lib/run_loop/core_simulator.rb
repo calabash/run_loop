@@ -401,12 +401,9 @@ Command had no output
 
   # @!visibility private
   def install_app_with_simctl
-    launch_simulator
-
     args = ['simctl', 'install', device.udid, app.path]
     xcrun.exec(args, log_cmd: true, timeout: 20)
 
-    device.simulator_wait_for_stable_state
     installed_app_bundle_dir
   end
 
