@@ -246,7 +246,7 @@ class RunLoop::CoreSimulator
     installed_app_bundle = installed_app_bundle_dir
 
     # App is not installed. Use simctl interface to install.
-    if !installed_app_bundle
+    if !installed_app_bundle && xcode.version_gte_7?
       installed_app_bundle = install_app_with_simctl
     else
       ensure_app_same
