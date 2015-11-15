@@ -153,4 +153,27 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment.developer_dir).to be == nil
     end
   end
+
+  describe ".jenkins?" do
+    it "returns true if JENKINS_HOME defined" do
+      stub_env({"JENKINS_HOME" => "/Users/Shared/Jenkins"})
+
+      expect(RunLoop::Environment.jenkins?).to be_truthy
+    end
+
+    describe "returns false if JENKINS_HOME" do
+      it "is nil" do
+        stub_env({"JENKINS_HOME" => nil})
+
+        expect(RunLoop::Environment.jenkins?).to be_falsey
+      end
+
+      it "is empty string" do
+        stub_env({"JENKINS_HOME" => ""})
+
+        expect(RunLoop::Environment.jenkins?).to be_falsey
+      end
+
+    end
+  end
 end

@@ -80,6 +80,14 @@ module RunLoop
       end
     end
 
+    # Returns true if running in Jenkins CI
+    #
+    # Checks the value of JENKINS_HOME
+    def self.jenkins?
+      value = ENV["JENKINS_HOME"]
+      return value && value != ''
+    end
+
     # !@visibility private
     def self.with_debugging(debug, &block)
       if debug
