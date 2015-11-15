@@ -88,6 +88,14 @@ module RunLoop
       return value && value != ''
     end
 
+    # Returns true if running in Travis CI
+    #
+    # Checks the value of TRAVIS
+    def self.travis?
+      value = ENV["TRAVIS"]
+      return value && value != ''
+    end
+
     # !@visibility private
     def self.with_debugging(debug, &block)
       if debug

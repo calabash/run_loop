@@ -173,7 +173,28 @@ describe RunLoop::Environment do
 
         expect(RunLoop::Environment.jenkins?).to be_falsey
       end
+    end
+  end
 
+  describe ".travis?" do
+    it "returns true if TRAVIS defined" do
+      stub_env({"TRAVIS" => "some truthy value"})
+
+      expect(RunLoop::Environment.travis?).to be_truthy
+    end
+
+    describe "returns false if TRAVIS" do
+      it "is nil" do
+        stub_env({"TRAVIS" => nil})
+
+        expect(RunLoop::Environment.travis?).to be_falsey
+      end
+
+      it "is empty string" do
+        stub_env({"TRAVIS" => ""})
+
+        expect(RunLoop::Environment.travis?).to be_falsey
+      end
     end
   end
 end
