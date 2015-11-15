@@ -219,4 +219,26 @@ describe RunLoop::Environment do
       end
     end
   end
+
+  describe ".teamcity?" do
+    it "returns true if TEAMCITY_PROJECT_NAME defined" do
+      stub_env({"TEAMCITY_PROJECT_NAME" => "project name"})
+
+      expect(RunLoop::Environment.teamcity?).to be_truthy
+    end
+
+    describe "returns false if TEAMCITY_PROJECT_NAME" do
+      it "is nil" do
+        stub_env({"TEAMCITY_PROJECT_NAME" => nil})
+
+        expect(RunLoop::Environment.teamcity?).to be_falsey
+      end
+
+      it "is empty string" do
+        stub_env({"TEAMCITY_PROJECT_NAME" => ""})
+
+        expect(RunLoop::Environment.teamcity?).to be_falsey
+      end
+    end
+  end
 end
