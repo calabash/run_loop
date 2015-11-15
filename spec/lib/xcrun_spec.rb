@@ -85,19 +85,6 @@ describe RunLoop::Xcrun do
         expect(xcrun_hash[:pid]).to be == 3030
         expect(xcrun_hash[:exit_status]).to be == 256
       end
-
-      it 'actual' do
-        if Resources.shared.travis_ci?
-          timeout = 2.0
-        else
-          timeout = 0.5
-        end
-        xcrun_hash = xcrun.exec(['echo', "\"actual\""], timeout: timeout)
-
-        expect(xcrun_hash[:pid]).to be_truthy
-        expect(xcrun_hash[:exit_status]).to be == 0
-        expect(xcrun_hash[:out]).to be == "\"actual\""
-      end
     end
   end
 end
