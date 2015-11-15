@@ -112,6 +112,17 @@ module RunLoop
       return value && value != ''
     end
 
+    # Returns true if running in a CI environment
+    def self.ci?
+      [
+        self.ci_var_defined?,
+        self.travis?,
+        self.jenkins?,
+        self.circle_ci?,
+        self.teamcity?
+      ].any?
+    end
+
     # !@visibility private
     def self.with_debugging(debug, &block)
       if debug
@@ -128,5 +139,14 @@ module RunLoop
         block.call
       end
     end
+
+    private
+
+    # !@visibility private
+    def self.ci_var_defined?
+      value = ENV["CI"]
+      return value && value != ''
+    end
   end
 end
+

@@ -241,4 +241,93 @@ describe RunLoop::Environment do
       end
     end
   end
+
+  describe ".ci?" do
+    describe "truthy" do
+      it "CI" do
+        expect(RunLoop::Environment).to receive(:jenkins?).and_return false
+        expect(RunLoop::Environment).to receive(:travis?).and_return false
+        expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
+        expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return true
+
+        expect(RunLoop::Environment.ci?).to be_truthy
+      end
+
+      it "Jenkins" do
+        expect(RunLoop::Environment).to receive(:jenkins?).and_return true
+        expect(RunLoop::Environment).to receive(:travis?).and_return false
+        expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
+        expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
+
+        expect(RunLoop::Environment.ci?).to be_truthy
+      end
+
+      it "Travis" do
+        expect(RunLoop::Environment).to receive(:jenkins?).and_return false
+        expect(RunLoop::Environment).to receive(:travis?).and_return true
+        expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
+        expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
+
+        expect(RunLoop::Environment.ci?).to be_truthy
+      end
+
+      it "Circle CI" do
+        expect(RunLoop::Environment).to receive(:jenkins?).and_return false
+        expect(RunLoop::Environment).to receive(:travis?).and_return false
+        expect(RunLoop::Environment).to receive(:circle_ci?).and_return true
+        expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
+
+        expect(RunLoop::Environment.ci?).to be_truthy
+      end
+
+      it "TeamCity" do
+        expect(RunLoop::Environment).to receive(:jenkins?).and_return false
+        expect(RunLoop::Environment).to receive(:travis?).and_return false
+        expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
+        expect(RunLoop::Environment).to receive(:teamcity?).and_return true
+        expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
+
+        expect(RunLoop::Environment.ci?).to be_truthy
+      end
+    end
+
+    it "falsey" do
+      expect(RunLoop::Environment).to receive(:jenkins?).and_return false
+      expect(RunLoop::Environment).to receive(:travis?).and_return false
+      expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
+      expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+      expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
+
+      expect(RunLoop::Environment.ci?).to be_falsey
+    end
+  end
+
+  # private
+
+  describe ".ci_var_defined?" do
+    it "returns true if CI defined" do
+      stub_env({"CI" => true})
+
+      expect(RunLoop::Environment.send(:ci_var_defined?)).to be_truthy
+    end
+
+    describe "returns false if CI" do
+      it "is nil" do
+        stub_env({"CI" => nil})
+
+        expect(RunLoop::Environment.send(:ci_var_defined?)).to be_falsey
+      end
+
+      it "is empty string" do
+        stub_env({"CI" => ""})
+
+        expect(RunLoop::Environment.send(:ci_var_defined?)).to be_falsey
+      end
+    end
+  end
 end
+
