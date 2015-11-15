@@ -96,6 +96,14 @@ module RunLoop
       return value && value != ''
     end
 
+    # Returns true if running in Circle CI
+    #
+    # Checks the value of CIRCLECI
+    def self.circle_ci?
+      value = ENV["CIRCLECI"]
+      return value && value != ''
+    end
+
     # !@visibility private
     def self.with_debugging(debug, &block)
       if debug

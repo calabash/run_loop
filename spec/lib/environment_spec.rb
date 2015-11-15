@@ -197,4 +197,26 @@ describe RunLoop::Environment do
       end
     end
   end
+
+  describe ".circle_ci?" do
+    it "returns true if CIRCLECI defined" do
+      stub_env({"CIRCLECI" => true})
+
+      expect(RunLoop::Environment.circle_ci?).to be_truthy
+    end
+
+    describe "returns false if CIRCLECI" do
+      it "is nil" do
+        stub_env({"CIRCLECI" => nil})
+
+        expect(RunLoop::Environment.circle_ci?).to be_falsey
+      end
+
+      it "is empty string" do
+        stub_env({"CIRCLECI" => ""})
+
+        expect(RunLoop::Environment.circle_ci?).to be_falsey
+      end
+    end
+  end
 end
