@@ -3,7 +3,15 @@ module RunLoop
 
     include RunLoop::Regex
 
-    # Controls the behavior of Device#simulator_wait_for_stable_state.
+    # Starting in Xcode 7, iOS 9 simulators have a new "booting" state.
+    #
+    # The simulator must completely boot before run-loop tries to do things
+    # like installing an app or clearing an app sandbox.  Run-loop tries to
+    # wait for a the simulator stabilize by watching the checksum of the
+    # simulator directory and the simulator log.
+    #
+    # On resource constrained devices or CI systems, the default settings may
+    # not work.
     #
     # You can override these values if they do not work in your environment.
     #
@@ -17,8 +25,9 @@ module RunLoop
       # The maximum amount of time to wait for the simulator
       # to stabilize.  No errors are raised if this timeout is
       # exceeded - if the default 30 seconds has passed, the
-      # simulator is probably stable.
-      :timeout => 30
+      # simulator is probably stable enough for subsequent
+      # operations.
+      :timeout => RunLoop::Environment.ci? ? 120 : 30
     }
 
     attr_reader :name
