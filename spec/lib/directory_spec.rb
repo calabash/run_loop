@@ -60,24 +60,73 @@ describe RunLoop::Directory do
       end
     end
 
-    it "logs read errors" do
-      tmp_dir = Dir.mktmpdir
-      path = File.join(tmp_dir, "foo.txt")
-      FileUtils.touch(path)
+    describe "options" do
+      let(:tmp_dir) { Dir.mktmpdir }
+      let(:path) do
+        path = File.join(tmp_dir, "foo.txt")
+        FileUtils.touch(path)
+        path
+      end
 
-      error = RuntimeError.new("My runtime error")
-      expect(File).to receive(:read).with(path).and_raise error
+      it "raises an error when :handle_errors_by is an unknown value" do
+        options = { :handle_errors_by => :unknown }
 
-      out = Kernel.capture_stdout do
-        RunLoop::Directory.directory_digest(tmp_dir)
-      end.string
+        expect do
+          RunLoop::Directory.directory_digest(tmp_dir, options)
+        end.to raise_error ArgumentError,
+        /Expected :handle_errors_by to be :raising, :logging, or :ignoring/
+      end
 
-      puts out
+      it "logs read errors when :handle_errors_by is :logging" do
+        options = { :handle_errors_by => :logging }
 
-      expect(out[/directory_digest raised an error:/, 0]).to be_truthy
-      expect(out[/My runtime error/, 0]).to be_truthy
-      expect(out[/#{path}/, 0]).to be_truthy
-      expect(out[/This is not a fatal error; it can be ignored/, 0]).to be_truthy
+        error = RuntimeError.new("My runtime error")
+        expect(File).to receive(:read).with(path).and_raise error
+
+        out = Kernel.capture_stdout do
+          RunLoop::Directory.directory_digest(tmp_dir, options)
+        end.string
+
+        puts out
+
+        expect(out[/directory_digest raised an error:/, 0]).to be_truthy
+        expect(out[/My runtime error/, 0]).to be_truthy
+        expect(out[/#{path}/, 0]).to be_truthy
+        expect(out[/This is not a fatal error; it can be ignored/, 0]).to be_truthy
+      end
+
+      it "ignores read errors when :handle_errors_by is :ignoring" do
+        options = { :handle_errors_by => :ignoring }
+
+        error = RuntimeError.new("My runtime error")
+        expect(File).to receive(:read).with(path).and_raise error
+
+        out = Kernel.capture_stdout do
+          RunLoop::Directory.directory_digest(tmp_dir, options)
+        end.string
+
+        expect(out).to be == ""
+      end
+
+      it "raises read errors when :handle_errors_by is :raising" do
+        options = { :handle_errors_by => :raising }
+
+        error = RuntimeError.new("My runtime error")
+        expect(File).to receive(:read).with(path).and_raise error
+
+        expect do
+          RunLoop::Directory.directory_digest(tmp_dir, options)
+        end.to raise_error RuntimeError, /My runtime error/
+      end
+
+      it "the default behavior is to raise" do
+        error = RuntimeError.new("My runtime error")
+        expect(File).to receive(:read).with(path).and_raise error
+
+        expect do
+          RunLoop::Directory.directory_digest(tmp_dir)
+        end.to raise_error RuntimeError, /My runtime error/
+      end
     end
   end
 
