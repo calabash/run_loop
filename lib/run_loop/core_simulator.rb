@@ -1,6 +1,24 @@
 # A class to manage interactions with CoreSimulators.
 class RunLoop::CoreSimulator
 
+  # Starting in Xcode 7, the time for simctl to install a simulator on a
+  # device has increased. The situation on resource constrained devices is
+  # especially bad.
+  #
+  # If the default values do not work in your environment, you can override
+  # them.  For cucumber users, the best place to override would be in your
+  # features/support/env.rb
+  #
+  # RunLoop::CoreSimulator::OPTIONS[:install_app_timeout] = 60
+  OPTIONS = {
+
+    # How long to wait for an app to install.
+    :install_app_timeout => RunLoop::Environment.ci? ? 60 : 30,
+
+    # How long to wait for an app to launch.
+    :app_launch_timeout => RunLoop::Environment.ci? ? 60 : 30
+  }
+
   # @!visibility private
   @@simulator_pid = nil
 
@@ -215,7 +233,8 @@ class RunLoop::CoreSimulator
     launch_simulator
 
     args = ['simctl', 'launch', device.udid, app.bundle_identifier]
-    hash = xcrun.exec(args, log_cmd: true, timeout: 30)
+    timeout = OPTIONS[:app_launch_timeout]
+    hash = xcrun.exec(args, log_cmd: true, timeout: timeout)
 
     exit_status = hash[:exit_status]
 
@@ -404,7 +423,8 @@ Command had no output
     launch_simulator
 
     args = ['simctl', 'install', device.udid, app.path]
-    xcrun.exec(args, log_cmd: true, timeout: 20)
+    timeout = OPTIONS[:install_app_timeout]
+    xcrun.exec(args, log_cmd: true, timeout: timeout)
 
     device.simulator_wait_for_stable_state
     installed_app_bundle_dir
