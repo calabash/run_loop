@@ -22,8 +22,27 @@ module RunLoop
     # Computes the digest of directory.
     #
     # @param path A path to a directory.
+    # @param options Control the behavior of the method.
+    # @option options :handle_errors_by (:raising) Controls what to do when
+    #   File.read causes an error.  The default behavior is to raise.  Other
+    #   options are: :logging and :ignoring.  Logging will only happen if
+    #   running in debug mode.
+    #
     # @raise ArgumentError When `path` is not a directory or path does not exist.
-    def self.directory_digest(path)
+    # @raise ArgumentError When options[:handle_errors_by] has n unsupported value.
+    def self.directory_digest(path, options={})
+      default_options = {
+        :handle_errors_by => :raising
+      }
+
+      merged_options = default_options.merge(options)
+      handle_errors_by = merged_options[:handle_errors_by]
+      unless [:raising, :logging, :ignoring].include?(handle_errors_by)
+        raise ArgumentError,
+%Q{Expected :handle_errors_by to be :raising, :logging, or :ignoring;
+found '#{handle_errors_by}'
+}
+      end
 
       unless File.exist?(path)
         raise ArgumentError, "Expected '#{path}' to exist"
@@ -47,14 +66,26 @@ module RunLoop
           begin
             sha << File.read(file)
           rescue => e
-            [
-                 "RunLoop::Directory.directory_digest raised an error:",
-                 e,
-                 "while trying to find the SHA of this file:",
-                 file,
-                 "This is not a fatal error; it can be ignored."
-            ].each do |line|
-              RunLoop.log_debug(line)
+            case handle_errors_by
+            when :logging
+              message =
+%Q{RunLoop::Directory.directory_digest raised an error:
+
+         #{e}
+
+       while trying to find the SHA of this file:
+
+         #{file}
+
+       This is not a fatal error; it can be ignored.
+}
+              RunLoop.log_debug(message)
+            when :raising
+              raise e.class, e.message
+            when :ignoring
+               # nop
+            else
+               # nop
             end
           end
         end
