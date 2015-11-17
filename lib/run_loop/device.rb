@@ -341,7 +341,9 @@ Please update your sources.))
         begin
           # Typically, this returns in < 0.3 seconds.
           Timeout.timeout(10, TimeoutError) do
-            RunLoop::Directory.directory_digest(data_dir)
+            # Errors are ignorable and users are confused by the messages.
+            options = { :handle_errors_by => :ignoring }
+            RunLoop::Directory.directory_digest(data_dir, options)
           end
         rescue => _
           SecureRandom.uuid
