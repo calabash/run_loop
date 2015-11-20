@@ -97,8 +97,7 @@ module RunLoop
         ENV['DEBUG'] = '1' if debug
 
         begin
-          RunLoop::SimControl.terminate_all_sims
-          RunLoop::LifeCycle::Simulator.new.terminate_core_simulator_processes
+          RunLoop::CoreSimulator.terminate_core_simulator_processes
         ensure
           ENV['DEBUG'] = original_value if debug
         end
