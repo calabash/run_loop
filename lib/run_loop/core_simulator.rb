@@ -1,22 +1,24 @@
 # A class to manage interactions with CoreSimulators.
 class RunLoop::CoreSimulator
 
-  # Starting in Xcode 7, the time for simctl to install a simulator on a
-  # device has increased. The situation on resource constrained devices is
-  # especially bad.
+  # These options control various aspects of an app's life cycle on the iOS
+  # Simulator.
   #
-  # If the default values do not work in your environment, you can override
-  # them.  For cucumber users, the best place to override would be in your
-  # features/support/env.rb
+  # You can override these values if they do not work in your environment.
   #
-  # RunLoop::CoreSimulator::OPTIONS[:install_app_timeout] = 60
-  OPTIONS = {
-
-    # How long to wait for an app to install.
-    :install_app_timeout => RunLoop::Environment.ci? ? 60 : 30,
-
-    # How long to wait for an app to launch.
-    :app_launch_timeout => RunLoop::Environment.ci? ? 60 : 30
+  # For cucumber users, the best place to override would be in your
+  # features/support/env.rb.
+  #
+  # For example:
+  #
+  # RunLoop::CoreSimulator::DEFAULT_OPTIONS[:install_app_timeout] = 60
+  DEFAULT_OPTIONS = {
+    # In most cases 30 seconds is a reasonable amount of time to wait for an
+    # install.  When testing larger apps, on slow machines, or in CI, this
+    # value may need to be higher.  120 is the default for CI.
+    :install_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
+    :uninstall_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
+    :launch_app_timeout => RunLoop::Environment.ci? ? 120 : 30
   }
 
   # @!visibility private
@@ -233,7 +235,7 @@ class RunLoop::CoreSimulator
     launch_simulator
 
     args = ['simctl', 'launch', device.udid, app.bundle_identifier]
-    timeout = OPTIONS[:app_launch_timeout]
+    timeout = DEFAULT_OPTIONS[:launch_app_timeout]
     hash = xcrun.exec(args, log_cmd: true, timeout: timeout)
 
     exit_status = hash[:exit_status]
@@ -297,7 +299,9 @@ class RunLoop::CoreSimulator
     launch_simulator
 
     args = ['simctl', 'uninstall', device.udid, app.bundle_identifier]
-    xcrun.exec(args, log_cmd: true, timeout: 20)
+
+    timeout = DEFAULT_OPTIONS[:uninstall_app_timeout]
+    xcrun.exec(args, log_cmd: true, timeout: timeout)
 
     device.simulator_wait_for_stable_state
     true
@@ -423,7 +427,7 @@ Command had no output
     launch_simulator
 
     args = ['simctl', 'install', device.udid, app.path]
-    timeout = OPTIONS[:install_app_timeout]
+    timeout = DEFAULT_OPTIONS[:install_app_timeout]
     xcrun.exec(args, log_cmd: true, timeout: timeout)
 
     device.simulator_wait_for_stable_state

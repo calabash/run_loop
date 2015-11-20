@@ -1,5 +1,18 @@
 describe RunLoop::Device do
 
+  describe "SIM_STABLE_STATE_OPTIONS" do
+    it ":timeout" do
+      if RunLoop::Environment.ci?
+        expected = 120
+      else
+        expected = 30
+      end
+
+      actual = RunLoop::Device::SIM_STABLE_STATE_OPTIONS[:timeout]
+      expect(actual).to be == expected
+    end
+  end
+
   context 'creating a new instance' do
     subject!(:version) { RunLoop::Version.new('7.1.2') }
     subject(:device) { RunLoop::Device.new('name', version , 'udid', 'Shutdown') }
@@ -370,3 +383,4 @@ describe RunLoop::Device do
     end
   end
 end
+
