@@ -98,6 +98,11 @@ module RunLoop
 
         begin
           RunLoop::CoreSimulator.terminate_core_simulator_processes
+          process_name = "com.apple.CoreSimulator.CoreSimulatorService"
+          RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
+            kill_options = { :timeout => 0.5 }
+            RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
+          end
         ensure
           ENV['DEBUG'] = original_value if debug
         end
