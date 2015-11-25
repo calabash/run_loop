@@ -185,6 +185,12 @@ module RunLoop
         # Quits the simulator.
         core_sim = RunLoop::CoreSimulator.new(device, app)
 
+        # :reset is a legacy variable; has been replaced with :reset_app_sandbox
+        if launch_options[:reset] || launch_options[:reset_app_sandbox]
+          core_sim.reset_app_sandbox
+        end
+
+        # Launches the simulator
         core_sim.install
 
         # Will quit the simulator if it is running.
