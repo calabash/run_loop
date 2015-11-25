@@ -190,9 +190,6 @@ module RunLoop
           core_sim.reset_app_sandbox
         end
 
-        # Launches the simulator
-        core_sim.install
-
         # Will quit the simulator if it is running.
         # @todo fix accessibility_enabled? so we don't have to quit the sim
         # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
@@ -202,17 +199,15 @@ module RunLoop
         # Will quit the simulator if it is running.
         # @todo fix software_keyboard_enabled? so we don't have to quit the sim
         # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
-        # https://github.com/calabash/run_loop/issues/167
+        # https://github.com/calabash/run_loop/issues/168
         sim_control.ensure_software_keyboard(device)
 
-        # Xcode 6.3 instruments cannot launch an app that is already installed on
-        # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
-        if xcode.version_gte_63?
+        # Launches the simulator if the app is not installed.
+        core_sim.install
 
-          if core_sim.app_is_installed? && !sim_control.sim_is_running?
-            core_sim.launch_simulator
-          end
-        end
+        # If CoreSimulator has already launched the simulator, it will not
+        # launching it again.
+        core_sim.launch_simulator
       end
     end
 
