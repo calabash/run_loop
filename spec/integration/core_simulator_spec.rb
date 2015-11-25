@@ -16,6 +16,18 @@ describe RunLoop::CoreSimulator do
     sleep 2
   end
 
+  describe ".erase" do
+    it "can quit, shutdown, and erase a simulator" do
+      core_sim.launch_simulator
+
+      expect(RunLoop::CoreSimulator.erase(simulator)).to be_truthy
+    end
+
+    it "can shutdown and erase a simulator" do
+      expect(RunLoop::CoreSimulator.erase(simulator)).to be_truthy
+    end
+
+  end
   describe '#launch_simulator' do
     it 'can launch the simulator' do
       expect(core_sim.launch_simulator).to be_truthy

@@ -162,6 +162,82 @@ class RunLoop::CoreSimulator
   end
 
   # @!visibility private
+  # Erase a simulator.  This is the same as touching the Simulator
+  # "Reset Content & Settings" menu item.
+  #
+  # @param [RunLoop::Device] simulator The simulator to erase
+  # @param [Hash] options Control the behavior of the method.
+  # @option options [Numeric] :timout (180) How long tow wait for simctl to
+  #   shutdown and erase the simulator.  The timeout is apply separately to
+  #   each command.
+  #
+  # @raise RuntimeError If the simulator cannot be shutdown
+  # @raise RuntimeError If the simulator cannot be erased
+  # @raise ArgumentError If the simulator is a physical device
+  def self.erase(simulator, options={})
+    if simulator.physical_device?
+      raise ArgumentError,
+        "#{simulator} is a physical device.  This method is only for Simulators"
+    end
+
+    default_options = {
+      :timeout => 60*3
+    }
+
+    merged_options = default_options.merge(options)
+
+    self.quit_simulator
+
+    xcrun = merged_options[:xcrun] || RunLoop::Xcrun.new
+    timeout = merged_options[:timeout]
+    xcrun_opts = {
+      :log_cmd => true,
+      :timeout => timeout
+    }
+
+    if simulator.update_simulator_state != "Shutdown"
+      args = ["simctl", "shutdown", simulator.udid]
+      xcrun.exec(args, xcrun_opts)
+      begin
+        self.wait_for_simulator_state(simulator, "Shutdown")
+      rescue RuntimeError => _
+        raise RuntimeError, %Q{
+Could not erase simulator because it could not be Shutdown.
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
+
+}
+
+      end
+    end
+
+    args = ["simctl", "erase", simulator.udid]
+    hash = xcrun.exec(args, xcrun_opts)
+
+    if hash[:exit_status] != 0
+      raise RuntimeError, %Q{
+Could not erase simulator because simctl returned this error:
+
+#{hash[:out]}
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
+
+}
+
+    end
+
+    hash
+  end
+
+  # @!visibility private
   def self.simulator_pid
     @@simulator_pid
   end
