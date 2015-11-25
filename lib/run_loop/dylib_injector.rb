@@ -7,6 +7,16 @@ module RunLoop
   # Injects dylibs into running executables using lldb.
   class DylibInjector
 
+    # Options for controlling how often to retry dylib injection.
+    #
+    # Try 3 times for 10 seconds each try with a sleep of 2 seconds
+    # between tries.
+    RETRY_OPTIONS = {
+      :tries => 3,
+      :interval => 2,
+      :timeout => 10
+    }
+
     # @!attribute [r] process_name
     # The name of the process to inject the dylib into.  This should be obtained
     #  by inspecting the Info.plist in the app bundle.
@@ -18,6 +28,9 @@ module RunLoop
     # @return [String] The dylib_path
     attr_reader :dylib_path
 
+    # @!visibility private
+    attr_reader :xcrun
+
     # Create a new dylib injector.
     # @param [String] process_name The name of the process to inject the dylib
     #  into.  This should be obtained by inspecting the Info.plist in the app
@@ -25,92 +38,99 @@ module RunLoop
     # @param [String] dylib_path The path the dylib to inject.
     def initialize(process_name, dylib_path)
       @process_name = process_name
-      @dylib_path = dylib_path
+      @dylib_path = Shellwords.shellescape(dylib_path)
+    end
+
+    def xcrun
+      @xcrun ||= RunLoop::Xcrun.new
     end
 
     # Injects a dylib into a a currently running process.
-    def inject_dylib
-      debug_logging = RunLoop::Environment.debug?
-      puts "Starting lldb." if debug_logging
+    def inject_dylib(timeout)
+      RunLoop.log_debug("Starting lldb injection with a timeout of #{timeout} seconds")
 
-      stderr_output = nil
-      lldb_status = nil
-      lldb_start_time = Time.now
-      Open3.popen3('sh') do |stdin, stdout, stderr, process_status|
-        stdin.puts 'xcrun lldb --no-lldbinit<<EOF'
-        stdin.puts "process attach -n '#{@process_name}'"
-        stdin.puts "expr (void*)dlopen(\"#{@dylib_path}\", 0x2)"
-        stdin.puts 'detach'
-        stdin.puts 'exit'
-        stdin.puts 'EOF'
-        stdin.close
+      script_path = write_script
 
-        puts "#{stdout.read}" if debug_logging
+      start = Time.now
 
-        lldb_status = process_status
-        stderr_output = stderr.read.strip
-      end
+      options = {
+        :timeout => timeout,
+        :log_cmd => true
+      }
 
-      pid = lldb_status.pid
-      exit_status = lldb_status.value.exitstatus
-
-      if stderr_output == ''
-        if debug_logging
-          puts "lldb '#{pid}' exited with value '#{exit_status}'."
-          puts "Took #{Time.now-lldb_start_time} for lldb to inject calabash dylib."
-        end
-      else
-        puts "#{stderr_output}"
-        if debug_logging
-          puts "lldb '#{pid}' exited with value '#{exit_status}'."
-          puts "lldb tried for  #{Time.now-lldb_start_time} to inject calabash dylib before giving up."
-        end
-      end
-
-      stderr_output == ''
-    end
-
-    def inject_dylib_with_timeout(timeout)
+      hash = nil
       success = false
-      Timeout.timeout(timeout) do
-        success = inject_dylib
+      begin
+        hash = xcrun.exec(["lldb", "--no-lldbinit", "--source", script_path], options)
+        pid = hash[:pid]
+        exit_status = hash[:exit_status]
+        success = exit_status == 0
+
+        RunLoop.log_debug("lldb '#{pid}' exited with value '#{exit_status}'.")
+
+        success = exit_status == 0
+        elapsed = Time.now - start
+
+        if success
+          RunLoop.log_debug("Took #{elapsed} seconds for lldb to inject calabash dylib.")
+        else
+          RunLoop.log_debug("Could not inject dylib after #{elapsed} seconds.")
+          if hash[:out]
+            hash[:out].split("\n").each do |line|
+              RunLoop.log_debug(line)
+            end
+          else
+            RunLoop.log_debug("lldb returned no output to stdout or stderr")
+          end
+        end
+      rescue RunLoop::Xcrun::TimeoutError
+        elapsed = Time.now - start
+        RunLoop.log_debug("lldb tried for #{elapsed} seconds to inject calabash dylib before giving up.")
       end
+
       success
     end
 
     def retriable_inject_dylib(options={})
-      default_options = {:tries => 3,
-                         :interval => 10,
-                         :timeout => 10}
-      merged_options = default_options.merge(options)
-
-      debug_logging = RunLoop::Environment.debug?
-
-      on_retry = Proc.new do |_, try, elapsed_time, next_interval|
-        if debug_logging
-          # Retriable 2.0
-          if elapsed_time && next_interval
-            puts "LLDB: attempt #{try} failed in '#{elapsed_time}'; will retry in '#{next_interval}'"
-          else
-            puts "LLDB: attempt #{try} failed; will retry in #{merged_options[:interval]}"
-          end
-        end
-        RunLoop::LLDB.kill_lldb_processes
-        RunLoop::ProcessWaiter.new('lldb').wait_for_none
-      end
+      merged_options = RETRY_OPTIONS.merge(options)
 
       tries = merged_options[:tries]
+      timeout = merged_options[:timeout]
       interval = merged_options[:interval]
-      retry_opts = RunLoop::RetryOpts.tries_and_interval(tries, interval, {:on_retry => on_retry})
 
-      # For some reason, :timeout does not work here;
-      # the lldb process can hang indefinitely.
-      Retriable.retriable(retry_opts) do
-        unless inject_dylib_with_timeout merged_options[:timeout]
-          raise RuntimeError, "Could not inject dylib"
-        end
+      success = false
+
+      tries.times do
+
+        success = inject_dylib(timeout)
+        break if success
+
+        sleep(interval)
       end
-      true
+
+      if !success
+        raise RuntimeError, "Could not inject dylib"
+      end
+      success
+    end
+
+    private
+
+    def write_script
+      script = File.join(DotDir.directory, "inject-dylib.lldb")
+
+      if File.exist?(script)
+        FileUtils.rm_rf(script)
+      end
+
+      File.open(script, "w") do |file|
+        file.write("process attach -n \"#{process_name}\"\n")
+        file.write("expr (void*)dlopen(\"#{dylib_path}\", 0x2)\n")
+        file.write("detach\n")
+        file.write("exit\n")
+      end
+
+      script
     end
   end
 end

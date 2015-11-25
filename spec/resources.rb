@@ -153,22 +153,24 @@ class Resources
 
   def launch_with_options(options, tries=self.launch_retries, &block)
     hash = nil
-    Retriable.retriable({:tries => tries}) do
-      hash = RunLoop.run(options)
-    end
+
+    counter = 0
 
     begin
-      if block_given?
-        block.call(hash)
+      counter = counter + 1
+      hash = RunLoop.run(options)
+    rescue => e
+      if counter == tries
+        raise e
       end
-    ensure
-      # An attempt to suppress "assetsd crashes on Xcode 6.3", did not work.
-      # Crash occurs after the app has launched.  Possibly the result of
-      # resetting the simulator.
-      # Terminate the app.
-      # Open3.popen3('curl', *['http://localhost:37265/exit']) {}
-      # sleep(1)
+      sleep(1.0)
+      retry
     end
+
+    if block_given?
+      block.call(hash)
+    end
+
     hash
   end
 
@@ -353,16 +355,10 @@ class Resources
     case cmd
       when :install
         ipa = merged[:ipa]
-        Retriable.retriable do
-          uninstall device_udid, bundle_id, bin_path
-        end
-        Retriable.retriable do
-          install device_udid, ipa, bundle_id, bin_path
-        end
+        uninstall device_udid, bundle_id, bin_path
+        install device_udid, ipa, bundle_id, bin_path
       when :uninstall
-        Retriable.retriable do
-          uninstall device_udid, bundle_id, bin_path
-        end
+        uninstall device_udid, bundle_id, bin_path
       else
         cmds = [:install, :uninstall]
         raise ArgumentError, "expected '#{cmd}' to be one of '#{cmds}'"
@@ -436,7 +432,7 @@ class Resources
   def fork_fake_instruments_process
     pid = Process.fork
     if pid.nil?
-      exec("#{path_to_fake_instruments}")
+      exec("\"#{path_to_fake_instruments}\"")
     else
       @fake_instruments_pids ||= []
       @fake_instruments_pids << pid
@@ -500,7 +496,7 @@ class Resources
     instruments_app = File.join(dev_dir, '..', 'Applications', 'Instruments.app')
     pid = Process.fork
     if pid.nil?
-      exec "open #{instruments_app}"
+      exec "open \"#{instruments_app}\""
     else
       Process.detach pid
       poll_until = Time.now + 5

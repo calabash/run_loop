@@ -2,7 +2,7 @@ if Resources.shared.core_simulator_env?
   describe 'Simulator/Binary Compatibility Check' do
 
     before do
-      RunLoop::SimControl.terminate_all_sims
+      RunLoop::CoreSimulator.quit_simulator
     end
 
     describe 'can launch if library is FAT' do

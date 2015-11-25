@@ -1,5 +1,36 @@
 ## Change Log
 
+### 2.0.0
+
+* Core: prevent double launching of simulator #341 @fmuzf
+* CoreSim: expose :wait_for_state_timeout option #340
+* CoreSimulator can erase a simulator #339
+* Core: prepare simulator responds to :reset launch arg #338
+* Fix 'simctl manage processes' #336
+* Increase simctl and sim stable timeouts in CI environments and expose
+  options to users #334
+* Find window with hitpoint #333 @krukow
+* Improve Directory.directory_digest response to File.read errors #331
+* Increase simctl install/launch app and simulator stable timeouts in CI
+  environments #329
+* Auto dismiss "nearby bluetooth devices" alert #326
+* Simplify the detection of iOS Simulator #323
+* Remove Retriable dependency #322
+* Remove CAL_SIM_POST_LAUNCH_WAIT env var #321
+* Remove XCTools #319
+* Expose important timeouts as constant mutable hashes #315
+* CoreSimulator#launch launches simulator even if app is installed #313
+* Send KILL to lldb directly and don't wait as long for lldb to die #312
+* Improve dylib injection for simulators #311 @MorenGregersen
+* Standup Jenkins jobs #309
+* Set minimum ruby version to 2.0 #308
+
+The following have been removed from RunLoop in 2.0:
+
+* RunLoop::XCTools; replaced with Xcode and Instruments
+* RunLoop::Environment.sim_post_launch_wait; no replacement.
+  Additionally, run-loop no longer responds to CAL_SIM_POST_LAUNCH_WAIT
+
 ### 1.5.6
 
 Many thanks to everyone who filed issues for this release.

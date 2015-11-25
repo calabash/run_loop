@@ -3,6 +3,33 @@ module RunLoop
 
     include RunLoop::Regex
 
+    # Starting in Xcode 7, iOS 9 simulators have a new "booting" state.
+    #
+    # The simulator must completely boot before run-loop tries to do things
+    # like installing an app or clearing an app sandbox.  Run-loop tries to
+    # wait for a the simulator stabilize by watching the checksum of the
+    # simulator directory and the simulator log.
+    #
+    # On resource constrained devices or CI systems, the default settings may
+    # not work.
+    #
+    # You can override these values if they do not work in your environment.
+    #
+    # For cucumber users, the best place to override would be in your
+    # features/support/env.rb.
+    #
+    # For example:
+    #
+    # RunLoop::Device::SIM_STABLE_STATE_OPTIONS[:timeout] = 60
+    SIM_STABLE_STATE_OPTIONS = {
+      # The maximum amount of time to wait for the simulator
+      # to stabilize.  No errors are raised if this timeout is
+      # exceeded - if the default 30 seconds has passed, the
+      # simulator is probably stable enough for subsequent
+      # operations.
+      :timeout => RunLoop::Environment.ci? ? 120 : 30
+    }
+
     attr_reader :name
     attr_reader :version
     attr_reader :udid
@@ -117,22 +144,12 @@ Please update your sources.))
     # Returns and instruments-ready device identifier that is a suitable value
     # for DEVICE_TARGET environment variable.
     #
-    # @note As of 1.5.0, the XCTools optional argument has become a non-optional
-    #  Xcode argument.
-    #
-    # @param [RunLoop::Xcode, RunLoop::XCTools] xcode The version of the active
+    # @param [RunLoop::Xcode] xcode The version of the active
     #  Xcode.
     # @return [String] An instruments-ready device identifier.
     # @raise [RuntimeError] If trying to obtain a instruments-ready identifier
     #  for a simulator when Xcode < 6.
     def instruments_identifier(xcode=SIM_CONTROL.xcode)
-      if xcode.is_a?(RunLoop::XCTools)
-        RunLoop.deprecated('1.5.0',
-                           %q(
-RunLoop::XCTools has been replaced with a non-optional RunLoop::Xcode argument.
-Please update your sources to pass an instance of RunLoop::Xcode))
-      end
-
       if physical_device?
         udid
       else
@@ -292,19 +309,27 @@ Please update your sources to pass an instance of RunLoop::Xcode))
     def simulator_wait_for_stable_state
       require 'securerandom'
 
+      # How long to wait between stability checks.
       delay = 0.5
 
       first_launch = false
 
+      # At launch there is a brief moment when the SHA and
+      # the log file are are stable.  Then a bunch of activity
+      # occurs.  This is the quiet time.
+      #
+      # Starting in iOS 9, simulators display at _booting_ screen
+      # at first launch.  At first launch, these simulators need
+      # a much longer quiet time.
       if version >= RunLoop::Version.new('9.0')
         first_launch = simulator_data_dir_size < 20
-        quiet_time = 2
+        quiet_time = 2.0
       else
-        quiet_time = 1
+        quiet_time = 1.0
       end
 
       now = Time.now
-      timeout = 30
+      timeout = SIM_STABLE_STATE_OPTIONS[:timeout]
       poll_until = now + timeout
       quiet = now + quiet_time
 
@@ -315,12 +340,19 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       sha_fn = lambda do |data_dir|
         begin
           # Typically, this returns in < 0.3 seconds.
-          Timeout.timeout(2, TimeoutError) do
-            RunLoop::Directory.directory_digest(data_dir)
+          Timeout.timeout(10, TimeoutError) do
+            # Errors are ignorable and users are confused by the messages.
+            options = { :handle_errors_by => :ignoring }
+            RunLoop::Directory.directory_digest(data_dir, options)
           end
         rescue => _
           SecureRandom.uuid
         end
+      end
+
+      RunLoop.log_debug("Waiting for simulator to stabilize with timeout: #{timeout}")
+      if first_launch
+        RunLoop.log_debug("Detected the first launch of an iOS >= 9.0 Simulator")
       end
 
       current_line = nil

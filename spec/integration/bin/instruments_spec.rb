@@ -2,6 +2,10 @@ require 'run_loop/cli/instruments'
 
 describe RunLoop::CLI::Instruments do
 
+  before do
+    allow(RunLoop::Environment).to receive(:debug?).and_return true
+  end
+
   context 'quit' do
     it 'has help' do
       expect(Luffa.unix_command('run-loop instruments help quit',
@@ -17,10 +21,8 @@ describe RunLoop::CLI::Instruments do
                   :sim_control => sim_control
             }
 
-      hash = nil
-      Retriable.retriable({:tries => Resources.shared.launch_retries}) do
-        hash = RunLoop.run(options)
-      end
+      hash = Resources.shared.launch_with_options(options)
+
       expect(hash).not_to be nil
 
       instruments = RunLoop::Instruments.new

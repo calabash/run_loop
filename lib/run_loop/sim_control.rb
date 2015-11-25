@@ -16,12 +16,6 @@ module RunLoop
 
     include RunLoop::Regex
 
-    # @deprecated 1.5.0 - replaced by #xcode
-    def xctools
-      RunLoop.deprecated('1.5.0', 'Replaced by RunLoop::Xcode') if RunLoop::Environment.debug?
-      @xctools ||= RunLoop::XCTools.new
-    end
-
     # @!visibility private
     def xcode
       @xcode ||= RunLoop::Xcode.new
@@ -74,7 +68,7 @@ module RunLoop
     # @option opts [Float] :post_quit_wait (1.0) How long to sleep after the
     #  simulator has quit.
     #
-    # @todo Consider migrating apple script call to xctools.
+    # @todo Consider migrating AppleScript calls to separate class
     def quit_sim(opts={})
       if sim_is_running?
         default_opts = {:post_quit_wait => 1.0 }
@@ -91,11 +85,9 @@ module RunLoop
     # @param [Hash] opts Optional controls.
     # @option opts [Float] :post_launch_wait (2.0) How long to sleep after the
     #  simulator has launched.
-    #
-    # @todo Consider migrating apple script call to xctools.
     def launch_sim(opts={})
       unless sim_is_running?
-        default_opts = {:post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0}
+        default_opts = {:post_launch_wait => 2.0}
         merged_opts = default_opts.merge(opts)
         `xcrun open -g -a "#{sim_app_path}"`
         sleep(merged_opts[:post_launch_wait]) if merged_opts[:post_launch_wait]
@@ -112,7 +104,7 @@ module RunLoop
     #  simulator has launched.
     def relaunch_sim(opts={})
       default_opts = {:post_quit_wait => 1.0,
-                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 2.0}
+                      :post_launch_wait =>  2.0}
       merged_opts = default_opts.merge(opts)
       quit_sim(merged_opts)
       launch_sim(merged_opts)
@@ -204,7 +196,7 @@ module RunLoop
     #  **NOTE:** This option is ignored in Xcode < 6.
     def reset_sim_content_and_settings(opts={})
       default_opts = {:post_quit_wait => 1.0,
-                      :post_launch_wait => RunLoop::Environment.sim_post_launch_wait || 3.0,
+                      :post_launch_wait =>  3.0,
                       :sim_udid => nil}
       merged_opts = default_opts.merge(opts)
 
@@ -1151,34 +1143,23 @@ module RunLoop
 
       out.split("\n").each do |line|
 
-        possible_sdk = line[VERSION_REGEX,0]
-        if possible_sdk
-          current_sdk = possible_sdk
+        not_ios = [
+          line[/Unavailable/, 0], # Unavailable SDK
+          line[/Apple Watch/, 0],
+          line[/watchOS/, 0],
+          line[/Apple TV/, 0],
+          line[/tvOS/, 0]
+        ].any?
+
+        if not_ios
+          current_sdk = nil
+          next
+        end
+
+        ios_sdk = line[VERSION_REGEX,0]
+        if ios_sdk
+          current_sdk = ios_sdk
           simulators[current_sdk] = []
-          next
-        end
-
-        unavailable_sdk = line[/Unavailable/, 0]
-        if unavailable_sdk
-          current_sdk = nil
-          next
-        end
-
-        watch_os = line[/watchOS/, 0]
-        if watch_os
-          current_sdk = nil
-          next
-        end
-
-        watch = line[/Apple Watch/, 0]
-        if watch
-          current_sdk = nil
-          next
-        end
-
-        tv = line[/Apple TV/, 0]
-        if tv
-          current_sdk = nil
           next
         end
 
@@ -1188,9 +1169,9 @@ module RunLoop
             udid = line[CORE_SIMULATOR_UDID_REGEX,0]
             state = line[/(Booted|Shutdown)/,0]
             simulators[current_sdk] << {
-                  :name => name,
-                  :udid => udid,
-                  :state => state
+              :name => name,
+              :udid => udid,
+              :state => state
             }
           end
         end

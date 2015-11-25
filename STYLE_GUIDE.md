@@ -11,7 +11,15 @@ Follow the GitHub Style guide as much as possible.
    few characters over is not a problem.
 4. Use spaces for indenting; no hard tabs.
 5. Use `["a", "b", "c"]` over `%w(a, b, c)`.
-6. Use `""` for interpolated strings and `''` for non-interpolated strings.
+
+A note about `"` vs. `'`.  For a couple of years, the style guide said:
+
+>  Use `""` for interpolated strings and `''` for non-interpolated
+>  strings.
+
+I did an analysis of my workflow and I found that I spent a great deal
+of time chasing this style.  I've decided it is just not worth the
+effort.  Use `"` always.
 
 ### Rspec
 
@@ -20,15 +28,15 @@ Follow the GitHub Style guide as much as possible.
 ```
 # Incorrect
 it '#xcode_version_gte_63?' do
- expect(xcode).to receive(:version_gte_63?).and_return true
- expect(xctools.xcode_version_gte_63?).to be_truthy
+  expect(xcode).to receive(:version?).and_return RunLoop::Version.new("6.3"))
+  expect(xcode.version_gte_63?).to be_truthy
 end
 
 # Correct
 it '#xcode_version_gte_63?' do
-  expect(xcode).to receive(:version_gte_63?).and_return true
+  expect(xcode).to receive(:version?).and_return RunLoop::Version.new("6.3"))
 
-  expect(xctools.xcode_version_gte_63?).to be_truthy
+  expect(xcode.version_gte_63?).to be_truthy
 end
 ```
 

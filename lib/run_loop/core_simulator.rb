@@ -1,6 +1,34 @@
 # A class to manage interactions with CoreSimulators.
 class RunLoop::CoreSimulator
 
+  # These options control various aspects of an app's life cycle on the iOS
+  # Simulator.
+  #
+  # You can override these values if they do not work in your environment.
+  #
+  # For cucumber users, the best place to override would be in your
+  # features/support/env.rb.
+  #
+  # For example:
+  #
+  # RunLoop::CoreSimulator::DEFAULT_OPTIONS[:install_app_timeout] = 60
+  DEFAULT_OPTIONS = {
+    # In most cases 30 seconds is a reasonable amount of time to wait for an
+    # install.  When testing larger apps, on slow machines, or in CI, this
+    # value may need to be higher.  120 is the default for CI.
+    :install_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
+    :uninstall_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
+    :launch_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
+    :wait_for_state_timeout => RunLoop::Environment.ci? ? 120 : 30
+  }
+
+  # @!visibility private
+  # This should not be overridden
+  WAIT_FOR_SIMULATOR_STATE_INTERVAL = 0.1
+
+  # @!visibility private
+  @@simulator_pid = nil
+
   # @!visibility private
   attr_reader :app
 
@@ -17,19 +45,11 @@ class RunLoop::CoreSimulator
   attr_reader :xcrun
 
   # @!visibility private
-  attr_reader :simulator_pid
-
-  # @!visibility private
   METADATA_PLIST = '.com.apple.mobile_container_manager.metadata.plist'
 
   # @!visibility private
   CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
 
-  # @!visibility private
-  WAIT_FOR_DEVICE_STATE_OPTS = {
-        interval: 0.1,
-        timeout: 5
-  }
 
   # @!visibility private
   MANAGED_PROCESSES =
@@ -109,6 +129,122 @@ class RunLoop::CoreSimulator
       send_term_first = process_details[1]
       self.term_or_kill(process_name, send_term_first)
     end
+
+    self.simulator_pid = nil
+  end
+
+  # @!visibility private
+  #
+  # Some operations, like erase, require that the simulator be
+  # 'Shutdown'.
+  #
+  # @param [RunLoop::Device] simulator the sim to wait for
+  # @param [String] target_state the state to wait for
+  def self.wait_for_simulator_state(simulator, target_state)
+    now = Time.now
+    timeout = DEFAULT_OPTIONS[:wait_for_state_timeout]
+    poll_until = now + timeout
+    delay = WAIT_FOR_SIMULATOR_STATE_INTERVAL
+    in_state = false
+    while Time.now < poll_until
+      in_state = simulator.update_simulator_state == target_state
+      break if in_state
+      sleep delay if delay != 0
+    end
+
+    elapsed = Time.now - now
+    RunLoop.log_debug("Waited for #{elapsed} seconds for device to have state: '#{target_state}'.")
+
+    unless in_state
+      raise "Expected '#{target_state} but found '#{simulator.state}' after waiting."
+    end
+    in_state
+  end
+
+  # @!visibility private
+  # Erase a simulator.  This is the same as touching the Simulator
+  # "Reset Content & Settings" menu item.
+  #
+  # @param [RunLoop::Device] simulator The simulator to erase
+  # @param [Hash] options Control the behavior of the method.
+  # @option options [Numeric] :timout (180) How long tow wait for simctl to
+  #   shutdown and erase the simulator.  The timeout is apply separately to
+  #   each command.
+  #
+  # @raise RuntimeError If the simulator cannot be shutdown
+  # @raise RuntimeError If the simulator cannot be erased
+  # @raise ArgumentError If the simulator is a physical device
+  def self.erase(simulator, options={})
+    if simulator.physical_device?
+      raise ArgumentError,
+        "#{simulator} is a physical device.  This method is only for Simulators"
+    end
+
+    default_options = {
+      :timeout => 60*3
+    }
+
+    merged_options = default_options.merge(options)
+
+    self.quit_simulator
+
+    xcrun = merged_options[:xcrun] || RunLoop::Xcrun.new
+    timeout = merged_options[:timeout]
+    xcrun_opts = {
+      :log_cmd => true,
+      :timeout => timeout
+    }
+
+    if simulator.update_simulator_state != "Shutdown"
+      args = ["simctl", "shutdown", simulator.udid]
+      xcrun.exec(args, xcrun_opts)
+      begin
+        self.wait_for_simulator_state(simulator, "Shutdown")
+      rescue RuntimeError => _
+        raise RuntimeError, %Q{
+Could not erase simulator because it could not be Shutdown.
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
+
+}
+
+      end
+    end
+
+    args = ["simctl", "erase", simulator.udid]
+    hash = xcrun.exec(args, xcrun_opts)
+
+    if hash[:exit_status] != 0
+      raise RuntimeError, %Q{
+Could not erase simulator because simctl returned this error:
+
+#{hash[:out]}
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
+
+}
+
+    end
+
+    hash
+  end
+
+  # @!visibility private
+  def self.simulator_pid
+    @@simulator_pid
+  end
+
+  # @!visibility private
+  def self.simulator_pid=(pid)
+    @@simulator_pid = pid
   end
 
   # @param [RunLoop::Device] device The device.
@@ -130,7 +266,7 @@ class RunLoop::CoreSimulator
       RunLoop::CoreSimulator.quit_simulator
     end
 
-    # stdio.pipe - can cause problems finding the SHA or size data dir
+    # stdio.pipe - can cause problems finding the SHA of a simulator
     rm_instruments_pipe
   end
 
@@ -149,19 +285,14 @@ class RunLoop::CoreSimulator
     @xcrun ||= RunLoop::Xcrun.new
   end
 
-  # @!visibility private
-  def simulator_pid
-    @simulator_pid
-  end
-
   # Launch the simulator indicated by device.
   def launch_simulator
 
-    if sim_pid != nil
+    if running_simulator_pid != nil
       # There is a running simulator.
 
       # Did we launch it?
-      if sim_pid == simulator_pid
+      if running_simulator_pid == RunLoop::CoreSimulator.simulator_pid
         # Nothing to do, we already launched the simulator.
         return
       else
@@ -177,11 +308,8 @@ class RunLoop::CoreSimulator
 
     start_time = Time.now
 
-    pid = spawn('xcrun', *args)
+    pid = Process.spawn('xcrun', *args)
     Process.detach(pid)
-
-    # Keep track of the pid so we can know if we have already launched this sim.
-    @simulator_pid = pid
 
     options = { :timeout => 5, :raise_on_timeout => true }
     RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
@@ -190,6 +318,9 @@ class RunLoop::CoreSimulator
 
     elapsed = Time.now - start_time
     RunLoop.log_debug("Took #{elapsed} seconds to launch the simulator")
+
+    # Keep track of the pid so we can know if we have already launched this sim.
+    RunLoop::CoreSimulator.simulator_pid = running_simulator_pid
 
     true
   end
@@ -201,14 +332,20 @@ class RunLoop::CoreSimulator
   def launch
     install
 
+    # If the app is the same, install will not launch the simulator.
+    # In order to launch the app, the simulator needs to be running.
+    # launch_simulator ensures that the sim is launched and will not
+    # relaunch it.
+    launch_simulator
+
     args = ['simctl', 'launch', device.udid, app.bundle_identifier]
-    hash = xcrun.exec(args, log_cmd: true, timeout: 20)
+    timeout = DEFAULT_OPTIONS[:launch_app_timeout]
+    hash = xcrun.exec(args, log_cmd: true, timeout: timeout)
 
     exit_status = hash[:exit_status]
 
     if exit_status != 0
-      err = hash[:err]
-      RunLoop.log_error(err)
+      RunLoop.log_error(hash[:out])
       raise RuntimeError, "Could not launch #{app.bundle_identifier} on #{device}"
     end
 
@@ -254,7 +391,7 @@ class RunLoop::CoreSimulator
   def reset_app_sandbox
     return true if !app_is_installed?
 
-    wait_for_device_state('Shutdown')
+    RunLoop::CoreSimulator.wait_for_simulator_state(device, "Shutdown")
 
     reset_app_sandbox_internal
   end
@@ -266,7 +403,9 @@ class RunLoop::CoreSimulator
     launch_simulator
 
     args = ['simctl', 'uninstall', device.udid, app.bundle_identifier]
-    xcrun.exec(args, log_cmd: true, timeout: 20)
+
+    timeout = DEFAULT_OPTIONS[:uninstall_app_timeout]
+    xcrun.exec(args, log_cmd: true, timeout: timeout)
 
     device.simulator_wait_for_stable_state
     true
@@ -345,12 +484,46 @@ class RunLoop::CoreSimulator
   #
   # @note Will only search for the current Xcode simulator.
   #
-  # @return [String, nil] The pid as a String or nil if no process is found.
+  # @return [Integer, nil] The pid as a String or nil if no process is found.
   #
   # @todo Convert this to force UTF8
-  def sim_pid
+  def running_simulator_pid
     process_name = "MacOS/#{sim_name}"
-    `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split(' ').first
+
+    args = ["xcrun", "ps", "x", "-o", "pid,command"]
+    hash = xcrun.exec(args)
+
+    exit_status = hash[:exit_status]
+    if exit_status != 0
+      raise RuntimeError,
+%Q{Could not find the pid of #{sim_name} with:
+
+#{args.join(" ")}
+
+Command exited with status #{exit_status}
+Message: '#{hash[:out]}'
+}
+    end
+
+    if hash[:out].nil? || hash[:out] == ""
+       raise RuntimeError,
+%Q{Could not find the pid of #{sim_name} with:
+
+#{args.join(" ")}
+
+Command had no output
+}
+    end
+
+    lines = hash[:out].split("\n")
+
+    match = lines.detect do |line|
+      line[/#{process_name}/, 0]
+    end
+
+    return nil if match.nil?
+
+    match.split(" ").first.to_i
   end
 
   # @!visibility private
@@ -358,32 +531,11 @@ class RunLoop::CoreSimulator
     launch_simulator
 
     args = ['simctl', 'install', device.udid, app.path]
-    xcrun.exec(args, log_cmd: true, timeout: 20)
+    timeout = DEFAULT_OPTIONS[:install_app_timeout]
+    xcrun.exec(args, log_cmd: true, timeout: timeout)
 
     device.simulator_wait_for_stable_state
     installed_app_bundle_dir
-  end
-
-  # @!visibility private
-  def wait_for_device_state(target_state)
-    now = Time.now
-    timeout = WAIT_FOR_DEVICE_STATE_OPTS[:timeout]
-    poll_until = now + timeout
-    delay = WAIT_FOR_DEVICE_STATE_OPTS[:interval]
-    in_state = false
-    while Time.now < poll_until
-      in_state = device.update_simulator_state == target_state
-      break if in_state
-      sleep delay
-    end
-
-    elapsed = Time.now - now
-    RunLoop.log_debug("Waited for #{elapsed} seconds for device to have state: '#{target_state}'.")
-
-    unless in_state
-      raise "Expected '#{target_state} but found '#{device.state}' after waiting."
-    end
-    in_state
   end
 
   # Required for support of iOS 7 CoreSimulators.  Can be removed when

@@ -80,32 +80,47 @@ module RunLoop
       end
     end
 
-    # Returns the value of CAL_SIM_POST_LAUNCH_WAIT
+    # Returns true if running in Jenkins CI
     #
-    # Controls how long to wait _after_ the simulator is opened.
-    #
-    # The default wait time is 1.0.  This was arrived at through testing.
-    #
-    # In CoreSimulator environments, the iOS Simulator starts many async
-    # processes that must be allowed to finish before we start operating on the
-    # simulator.  Until we find the right combination of processes to wait for,
-    # this variable will give us the opportunity to control how long we wait.
-    #
-    # Essential for managed envs like Travis + Jenkins and on slower machines.
-    def self.sim_post_launch_wait
-      value = ENV['CAL_SIM_POST_LAUNCH_WAIT']
-      float = nil
-      begin
-        float = value.to_f
-      rescue NoMethodError => _
+    # Checks the value of JENKINS_HOME
+    def self.jenkins?
+      value = ENV["JENKINS_HOME"]
+      return value && value != ''
+    end
 
-      end
+    # Returns true if running in Travis CI
+    #
+    # Checks the value of TRAVIS
+    def self.travis?
+      value = ENV["TRAVIS"]
+      return value && value != ''
+    end
 
-      if float.nil? || float == 0.0
-        nil
-      else
-        float
-      end
+    # Returns true if running in Circle CI
+    #
+    # Checks the value of CIRCLECI
+    def self.circle_ci?
+      value = ENV["CIRCLECI"]
+      return value && value != ''
+    end
+
+    # Returns true if running in Teamcity
+    #
+    # Checks the value of TEAMCITY_PROJECT_NAME
+    def self.teamcity?
+      value = ENV["TEAMCITY_PROJECT_NAME"]
+      return value && value != ''
+    end
+
+    # Returns true if running in a CI environment
+    def self.ci?
+      [
+        self.ci_var_defined?,
+        self.travis?,
+        self.jenkins?,
+        self.circle_ci?,
+        self.teamcity?
+      ].any?
     end
 
     # !@visibility private
@@ -124,5 +139,14 @@ module RunLoop
         block.call
       end
     end
+
+    private
+
+    # !@visibility private
+    def self.ci_var_defined?
+      value = ENV["CI"]
+      return value && value != ''
+    end
   end
 end
+

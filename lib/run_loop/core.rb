@@ -185,7 +185,10 @@ module RunLoop
         # Quits the simulator.
         core_sim = RunLoop::CoreSimulator.new(device, app)
 
-        core_sim.install
+        # :reset is a legacy variable; has been replaced with :reset_app_sandbox
+        if launch_options[:reset] || launch_options[:reset_app_sandbox]
+          core_sim.reset_app_sandbox
+        end
 
         # Will quit the simulator if it is running.
         # @todo fix accessibility_enabled? so we don't have to quit the sim
@@ -196,17 +199,15 @@ module RunLoop
         # Will quit the simulator if it is running.
         # @todo fix software_keyboard_enabled? so we don't have to quit the sim
         # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
-        # https://github.com/calabash/run_loop/issues/167
+        # https://github.com/calabash/run_loop/issues/168
         sim_control.ensure_software_keyboard(device)
 
-        # Xcode 6.3 instruments cannot launch an app that is already installed on
-        # iOS 8.3 Simulators. See: https://github.com/calabash/calabash-ios/issues/744
-        if xcode.version_gte_63?
+        # Launches the simulator if the app is not installed.
+        core_sim.install
 
-          if core_sim.app_is_installed? && !sim_control.sim_is_running?
-            core_sim.launch_simulator
-          end
-        end
+        # If CoreSimulator has already launched the simulator, it will not
+        # launching it again.
+        core_sim.launch_simulator
       end
     end
 
@@ -217,15 +218,6 @@ module RunLoop
 
       logger = options[:logger]
       sim_control ||= options[:sim_control] || RunLoop::SimControl.new
-
-      if options[:xctools]
-        if RunLoop::Environment.debug?
-          RunLoop.deprecated('1.5.0', %q(
-RunLoop::XCTools has been replaced with RunLoop::Xcode.
-The :xctools key will be ignored.  It has been replaced by the :xcode key.
-Please update your sources to pass an instance of RunLoop::Xcode))
-        end
-      end
 
       xcode ||= options[:xcode] || sim_control.xcode
 
@@ -476,34 +468,23 @@ Logfile: #{log_file}
   #
   # For historical reasons, the most recent non-64b SDK should be used.
   #
-  # @param [RunLoop::XCTools, RunLoop::Xcode] xcode Used to detect the current xcode
+  # @param [RunLoop::Xcode] xcode Used to detect the current xcode
   #  version.
   def self.default_simulator(xcode=RunLoop::Xcode.new)
-    if xcode.is_a?(RunLoop::XCTools)
-      if RunLoop::Environment.debug?
-        RunLoop.deprecated('1.5.0',
-                           %q(
-RunLoop::XCTools has been replaced with RunLoop::Xcode.
-Please update your sources to pass an instance of RunLoop::Xcode))
-      end
-      ensured_xcode = RunLoop::Xcode.new
-    else
-      ensured_xcode = xcode
-    end
 
-    if ensured_xcode.version_gte_71?
+    if xcode.version_gte_71?
       'iPhone 6s (9.1)'
-    elsif ensured_xcode.version_gte_7?
+    elsif xcode.version_gte_7?
       'iPhone 5s (9.0)'
-    elsif ensured_xcode.version_gte_64?
+    elsif xcode.version_gte_64?
       'iPhone 5s (8.4 Simulator)'
-    elsif ensured_xcode.version_gte_63?
+    elsif xcode.version_gte_63?
       'iPhone 5s (8.3 Simulator)'
-    elsif ensured_xcode.version_gte_62?
+    elsif xcode.version_gte_62?
       'iPhone 5s (8.2 Simulator)'
-    elsif ensured_xcode.version_gte_61?
+    elsif xcode.version_gte_61?
       'iPhone 5s (8.1 Simulator)'
-    elsif ensured_xcode.version_gte_6?
+    elsif xcode.version_gte_6?
       'iPhone 5s (8.0 Simulator)'
     else
       'iPhone Retina (4-inch) - Simulator - iOS 7.1'
@@ -731,18 +712,7 @@ Please update your sources to pass an instance of RunLoop::Xcode))
       candidate
     end
 
-    def self.default_tracetemplate(instruments_arg=RunLoop::Instruments.new)
-      if instruments_arg.is_a?(RunLoop::XCTools)
-        if RunLoop::Environment.debug?
-          RunLoop.deprecated('1.5.0',
-                             %q(
-RunLoop::XCTools has been replaced with RunLoop::Xcode.
-Please update your sources to pass an instance of RunLoop::Instruments))
-        end
-        instruments = RunLoop::Instruments.new
-      else
-        instruments = instruments_arg
-      end
+    def self.default_tracetemplate(instruments=RunLoop::Instruments.new)
 
       templates = instruments.templates
 

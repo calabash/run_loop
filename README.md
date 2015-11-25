@@ -7,9 +7,12 @@
 * [How to contribute.](CONTRIBUTING.md)
 * [How to make a release.](CONTRIBUTING.md)
 
-### Supported Xcode Versions
+### Requirements
 
 * Xcode 6 and 7.
+* ruby >= 2.0
+
+The most recent versions of Xcode and ruby are strongly recommended.
 
 ### License
 

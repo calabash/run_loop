@@ -16,9 +16,26 @@ describe RunLoop::CoreSimulator do
     sleep 2
   end
 
+  describe ".erase" do
+    it "can quit, shutdown, and erase a simulator" do
+      core_sim.launch_simulator
+
+      expect(RunLoop::CoreSimulator.erase(simulator)).to be_truthy
+    end
+
+    it "can shutdown and erase a simulator" do
+      expect(RunLoop::CoreSimulator.erase(simulator)).to be_truthy
+    end
+
+  end
   describe '#launch_simulator' do
     it 'can launch the simulator' do
       expect(core_sim.launch_simulator).to be_truthy
+
+      pid = RunLoop::CoreSimulator.simulator_pid
+      running = core_sim.send(:running_simulator_pid)
+
+      expect(pid).to be == running
     end
 
     it 'it does not relaunch if the simulator is already running' do
@@ -27,15 +44,51 @@ describe RunLoop::CoreSimulator do
       expect(Process).not_to receive(:spawn)
 
       core_sim.launch_simulator
+
+      pid = RunLoop::CoreSimulator.simulator_pid
+      running = core_sim.send(:running_simulator_pid)
+
+      expect(pid).to be == running
     end
 
     it 'quits the simulator if it is not the same' do
+      core_sim.launch_simulator
 
+      running = core_sim.send(:running_simulator_pid)
+      RunLoop::CoreSimulator.class_variable_set(:@@simulator_pid, running - 1)
+
+      expect(Process).to receive(:spawn).and_call_original
+
+      core_sim.launch_simulator
+
+      pid = RunLoop::CoreSimulator.simulator_pid
+      running = core_sim.send(:running_simulator_pid)
+      expect(pid).to be == running
     end
   end
 
-  it '#launch' do
-    expect(core_sim.launch).to be_truthy
+  describe "#launch" do
+    before do
+      args = ['simctl', 'erase', simulator.udid]
+      xcrun.exec(args, {:log_cmd => true })
+      simulator.simulator_wait_for_stable_state
+    end
+
+    it "launches the app" do
+      expect(core_sim.launch).to be_truthy
+    end
+
+    it "launches the app even if it is already installed" do
+      expect(core_sim.launch).to be_truthy
+
+      RunLoop::CoreSimulator.quit_simulator
+
+      expect(core_sim.launch).to be_truthy
+
+      pid = RunLoop::CoreSimulator.simulator_pid
+      running = core_sim.send(:running_simulator_pid)
+      expect(pid).to be == running
+    end
   end
 
   it 'install with simctl' do
@@ -53,3 +106,4 @@ describe RunLoop::CoreSimulator do
     expect(core_sim.app_is_installed?).to be_falsey
   end
 end
+

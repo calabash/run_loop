@@ -341,11 +341,11 @@ describe RunLoop::SimControl do
         actual = sim_control.send(:simctl_list, :devices)
 
         expect(actual).to be_a Hash
-        expect(actual.length).to be == 8
+        expect(actual.length).to be == 6
 
         expect(actual['7.1']).to be == []
-        expect(actual['9.0']).to be == []
-        expect(actual['2.0']).to be == []
+        expect(actual['9.0']).to be == nil
+        expect(actual['2.0']).to be == nil
 
         # Has an extra 'TEST' device
         expect(actual['8.1'].length).to be == 9

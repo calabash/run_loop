@@ -2,8 +2,8 @@ require 'bundler'
 Bundler::GemHelper.install_tasks
 
 begin
-
   require 'rspec/core/rake_task'
+
   RSpec::Core::RakeTask.new(:spec) do |task|
     task.pattern = 'spec/lib/**{,/*/**}/*_spec.rb'
   end

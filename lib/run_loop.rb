@@ -13,7 +13,6 @@ require 'run_loop/dylib_injector'
 require 'run_loop/fifo'
 require 'run_loop/core'
 require 'run_loop/version'
-require 'run_loop/xctools'
 require 'run_loop/plist_buddy'
 require 'run_loop/app'
 require 'run_loop/ipa'
@@ -24,7 +23,6 @@ require 'run_loop/lipo'
 require 'run_loop/cache/cache'
 require 'run_loop/host_cache'
 require 'run_loop/patches/awesome_print'
-require 'run_loop/patches/retriable'
 require 'run_loop/core_simulator'
 require 'run_loop/simctl/plists'
 
@@ -37,11 +35,7 @@ module RunLoop
   # @return [void]
   def self.deprecated(version, msg)
 
-    if RUBY_VERSION < '2.0'
-      stack = Kernel.caller[1..6].join("\n")
-    else
-      stack = Kernel.caller(0, 6)[1..-1].join("\n")
-    end
+    stack = Kernel.caller(0, 6)[1..-1].join("\n")
 
     msg = "deprecated '#{version}' - #{msg}\n#{stack}"
 
