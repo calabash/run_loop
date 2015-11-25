@@ -573,7 +573,7 @@ describe RunLoop::CoreSimulator do
       end
     end
 
-    describe '#wait_for_device_state' do
+    describe '.wait_for_simulator_state' do
       it 'times out if state is never reached' do
         if Resources.shared.travis_ci?
           options = { :timeout => 0.2, :interval => 0.01 }
@@ -586,7 +586,7 @@ describe RunLoop::CoreSimulator do
         expect(device).to receive(:update_simulator_state).at_least(:once).and_return 'Undesired'
 
         expect do
-          core_sim.send(:wait_for_device_state, 'Desired')
+          RunLoop::CoreSimulator.wait_for_simulator_state(device, 'Desired')
         end.to raise_error RuntimeError, /Expected/
       end
 
@@ -597,7 +597,7 @@ describe RunLoop::CoreSimulator do
         values = ['Undesired', 'Undesired', 'Desired']
         expect(device).to receive(:update_simulator_state).at_least(:once).and_return(*values)
 
-        expect(core_sim.send(:wait_for_device_state, 'Desired')).to be_truthy
+        expect(RunLoop::CoreSimulator.wait_for_simulator_state(device, "Desired")).to be_truthy
       end
     end
 
@@ -627,7 +627,8 @@ describe RunLoop::CoreSimulator do
 
         it 'calls reset_app_sandbox_internal otherwise' do
           expect(core_sim).to receive(:app_is_installed?).and_return true
-          expect(core_sim).to receive(:wait_for_device_state).with('Shutdown').and_return true
+          args = [core_sim.device, "Shutdown"]
+          expect(RunLoop::CoreSimulator).to receive(:wait_for_simulator_state).with(*args).and_return true
           expect(core_sim).to receive(:reset_app_sandbox_internal).and_return true
 
           expect(core_sim.reset_app_sandbox).to be_truthy

@@ -134,6 +134,34 @@ class RunLoop::CoreSimulator
   end
 
   # @!visibility private
+  #
+  # Some operations, like erase, require that the simulator be
+  # 'Shutdown'.
+  #
+  # @param [RunLoop::Device] simulator the sim to wait for
+  # @param [String] target_state the state to wait for
+  def self.wait_for_simulator_state(simulator, target_state)
+    now = Time.now
+    timeout = WAIT_FOR_DEVICE_STATE_OPTS[:timeout]
+    poll_until = now + timeout
+    delay = WAIT_FOR_DEVICE_STATE_OPTS[:interval]
+    in_state = false
+    while Time.now < poll_until
+      in_state = simulator.update_simulator_state == target_state
+      break if in_state
+      sleep delay
+    end
+
+    elapsed = Time.now - now
+    RunLoop.log_debug("Waited for #{elapsed} seconds for device to have state: '#{target_state}'.")
+
+    unless in_state
+      raise "Expected '#{target_state} but found '#{simulator.state}' after waiting."
+    end
+    in_state
+  end
+
+  # @!visibility private
   def self.simulator_pid
     @@simulator_pid
   end
@@ -287,7 +315,7 @@ class RunLoop::CoreSimulator
   def reset_app_sandbox
     return true if !app_is_installed?
 
-    wait_for_device_state('Shutdown')
+    RunLoop::CoreSimulator.wait_for_simulator_state(device, "Shutdown")
 
     reset_app_sandbox_internal
   end
@@ -432,28 +460,6 @@ Command had no output
 
     device.simulator_wait_for_stable_state
     installed_app_bundle_dir
-  end
-
-  # @!visibility private
-  def wait_for_device_state(target_state)
-    now = Time.now
-    timeout = WAIT_FOR_DEVICE_STATE_OPTS[:timeout]
-    poll_until = now + timeout
-    delay = WAIT_FOR_DEVICE_STATE_OPTS[:interval]
-    in_state = false
-    while Time.now < poll_until
-      in_state = device.update_simulator_state == target_state
-      break if in_state
-      sleep delay
-    end
-
-    elapsed = Time.now - now
-    RunLoop.log_debug("Waited for #{elapsed} seconds for device to have state: '#{target_state}'.")
-
-    unless in_state
-      raise "Expected '#{target_state} but found '#{device.state}' after waiting."
-    end
-    in_state
   end
 
   # Required for support of iOS 7 CoreSimulators.  Can be removed when
