@@ -663,15 +663,14 @@ describe RunLoop::CoreSimulator do
     end
 
     describe '.wait_for_simulator_state' do
-      it 'times out if state is never reached' do
-        if Resources.shared.travis_ci?
-          options = { :timeout => 0.2, :interval => 0.01 }
-        else
-          options = { :timeout => 0.02, :interval => 0.01 }
-        end
+      before do
+        stub_const("RunLoop::CoreSimulator::WAIT_FOR_SIMULATOR_STATE_INTERVAL", 0)
 
-        stub_const('RunLoop::CoreSimulator::WAIT_FOR_DEVICE_STATE_OPTS',
-                   options)
+        options = { :wait_for_state_timeout => 0.2 }
+        stub_const('RunLoop::CoreSimulator::DEFAULT_OPTIONS', options)
+      end
+
+      it 'times out if state is never reached' do
         expect(device).to receive(:update_simulator_state).at_least(:once).and_return 'Undesired'
 
         expect do
@@ -680,9 +679,6 @@ describe RunLoop::CoreSimulator do
       end
 
       it 'waits for a state' do
-        options = { :timeout => 0.1, :interval => 0.01 }
-        stub_const('RunLoop::CoreSimulator::WAIT_FOR_DEVICE_STATE_OPTS',
-                   options)
         values = ['Undesired', 'Undesired', 'Desired']
         expect(device).to receive(:update_simulator_state).at_least(:once).and_return(*values)
 

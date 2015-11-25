@@ -18,8 +18,13 @@ class RunLoop::CoreSimulator
     # value may need to be higher.  120 is the default for CI.
     :install_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
     :uninstall_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
-    :launch_app_timeout => RunLoop::Environment.ci? ? 120 : 30
+    :launch_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
+    :wait_for_state_timeout => RunLoop::Environment.ci? ? 120 : 30
   }
+
+  # @!visibility private
+  # This should not be overridden
+  WAIT_FOR_SIMULATOR_STATE_INTERVAL = 0.1
 
   # @!visibility private
   @@simulator_pid = nil
@@ -45,11 +50,6 @@ class RunLoop::CoreSimulator
   # @!visibility private
   CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
 
-  # @!visibility private
-  WAIT_FOR_DEVICE_STATE_OPTS = {
-        interval: 0.1,
-        timeout: 5
-  }
 
   # @!visibility private
   MANAGED_PROCESSES =
@@ -142,14 +142,14 @@ class RunLoop::CoreSimulator
   # @param [String] target_state the state to wait for
   def self.wait_for_simulator_state(simulator, target_state)
     now = Time.now
-    timeout = WAIT_FOR_DEVICE_STATE_OPTS[:timeout]
+    timeout = DEFAULT_OPTIONS[:wait_for_state_timeout]
     poll_until = now + timeout
-    delay = WAIT_FOR_DEVICE_STATE_OPTS[:interval]
+    delay = WAIT_FOR_SIMULATOR_STATE_INTERVAL
     in_state = false
     while Time.now < poll_until
       in_state = simulator.update_simulator_state == target_state
       break if in_state
-      sleep delay
+      sleep delay if delay != 0
     end
 
     elapsed = Time.now - now
