@@ -200,6 +200,7 @@ function isLocationPrompt(alert) {
     var exps = [
 
             ["Tillad", /bruge din lokalitet, når du bruger appen/],
+            ["Tillad", /også når du ikke bruger appen/],
             ["OK", /vil bruge din aktuelle placering/],
             ["OK", /Would Like to Use Your Current Location/],
             ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
