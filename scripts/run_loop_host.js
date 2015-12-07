@@ -222,25 +222,25 @@ function isLocationPrompt(alert) {
             ["OK", /vil bruge din aktuelle placering/],
             ["OK", /Would Like to Use Your Current Location/],
             ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
-            ["OK", /Would Like to Send You Notifications/],
-            ["OK", /would like to send you Push Notifications/],
             ["Allow", /access your location/],
             ["OK", /Would Like to Access Your Photos/],
             ["OK", /Would Like to Access Your Contacts/],
             ["OK", /Location Accuracy/],
             ["OK", /запрашивает разрешение на использование Ващей текущей пгеопозиции/],
             ["OK", /Access the Microphone/],
-            ["OK", /enviarle notificaiones/],
             ["OK", /Would Like to Access Your Calendar/],
             ["OK", /Would Like to Access Your Reminders/],
             ["OK", /Would Like to Access Your Motion Activity/],
             ["OK", /Would Like to Access the Camera/],
-
-            //iOS 9 - English
             ["OK", /Would Like to Access Your Motion & Fitness Activity/],
             ["OK", /Would Like Access to Twitter Accounts/],
+            ["OK", /data available to nearby bluetooth devices/],
 
-            ["OK", /data available to nearby bluetooth devices/]
+            // APNS
+            ["OK", /enviarle notificaiones/],
+            ["OK", /wil u berichten stuern/],
+            ["OK", /Would Like to Send You Notifications/],
+            ["OK", /would like to send you Push Notifications/],
         ],
         ans, exp,
         txt;
