@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.0.1
+
+* Add Danish missing localization for Location alert #346
+* Dutch APNS dialog is not automatically dismissed #337
+
 ### 2.0.0
 
 * Core: prevent double launching of simulator #341 @fmuzf
