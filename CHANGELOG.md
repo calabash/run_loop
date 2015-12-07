@@ -21,7 +21,7 @@
 * Expose important timeouts as constant mutable hashes #315
 * CoreSimulator#launch launches simulator even if app is installed #313
 * Send KILL to lldb directly and don't wait as long for lldb to die #312
-* Improve dylib injection for simulators #311 @MorenGregersen
+* Improve dylib injection for simulators #311 @MortenGregersen
 * Standup Jenkins jobs #309
 * Set minimum ruby version to 2.0 #308
 
