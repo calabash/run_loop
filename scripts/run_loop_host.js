@@ -240,7 +240,7 @@ function isLocationPrompt(alert) {
             ["OK", /enviarle notificaiones/],
             ["OK", /wil u berichten stuern/],
             ["OK", /Would Like to Send You Notifications/],
-            ["OK", /would like to send you Push Notifications/],
+            ["OK", /would like to send you Push Notifications/]
         ],
         ans, exp,
         txt;
