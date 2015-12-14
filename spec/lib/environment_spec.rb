@@ -242,6 +242,28 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".gitlab?" do
+    it "returns true if GITLAB_CI is defined" do
+      stub_env({"GITLAB_CI" => true})
+
+      expect(RunLoop::Environment.gitlab?).to be == true
+    end
+
+    describe "returns false if GITLAB_CI undefined or empty" do
+      it "is nil" do
+        stub_env({"GITLAB_CI" => nil})
+
+        expect(RunLoop::Environment.gitlab?).to be == false
+      end
+
+      it "is empty string" do
+        stub_env({"GITLAB_CI" => ""})
+
+        expect(RunLoop::Environment.gitlab?).to be == false
+      end
+    end
+  end
+
   describe ".ci?" do
     describe "truthy" do
       it "CI" do
@@ -249,9 +271,10 @@ describe RunLoop::Environment do
         expect(RunLoop::Environment).to receive(:travis?).and_return false
         expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
         expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:gitlab?).and_return false
         expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return true
 
-        expect(RunLoop::Environment.ci?).to be_truthy
+        expect(RunLoop::Environment.ci?).to be == true
       end
 
       it "Jenkins" do
@@ -259,9 +282,10 @@ describe RunLoop::Environment do
         expect(RunLoop::Environment).to receive(:travis?).and_return false
         expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
         expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:gitlab?).and_return false
         expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
 
-        expect(RunLoop::Environment.ci?).to be_truthy
+        expect(RunLoop::Environment.ci?).to be == true
       end
 
       it "Travis" do
@@ -269,9 +293,10 @@ describe RunLoop::Environment do
         expect(RunLoop::Environment).to receive(:travis?).and_return true
         expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
         expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:gitlab?).and_return false
         expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
 
-        expect(RunLoop::Environment.ci?).to be_truthy
+        expect(RunLoop::Environment.ci?).to be == true
       end
 
       it "Circle CI" do
@@ -279,9 +304,10 @@ describe RunLoop::Environment do
         expect(RunLoop::Environment).to receive(:travis?).and_return false
         expect(RunLoop::Environment).to receive(:circle_ci?).and_return true
         expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:gitlab?).and_return false
         expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
 
-        expect(RunLoop::Environment.ci?).to be_truthy
+        expect(RunLoop::Environment.ci?).to be == true
       end
 
       it "TeamCity" do
@@ -289,9 +315,21 @@ describe RunLoop::Environment do
         expect(RunLoop::Environment).to receive(:travis?).and_return false
         expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
         expect(RunLoop::Environment).to receive(:teamcity?).and_return true
+        expect(RunLoop::Environment).to receive(:gitlab?).and_return false
         expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
 
-        expect(RunLoop::Environment.ci?).to be_truthy
+        expect(RunLoop::Environment.ci?).to be == true
+      end
+
+      it "GitLab" do
+        expect(RunLoop::Environment).to receive(:jenkins?).and_return false
+        expect(RunLoop::Environment).to receive(:travis?).and_return false
+        expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
+        expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:gitlab?).and_return true
+        expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
+
+        expect(RunLoop::Environment.ci?).to be == true
       end
     end
 
@@ -300,9 +338,10 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment).to receive(:travis?).and_return false
       expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
       expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+      expect(RunLoop::Environment).to receive(:gitlab?).and_return false
       expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
 
-      expect(RunLoop::Environment.ci?).to be_falsey
+      expect(RunLoop::Environment.ci?).to be == false
     end
   end
 
