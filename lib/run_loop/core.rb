@@ -472,22 +472,24 @@ Logfile: #{log_file}
   #  version.
   def self.default_simulator(xcode=RunLoop::Xcode.new)
 
-    if xcode.version_gte_71?
-      'iPhone 6s (9.1)'
+    if xcode.version_gte_72?
+      "iPhone 6s (9.2)"
+    elsif xcode.version_gte_71?
+      "iPhone 6s (9.1)"
     elsif xcode.version_gte_7?
-      'iPhone 5s (9.0)'
+      "iPhone 5s (9.0)"
     elsif xcode.version_gte_64?
-      'iPhone 5s (8.4 Simulator)'
+      "iPhone 5s (8.4 Simulator)"
     elsif xcode.version_gte_63?
-      'iPhone 5s (8.3 Simulator)'
+      "iPhone 5s (8.3 Simulator)"
     elsif xcode.version_gte_62?
-      'iPhone 5s (8.2 Simulator)'
+      "iPhone 5s (8.2 Simulator)"
     elsif xcode.version_gte_61?
-      'iPhone 5s (8.1 Simulator)'
+      "iPhone 5s (8.1 Simulator)"
     elsif xcode.version_gte_6?
-      'iPhone 5s (8.0 Simulator)'
+      "iPhone 5s (8.0 Simulator)"
     else
-      'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+      "iPhone Retina (4-inch) - Simulator - iOS 7.1"
     end
   end
 
