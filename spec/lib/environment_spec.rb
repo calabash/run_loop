@@ -158,20 +158,20 @@ describe RunLoop::Environment do
     it "returns true if JENKINS_HOME defined" do
       stub_env({"JENKINS_HOME" => "/Users/Shared/Jenkins"})
 
-      expect(RunLoop::Environment.jenkins?).to be_truthy
+      expect(RunLoop::Environment.jenkins?).to be == true
     end
 
     describe "returns false if JENKINS_HOME" do
       it "is nil" do
         stub_env({"JENKINS_HOME" => nil})
 
-        expect(RunLoop::Environment.jenkins?).to be_falsey
+        expect(RunLoop::Environment.jenkins?).to be == false
       end
 
       it "is empty string" do
         stub_env({"JENKINS_HOME" => ""})
 
-        expect(RunLoop::Environment.jenkins?).to be_falsey
+        expect(RunLoop::Environment.jenkins?).to be == false
       end
     end
   end
@@ -180,20 +180,20 @@ describe RunLoop::Environment do
     it "returns true if TRAVIS defined" do
       stub_env({"TRAVIS" => "some truthy value"})
 
-      expect(RunLoop::Environment.travis?).to be_truthy
+      expect(RunLoop::Environment.travis?).to be == true
     end
 
     describe "returns false if TRAVIS" do
       it "is nil" do
         stub_env({"TRAVIS" => nil})
 
-        expect(RunLoop::Environment.travis?).to be_falsey
+        expect(RunLoop::Environment.travis?).to be == false
       end
 
       it "is empty string" do
         stub_env({"TRAVIS" => ""})
 
-        expect(RunLoop::Environment.travis?).to be_falsey
+        expect(RunLoop::Environment.travis?).to be == false
       end
     end
   end
@@ -202,20 +202,20 @@ describe RunLoop::Environment do
     it "returns true if CIRCLECI defined" do
       stub_env({"CIRCLECI" => true})
 
-      expect(RunLoop::Environment.circle_ci?).to be_truthy
+      expect(RunLoop::Environment.circle_ci?).to be == true
     end
 
     describe "returns false if CIRCLECI" do
       it "is nil" do
         stub_env({"CIRCLECI" => nil})
 
-        expect(RunLoop::Environment.circle_ci?).to be_falsey
+        expect(RunLoop::Environment.circle_ci?).to be == false
       end
 
       it "is empty string" do
         stub_env({"CIRCLECI" => ""})
 
-        expect(RunLoop::Environment.circle_ci?).to be_falsey
+        expect(RunLoop::Environment.circle_ci?).to be == false
       end
     end
   end
@@ -224,20 +224,20 @@ describe RunLoop::Environment do
     it "returns true if TEAMCITY_PROJECT_NAME defined" do
       stub_env({"TEAMCITY_PROJECT_NAME" => "project name"})
 
-      expect(RunLoop::Environment.teamcity?).to be_truthy
+      expect(RunLoop::Environment.teamcity?).to be == true
     end
 
     describe "returns false if TEAMCITY_PROJECT_NAME" do
       it "is nil" do
         stub_env({"TEAMCITY_PROJECT_NAME" => nil})
 
-        expect(RunLoop::Environment.teamcity?).to be_falsey
+        expect(RunLoop::Environment.teamcity?).to be == false
       end
 
       it "is empty string" do
         stub_env({"TEAMCITY_PROJECT_NAME" => ""})
 
-        expect(RunLoop::Environment.teamcity?).to be_falsey
+        expect(RunLoop::Environment.teamcity?).to be == false
       end
     end
   end
@@ -312,20 +312,20 @@ describe RunLoop::Environment do
     it "returns true if CI defined" do
       stub_env({"CI" => true})
 
-      expect(RunLoop::Environment.send(:ci_var_defined?)).to be_truthy
+      expect(RunLoop::Environment.send(:ci_var_defined?)).to be == true
     end
 
     describe "returns false if CI" do
       it "is nil" do
         stub_env({"CI" => nil})
 
-        expect(RunLoop::Environment.send(:ci_var_defined?)).to be_falsey
+        expect(RunLoop::Environment.send(:ci_var_defined?)).to be == false
       end
 
       it "is empty string" do
         stub_env({"CI" => ""})
 
-        expect(RunLoop::Environment.send(:ci_var_defined?)).to be_falsey
+        expect(RunLoop::Environment.send(:ci_var_defined?)).to be == false
       end
     end
   end
