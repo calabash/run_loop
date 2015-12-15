@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 ruby_files = Dir.glob('{lib}/**/*.rb')
-java_scripts = Dir.glob('scripts/*.js')
+java_scripts = Dir.glob('scripts/**/*.js')
 bash_scripts = ['scripts/udidetect', 'scripts/read-cmd.sh', 'scripts/timeout3']
 plists = Dir.glob('plists/**/*.plist')
 
