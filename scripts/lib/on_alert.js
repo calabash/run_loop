@@ -15,9 +15,9 @@ function findAlertViewText(alert) {
     return txt;
 }
 
-function isLocationPrompt(alert) {
-    var exps = [
+function isPrivacyAlert(alert) {
 
+    var exps = [
       ["Tillad", /bruge din lokalitet, når du bruger appen/],
       ["Tillad", /også når du ikke bruger appen/],
       ["OK", /vil bruge din aktuelle placering/],

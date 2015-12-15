@@ -1,6 +1,5 @@
 <%= render_template("lib/json2.min.js") %>
 
-
 _RUN_LOOP_MAX_RETRY_AFTER_HANDLER = 10;
 var _expectedIndex = 0,//expected index of next command
     _actualIndex=0,//actual index of next command by reading commandPath
@@ -18,29 +17,29 @@ UIATarget.onAlert = function (alert) {
         rsp = null,
         actualIndex = null;
     target.pushTimeout(10);
-    function attemptTouchOKOnLocation(retry_count) {
+    function dismissPrivacyAlert(retry_count) {
         retry_count = retry_count || 0;
         if (retry_count >= 5) {
-            Log.output("Maxed out retry (5) - unable to dismiss location dialog.");
+            Log.output("Maxed out retry (5) - unable to dismiss privacy dialog.");
             return;
         }
         try {
-            var answer = isLocationPrompt(alert);
+            var answer = isPrivacyAlert(alert);
             if (answer) {
                 alert.buttons()[answer].tap();
             }
         }
         catch (e) {
-            Log.output("Exception while trying to touch alert dialog. Retrying...");
+            Log.output("Exception while trying to touch alert. Retrying...");
             if (e && typeof e.toString == 'function') {
                 Log.output(e.toString());
             }
             target.delay(1);
-            attemptTouchOKOnLocation(retry_count + 1);
+            dismissPrivacyAlert(retry_count + 1);
         }
     }
 
-    attemptTouchOKOnLocation(0);
+    dismissPrivacyAlert(0);
     target.popTimeout();
     return true;
 };

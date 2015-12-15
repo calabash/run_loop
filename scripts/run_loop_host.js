@@ -26,14 +26,14 @@ UIATarget.onAlert = function (alert) {
     Log.output({"output":"on alert"}, true);
     var target = UIATarget.localTarget();
     target.pushTimeout(10);
-    function attemptTouchOKOnLocation(retry_count) {
+    function dismissPrivacyAlert(retry_count) {
         retry_count = retry_count || 0;
         if (retry_count >= 5) {
             Log.output("Maxed out retry (5) - unable to dismiss location dialog.");
             return;
         }
         try {
-            var answer = isLocationPrompt(alert);
+            var answer = isPrivacyAlert(alert);
             if (answer) {
                 alert.buttons()[answer].tap();
             }
@@ -44,11 +44,11 @@ UIATarget.onAlert = function (alert) {
                 Log.output(e.toString());
             }
             target.delay(1);
-            attemptTouchOKOnLocation(retry_count + 1);
+            dismissPrivacyAlert(retry_count + 1);
         }
     }
 
-    attemptTouchOKOnLocation(0);
+    dismissPrivacyAlert(0);
     target.popTimeout();
     return true;
 };
