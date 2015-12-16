@@ -254,12 +254,14 @@ module RunLoop
       FileUtils.rm_f(repl_path)
 
       uia_strategy = options[:uia_strategy]
+
       if uia_strategy == :host
         create_uia_pipe(repl_path)
-        RunLoop::HostCache.default.clear unless RunLoop::Environment.xtc?
       else
         FileUtils.touch repl_path
       end
+
+      RunLoop::HostCache.default.clear unless RunLoop::Environment.xtc?
 
       cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
       File.open(script, 'w') do |file|
