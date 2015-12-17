@@ -85,7 +85,7 @@ module RunLoop
     # Checks the value of JENKINS_HOME
     def self.jenkins?
       value = ENV["JENKINS_HOME"]
-      return value && value != ''
+      !!value && value != ''
     end
 
     # Returns true if running in Travis CI
@@ -93,7 +93,7 @@ module RunLoop
     # Checks the value of TRAVIS
     def self.travis?
       value = ENV["TRAVIS"]
-      return value && value != ''
+      !!value && value != ''
     end
 
     # Returns true if running in Circle CI
@@ -101,7 +101,7 @@ module RunLoop
     # Checks the value of CIRCLECI
     def self.circle_ci?
       value = ENV["CIRCLECI"]
-      return value && value != ''
+      !!value && value != ''
     end
 
     # Returns true if running in Teamcity
@@ -109,7 +109,15 @@ module RunLoop
     # Checks the value of TEAMCITY_PROJECT_NAME
     def self.teamcity?
       value = ENV["TEAMCITY_PROJECT_NAME"]
-      return value && value != ''
+      !!value && value != ''
+    end
+
+    # Returns true if running in Teamcity
+    #
+    # Checks the value of GITLAB_CI
+    def self.gitlab?
+      value = ENV["GITLAB_CI"]
+      !!value && value != ''
     end
 
     # Returns true if running in a CI environment
@@ -119,7 +127,8 @@ module RunLoop
         self.travis?,
         self.jenkins?,
         self.circle_ci?,
-        self.teamcity?
+        self.teamcity?,
+        self.gitlab?
       ].any?
     end
 
@@ -145,7 +154,7 @@ module RunLoop
     # !@visibility private
     def self.ci_var_defined?
       value = ENV["CI"]
-      return value && value != ''
+      !!value && value != ''
     end
   end
 end

@@ -56,6 +56,7 @@ describe RunLoop::Xcode do
     expect(xcode.send(:fetch_version, key)).to be == version
   end
 
+  it '#v72' do expect(xcode.v72).to be == RunLoop::Version.new('7.2') end
   it '#v71' do expect(xcode.v71).to be == RunLoop::Version.new('7.1') end
   it '#v70' do expect(xcode.v70).to be == RunLoop::Version.new('7.0') end
   it '#v64' do expect(xcode.v64).to be == RunLoop::Version.new('6.4') end
@@ -66,19 +67,19 @@ describe RunLoop::Xcode do
   it '#v51' do expect(xcode.v51).to be == RunLoop::Version.new('5.1') end
   it '#v50' do expect(xcode.v50).to be == RunLoop::Version.new('5.0') end
 
-  describe '#version_gte_71?' do
+  describe '#version_gte_72?' do
     it 'true' do
-      expect(xcode).to receive(:version).and_return(xcode.v71,
+      expect(xcode).to receive(:version).and_return(xcode.v72,
                                                     RunLoop::Version.new('8.0'))
 
-      expect(xcode.version_gte_71?).to be_truthy
-      expect(xcode.version_gte_71?).to be_truthy
+      expect(xcode.version_gte_72?).to be_truthy
+      expect(xcode.version_gte_72?).to be_truthy
     end
 
     it 'false' do
-      expect(xcode).to receive(:version).and_return xcode.v70
+      expect(xcode).to receive(:version).and_return xcode.v71
 
-      expect(xcode.version_gte_71?).to be_falsey
+      expect(xcode.version_gte_72?).to be_falsey
     end
   end
 

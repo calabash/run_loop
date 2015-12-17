@@ -15,15 +15,15 @@ module RunLoop
     START_DELIMITER = "OUTPUT_JSON:\n"
     END_DELIMITER="\nEND_OUTPUT"
 
-    SCRIPTS_PATH = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'scripts'))
     SCRIPTS = {
-        :dismiss => 'run_dismiss_location.js',
-        :run_loop_fast_uia => 'run_loop_fast_uia.js',
-        :run_loop_shared_element => 'run_loop_shared_element.js',
-        :run_loop_host => 'run_loop_host.js',
-        :run_loop_basic => 'run_loop_basic.js'
+      :dismiss => 'run_dismiss_location.js',
+      :run_loop_host => 'run_loop_host.js',
+      :run_loop_fast_uia => 'run_loop_fast_uia.js',
+      :run_loop_shared_element => 'run_loop_shared_element.js',
+      :run_loop_basic => 'run_loop_basic.js'
     }
 
+    SCRIPTS_PATH = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'scripts'))
     READ_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'read-cmd.sh')
     TIMEOUT_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'timeout3')
 
@@ -54,7 +54,7 @@ module RunLoop
       if SCRIPTS[key].nil?
         return nil
       end
-      File.join(scripts_path, SCRIPTS[key])
+      SCRIPTS[key]
     end
 
     def self.detect_connected_device
@@ -244,7 +244,7 @@ module RunLoop
 
       script = File.join(results_dir, '_run_loop.js')
 
-      code = File.read(options[:script])
+      code = UIAScriptTemplate.new(SCRIPTS_PATH, options[:script]).result
       code = code.gsub(/\$PATH/, results_dir)
       code = code.gsub(/\$READ_SCRIPT_PATH/, READ_SCRIPT_PATH)
       code = code.gsub(/\$TIMEOUT_SCRIPT_PATH/, TIMEOUT_SCRIPT_PATH)
@@ -254,12 +254,14 @@ module RunLoop
       FileUtils.rm_f(repl_path)
 
       uia_strategy = options[:uia_strategy]
+
       if uia_strategy == :host
         create_uia_pipe(repl_path)
-        RunLoop::HostCache.default.clear unless RunLoop::Environment.xtc?
       else
         FileUtils.touch repl_path
       end
+
+      RunLoop::HostCache.default.clear unless RunLoop::Environment.xtc?
 
       cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
       File.open(script, 'w') do |file|
@@ -472,22 +474,24 @@ Logfile: #{log_file}
   #  version.
   def self.default_simulator(xcode=RunLoop::Xcode.new)
 
-    if xcode.version_gte_71?
-      'iPhone 6s (9.1)'
+    if xcode.version_gte_72?
+      "iPhone 6s (9.2)"
+    elsif xcode.version_gte_71?
+      "iPhone 6s (9.1)"
     elsif xcode.version_gte_7?
-      'iPhone 5s (9.0)'
+      "iPhone 5s (9.0)"
     elsif xcode.version_gte_64?
-      'iPhone 5s (8.4 Simulator)'
+      "iPhone 5s (8.4 Simulator)"
     elsif xcode.version_gte_63?
-      'iPhone 5s (8.3 Simulator)'
+      "iPhone 5s (8.3 Simulator)"
     elsif xcode.version_gte_62?
-      'iPhone 5s (8.2 Simulator)'
+      "iPhone 5s (8.2 Simulator)"
     elsif xcode.version_gte_61?
-      'iPhone 5s (8.1 Simulator)'
+      "iPhone 5s (8.1 Simulator)"
     elsif xcode.version_gte_6?
-      'iPhone 5s (8.0 Simulator)'
+      "iPhone 5s (8.0 Simulator)"
     else
-      'iPhone Retina (4-inch) - Simulator - iOS 7.1'
+      "iPhone Retina (4-inch) - Simulator - iOS 7.1"
     end
   end
 
