@@ -2,6 +2,7 @@
 
 ### 2.0.2
 
+* OnAlert: divide regexes by language #358
 * HostCache can be used by `console_attach` for all strategies #357
 * Xcode 7.2 support #355
 * Add Gitlab as a supported CI #353
