@@ -1,5 +1,15 @@
 ## Change Log
 
+### 2.0.2
+
+* OnAlert: divide regexes by language #358
+* HostCache can be used by `console_attach` for all strategies #357
+* Xcode 7.2 support #355
+* Add Gitlab as a supported CI #353
+* \*\_ci? methods should return true/false #355
+* Extract Logger and onAlert to a single JavaScript file using erb
+  templates #261 @svevang
+
 ### 2.0.1
 
 * Add Danish missing localization for Location alert #346
