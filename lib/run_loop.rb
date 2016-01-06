@@ -99,6 +99,16 @@ Please quit the Instruments.app and try again.)
     cloned_options[:script] = script
     cloned_options[:uia_strategy] = uia_strategy
 
+    # Xcode and SimControl will not be properly cloned and we don't want
+    # them to be; we want to use the exact objects that were passed.
+    if options[:xcode]
+      cloned_options[:xcode] = options[:xcode]
+    end
+
+    if options[:sim_control]
+      cloned_options[:sim_control] = options[:sim_control]
+    end
+
     Core.run_with_options(cloned_options)
   end
 
