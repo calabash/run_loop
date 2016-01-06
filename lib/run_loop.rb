@@ -93,12 +93,13 @@ Please quit the Instruments.app and try again.)
         raise "Inconsistent state: desired script #{desired_script} has not uia_strategy"
       end
     end
+
     # At this point script and uia_strategy selected
+    cloned_options = options.clone
+    cloned_options[:script] = script
+    cloned_options[:uia_strategy] = uia_strategy
 
-    options[:script] = script
-    options[:uia_strategy] = uia_strategy
-
-    Core.run_with_options(options)
+    Core.run_with_options(cloned_options)
   end
 
   def self.send_command(run_loop, cmd, options={timeout: 60}, num_retries=0, last_error=nil)
