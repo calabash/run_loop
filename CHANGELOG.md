@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.0.3
+
+* Hotfix for: Unable to find file: run\_loop\_fast\_uia.js #361
+  - @NickLaMuro, @kyleect and everyone else who reported
+
 ### 2.0.2
 
 * OnAlert: divide regexes by language #358
