@@ -21,9 +21,7 @@ notifications:
       - chris.fuentes@xamarin.com
     on_success: change
     on_failure: always
+  slack:
+    rooms:
+      secure: j15+d9xbUbGIyX4mmTmWP4EUg13LFiyeSGoVvpjsrPyoCR78V4jqbunLON55KczLQD5ql+xBwv34x57UZhca8g74ZBulF7A5xm7oxSyOgMOB1hgf5ruEU3n8dtWvHFvuLUyreu2QYrmGPznJnEOXE0feFuDBiyp1BpTvk4gwr+4=
 
-  # Posts to the Slack calabash channel.
-  # Turning off because they should be posted in some other
-  # yet to be determined channel.
-  # slack:
-  #  secure: gWmLS+smElUJwiCF0PYPPkFVDEowNhaD6yD9T3QxRAOamUahVq20NQg8qy1Gj2niiFDlbqYKpZZlZEwLyrcEbwWsBgyYYdNRphEqxBySzbWXZ9ebxwT7tp4bv8NMoVBe0WODx0L3kt48IUcUoSHU/aOBYmPRzf0rTFCZcwqd0W4=#calabash
