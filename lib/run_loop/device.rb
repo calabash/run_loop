@@ -38,6 +38,7 @@ module RunLoop
     attr_reader :simulator_accessibility_plist_path
     attr_reader :simulator_preferences_plist_path
     attr_reader :simulator_log_file_path
+    attr_reader :pbuddy
 
     # Create a new device.
     #
@@ -401,6 +402,29 @@ Please update your sources.))
       end
     end
 
+    # @!visibility private
+    #
+    # Sets the AppleLocale key in the .GlobalPreferences.plist file
+    #
+    # @param [String] locale_code a locale code
+    #
+    # @return [RunLoop::Locale] a locale instance
+    #
+    # @raise [RuntimeError] if this is a physical device
+    # @raise [ArgumentError] if the locale code is invalid
+    def simulator_set_locale(locale_code)
+      if physical_device?
+        raise RuntimeError, "This method is for Simulators only"
+      end
+
+      locale = RunLoop::Locale.locale_for_code(locale_code, self)
+
+      global_plist = simulator_global_preferences_path
+      pbuddy.plist_set("AppleLocale", "string", locale.code, global_plist)
+
+      locale
+    end
+
     private
 
     # @!visibility private
@@ -433,6 +457,11 @@ Please update your sources.))
     # @!visibility private
     def xcrun
       RunLoop::Xcrun.new
+    end
+
+    # @!visibility private
+    def pbuddy
+      RunLoop::PlistBuddy.new
     end
 
     # @!visibility private

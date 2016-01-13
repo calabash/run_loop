@@ -309,12 +309,37 @@ describe RunLoop::Device do
   describe "#simulator_set_locale" do
     describe "raises error" do
       it "is called on a physical device" do
-
+        device = RunLoop::Device.new("denis",
+                                     "8.3",
+                                     "893688959205dc7eb48d603c558ede919ad8dd0c")
+        expect do
+          device.simulator_set_locale("en")
+        end.to raise_error RuntimeError, /This method is for Simulators only/
       end
 
       it "the locale code is not valid" do
+        device = RunLoop::Device.new("denis","8.3", "udid")
 
+        expect do
+          device.simulator_set_locale("xyz")
+        end.to raise_error ArgumentError
       end
+    end
+
+    it "sets the AppleLocale of the .GlobalPreferences.plist" do
+      device = RunLoop::Device.new("denis","8.3", "udid")
+
+      expect(device).to receive(:simulator_global_preferences_path).and_return("a.plist")
+
+      pbuddy = RunLoop::PlistBuddy.new
+      expect(device).to receive(:pbuddy).and_return(pbuddy)
+
+      args = ["AppleLocale", "string", "en", "a.plist"]
+      expect(pbuddy).to receive(:plist_set).with(*args).and_return true
+
+      locale = device.simulator_set_locale("en")
+      expect(locale.code).to be == "en"
+      expect(locale.name).to be == "English"
     end
   end
 
