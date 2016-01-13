@@ -87,6 +87,22 @@ module RunLoop
       }.call
     end
 
+    # Inspects the app's file for the server version
+    def calabash_server_version
+      unless path.nil? || path == ""
+        path_to_bin = File.join(app_path, executable_name)
+        version_str = xcrun.exec(["strings", path_to_bin])[:out][/CALABASH VERSION: \d+\.\d+\.\d+/, 0]
+        unless version_str.nil? || version_str == ""
+          server_ver = version_str.split(":")[1].delete(' ')
+          RunLoop::Version.new(server_ver)
+        else
+          raise 'Ipa file does not contain Calabash server'
+        end
+      else
+        raise 'Unexpected empty path'
+      end
+    end
+
     private
 
     def tmpdir
