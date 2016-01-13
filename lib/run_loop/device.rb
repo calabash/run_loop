@@ -267,6 +267,14 @@ Please update your sources.))
     end
 
     # @!visibility private
+    def simulator_global_preferences_path
+      @simulator_global_preferences_path ||= lambda do
+        return nil if physical_device?
+        File.join(simulator_root_dir, "data/Library/Preferences/.GlobalPreferences.plist")
+      end.call
+    end
+
+    # @!visibility private
     # Is this the first launch of this Simulator?
     #
     # TODO Needs unit and integration tests.

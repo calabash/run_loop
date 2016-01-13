@@ -283,13 +283,25 @@ describe RunLoop::Device do
     end
 
     describe '#simulator_device_plist' do
-      it 'is nil if a simulator' do
+      it 'is nil if a physical device' do
         expect(physical.simulator_device_plist).to be_falsey
       end
 
       it 'is non-nil for simulators' do
         actual = simulator.simulator_device_plist
         expect(actual[/#{simulator.udid}\/device.plist/, 0]).to be_truthy
+      end
+    end
+
+    describe "#simulator_global_preferences_path" do
+      it "is nil if a physical device" do
+        expect(physical.simulator_global_preferences_path).to be_falsey
+      end
+
+      it "is non-nil for simulators" do
+        actual = simulator.simulator_global_preferences_path
+        expect(actual[/#{simulator.udid}/,0]).to be_truthy
+        expect(actual[/\.GlobalPreferences.plist/, 0]).to be_truthy
       end
     end
   end
