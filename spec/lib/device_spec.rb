@@ -306,6 +306,18 @@ describe RunLoop::Device do
     end
   end
 
+  describe "#simulator_set_locale" do
+    describe "raises error" do
+      it "is called on a physical device" do
+
+      end
+
+      it "the locale code is not valid" do
+
+      end
+    end
+  end
+
   describe 'updating the device state' do
 
     before do
