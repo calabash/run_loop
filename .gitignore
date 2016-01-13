@@ -35,5 +35,6 @@ Gemfile.lock
 .DS_Store
 __MACOSX
 
-# emacs
+# emacs and vim
 (.*/)?\#[^/]*\#$
+*.swp
