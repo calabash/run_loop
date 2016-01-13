@@ -120,6 +120,55 @@ describe RunLoop::CoreSimulator do
     end
   end
 
+  describe ".set_locale" do
+
+    let(:device) { RunLoop::Device.new("denis", "8.3", "udid") }
+
+    before do
+      allow(RunLoop::CoreSimulator).to receive(:quit_simulator).and_return(true)
+    end
+
+    describe "raises error" do
+      it "device arg is RunLoop::Device that is not a simulator" do
+        expect(device).to receive(:physical_device?).at_least(:once).and_return(true)
+
+        expect do
+          RunLoop::CoreSimulator.set_locale(device, "en")
+        end.to raise_error ArgumentError, /The locale cannot be set on physical devices/
+      end
+
+      it "device arg is a String that does not match any simulator" do
+        expect do
+          RunLoop::CoreSimulator.set_locale("no matching sim", "en")
+        end.to raise_error ArgumentError
+      end
+
+      it "locale_code is not valid for the device" do
+        device = RunLoop::Device.new("denis", "8.3", "udid")
+
+        expect do
+          RunLoop::CoreSimulator.set_locale(device, "invalid locale code")
+        end.to raise_error ArgumentError
+      end
+    end
+
+    describe "sets the locale" do
+      it "when device is a RunLoop::Device" do
+        expect(device).to receive(:simulator_set_locale).and_return(true)
+
+        expect(RunLoop::CoreSimulator.set_locale(device, "en")).to be_truthy
+      end
+
+      it "when device is a string identifier" do
+        expect(RunLoop::Device).to receive(:device_with_identifier).and_return(device)
+        expect(device).to receive(:simulator_set_locale).and_return(true)
+
+        expect(RunLoop::CoreSimulator.set_locale("identifier", "en")).to be_truthy
+
+      end
+    end
+  end
+
   describe 'instance methods' do
     before do
       allow(RunLoop::CoreSimulator).to receive(:terminate_core_simulator_processes).and_return true

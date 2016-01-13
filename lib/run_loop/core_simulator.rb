@@ -238,6 +238,34 @@ $ bundle exec run-loop simctl manage-processes
   end
 
   # @!visibility private
+  #
+  # @param [RunLoop::Device, String] device a simulator UDID, instruments-ready
+  #  name, or a RunLoop::Device.
+  #
+  # @param [String] locale_code a locale code
+  #
+  # @raise [ArgumentError] if no device can be found matching the UDID or
+  #   instruments-ready name
+  # @raise [ArgumentError] if device is not a simulator
+  # @raise [ArgumentError] if locale_code is invalid
+  def self.set_locale(device, locale_code)
+    if device.is_a?(RunLoop::Device)
+      simulator = device
+    else
+      simulator = RunLoop::Device.device_with_identifier(device)
+    end
+
+    if simulator.physical_device?
+      raise ArgumentError,
+        "The locale cannot be set on physical devices"
+    end
+
+    self.quit_simulator
+    RunLoop.log_debug("Setting locale to '#{locale_code}'")
+    simulator.simulator_set_locale(locale_code)
+  end
+
+  # @!visibility private
   def self.simulator_pid
     @@simulator_pid
   end
