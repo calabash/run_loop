@@ -435,6 +435,9 @@ Please update your sources.))
       out = pbuddy.plist_read("AppleLanguages", global_plist)
 
       # example: "Array {\n    en\n    en-US\n}"
+      # I am intentionally punting on this because I don't want
+      # to track down edge cases until the output of this method
+      # is actually used.
       result = [out]
       begin
         result = out.strip.gsub(/[\{\}]/, "").split($-0).map do |elm|

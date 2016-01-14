@@ -266,6 +266,33 @@ $ bundle exec run-loop simctl manage-processes
   end
 
   # @!visibility private
+  #
+  # @param [RunLoop::Device, String] device a simulator UDID, instruments-ready
+  #   name, or a RunLoop::Device
+  # @param [String] lang_code a language code
+  #
+  # @raise [ArgumentError] if no device can be found matching the UDID or
+  #   instruments-ready name
+  # @raise [ArgumentError] if device is not a simulator
+  # @raise [ArgumentError] if language_code is invalid
+  def self.set_language(device, lang_code)
+    if device.is_a?(RunLoop::Device)
+      simulator = device
+    else
+      simulator = RunLoop::Device.device_with_identifier(device)
+    end
+
+    if simulator.physical_device?
+      raise ArgumentError,
+        "The language cannot be set on physical devices"
+    end
+
+    self.quit_simulator
+    RunLoop.log_debug("Setting preferred language to '#{lang_code}'")
+    simulator.simulator_set_language(lang_code)
+  end
+
+  # @!visibility private
   def self.simulator_pid
     @@simulator_pid
   end

@@ -112,5 +112,10 @@ describe RunLoop::CoreSimulator do
     expect(actual.name).to be == "English"
     expect(actual.code).to be == "en"
   end
+
+  it ".set_language" do
+    actual = RunLoop::CoreSimulator.set_language(simulator, "en")
+    expect(actual.first).to be == "en"
+  end
 end
 
