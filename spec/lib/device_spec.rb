@@ -306,6 +306,58 @@ describe RunLoop::Device do
     end
   end
 
+  describe "#simulator_languages" do
+    let(:device) { RunLoop::Device.new("iPhone 5s", "8.3", "udid") }
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+    let(:plist) { "a.plist" }
+    let(:out) { "Array {\n    en\n    en-US\n}" }
+
+    before do
+      expect(device).to receive(:simulator_global_preferences_path).and_return(plist)
+      expect(device).to receive(:pbuddy).and_return(pbuddy)
+    end
+
+    it "returns a list of AppleLanguages from global plist" do
+      expect(pbuddy).to receive(:plist_read).with("AppleLanguages", plist).and_return(out)
+
+      expect(device.simulator_languages).to be == ["en", "en-US"]
+    end
+
+    it "catches errors and returns the string as an array" do
+      expect(pbuddy).to receive(:plist_read).with("AppleLanguages", plist).and_return(nil)
+
+      expect(device.simulator_languages).to be == [nil]
+    end
+  end
+
+  describe "#simulator_set_language" do
+    let(:device) { RunLoop::Device.new("iPhone 5s", "8.3", "udid") }
+
+    describe "raises errors" do
+      it "this is a physical device" do
+        expect(device).to receive(:physical_device?).and_return(true)
+
+        expect do
+          device.simulator_set_language("en")
+        end.to raise_error RuntimeError, /This method is for Simulators only/
+      end
+
+      it "language code is invalid" do
+        expect do
+          device.simulator_set_language("invalid code")
+        end.to raise_error ArgumentError, /is not valid for this device/
+      end
+    end
+
+    it "sets the language so it is _first_" do
+      plist = Resources.shared.global_preferences_plist
+      allow(device).to receive(:simulator_global_preferences_path).and_return(plist)
+
+      actual = device.simulator_set_language("en")
+      expect(actual).to be == ["en", "en-US"]
+    end
+  end
+
   describe "#simulator_set_locale" do
     describe "raises error" do
       it "is called on a physical device" do

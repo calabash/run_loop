@@ -56,7 +56,15 @@ class Resources
   end
 
   def resources_dir
-    @resources_dir = File.expand_path(File.join(File.dirname(__FILE__),  'resources'))
+    @resources_dir ||= File.expand_path(File.join(File.dirname(__FILE__),  'resources'))
+  end
+
+  def local_tmp_dir
+    @local_tmp_dir ||= lambda do
+      path = File.expand_path(File.join(File.dirname(__FILE__),  "..", "tmp"))
+      FileUtils.mkdir_p(path)
+      path
+    end.call
   end
 
   def infinite_run_loop_script
@@ -93,6 +101,15 @@ class Resources
 
   def bundle_id
     @bundle_id = 'com.xamarin.CalSmoke-cal'
+  end
+
+  def global_preferences_plist
+    source = File.join(resources_dir, "GlobalPreferences.plist")
+    target = File.join(local_tmp_dir, "GlobalPreferences.plist")
+    FileUtils.rm_rf(target)
+    FileUtils.cp(source, target)
+
+    target
   end
 
   def self.shutdown_all_booted(options = {})

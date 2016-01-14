@@ -425,6 +425,63 @@ Please update your sources.))
       locale
     end
 
+    # @!visibility private
+    #
+    # Returns the AppleLanguages array in global plist as an array
+    #
+    # @return [Array<String>] list of language codes
+    def simulator_languages
+      global_plist = simulator_global_preferences_path
+      out = pbuddy.plist_read("AppleLanguages", global_plist)
+
+      # example: "Array {\n    en\n    en-US\n}"
+      result = [out]
+      begin
+        result = out.strip.gsub(/[\{\}]/, "").split($-0).map do |elm|
+          elm.strip
+        end[1..-1]
+      rescue => e
+        RunLoop.log_debug("Caught error #{e.message} trying to parse '#{out}'")
+      end
+
+      result
+    end
+
+    # @!visibility private
+    #
+    # Sets the first element in the AppleLanguages array to lang_code.
+    #
+    # @param [String] lang_code a language code
+    #
+    # @return [Array<String>] list of language codes
+    #
+    # @raise [RuntimeError] if this is a physical device
+    # @raise [ArgumentError] if the language code is invalid
+    def simulator_set_language(lang_code)
+      if physical_device?
+        raise RuntimeError, "This method is for Simulators only"
+      end
+
+      if !RunLoop::Language.valid_code_for_device?(lang_code, self)
+        raise ArgumentError,
+          "The language code '#{lang_code}' is not valid for this device"
+      end
+
+      global_plist = simulator_global_preferences_path
+
+      cmd = [
+        "PlistBuddy",
+        "-c",
+        "Add :AppleLanguages:0 string '#{lang_code}'",
+        global_plist
+      ]
+
+      # RunLoop::PlistBuddy cannot add items to arrays.
+      xcrun.exec(cmd, {:log_cmd => true})
+
+      simulator_languages
+    end
+
     private
 
     # @!visibility private
