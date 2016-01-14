@@ -69,17 +69,19 @@ module RunLoop
 
     # Inspects the app's file for the server version
     def calabash_server_version
-      unless path.nil? || path == ""
-        path_to_bin = File.join(app_path, executable_name)
-        version_str = xcrun.exec(["strings", path_to_bin])[:out][/CALABASH VERSION: \d+\.\d+\.\d+/, 0]
-        unless version_str.nil? || version_str == ""
-          server_ver = version_str.split(":")[1].delete(' ')
-          RunLoop::Version.new(server_ver)
-        else
-          raise 'App file does not contain Calabash server'
+      if valid?
+        path_to_bin = File.join(path, executable_name)
+        xcrun ||= RunLoop::Xcrun.new
+        hash = xcrun.exec(["strings", path_to_bin])
+        unless hash.nil?
+          version_str = hash[:out][/CALABASH VERSION: \d+\.\d+\.\d+/, 0]
+          unless version_str.nil? || version_str == ""
+            server_ver = version_str.split(":")[1].delete(' ')
+            RunLoop::Version.new(server_ver)
+          end
         end
       else
-        raise 'Unexpected empty path'
+        raise 'Path is not valid'
       end
     end
 
