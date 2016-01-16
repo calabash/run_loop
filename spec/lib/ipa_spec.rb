@@ -1,6 +1,6 @@
 describe RunLoop::Ipa do
 
-  let(:ipa_path) { Resources.shared.ipa_path  }
+  let(:ipa_path) { Resources.shared.cal_ipa_path  }
 
   let(:ipa) { RunLoop::Ipa.new(ipa_path) }
 
@@ -75,6 +75,20 @@ describe RunLoop::Ipa do
         expect { ipa.executable_name }.to raise_error(RuntimeError)
       end
     end
+  end
+
+  context '#calabash_server_version' do
+    subject { RunLoop::Ipa.new(Resources.shared.cal_ipa_path).calabash_server_version }
+    it { should be_kind_of(RunLoop::Version) }
+
+    context 'should be nil when' do
+      let (:ipa_path) { Resources.shared.ipa_path }
+      it 'calabash server not included in app' do
+        ipa = RunLoop::Ipa.new(ipa_path)
+        expect(ipa.calabash_server_version).to be_nil
+      end
+    end
+
   end
 
   describe 'private' do
