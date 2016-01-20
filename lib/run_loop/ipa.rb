@@ -87,6 +87,26 @@ module RunLoop
       }.call
     end
 
+    # Inspects the app's file for the server version
+    def calabash_server_version
+      if bundle_dir.nil? || !File.exist?(bundle_dir)
+        raise "Expected a '#{File.basename(path).split('.').first}.app'\nat path '#{payload_dir}'"
+      else
+        if !executable_name.nil? && executable_name != ''
+          path_to_bin = File.join(bundle_dir, executable_name)
+          xcrun ||= RunLoop::Xcrun.new
+          hash = xcrun.exec(["strings", path_to_bin])
+          unless hash.nil?
+            version_str = hash[:out][/CALABASH VERSION: \d+\.\d+\.\d+/, 0]
+            unless version_str.nil? || version_str == ""
+              server_ver = version_str.split(":")[1].delete(' ')
+              RunLoop::Version.new(server_ver)
+            end
+          end
+        end
+      end
+    end
+
     private
 
     def tmpdir

@@ -72,7 +72,11 @@ class Resources
   end
 
   def ipa_path
-    @ipa_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke-cal.ipa'))
+    @ipa_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke.ipa'))
+  end
+
+  def cal_ipa_path
+    @cal_ipa_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke-cal.ipa'))
   end
 
   def sim_dylib_path

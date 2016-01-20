@@ -75,6 +75,27 @@ describe RunLoop::App do
     end
   end
 
+  context '#calabash_server_version' do
+    subject { RunLoop::App.new(Resources.shared.cal_app_bundle_path).calabash_server_version }
+    it { should be_kind_of(RunLoop::Version) }
+
+    context 'should be nil when' do
+      let (:path) { Resources.shared.app_bundle_path }
+      it 'calabash server not included in app' do
+        app = RunLoop::App.new(path)
+        expect(app.calabash_server_version).to be_nil
+      end
+    end
+
+    context 'raises an error when' do
+      let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
+      it 'path is not valid' do
+        app = RunLoop::App.new(path)
+        expect { app.calabash_server_version }.to raise_error(RuntimeError)
+      end
+    end
+  end
+
   it '#sha1' do
     expect(RunLoop::Directory).to receive(:directory_digest).with(app.path).and_return 'sha1'
 
