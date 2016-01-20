@@ -24,10 +24,10 @@ module RunLoop
       to_s
     end
 
-    # Returns a version instance for `Xcode 7.1`; used to check for the
+    # Returns a version instance for `Xcode 7.2`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
-    # @return [RunLoop::Version] 7.1
+    # @return [RunLoop::Version] 7.2
     def v72
       fetch_version(:v72)
     end
