@@ -24,6 +24,14 @@ module RunLoop
       to_s
     end
 
+    # Returns a version instance for `Xcode 7.3`; used to check for the
+    # availability of features and paths to various items on the filesystem.
+    #
+    # @return [RunLoop::Version] 7.3
+    def v73
+      fetch_version(:v73)
+    end
+
     # Returns a version instance for `Xcode 7.2`; used to check for the
     # availability of features and paths to various items on the filesystem.
     #
@@ -102,6 +110,13 @@ module RunLoop
     # @return [RunLoop::Version] 5.0
     def v50
       fetch_version(:v50)
+    end
+
+    # Is the active Xcode version 7.3 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 7.3
+    def version_gte_73?
+      version >= v73
     end
 
     # Is the active Xcode version 7.2 or above?
