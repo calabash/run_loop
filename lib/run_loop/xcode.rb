@@ -104,9 +104,9 @@ module RunLoop
       fetch_version(:v50)
     end
 
-    # Is the active Xcode version 7.1 or above?
+    # Is the active Xcode version 7.2 or above?
     #
-    # @return [Boolean] `true` if the current Xcode version is >= 7.1
+    # @return [Boolean] `true` if the current Xcode version is >= 7.2
     def version_gte_72?
       version >= v72
     end
