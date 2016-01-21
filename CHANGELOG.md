@@ -1,5 +1,12 @@
 ## Change Log
 
+### 2.0.4
+
+* Xcode 7.3 support #370
+* Launch simulator with locale and language #367
+* App and Ipa classes can report calabash\_server\_version #366
+  @ark-konopacki
+
 ### 2.0.3
 
 * Fix: Unable to find file: run\_loop\_fast\_uia.js #361
