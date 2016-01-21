@@ -28,6 +28,7 @@ describe RunLoop::CoreSimulator do
     end
 
   end
+
   describe '#launch_simulator' do
     it 'can launch the simulator' do
       expect(core_sim.launch_simulator).to be_truthy
@@ -104,6 +105,17 @@ describe RunLoop::CoreSimulator do
   it 'uninstall app and sandbox with simctl' do
     expect(core_sim.uninstall_app_and_sandbox)
     expect(core_sim.app_is_installed?).to be_falsey
+  end
+
+  it ".set_locale" do
+    actual = RunLoop::CoreSimulator.set_locale(simulator, "en")
+    expect(actual.name).to be == "English"
+    expect(actual.code).to be == "en"
+  end
+
+  it ".set_language" do
+    actual = RunLoop::CoreSimulator.set_language(simulator, "en")
+    expect(actual.first).to be == "en"
   end
 end
 

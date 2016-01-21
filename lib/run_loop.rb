@@ -26,6 +26,8 @@ require 'run_loop/patches/awesome_print'
 require 'run_loop/core_simulator'
 require 'run_loop/simctl/plists'
 require 'run_loop/template'
+require "run_loop/locale"
+require "run_loop/language"
 
 module RunLoop
 

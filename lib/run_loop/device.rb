@@ -38,6 +38,7 @@ module RunLoop
     attr_reader :simulator_accessibility_plist_path
     attr_reader :simulator_preferences_plist_path
     attr_reader :simulator_log_file_path
+    attr_reader :pbuddy
 
     # Create a new device.
     #
@@ -267,6 +268,14 @@ Please update your sources.))
     end
 
     # @!visibility private
+    def simulator_global_preferences_path
+      @simulator_global_preferences_path ||= lambda do
+        return nil if physical_device?
+        File.join(simulator_root_dir, "data/Library/Preferences/.GlobalPreferences.plist")
+      end.call
+    end
+
+    # @!visibility private
     # Is this the first launch of this Simulator?
     #
     # TODO Needs unit and integration tests.
@@ -393,6 +402,89 @@ Please update your sources.))
       end
     end
 
+    # @!visibility private
+    #
+    # Sets the AppleLocale key in the .GlobalPreferences.plist file
+    #
+    # @param [String] locale_code a locale code
+    #
+    # @return [RunLoop::Locale] a locale instance
+    #
+    # @raise [RuntimeError] if this is a physical device
+    # @raise [ArgumentError] if the locale code is invalid
+    def simulator_set_locale(locale_code)
+      if physical_device?
+        raise RuntimeError, "This method is for Simulators only"
+      end
+
+      locale = RunLoop::Locale.locale_for_code(locale_code, self)
+
+      global_plist = simulator_global_preferences_path
+      pbuddy.plist_set("AppleLocale", "string", locale.code, global_plist)
+
+      locale
+    end
+
+    # @!visibility private
+    #
+    # Returns the AppleLanguages array in global plist as an array
+    #
+    # @return [Array<String>] list of language codes
+    def simulator_languages
+      global_plist = simulator_global_preferences_path
+      out = pbuddy.plist_read("AppleLanguages", global_plist)
+
+      # example: "Array {\n    en\n    en-US\n}"
+      # I am intentionally punting on this because I don't want
+      # to track down edge cases until the output of this method
+      # is actually used.
+      result = [out]
+      begin
+        result = out.strip.gsub(/[\{\}]/, "").split($-0).map do |elm|
+          elm.strip
+        end[1..-1]
+      rescue => e
+        RunLoop.log_debug("Caught error #{e.message} trying to parse '#{out}'")
+      end
+
+      result
+    end
+
+    # @!visibility private
+    #
+    # Sets the first element in the AppleLanguages array to lang_code.
+    #
+    # @param [String] lang_code a language code
+    #
+    # @return [Array<String>] list of language codes
+    #
+    # @raise [RuntimeError] if this is a physical device
+    # @raise [ArgumentError] if the language code is invalid
+    def simulator_set_language(lang_code)
+      if physical_device?
+        raise RuntimeError, "This method is for Simulators only"
+      end
+
+      if !RunLoop::Language.valid_code_for_device?(lang_code, self)
+        raise ArgumentError,
+          "The language code '#{lang_code}' is not valid for this device"
+      end
+
+      global_plist = simulator_global_preferences_path
+
+      cmd = [
+        "PlistBuddy",
+        "-c",
+        "Add :AppleLanguages:0 string '#{lang_code}'",
+        global_plist
+      ]
+
+      # RunLoop::PlistBuddy cannot add items to arrays.
+      xcrun.exec(cmd, {:log_cmd => true})
+
+      simulator_languages
+    end
+
     private
 
     # @!visibility private
@@ -425,6 +517,11 @@ Please update your sources.))
     # @!visibility private
     def xcrun
       RunLoop::Xcrun.new
+    end
+
+    # @!visibility private
+    def pbuddy
+      RunLoop::PlistBuddy.new
     end
 
     # @!visibility private
