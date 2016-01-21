@@ -15,7 +15,7 @@ module RunLoop
 
     # @!visibility private
     def render_template(template_relative_path)
-      return UIAScriptTemplate.new(@template_root, template_relative_path).result
+      UIAScriptTemplate.new(@template_root, template_relative_path).result
     end
 
     # @!visibility private
