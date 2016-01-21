@@ -283,7 +283,7 @@ describe RunLoop::Device do
     end
 
     describe '#simulator_device_plist' do
-      it 'is nil if a simulator' do
+      it 'is nil if a physical device' do
         expect(physical.simulator_device_plist).to be_falsey
       end
 
@@ -291,6 +291,115 @@ describe RunLoop::Device do
         actual = simulator.simulator_device_plist
         expect(actual[/#{simulator.udid}\/device.plist/, 0]).to be_truthy
       end
+    end
+
+    describe "#simulator_global_preferences_path" do
+      it "is nil if a physical device" do
+        expect(physical.simulator_global_preferences_path).to be_falsey
+      end
+
+      it "is non-nil for simulators" do
+        actual = simulator.simulator_global_preferences_path
+        expect(actual[/#{simulator.udid}/,0]).to be_truthy
+        expect(actual[/\.GlobalPreferences.plist/, 0]).to be_truthy
+      end
+    end
+  end
+
+  describe "#simulator_languages" do
+    let(:device) { RunLoop::Device.new("iPhone 5s", "8.3", "udid") }
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+    let(:plist) { "a.plist" }
+    let(:out) { "Array {\n    en\n    en-US\n}" }
+
+    before do
+      expect(device).to receive(:simulator_global_preferences_path).and_return(plist)
+      expect(device).to receive(:pbuddy).and_return(pbuddy)
+    end
+
+    it "returns a list of AppleLanguages from global plist" do
+      expect(pbuddy).to receive(:plist_read).with("AppleLanguages", plist).and_return(out)
+
+      expect(device.simulator_languages).to be == ["en", "en-US"]
+    end
+
+    it "catches errors and returns the string as an array" do
+      expect(pbuddy).to receive(:plist_read).with("AppleLanguages", plist).and_return(nil)
+
+      expect(device.simulator_languages).to be == [nil]
+    end
+  end
+
+  describe "#simulator_set_language" do
+    let(:device) { RunLoop::Device.new("iPhone 5s", "8.3", "udid") }
+
+    describe "raises errors" do
+      it "this is a physical device" do
+        expect(device).to receive(:physical_device?).and_return(true)
+
+        expect do
+          device.simulator_set_language("en")
+        end.to raise_error RuntimeError, /This method is for Simulators only/
+      end
+
+      it "language code is invalid" do
+        expect do
+          device.simulator_set_language("invalid code")
+        end.to raise_error ArgumentError, /is not valid for this device/
+      end
+    end
+
+    it "sets the language so it is _first_" do
+      plist = Resources.shared.global_preferences_plist
+      allow(device).to receive(:simulator_global_preferences_path).and_return(plist)
+
+      actual = device.simulator_set_language("en")
+
+      # Travis is running Xcode 6.1 which is not behaving the same as it
+      # is locally.  This is passing locally for all Xcodes and on El Cap
+      # Xcode 7.2.  Is it a difference in the PlistBuddy implementation?
+      if Luffa::Environment.travis_ci?
+        expect(actual).to be == ["en-US"]
+      else
+        expect(actual).to be == ["en", "en-US"]
+      end
+    end
+  end
+
+  describe "#simulator_set_locale" do
+    describe "raises error" do
+      it "is called on a physical device" do
+        device = RunLoop::Device.new("denis",
+                                     "8.3",
+                                     "893688959205dc7eb48d603c558ede919ad8dd0c")
+        expect do
+          device.simulator_set_locale("en")
+        end.to raise_error RuntimeError, /This method is for Simulators only/
+      end
+
+      it "the locale code is not valid" do
+        device = RunLoop::Device.new("denis","8.3", "udid")
+
+        expect do
+          device.simulator_set_locale("xyz")
+        end.to raise_error ArgumentError
+      end
+    end
+
+    it "sets the AppleLocale of the .GlobalPreferences.plist" do
+      device = RunLoop::Device.new("denis","8.3", "udid")
+
+      expect(device).to receive(:simulator_global_preferences_path).and_return("a.plist")
+
+      pbuddy = RunLoop::PlistBuddy.new
+      expect(device).to receive(:pbuddy).and_return(pbuddy)
+
+      args = ["AppleLocale", "string", "en", "a.plist"]
+      expect(pbuddy).to receive(:plist_set).with(*args).and_return true
+
+      locale = device.simulator_set_locale("en")
+      expect(locale.code).to be == "en"
+      expect(locale.name).to be == "English"
     end
   end
 
