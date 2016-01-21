@@ -22,7 +22,13 @@ class Resources
   end
 
   def launch_retries
-    travis_ci? ? 8 : 2
+    if RunLoop::Environment.travis?
+     8
+    elsif RunLoop::Environment.jenkins?
+     5
+    else
+     2
+    end
   end
 
   def xcode
