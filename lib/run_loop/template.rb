@@ -9,7 +9,7 @@ module RunLoop
     # @!visibility private
     def initialize(template_root, template_relative_path)
       @template_root = template_root
-      @template = File.read(File.join(@template_root, template_relative_path))
+      @template = File.read(File.join(@template_root, template_relative_path)).force_encoding("utf-8")
       super(@template)
     end
 
