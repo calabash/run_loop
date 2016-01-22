@@ -65,50 +65,57 @@ describe RunLoop::App do
     end
   end
 
-  context '#info_plist_path' do
-    subject { RunLoop::App.new(path).info_plist_path }
+  it '#info_plist_path' do
+    actual = app.info_plist_path
+    expected = File.join(Resources.shared.app_bundle_path, "Info.plist")
 
-    context 'the plist exists' do
-      let(:path) { Resources.shared.app_bundle_path }
-      it { is_expected.to be == File.join(path, 'Info.plist') }
+    expect(actual).to be == expected
+    expect(app.instance_variable_get(:@info_plist_path)).to be == expected
+  end
+
+  describe '#bundle_identifier' do
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+    let(:args) { ["CFBundleIdentifier", app.info_plist_path] }
+
+    before do
+      allow(app).to receive(:plist_buddy).and_return(pbuddy)
     end
 
-    describe 'raises error when' do
-      let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
-      it 'there is no info plist' do
-        app = RunLoop::App.new(path)
-        expect { app.info_plist_path }.to raise_error(RuntimeError)
-      end
+    it "returns the bundle identifier" do
+      expect(pbuddy).to receive(:plist_read).with(*args).and_return("com.example.App")
+
+      expect(app.bundle_identifier).to be == "com.example.App"
+    end
+
+    it "raises an error if key is not found" do
+      expect(pbuddy).to receive(:plist_read).with(*args).and_return(nil)
+
+      expect do
+        app.bundle_identifier
+      end.to raise_error RuntimeError, /Expected key 'CFBundleIdentifier'/
     end
   end
 
-  context '#bundle_identifier' do
-    subject { RunLoop::App.new(Resources.shared.app_bundle_path).bundle_identifier }
-    it { is_expected.to be == bundle_id }
+  describe '#exectuable_name' do
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+    let(:args) { ["CFBundleExecutable", app.info_plist_path] }
 
-    context 'raises an error when' do
-      let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
-      it 'there is no CFBundleIdentifier' do
-        app = RunLoop::App.new(path)
-        file = RunLoop::PlistBuddy.new.create_plist(File.join(path, 'Info.plist'))
-        expect(File.exist?(file)).to be_truthy
-        expect { app.bundle_identifier }.to raise_error(RuntimeError)
-      end
+    before do
+      allow(app).to receive(:plist_buddy).and_return(pbuddy)
     end
-  end
 
-  context '#exectuable_name' do
-    subject { RunLoop::App.new(Resources.shared.app_bundle_path).executable_name }
-    it { is_expected.to be == 'CalSmoke' }
+    it "returns the executable name" do
+      expect(pbuddy).to receive(:plist_read).with(*args).and_return("App")
 
-    context 'raises an error when' do
-      let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
-      it 'there is no CFExecutableName' do
-        app = RunLoop::App.new(path)
-        file = RunLoop::PlistBuddy.new.create_plist(File.join(path, 'Info.plist'))
-        expect(File.exist?(file)).to be_truthy
-        expect { app.executable_name }.to raise_error(RuntimeError)
-      end
+      expect(app.executable_name).to be == "App"
+    end
+
+    it "raises an error if key is not found" do
+      expect(pbuddy).to receive(:plist_read).with(*args).and_return(nil)
+
+      expect do
+        app.executable_name
+      end.to raise_error RuntimeError, /Expected key 'CFBundleExecutable'/
     end
   end
 
@@ -121,14 +128,6 @@ describe RunLoop::App do
       it 'calabash server not included in app' do
         app = RunLoop::App.new(path)
         expect(app.calabash_server_version).to be_nil
-      end
-    end
-
-    context 'raises an error when' do
-      let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.app')).first }
-      it 'path is not valid' do
-        app = RunLoop::App.new(path)
-        expect { app.calabash_server_version }.to raise_error(RuntimeError)
       end
     end
   end

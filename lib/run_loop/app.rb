@@ -58,11 +58,7 @@ Bundle must:
     # Returns the Info.plist path.
     # @raise [RuntimeError] If there is no Info.plist.
     def info_plist_path
-      info_plist = File.join(path, 'Info.plist')
-      unless File.exist?(info_plist)
-        raise "Expected an Info.plist at '#{path}'"
-      end
-      info_plist
+      @info_plist_path ||= File.join(path, 'Info.plist')
     end
 
     # Inspects the app's Info.plist for the bundle identifier.
@@ -91,19 +87,15 @@ Bundle must:
 
     # Inspects the app's file for the server version
     def calabash_server_version
-      if valid?
-        path_to_bin = File.join(path, executable_name)
-        xcrun ||= RunLoop::Xcrun.new
-        hash = xcrun.exec(["strings", path_to_bin])
-        unless hash.nil?
-          version_str = hash[:out][/CALABASH VERSION: \d+\.\d+\.\d+/, 0]
-          unless version_str.nil? || version_str == ""
-            server_ver = version_str.split(":")[1].delete(' ')
-            RunLoop::Version.new(server_ver)
-          end
+      path_to_bin = File.join(path, executable_name)
+      xcrun ||= RunLoop::Xcrun.new
+      hash = xcrun.exec(["strings", path_to_bin])
+      unless hash.nil?
+        version_str = hash[:out][/CALABASH VERSION: \d+\.\d+\.\d+/, 0]
+        unless version_str.nil? || version_str == ""
+          server_ver = version_str.split(":")[1].delete(' ')
+          RunLoop::Version.new(server_ver)
         end
-      else
-        raise 'Path is not valid'
       end
     end
 
