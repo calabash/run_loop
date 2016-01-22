@@ -14,6 +14,20 @@ module RunLoop
     # @return [RunLoop::App] A instance of App with a path.
     def initialize(app_bundle_path)
       @path = File.expand_path(app_bundle_path)
+
+      if !App.valid?(app_bundle_path)
+        raise ArgumentError,
+%Q{App does not exist at path or is not an app bundle.
+
+#{app_bundle_path}
+
+Bundle must:
+
+1. be a directory that exists,
+2. have a .app extension,
+3. and contain an Info.plist.
+}
+      end
     end
 
     # @!visibility private

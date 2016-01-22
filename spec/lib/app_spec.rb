@@ -7,6 +7,14 @@ describe RunLoop::App do
     it 'creates a new app with a path' do
       expect(app.path).to be == Resources.shared.app_bundle_path
     end
+
+    it "raises an error if app bundle path is not valid" do
+      expect(RunLoop::App).to receive(:valid?).and_return(false)
+
+      expect do
+        expect(RunLoop::App.new("path/does/not/exist"))
+      end.to raise_error ArgumentError, /App does not exist at path or is not an app bundle/
+    end
   end
 
   context ".valid?" do
