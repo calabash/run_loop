@@ -9,22 +9,51 @@ describe RunLoop::App do
     end
   end
 
-  context '#valid?' do
-    subject { RunLoop::App.new(path).valid? }
+  context ".valid?" do
+    subject { RunLoop::App.valid?(path) }
 
-    context 'path does not exist' do
-      let (:path) { '/path/does/not/exist' }
+    context "path does not exist" do
+      let (:path) { "/path/does/not/exist" }
       it { is_expected.to be_falsey }
     end
 
-    context 'path is not a directory' do
-      let (:path) { FileUtils.touch(File.join(Dir.mktmpdir, 'foo.app')).first }
+    context "path is not a directory" do
+      let (:path) { FileUtils.touch(File.join(Dir.mktmpdir, "foo.app")).first }
       it { is_expected.to be_falsey }
     end
 
-    context 'path does not end in .app' do
-      let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, 'foo.bar')).first }
+    context "path does not end in .app" do
+      let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, "foo.bar")).first }
       it { is_expected.to be_falsey }
+    end
+
+    context "path is nil" do
+      let(:path) { nil }
+      it { is_expected.to be_falsey }
+    end
+
+    context "bundle does not contain an Info.plist" do
+      let(:path) do
+        tmp_dir = Dir.mktmpdir
+        bundle = File.join(tmp_dir, "foo.app")
+        FileUtils.mkdir_p(bundle)
+        bundle
+      end
+      it { is_expected.to be_falsey }
+    end
+  end
+
+  describe "#valid?" do
+    it "returns false" do
+      expect(RunLoop::App).to receive(:valid?).with(app.path).and_return(false)
+
+      expect(app.valid?).to be_falsey
+    end
+
+    it "returns true" do
+      expect(RunLoop::App).to receive(:valid?).with(app.path).and_return(true)
+
+      expect(app.valid?).to be_truthy
     end
   end
 

@@ -28,9 +28,17 @@ module RunLoop
 
     # Is this a valid app?
     def valid?
-      [File.exist?(path),
-       File.directory?(path),
-       File.extname(path) == '.app'].all?
+      App.valid?(path)
+    end
+
+    # @!visibility private
+    def self.valid?(app_bundle_path)
+      return false if app_bundle_path.nil?
+
+      File.exist?(app_bundle_path) &&
+        File.directory?(app_bundle_path) &&
+        File.extname(app_bundle_path) == '.app' &&
+        File.exist?(File.join(app_bundle_path, "Info.plist"))
     end
 
     # Returns the Info.plist path.
