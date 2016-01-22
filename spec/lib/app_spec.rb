@@ -96,7 +96,7 @@ describe RunLoop::App do
     end
   end
 
-  describe '#exectuable_name' do
+  describe '#executable_name' do
     let(:pbuddy) { RunLoop::PlistBuddy.new }
     let(:args) { ["CFBundleExecutable", app.info_plist_path] }
 
