@@ -30,8 +30,7 @@ function englishLocalizations() {
     ["OK", /Would Like to Access Your Motion & Fitness Activity/],
     ["OK", /Would Like Access to Twitter Accounts/],
     ["OK", /data available to nearby bluetooth devices/],
-    ["OK", /Would Like to Send You Notifications/],
-    ["OK", /would like to send you Push Notifications/]
+    ["OK", /[Ww]ould [Ll]ike to [Ss]end [Yy]ou( Push)? Notifications/]
   ];
 }
 
