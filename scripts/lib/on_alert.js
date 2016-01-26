@@ -1,18 +1,31 @@
-function findAlertViewText(alert) {
+function findAlertTitle(alert) {
     if (!alert) {
         return false;
     }
-    var txt = alert.name(),
-        txts;
-    if (txt == null) {
-        txts = alert.staticTexts();
-        if (txts != null && txts.length > 0) {
+    var title = alert.name();
+    var staticTexts;
 
-            txt = txts[0].name();
+    if (title == null) {
+        staticTexts = alert.staticTexts();
+        if (staticTexts != null && staticTexts.length > 0) {
+
+            title = staticText[0].name();
         }
 
     }
-    return txt;
+    return title;
+}
+
+function findAlertButtonNames(alert) {
+  if (!alert) {
+    return false;
+  }
+
+  var buttons = alert.buttons();
+  var leftButton = buttons[0].name();
+  var rightButton = buttons[1].name();
+
+  return leftButton + "," + rightButton;
 }
 
 function englishLocalizations() {
@@ -100,17 +113,25 @@ function localizations() {
 
 function isPrivacyAlert(alert) {
 
-  var ans, exp, txt;
+  var expressions = localizations();
 
-  var exps = localizations();
+  var title = findAlertTitle(alert);
 
-  txt = findAlertViewText(alert);
-  Log.output({"output":"alert: "+txt}, true);
-  for (var i = 0; i < exps.length; i++) {
-    ans = exps[i][0];
-    exp = exps[i][1];
-    if (exp.test(txt)) {
-      return ans;
+  // Comment this out if you are capturing regexes.  See comment below.
+  Log.output({"output":"alert: " + title}, true);
+
+  // When debugging or trying to capture the regexes for a new
+  // localization, uncomment these lines and comment out the line above.
+  // var buttonNames = findAlertButtonNames(alert);
+  // Log.output({"output":"alert: " + title + "," + buttonNames}, true);
+
+  var answer;
+  var expression;
+  for (var i = 0; i < expressions.length; i++) {
+    answer = expressions[i][0];
+    expression = expressions[i][1];
+    if (expression.test(title)) {
+      return answer;
     }
   }
   return false;

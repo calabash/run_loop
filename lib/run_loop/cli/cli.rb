@@ -3,6 +3,7 @@ require 'run_loop'
 require 'run_loop/cli/errors'
 require 'run_loop/cli/instruments'
 require 'run_loop/cli/simctl'
+require "run_loop/cli/locale"
 
 trap 'SIGINT' do
   puts 'Trapped SIGINT - exiting'
@@ -30,6 +31,9 @@ module RunLoop
 
       desc 'simctl', "Interact with Xcode's command-line simctl"
       subcommand 'simctl', RunLoop::CLI::Simctl
+
+      desc "locale", "Tools for interacting with locales"
+      subcommand "locale", RunLoop::CLI::Locale
 
     end
   end
