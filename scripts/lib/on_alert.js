@@ -113,17 +113,20 @@ function localizations() {
 
 function isPrivacyAlert(alert) {
 
-  var ans, exp, txt;
+  var expressions = localizations();
 
-  var exps = localizations();
+  var title = findAlertTitle(alert);
+  var buttonNames = findAlertButtonNames(alert);
 
-  txt = findAlertViewText(alert);
-  Log.output({"output":"alert: "+txt}, true);
-  for (var i = 0; i < exps.length; i++) {
-    ans = exps[i][0];
-    exp = exps[i][1];
-    if (exp.test(txt)) {
-      return ans;
+  Log.output({"output":"alert: " + title + "," + buttonNames}, true);
+
+  var answer;
+  var expression;
+  for (var i = 0; i < expressions.length; i++) {
+    answer = expressions[i][0];
+    expression = expressions[i][1];
+    if (expression.test(title)) {
+      return answer;
     }
   }
   return false;
