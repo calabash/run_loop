@@ -72,6 +72,21 @@ function russianLocalizations() {
   ];
 }
 
+function frenchLocalizations() {
+  return [
+    ["OK", /vous envoyer des notifications/],
+    ["Autoriser", /à accéder à vos données de localisation lorsque vous utilisez l’app/],
+    ["Autoriser", /à accéder à vos données de localisation même lorsque vous n’utilisez pas l’app/],
+    ["OK", /souhaite accéder à vos contacts/],
+    ["OK", /souhaite accéder à votre calendrier/],
+    ["OK", /souhaite accéder à vos rappels/],
+    ["OK", /souhaite accéder à vos mouvements et vos activités physiques/],
+    ["OK", /souhaite accéder à vos photos/],
+    ["OK", /souhaite accéder à l’appareil photo/],
+    ["OK", /souhaite accéder aux comptes Twitter/]
+  ];
+}
+
 function localizations() {
   return [].concat(
      danishLocalizations(),
@@ -79,7 +94,8 @@ function localizations() {
      englishLocalizations(),
      germanLocalizations(),
      russianLocalizations(),
-     spanishLocalizations()
+     spanishLocalizations(),
+     frenchLocalizations()
   );
 }
 
