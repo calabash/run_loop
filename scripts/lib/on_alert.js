@@ -116,9 +116,11 @@ function isPrivacyAlert(alert) {
   var expressions = localizations();
 
   var title = findAlertTitle(alert);
-  var buttonNames = findAlertButtonNames(alert);
 
-  Log.output({"output":"alert: " + title + "," + buttonNames}, true);
+  // When debugging or trying to capture the regexes for a new
+  // localization, uncomment these lines.
+  // var buttonNames = findAlertButtonNames(alert);
+  // Log.output({"output":"alert: " + title + "," + buttonNames}, true);
 
   var answer;
   var expression;
