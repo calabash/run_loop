@@ -16,6 +16,16 @@ function findAlertTitle(alert) {
     return title;
 }
 
+function findAlertButtonNames(alert) {
+  if (!alert) {
+    return false;
+  }
+
+  var buttons = alert.buttons();
+  var leftButton = buttons[0].name();
+  var rightButton = buttons[1].name();
+
+  return leftButton + "," + rightButton;
 }
 
 function englishLocalizations() {
