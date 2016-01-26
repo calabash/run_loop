@@ -1,18 +1,21 @@
-function findAlertViewText(alert) {
+function findAlertTitle(alert) {
     if (!alert) {
         return false;
     }
-    var txt = alert.name(),
-        txts;
-    if (txt == null) {
-        txts = alert.staticTexts();
-        if (txts != null && txts.length > 0) {
+    var title = alert.name();
+    var staticTexts;
 
-            txt = txts[0].name();
+    if (title == null) {
+        staticTexts = alert.staticTexts();
+        if (staticTexts != null && staticTexts.length > 0) {
+
+            title = staticText[0].name();
         }
 
     }
-    return txt;
+    return title;
+}
+
 }
 
 function englishLocalizations() {
