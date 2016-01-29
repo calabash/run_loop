@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.0.5
+
+* Refactor auto dismiss JavaScript methods #378
+* JS: French localizations for privacy alerts #377
+
 ### 2.0.4
 
 * Xcode 7.3 support #370
