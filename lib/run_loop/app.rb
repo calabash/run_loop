@@ -105,6 +105,7 @@ Bundle must:
       executables = []
       Dir.glob("#{path}/**/*") do |file|
         next if File.directory?(file)
+        next if skip_executable_check?(file)
         if otool(file).executable?
           executables << file
         end
@@ -129,5 +130,46 @@ Bundle must:
     def otool(file)
       RunLoop::Otool.new(file)
     end
+
+    # @!visibility private
+    def skip_executable_check?(file)
+      image?(file) ||
+        plist?(file) ||
+        lproj_asset?(file) ||
+        code_signing_asset?(file)
+    end
+    # @!visibility private
+    def image?(file)
+      file[/jpeg|jpg|gif|png|tiff|svg|pdf/, 0]
+    end
+
+    # @!visibility private
+    def plist?(file)
+      File.extname(file) == ".plist"
+    end
+
+    # @!visibility private
+    def lproj_asset?(file)
+      extension = File.extname(file)
+
+      file[/lproj/, 0] ||
+        file[/storyboard/, 0] ||
+        extension == ".strings" ||
+        extension == ".xib" ||
+        extension == ".nib"
+    end
+
+    # @!visibility private
+    def code_signing_asset?(file)
+      name = File.basename(file)
+      extension = File.extname(file)
+
+      name == "PkgInfo" ||
+        name == "embedded" ||
+        extension == ".mobileprovision" ||
+        extension == ".xcent" ||
+        file[/_CodeSignature/, 0]
+    end
   end
 end
+

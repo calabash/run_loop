@@ -178,4 +178,59 @@ describe RunLoop::App do
       expect(app.executables).to be == []
     end
   end
+
+  describe "#image?" do
+    it "returns true" do
+      expect(app.send(:image?, "path/to/my.png")).to be_truthy
+      expect(app.send(:image?, "path/to/my.jpeg")).to be_truthy
+      expect(app.send(:image?, "path/to/my.jpg")).to be_truthy
+      expect(app.send(:image?, "path/to/my.gif")).to be_truthy
+      expect(app.send(:image?, "path/to/my.svg")).to be_truthy
+      expect(app.send(:image?, "path/to/my.tiff")).to be_truthy
+      expect(app.send(:image?, "path/to/my.pdf")).to be_truthy
+    end
+
+    it "returns false" do
+      expect(app.send(:image?, "path/to/my.plist")).to be_falsey
+    end
+  end
+
+  describe "#plist?" do
+    it "returns true" do
+      expect(app.send(:plist?, "path/to/my.plist")).to be_truthy
+    end
+
+    it "returns false" do
+      expect(app.send(:plist?, "path/to/my.png")).to be_falsey
+    end
+  end
+
+  describe "#lproj_asset?" do
+    it "returns true" do
+      expect(app.send(:lproj_asset?, "path/to/Base.lproj/My.nib")).to be_truthy
+      expect(app.send(:lproj_asset?, "path/to/My.nib")).to be_truthy
+      expect(app.send(:lproj_asset?, "path/to/My.xib")).to be_truthy
+      expect(app.send(:lproj_asset?, "path/to/Main.storyboardc/any_file")).to be_truthy
+      expect(app.send(:lproj_asset?, "path/to/Localizable.strings")).to be_truthy
+    end
+
+    it "returns false" do
+      expect(app.send(:lproj_asset?, "path/to/foo")).to be_falsey
+    end
+  end
+
+  describe "#code_signing_asset?" do
+    it "returns true" do
+      expect(app.send(:code_signing_asset?, "path/to/embedded.mobileprovision")).to be_truthy
+      expect(app.send(:code_signing_asset?, "path/to/some-other.mobileprovision")).to be_truthy
+      expect(app.send(:code_signing_asset?, "path/to/xcodesign.xcent")).to be_truthy
+      expect(app.send(:code_signing_asset?, "path/to/PkgInfo")).to be_truthy
+      expect(app.send(:code_signing_asset?, "path/to/_CodeSignature/any_file")).to be_truthy
+    end
+
+    it "returns false" do
+      expect(app.send(:code_signing_asset?, "path/to/foo")).to be_falsey
+    end
+  end
 end
+
