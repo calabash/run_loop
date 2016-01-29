@@ -99,6 +99,19 @@ Bundle must:
       end
     end
 
+    # @!visibility private
+    # Collects the paths to executables in the bundle.
+    def executables
+      executables = []
+      Dir.glob("#{path}/**/*") do |file|
+        next if File.directory?(file)
+        if otool(file).executable?
+          executables << file
+        end
+      end
+      executables
+    end
+
     # Returns the sha1 of the application.
     def sha1
       RunLoop::Directory.directory_digest(path)
@@ -106,9 +119,15 @@ Bundle must:
 
     private
 
+    # @!visibility private
     def plist_buddy
       @plist_buddy ||= RunLoop::PlistBuddy.new
     end
 
+    # @!visibility private
+    # An otool factory.
+    def otool(file)
+      RunLoop::Otool.new(file)
+    end
   end
 end

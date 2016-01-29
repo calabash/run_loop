@@ -137,4 +137,45 @@ describe RunLoop::App do
 
     expect(app.sha1).to be == 'sha1'
   end
+
+  describe "#executables" do
+    let(:path) { Resources.shared.app_bundle_path }
+    let(:app) { RunLoop::App.new(path) }
+
+    it "list should include the app executable" do
+      actual = app.executables
+      expected = [File.join(app.path, app.executable_name)]
+
+      expect(actual).to be == expected
+    end
+
+    it "list should include any dylibs" do
+      source = Resources.shared.app_bundle_path
+      target = File.expand_path(File.join("tmp", "app-tests", "executables"))
+      FileUtils.rm_rf(target)
+      FileUtils.mkdir_p(target)
+      FileUtils.cp_r(source, target)
+
+      dylib = Resources.shared.sim_dylib_path
+      FileUtils.cp(dylib, File.join(target, "CalSmoke.app"))
+      app = RunLoop::App.new(File.join(target, "CalSmoke.app"))
+
+      actual = app.executables
+      expected = [
+        File.join(app.path, app.executable_name),
+        File.join(app.path, File.basename(dylib))
+      ]
+
+      expect(actual).to be == expected
+    end
+
+    it "returns an empty list if no executables are found" do
+      file = __FILE__
+      otool = RunLoop::Otool.new(file)
+      expect(app).to receive(:otool).at_least(:once).and_return(otool)
+      expect(otool).to receive(:executable?).at_least(:once).and_return(false)
+
+      expect(app.executables).to be == []
+    end
+  end
 end
