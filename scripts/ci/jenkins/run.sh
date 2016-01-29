@@ -23,7 +23,9 @@ $RBENV_EXEC bundle exec rspec spec/lib
 $RBENV_EXEC bundle exec run-loop simctl manage-processes
 $RBENV_EXEC bundle exec rspec \
   spec/integration/core_simulator_spec.rb \
-  spec/integration/xcode_spec.rb
+  spec/integration/xcode_spec.rb \
+  spec/integration/otool_spec.rb \
+  spec/integration/strings_spec.rb
 
 # CLI tests
 
