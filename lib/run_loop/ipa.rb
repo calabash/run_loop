@@ -2,7 +2,6 @@ module RunLoop
   # A model of the an .ipa - a application binary for iOS devices.
   class Ipa
 
-
     # The path to this .ipa.
     # @!attribute [r] path
     # @return [String] A path to this .ipa.
@@ -36,53 +35,56 @@ module RunLoop
 
     # The bundle identifier of this ipa.
     # @return [String] A string representation of this ipa's CFBundleIdentifier
-    # @raise [RuntimeError] If ipa does not expand into a Payload/<app name>.app
-    #  directory.
-    # @raise [RuntimeError] If an Info.plist does exist in the .app.
     def bundle_identifier
       app.bundle_identifier
     end
 
     # Inspects the app's Info.plist for the executable name.
     # @return [String] The value of CFBundleExecutable.
-    # @raise [RuntimeError] If the plist cannot be read or the
-    #   CFBundleExecutable is empty or does not exist.
     def executable_name
       app.executable_name
     end
 
-    # Inspects the app's file for the server version
+    # Inspects the app's executables for the server version
+    # @return[RunLoop::Version] a version instance
     def calabash_server_version
       app.calabash_server_version
     end
 
     private
 
+    # @!visibility private
     def tmpdir
       @tmpdir ||= Dir.mktmpdir
     end
 
+    # @!visibility private
     def payload_dir
-      @payload_dir ||= lambda {
+      @payload_dir ||= lambda do
         FileUtils.cp(path, tmpdir)
         zip_path = File.join(tmpdir, File.basename(path))
         Dir.chdir(tmpdir) do
           system('unzip', *['-q', zip_path])
         end
         File.join(tmpdir, 'Payload')
-      }.call
+      end.call
     end
 
+    # @!visibility private
     def bundle_dir
-      @bundle_dir ||= lambda {
-        Dir.glob(File.join(payload_dir, '*')).detect {|f| File.directory?(f) && f.end_with?('.app')}
-      }.call
+      @bundle_dir ||= lambda do
+        Dir.glob(File.join(payload_dir, '*')).detect do |f|
+          File.directory?(f) && f.end_with?('.app')
+        end
+      end.call
     end
 
+    # @!visibility private
     def app
       @app ||= RunLoop::App.new(bundle_dir)
     end
 
+    # @!visibility private
     def plist_buddy
       @plist_buddy ||= RunLoop::PlistBuddy.new
     end
