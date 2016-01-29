@@ -29,66 +29,17 @@ describe RunLoop::Ipa do
     expect { ipa.to_s}.not_to raise_error
   end
 
-  describe '#bundle_identifier' do
-    it "reads the app's Info.plist" do
-      expect(ipa.bundle_identifier).to be == 'sh.calaba.CalSmoke-cal'
-    end
-
-    describe 'raises an error when' do
-      it 'cannot find the bundle_dir' do
-        expect(ipa).to receive(:bundle_dir).and_return(nil)
-        expect { ipa.bundle_identifier }.to raise_error(RuntimeError)
-      end
-
-      it 'cannot find the Info.plist' do
-        expect(ipa).to receive(:bundle_dir).at_least(:once).and_return(Dir.mktmpdir)
-        expect { ipa.bundle_identifier }.to raise_error(RuntimeError)
-      end
-
-      it 'Info.plist does not contain CFBundleIdentifier' do
-        pbuddy = ipa.send(:plist_buddy)
-        expect(pbuddy).to receive(:plist_read).and_return nil
-        expect { ipa.bundle_identifier }.to raise_error(RuntimeError)
-      end
-    end
+  it "#bundle_identifier" do
+    expect(ipa.bundle_identifier).to be == 'sh.calaba.CalSmoke-cal'
   end
 
-  describe '#executable_name' do
-    it "reads the app's Info.plist" do
-      expect(ipa.executable_name).to be == 'CalSmoke-cal'
-    end
-
-    describe 'raises an error when' do
-      it 'cannot find the bundle_dir' do
-        expect(ipa).to receive(:bundle_dir).and_return(nil)
-        expect { ipa.executable_name }.to raise_error(RuntimeError)
-      end
-
-      it 'cannot find the Info.plist' do
-        expect(ipa).to receive(:bundle_dir).at_least(:once).and_return(Dir.mktmpdir)
-        expect { ipa.executable_name }.to raise_error(RuntimeError)
-      end
-
-      it 'Info.plist does not contain key CFBundleExecutable' do
-        pbuddy = ipa.send(:plist_buddy)
-        expect(pbuddy).to receive(:plist_read).and_return nil
-        expect { ipa.executable_name }.to raise_error(RuntimeError)
-      end
-    end
+  it "#executable_name" do
+    expect(ipa.executable_name).to be == 'CalSmoke-cal'
   end
 
-  context '#calabash_server_version' do
-    subject { RunLoop::Ipa.new(Resources.shared.cal_ipa_path).calabash_server_version }
-    it { should be_kind_of(RunLoop::Version) }
-
-    context 'should be nil when' do
-      let (:ipa_path) { Resources.shared.ipa_path }
-      it 'calabash server not included in app' do
-        ipa = RunLoop::Ipa.new(ipa_path)
-        expect(ipa.calabash_server_version).to be_nil
-      end
-    end
-
+  it "calabash_server_version" do
+    version = ipa.calabash_server_version
+    expect(version).to be_a_kind_of(RunLoop::Version)
   end
 
   describe 'private' do
@@ -117,5 +68,22 @@ describe RunLoop::Ipa do
     it '#plist_buddy' do
       expect(ipa.send(:plist_buddy)).to be_a_kind_of(RunLoop::PlistBuddy)
     end
+
+    describe "#app" do
+      it "returns a RunLoop::App" do
+        app = ipa.send(:app)
+        expect(app).to be_a_kind_of(RunLoop::App)
+        expect(ipa.instance_variable_get(:@app)).to be
+      end
+
+      it "raises an error if the app is not valid" do
+        expect(ipa).to receive(:bundle_dir).and_return("path/to/invalid.app")
+
+        expect do
+          ipa.send(:app)
+        end.to raise_error ArgumentError
+      end
+    end
   end
 end
+
