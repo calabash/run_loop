@@ -25,7 +25,8 @@ $RBENV_EXEC bundle exec rspec \
   spec/integration/core_simulator_spec.rb \
   spec/integration/xcode_spec.rb \
   spec/integration/otool_spec.rb \
-  spec/integration/strings_spec.rb
+  spec/integration/strings_spec.rb \
+  spec/integration/app_spec.rb
 
 # CLI tests
 

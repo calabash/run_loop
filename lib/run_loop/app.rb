@@ -87,16 +87,12 @@ Bundle must:
 
     # Inspects the app's file for the server version
     def calabash_server_version
-      path_to_bin = File.join(path, executable_name)
-      xcrun ||= RunLoop::Xcrun.new
-      hash = xcrun.exec(["strings", path_to_bin])
-      unless hash.nil?
-        version_str = hash[:out][/CALABASH VERSION: \d+\.\d+\.\d+/, 0]
-        unless version_str.nil? || version_str == ""
-          server_ver = version_str.split(":")[1].delete(' ')
-          RunLoop::Version.new(server_ver)
-        end
+      version = nil
+      executables.each do |executable|
+        version = strings(executable).server_version
+        break if version
       end
+      version
     end
 
     # @!visibility private
@@ -129,6 +125,12 @@ Bundle must:
     # An otool factory.
     def otool(file)
       RunLoop::Otool.new(file)
+    end
+
+    # @!visibility private
+    # A strings factory
+    def strings(file)
+      RunLoop::Strings.new(file)
     end
 
     # @!visibility private
