@@ -56,7 +56,7 @@ describe RunLoop::Xcrun do
       end
     end
 
-    it 'forces UTF-8 encoding and chomps' do
+    it 'remove invalid UTF-8 signs and chomps' do
       # Force C (non UTF-8 encoding)
       stub_env({'LC_ALL' => 'C'})
       args = ['cat', 'spec/resources/encoding.txt']
@@ -64,12 +64,12 @@ describe RunLoop::Xcrun do
       # Confirm that the string is read as ASCII whatever
       command_runner_hash = CommandRunner.run(args, timeout: 0.2)
       command_runner_out = command_runner_hash[:out]
-      expect(command_runner_out.length).to be == 20
+      expect(command_runner_out.length).to be == 26
 
       xcrun_hash = xcrun.exec(args, timout: 0.2)
       xcrun_out = xcrun_hash[:out]
 
-      expect(xcrun_out).to be == 'ITZVÃ ●℆❡♡'
+      expect(xcrun_out).to be == 'ITZVÓÃ ●℆❡♡\\xC2'
     end
 
     describe 'contents of returned hash' do
