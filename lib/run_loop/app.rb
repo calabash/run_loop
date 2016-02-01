@@ -138,8 +138,10 @@ Bundle must:
       image?(file) ||
         plist?(file) ||
         lproj_asset?(file) ||
-        code_signing_asset?(file)
+        code_signing_asset?(file) ||
+        core_data_asset?(file)
     end
+
     # @!visibility private
     def image?(file)
       file[/jpeg|jpg|gif|png|tiff|svg|pdf|car/, 0]
@@ -171,6 +173,15 @@ Bundle must:
         extension == ".mobileprovision" ||
         extension == ".xcent" ||
         file[/_CodeSignature/, 0]
+    end
+
+    # @!visibility private
+    def core_data_asset?(file)
+      extension = File.extname(file)
+
+      file[/momd/, 0] ||
+        extension == ".mom" ||
+        extension == ".db"
     end
   end
 end

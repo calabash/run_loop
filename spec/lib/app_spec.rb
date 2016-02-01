@@ -233,5 +233,17 @@ describe RunLoop::App do
       expect(app.send(:code_signing_asset?, "path/to/foo")).to be_falsey
     end
   end
+
+  describe "#core_data_asset?" do
+    it "returns true" do
+      expect(app.send(:core_data_asset?, "path/to/my.mom")).to be_truthy
+      expect(app.send(:core_data_asset?, "path/to/CoreData.momd/SomeFile")).to be_truthy
+      expect(app.send(:core_data_asset?, "path/to/my.db")).to be_truthy
+    end
+
+    it "returns false" do
+      expect(app.send(:core_data_asset?, "path/to/foo")).to be_falsey
+    end
+  end
 end
 
