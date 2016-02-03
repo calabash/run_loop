@@ -136,10 +136,26 @@ Bundle must:
     # @!visibility private
     def skip_executable_check?(file)
       image?(file) ||
+        text?(file) ||
         plist?(file) ||
         lproj_asset?(file) ||
         code_signing_asset?(file) ||
         core_data_asset?(file)
+    end
+
+    # @!visibility private
+    def text?(file)
+       extension = File.extname(file)
+
+       extension == ".txt" ||
+         extension == ".md" ||
+         extension == ".html" ||
+         extension == ".xml" ||
+         extension == ".json" ||
+         extension == ".yaml" ||
+         extension == ".yml" ||
+         extension == ".rtf" ||
+         file[/NOTICE|LICENSE|README|ABOUT/, 0]
     end
 
     # @!visibility private

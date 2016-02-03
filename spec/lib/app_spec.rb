@@ -179,6 +179,17 @@ describe RunLoop::App do
     end
   end
 
+  it "#skip_executable_check?" do
+    expect(app).to receive(:image?).and_return(false)
+    expect(app).to receive(:text?).and_return(false)
+    expect(app).to receive(:plist?).and_return(false)
+    expect(app).to receive(:lproj_asset?).and_return(false)
+    expect(app).to receive(:code_signing_asset?).and_return(false)
+    expect(app).to receive(:core_data_asset?).and_return(false)
+
+    expect(app.send(:skip_executable_check?, "path/to/file")).to be_falsey
+  end
+
   describe "#image?" do
     it "returns true" do
       expect(app.send(:image?, "path/to/my.png")).to be_truthy
@@ -194,6 +205,27 @@ describe RunLoop::App do
 
     it "returns false" do
       expect(app.send(:image?, "path/to/my.plist")).to be_falsey
+    end
+  end
+
+  describe "#text?" do
+    it "returns true" do
+      expect(app.send(:text?, "path/to/my.txt")).to be_truthy
+      expect(app.send(:text?, "path/to/my.md")).to be_truthy
+      expect(app.send(:text?, "path/to/my.html")).to be_truthy
+      expect(app.send(:text?, "path/to/my.xml")).to be_truthy
+      expect(app.send(:text?, "path/to/my.json")).to be_truthy
+      expect(app.send(:text?, "path/to/my.yml")).to be_truthy
+      expect(app.send(:text?, "path/to/my.yaml")).to be_truthy
+      expect(app.send(:text?, "path/to/my.rtf")).to be_truthy
+      expect(app.send(:text?, "path/to/NOTICE")).to be_truthy
+      expect(app.send(:text?, "path/to/LICENSE")).to be_truthy
+      expect(app.send(:text?, "path/to/README")).to be_truthy
+      expect(app.send(:text?, "path/to/ABOUT")).to be_truthy
+    end
+
+    it "returns false" do
+      expect(app.send(:text?, "path/to/some_file")).to be_falsey
     end
   end
 
