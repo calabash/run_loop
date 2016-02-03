@@ -144,7 +144,7 @@ Bundle must:
 
     # @!visibility private
     def image?(file)
-      file[/jpeg|jpg|gif|png|tiff|svg|pdf|car/, 0]
+      file[/jpeg|jpg|gif|png|tiff|svg|pdf|car|iTunesArtwork/, 0]
     end
 
     # @!visibility private

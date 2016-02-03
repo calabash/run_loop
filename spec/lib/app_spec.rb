@@ -189,6 +189,7 @@ describe RunLoop::App do
       expect(app.send(:image?, "path/to/my.tiff")).to be_truthy
       expect(app.send(:image?, "path/to/my.pdf")).to be_truthy
       expect(app.send(:image?, "path/to/Assets.car")).to be_truthy
+      expect(app.send(:image?, "path/to/iTunesArtwork")).to be_truthy
     end
 
     it "returns false" do
