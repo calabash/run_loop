@@ -59,7 +59,10 @@ IO.popen requires all arguments to be Strings.
         command_output = CommandRunner.run(['xcrun'] + args, timeout: timeout)
 
         if command_output[:out]
-          out = command_output[:out].force_encoding('utf-8').chomp
+          out = command_output[:out]
+                    .encode('UTF-8', 'UTF-8', invalid: :replace, undef: :replace, replace: '')
+                    .chars.select(&:valid_encoding?).join
+                    .chomp
         else
           out = ''
         end
