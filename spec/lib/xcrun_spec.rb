@@ -106,11 +106,16 @@ describe RunLoop::Xcrun do
         /Could not force UTF-8 encoding on this string:/
       end
 
-      describe "integration" do
-        it "handles string with non-UTF8 characters" do
-          file = "spec/resources/ps-with-non-utf8.log"
-          string = File.read(file)
+      it "handles string with non-UTF8 characters" do
+        file = "spec/resources/ps-with-non-utf8.log"
+        string = File.read(file)
 
+        version = RunLoop::Version.new(RUBY_VERSION)
+        if version < RunLoop::Version.new("2.1.0")
+           expect do
+             xcrun.send(:encode_utf8_or_raise, string, command)
+           end.to raise_error RunLoop::Xcrun::UTF8Error
+        else
           actual = xcrun.send(:encode_utf8_or_raise, string, command)
           split = actual.split($-0)
 
@@ -119,20 +124,20 @@ describe RunLoop::Xcrun do
           expect(split[2]).to be == "  403 /Applications/M^\\M^IM^AM^SM^MM^E.app/Contents/MacOS/M^\\M^IM^AM^SM^MM^E"
           expect(split[3]).to be == " 1497 irb"
         end
+      end
 
-        it "handles UTF-8 strings" do
-          # Force C (non UTF-8 encoding)
-          stub_env({'LC_ALL' => 'C'})
-          args = ['cat', 'spec/resources/encoding.txt']
+      it "handles UTF-8 strings" do
+        # Force C (non UTF-8 encoding)
+        stub_env({'LC_ALL' => 'C'})
+        args = ['cat', 'spec/resources/encoding.txt']
 
-          # Confirm that the string is read as ASCII-US8BIT
-          command_runner_hash = CommandRunner.run(args, timeout: 0.2)
-          command_runner_out = command_runner_hash[:out]
-          expect(command_runner_out.length).to be == 22
+        # Confirm that the string is read as ASCII-US8BIT
+        command_runner_hash = CommandRunner.run(args, timeout: 0.2)
+        command_runner_out = command_runner_hash[:out]
+        expect(command_runner_out.length).to be == 22
 
-          actual = xcrun.send(:encode_utf8_or_raise, command_runner_out, command)
-          expect(actual).to be == 'ITZVÓÃ ●℆❡♡'
-        end
+        actual = xcrun.send(:encode_utf8_or_raise, command_runner_out, command)
+        expect(actual).to be == 'ITZVÓÃ ●℆❡♡'
       end
     end
 
