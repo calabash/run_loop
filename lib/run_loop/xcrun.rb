@@ -102,6 +102,7 @@ with a timeout of #{timeout}
 
     private
 
+    # @!visibility private
     def encode_utf8_or_raise(string, command)
       return '' if !string
 
