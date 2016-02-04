@@ -31,6 +31,15 @@ describe RunLoop::Xcrun do
       /Expected arg '5' to be a String, but found 'Fixnum'/
     end
 
+    it "re-raises error if UTF8 encoding fails" do
+      error = RunLoop::Xcrun::UTF8Error.new("complex message")
+      expect(xcrun).to receive(:encode_utf8_or_raise).and_raise(error)
+
+      expect do
+        xcrun.exec(["sleep", "0.5"])
+      end.to raise_error RunLoop::Xcrun::UTF8Error, /complex message/
+    end
+
     it 're-raises error thrown by CommandRunner' do
       expect(CommandRunner).to receive(:run).and_raise RuntimeError, 'Some error'
 

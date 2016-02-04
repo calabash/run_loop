@@ -71,6 +71,8 @@ IO.popen requires all arguments to be Strings.
                     :exit_status => process_status.exitstatus
               }
 
+      rescue UTF8Error => e
+        raise e
       rescue => e
         elapsed = "%0.2f" % (Time.now - start_time)
         raise Error,
