@@ -21,6 +21,8 @@ module RunLoop
     # Raised when Xcrun fails.
     class Error < RuntimeError; end
 
+    # Raised when the output of the command cannot be coerced to UTF8
+    class UTF8Error < RuntimeError; end
 
     # Raised when Xcrun times out.
     class TimeoutError < RuntimeError; end
@@ -58,15 +60,7 @@ IO.popen requires all arguments to be Strings.
         start_time = Time.now
         command_output = CommandRunner.run(['xcrun'] + args, timeout: timeout)
 
-        if command_output[:out]
-          out = command_output[:out]
-                    .encode('UTF-8', 'UTF-8', invalid: :replace, undef: :replace, replace: '')
-                    .chars.select(&:valid_encoding?).join
-                    .chomp
-        else
-          out = ''
-        end
-
+        out = encode_utf8_or_raise(command_output[:out], cmd)
         process_status = command_output[:status]
 
         hash =
@@ -103,5 +97,34 @@ with a timeout of #{timeout}
 
       hash
     end
+
+    private
+
+    def encode_utf8_or_raise(string, command)
+      return '' if !string
+
+      utf8 = string.force_encoding("UTF-8").chomp
+
+      return utf8 if utf8.valid_encoding?
+
+      encoded = utf8.encode('UTF-8', 'UTF-8', invalid: :replace, undef: :replace, replace: '')
+
+      return encoded if encoded.valid_encoding?
+
+        raise UTF8Error, %Q{
+Could not force UTF-8 encoding on this string:
+
+#{string}
+
+which is the output of this command:
+
+#{command}
+
+Please file an issue with a stacktrace and the text of this error.
+
+https://github.com/calabash/run_loop/issues
+}
+    end
   end
 end
+
