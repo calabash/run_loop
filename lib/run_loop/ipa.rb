@@ -2,17 +2,10 @@ module RunLoop
   # A model of the an .ipa - a application binary for iOS devices.
   class Ipa
 
-
     # The path to this .ipa.
     # @!attribute [r] path
     # @return [String] A path to this .ipa.
     attr_reader :path
-
-    # The bundle identifier of this ipa.
-    # @!attribute [r] bundle_identifier
-    # @return [String] The bundle identifier of this ipa; obtained by inspecting
-    #  the app's Info.plist.
-    attr_reader :bundle_identifier
 
     # Create a new ipa instance.
     # @param [String] path_to_ipa The path the .ipa file.
@@ -42,96 +35,59 @@ module RunLoop
 
     # The bundle identifier of this ipa.
     # @return [String] A string representation of this ipa's CFBundleIdentifier
-    # @raise [RuntimeError] If ipa does not expand into a Payload/<app name>.app
-    #  directory.
-    # @raise [RuntimeError] If an Info.plist does exist in the .app.
     def bundle_identifier
-      if bundle_dir.nil? || !File.exist?(bundle_dir)
-        raise "Expected a '#{File.basename(path).split('.').first}.app'\nat path '#{payload_dir}'"
-      end
-
-      @bundle_identifier ||= lambda {
-        info_plist_path = File.join(bundle_dir, 'Info.plist')
-        unless File.exist? info_plist_path
-          raise "Expected an 'Info.plist' at '#{bundle_dir}'"
-        end
-        identifier = plist_buddy.plist_read('CFBundleIdentifier', info_plist_path)
-
-        unless identifier
-          raise "Expected key 'CFBundleIdentifier' in '#{info_plist_path}'"
-        end
-        identifier
-      }.call
+      app.bundle_identifier
     end
 
     # Inspects the app's Info.plist for the executable name.
     # @return [String] The value of CFBundleExecutable.
-    # @raise [RuntimeError] If the plist cannot be read or the
-    #   CFBundleExecutable is empty or does not exist.
     def executable_name
-      if bundle_dir.nil? || !File.exist?(bundle_dir)
-        raise "Expected a '#{File.basename(path).split('.').first}.app'\nat path '#{payload_dir}'"
-      end
-
-      @executable_name ||= lambda {
-        info_plist_path = File.join(bundle_dir, 'Info.plist')
-        unless File.exist? info_plist_path
-          raise "Expected an 'Info.plist' at '#{bundle_dir}'"
-        end
-        name = plist_buddy.plist_read('CFBundleExecutable', info_plist_path)
-
-        unless name
-          raise "Expected key 'CFBundleExecutable' in '#{info_plist_path}'"
-        end
-        name
-      }.call
+      app.executable_name
     end
 
-    # Inspects the app's file for the server version
+    # Inspects the app's executables for the server version
+    # @return[RunLoop::Version] a version instance
     def calabash_server_version
-      if bundle_dir.nil? || !File.exist?(bundle_dir)
-        raise "Expected a '#{File.basename(path).split('.').first}.app'\nat path '#{payload_dir}'"
-      else
-        if !executable_name.nil? && executable_name != ''
-          path_to_bin = File.join(bundle_dir, executable_name)
-          xcrun ||= RunLoop::Xcrun.new
-          hash = xcrun.exec(["strings", path_to_bin])
-          unless hash.nil?
-            version_str = hash[:out][/CALABASH VERSION: \d+\.\d+\.\d+/, 0]
-            unless version_str.nil? || version_str == ""
-              server_ver = version_str.split(":")[1].delete(' ')
-              RunLoop::Version.new(server_ver)
-            end
-          end
-        end
-      end
+      app.calabash_server_version
     end
 
     private
 
+    # @!visibility private
     def tmpdir
       @tmpdir ||= Dir.mktmpdir
     end
 
+    # @!visibility private
     def payload_dir
-      @payload_dir ||= lambda {
+      @payload_dir ||= lambda do
         FileUtils.cp(path, tmpdir)
         zip_path = File.join(tmpdir, File.basename(path))
         Dir.chdir(tmpdir) do
           system('unzip', *['-q', zip_path])
         end
         File.join(tmpdir, 'Payload')
-      }.call
+      end.call
     end
 
+    # @!visibility private
     def bundle_dir
-      @bundle_dir ||= lambda {
-        Dir.glob(File.join(payload_dir, '*')).detect {|f| File.directory?(f) && f.end_with?('.app')}
-      }.call
+      @bundle_dir ||= lambda do
+        Dir.glob(File.join(payload_dir, '*')).detect do |f|
+          File.directory?(f) && f.end_with?('.app')
+        end
+      end.call
     end
 
+    # @!visibility private
+    def app
+      @app ||= RunLoop::App.new(bundle_dir)
+    end
+
+    # @!visibility private
     def plist_buddy
       @plist_buddy ||= RunLoop::PlistBuddy.new
     end
   end
 end
+

@@ -14,6 +14,20 @@ module RunLoop
     # @return [RunLoop::App] A instance of App with a path.
     def initialize(app_bundle_path)
       @path = File.expand_path(app_bundle_path)
+
+      if !App.valid?(app_bundle_path)
+        raise ArgumentError,
+%Q{App does not exist at path or is not an app bundle.
+
+#{app_bundle_path}
+
+Bundle must:
+
+1. be a directory that exists,
+2. have a .app extension,
+3. and contain an Info.plist.
+}
+      end
     end
 
     # @!visibility private
@@ -28,19 +42,23 @@ module RunLoop
 
     # Is this a valid app?
     def valid?
-      [File.exist?(path),
-       File.directory?(path),
-       File.extname(path) == '.app'].all?
+      App.valid?(path)
+    end
+
+    # @!visibility private
+    def self.valid?(app_bundle_path)
+      return false if app_bundle_path.nil?
+
+      File.exist?(app_bundle_path) &&
+        File.directory?(app_bundle_path) &&
+        File.extname(app_bundle_path) == '.app' &&
+        File.exist?(File.join(app_bundle_path, "Info.plist"))
     end
 
     # Returns the Info.plist path.
     # @raise [RuntimeError] If there is no Info.plist.
     def info_plist_path
-      info_plist = File.join(path, 'Info.plist')
-      unless File.exist?(info_plist)
-        raise "Expected an Info.plist at '#{path}'"
-      end
-      info_plist
+      @info_plist_path ||= File.join(path, 'Info.plist')
     end
 
     # Inspects the app's Info.plist for the bundle identifier.
@@ -69,20 +87,26 @@ module RunLoop
 
     # Inspects the app's file for the server version
     def calabash_server_version
-      if valid?
-        path_to_bin = File.join(path, executable_name)
-        xcrun ||= RunLoop::Xcrun.new
-        hash = xcrun.exec(["strings", path_to_bin])
-        unless hash.nil?
-          version_str = hash[:out][/CALABASH VERSION: \d+\.\d+\.\d+/, 0]
-          unless version_str.nil? || version_str == ""
-            server_ver = version_str.split(":")[1].delete(' ')
-            RunLoop::Version.new(server_ver)
-          end
-        end
-      else
-        raise 'Path is not valid'
+      version = nil
+      executables.each do |executable|
+        version = strings(executable).server_version
+        break if version
       end
+      version
+    end
+
+    # @!visibility private
+    # Collects the paths to executables in the bundle.
+    def executables
+      executables = []
+      Dir.glob("#{path}/**/*") do |file|
+        next if File.directory?(file)
+        next if skip_executable_check?(file)
+        if otool(file).executable?
+          executables << file
+        end
+      end
+      executables
     end
 
     # Returns the sha1 of the application.
@@ -92,9 +116,89 @@ module RunLoop
 
     private
 
+    # @!visibility private
     def plist_buddy
       @plist_buddy ||= RunLoop::PlistBuddy.new
     end
 
+    # @!visibility private
+    # An otool factory.
+    def otool(file)
+      RunLoop::Otool.new(file)
+    end
+
+    # @!visibility private
+    # A strings factory
+    def strings(file)
+      RunLoop::Strings.new(file)
+    end
+
+    # @!visibility private
+    def skip_executable_check?(file)
+      image?(file) ||
+        text?(file) ||
+        plist?(file) ||
+        lproj_asset?(file) ||
+        code_signing_asset?(file) ||
+        core_data_asset?(file)
+    end
+
+    # @!visibility private
+    def text?(file)
+       extension = File.extname(file)
+
+       extension == ".txt" ||
+         extension == ".md" ||
+         extension == ".html" ||
+         extension == ".xml" ||
+         extension == ".json" ||
+         extension == ".yaml" ||
+         extension == ".yml" ||
+         extension == ".rtf" ||
+         file[/NOTICE|LICENSE|README|ABOUT/, 0]
+    end
+
+    # @!visibility private
+    def image?(file)
+      file[/jpeg|jpg|gif|png|tiff|svg|pdf|car|iTunesArtwork/, 0]
+    end
+
+    # @!visibility private
+    def plist?(file)
+      File.extname(file) == ".plist"
+    end
+
+    # @!visibility private
+    def lproj_asset?(file)
+      extension = File.extname(file)
+
+      file[/lproj/, 0] ||
+        file[/storyboard/, 0] ||
+        extension == ".strings" ||
+        extension == ".xib" ||
+        extension == ".nib"
+    end
+
+    # @!visibility private
+    def code_signing_asset?(file)
+      name = File.basename(file)
+      extension = File.extname(file)
+
+      name == "PkgInfo" ||
+        name == "embedded" ||
+        extension == ".mobileprovision" ||
+        extension == ".xcent" ||
+        file[/_CodeSignature/, 0]
+    end
+
+    # @!visibility private
+    def core_data_asset?(file)
+      extension = File.extname(file)
+
+      file[/momd/, 0] ||
+        extension == ".mom" ||
+        extension == ".db"
+    end
   end
 end
+
