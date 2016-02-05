@@ -30,6 +30,7 @@ require 'run_loop/simctl/plists'
 require 'run_loop/template'
 require "run_loop/locale"
 require "run_loop/language"
+require "run_loop/xcuitest"
 
 module RunLoop
 
