@@ -28,6 +28,11 @@ module RunLoop
       ENV['XAMARIN_TEST_CLOUD'] == '1'
     end
 
+    # Returns the value of DEVICE_TARGET
+    def self.device_target
+      ENV["DEVICE_TARGET"]
+    end
+
     # Returns the value of TRACE_TEMPLATE; the Instruments template to use
     # during testing.
     def self.trace_template
