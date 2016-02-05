@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.0.6
+
+* Xcrun: handle command output that contains non-UTF8 characters #382 @ark-konopacki
+* Improve how App and Ipa instances detect the Calabash server version #379
+
 ### 2.0.5
 
 * Refactor auto dismiss JavaScript methods #378
