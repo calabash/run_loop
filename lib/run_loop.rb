@@ -31,6 +31,10 @@ require 'run_loop/template'
 require "run_loop/locale"
 require "run_loop/language"
 require "run_loop/xcuitest"
+require "run_loop/http/error"
+require "run_loop/http/server"
+require "run_loop/http/request"
+require "run_loop/http/retriable_client"
 
 module RunLoop
 
