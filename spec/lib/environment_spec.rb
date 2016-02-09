@@ -57,6 +57,12 @@ describe RunLoop::Environment do
     expect(RunLoop::Environment.device_target).to be == "target"
   end
 
+  it ".device_endpoint" do
+    url = "http://denis.local:27753"
+    stub_env({"DEVICE_ENDPOINT" => url})
+    expect(RunLoop::Environment.device_endpoint).to be == url
+  end
+
   it '.trace_template' do
     stub_env('TRACE_TEMPLATE', '/my/tracetemplate')
     expect(RunLoop::Environment.trace_template).to be == '/my/tracetemplate'

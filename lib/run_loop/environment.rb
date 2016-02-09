@@ -33,6 +33,11 @@ module RunLoop
       ENV["DEVICE_TARGET"]
     end
 
+    # Returns the value of DEVICE_ENDPOINT
+    def self.device_endpoint
+      ENV["DEVICE_ENDPOINT"]
+    end
+
     # Returns the value of TRACE_TEMPLATE; the Instruments template to use
     # during testing.
     def self.trace_template
