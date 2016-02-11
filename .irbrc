@@ -109,11 +109,11 @@ end
 
 if !ENV["XCUITEST_PROJ"]
   moody = File.expand_path(File.join("~/", "git", "calabash", "xcuitest", "xcuitest-server", "xcuitest-server.xcodeproj"))
-  prometus = File.expand_path(File.join("~/", "calabash-xcuitest-server", "xcuitest-server"))
+  prometus = File.expand_path(File.join("~/", "calabash-xcuitest-server", "xcuitest-server", "xcuitest-server.xcodeproj"))
 
   if File.directory?(moody)
     ENV["XCUITEST_PROJ"] = moody
-  elsif File.directory(prometus)
+  elsif File.directory?(prometus)
     ENV["XCUITEST_PROJ"] = prometus
   end
 end

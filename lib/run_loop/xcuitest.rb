@@ -144,7 +144,6 @@ module RunLoop
     def launch_app
       server = RunLoop::HTTP::Server.new(url)
       request = RunLoop::HTTP::Request.request("/session", {:bundleID => bundle_id})
-      binding.pry
       client = RunLoop::HTTP::RetriableClient.new(server)
       response = client.post(request)
 
