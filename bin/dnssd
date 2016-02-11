@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+
+require "dnssd"
+require "socket"
+require "ap"
+require "json"
+
+Thread.abort_on_exception = true
+
+trap 'INT' do exit end
+trap 'TERM' do exit end
+
+services = []
+addresses = []
+
+DNSSD.browse("_calabus._tcp") do |reply|
+  services << reply
+  next if reply.flags.more_coming?
+
+  added = services.select do |service|
+    service.flags.add?
+  end
+
+  added.each do |service|
+
+    resolved = service.resolve
+
+    addr = Socket.getaddrinfo(resolved.target, nil, Socket::AF_INET)
+
+    addr.each do |address|
+      match = addresses.find do |hash|
+        hash[:service] == service.name
+      end
+
+      if !match
+        addresses << {
+          :service => service.name,
+          :ip => addr[0][2],
+          :port => resolved.port,
+          :txt => resolved.text_record
+        }
+      end
+    end
+	end
+  json = JSON.generate(addresses)
+  puts json
+  exit
+end
+
+sleep
+

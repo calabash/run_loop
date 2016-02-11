@@ -3,6 +3,7 @@ require 'irb/ext/save-history'
 require 'benchmark'
 require 'run_loop'
 require 'command_runner'
+require "dnssd"
 
 AwesomePrint.irb!
 
