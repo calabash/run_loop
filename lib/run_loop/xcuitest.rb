@@ -10,8 +10,8 @@ module RunLoop
     }
 
     # @!visibility private
-    def self.project
-      value = ENV["XCUITEST_PROJ"]
+    def self.workspace
+      value = ENV["XCUITEST_WORKSPACE"]
       if value.nil? || value == ""
         return nil
       else
@@ -78,10 +78,10 @@ module RunLoop
         RunLoop.log_debug("Driver shutdown raised #{e}")
       end
 
-      project = XCUITest.project
+      workspace = XCUITest.workspace
 
-      if !project || !File.directory?(project)
-        raise RuntimeError, "No project found"
+      if !workspace || !File.directory?(workspace)
+        raise RuntimeError, "No workspace found"
       end
 
       destination = target.udid
@@ -98,8 +98,8 @@ module RunLoop
       args = [
         "xcrun",
         "xcodebuild",
-        "-scheme", "xcuitest-server",
-        "-project", project,
+        "-scheme", "CBXAppStub",
+        "-workspace", workspace,
         "-config", "Debug",
         "-destination", "id=#{destination}",
         "clean",
@@ -123,7 +123,7 @@ module RunLoop
         target.simulator_wait_for_stable_state
       end
 
-      RunLoop.log_debug("Waiting for project to build...")
+      RunLoop.log_debug("Waiting for CBX-Runner to build...")
 
       server = RunLoop::HTTP::Server.new(driver_url)
       request = RunLoop::HTTP::Request.new("/health", {})

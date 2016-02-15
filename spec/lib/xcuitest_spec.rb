@@ -8,26 +8,26 @@ describe RunLoop::XCUITest do
     expect(xcuitest.instance_variable_get(:@bundle_id)).to be == bundle_id
   end
 
-  describe ".project" do
+  describe ".workspace" do
     describe "return nil" do
-      it "XCUITEST_PROJ is not defined" do
-        stub_env({"XCUITEST_PROJ" => nil})
+      it "XCUITEST_WORKSPACE is not defined" do
+        stub_env({"XCUITEST_WORKSPACE" => nil})
 
-        expect(RunLoop::XCUITest.project).to be == nil
+        expect(RunLoop::XCUITest.workspace).to be == nil
       end
 
       it "XCUITEST_PROJ is ''" do
-        stub_env({"XCUITEST_PROJ" => ""})
+        stub_env({"XCUITEST_WORKSPACE" => ""})
 
-        expect(RunLoop::XCUITest.project).to be == nil
+        expect(RunLoop::XCUITest.workspace).to be == nil
       end
     end
 
     it "returns the path to the xcproj" do
       path = "path/to/xcodeproj"
-      stub_env({"XCUITEST_PROJ" => path})
+      stub_env({"XCUITEST_WORKSPACE" => path})
 
-      expect(RunLoop::XCUITest.project).to be == path
+      expect(RunLoop::XCUITest.workspace).to be == path
     end
   end
 
