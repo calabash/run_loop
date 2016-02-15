@@ -98,8 +98,8 @@ module RunLoop
       args = [
         "xcrun",
         "xcodebuild",
-        "-scheme", "xcuitest-server",
-        "-project", project,
+        "-scheme", "CBXAppStub",
+        "-workspace", project,
         "-config", "Debug",
         "-destination", "id=#{destination}",
         "clean",
