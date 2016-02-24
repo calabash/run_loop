@@ -109,6 +109,10 @@ class Resources
     @app_bundle_path_x86_64 ||= File.expand_path(File.join(resources_dir, 'lipo', 'x86_64', 'CalSmoke.app'))
   end
 
+  def wetap_bundle
+    @wettap_bundle ||= File.join(resources_dir, "wetap.app")
+  end
+
   def bundle_id
     @bundle_id = 'com.xamarin.CalSmoke-cal'
   end
