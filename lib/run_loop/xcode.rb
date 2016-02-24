@@ -216,13 +216,41 @@ module RunLoop
     #```
     #
     # @return [String] path to current developer directory
+    #
+    # @raise [RuntimeError] If path to Xcode.app/Contents/Developer
+    #   cannot be determined.
     def developer_dir
-      @xcode_developer_dir ||=
-            if RunLoop::Environment.developer_dir
-              RunLoop::Environment.developer_dir
-            else
-              xcode_select_path
-            end
+      @xcode_developer_dir ||= lambda do
+        if RunLoop::Environment.developer_dir
+          path = RunLoop::Environment.developer_dir
+        else
+          path = xcode_select_path
+        end
+
+        if !File.directory?(path)
+          raise RuntimeError,
+%Q{Cannot determine the active Xcode.  Expected an Xcode here:
+
+#{path}
+
+Check the value of xcode-select:
+
+# Does this resolve to a valid Xcode.app/Contents/Developer path?
+$ xcode-select --print-path
+
+Is the DEVELOPER_DIR variable set in your environment?  You would
+only use this if you have multiple Xcode's installed.
+
+$ echo $DEVELOPER_DIR
+
+See the man pages for xcrun and xcode-select for details.
+
+$ man xcrun
+$ man xcode-select
+}
+        end
+        path
+      end.call
     end
 
     private

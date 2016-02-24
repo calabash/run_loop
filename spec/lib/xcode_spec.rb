@@ -209,6 +209,7 @@ describe RunLoop::Xcode do
   describe '#developer_dir' do
     it 'respects the DEVELOPER_DIR env var' do
       expected = '/developer/dir'
+      expect(File).to receive(:directory?).with(expected).and_return(true)
       stub_env({'DEVELOPER_DIR' => expected})
 
       expect(xcode.developer_dir).to be == expected
@@ -220,6 +221,7 @@ describe RunLoop::Xcode do
 
     it 'or it returns the value of xcode-select' do
       expected = '/xcode-select/path'
+      expect(File).to receive(:directory?).with(expected).and_return(true)
       expect(xcode).to receive(:xcode_select_path).and_return(expected)
       stub_env({'DEVELOPER_DIR' => nil})
 
@@ -229,6 +231,16 @@ describe RunLoop::Xcode do
       expect(xcode).not_to receive(:xcode_select_path)
 
       expect(xcode.instance_variable_get(:@xcode_developer_dir)).to be == expected
+    end
+
+    it "raises an error if active Xcode cannot be determined" do
+      expected = '/developer/dir'
+      expect(File).to receive(:directory?).with(expected).and_return(false)
+      stub_env({'DEVELOPER_DIR' => expected})
+
+      expect do
+        xcode.developer_dir
+      end.to raise_error RuntimeError, /Cannot determine the active Xcode/
     end
   end
 
