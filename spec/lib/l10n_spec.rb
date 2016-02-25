@@ -1,11 +1,17 @@
 describe RunLoop::L10N do
 
   subject(:l10n) { RunLoop::L10N.new }
+  let(:xcode) { RunLoop::Xcode.new }
 
+  before do
+    allow(l10n).to receive(:xcode).and_return(xcode)
+  end
   describe '#uikit_bundle_l10n_path' do
     it 'return value' do
       if Resources.shared.core_simulator_env?
+        expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
         stub_env('DEVELOPER_DIR', '/some/xcode/path')
+
         axbundle_path = RunLoop::L10N.const_get('UIKIT_AXBUNDLE_PATH_CORE_SIM')
         expected = File.join('/some/xcode/path', axbundle_path)
         expect(l10n.send(:uikit_bundle_l10n_path)).to be == expected
@@ -26,7 +32,6 @@ describe RunLoop::L10N do
       let('localization') { 'da' }
       it { is_expected.to be == 'Slet' }
     end
-
     context 'when using an unknown localization' do
       let('localization') { 'not-real' }
       it { is_expected.to be == nil }
