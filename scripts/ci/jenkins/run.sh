@@ -26,7 +26,8 @@ $RBENV_EXEC bundle exec rspec \
   spec/integration/xcode_spec.rb \
   spec/integration/otool_spec.rb \
   spec/integration/strings_spec.rb \
-  spec/integration/app_spec.rb
+  spec/integration/app_spec.rb \
+  spec/integration/codesign_spec.rb
 
 # CLI tests
 
@@ -42,5 +43,6 @@ execute "$RBENV_EXEC bundle exec run-loop version"
 execute "$RBENV_EXEC bundle exec run-loop help"
 execute "$RBENV_EXEC bundle exec run-loop instruments help"
 execute "$RBENV_EXEC bundle exec run-loop simctl help"
-
+execute "$RBENV_EXEC bundle exec run-loop codesign help"
+execute "$RBENV_EXEC bundle exec run-loop codesign info spec/resources/CalSmoke.ipa"
 
