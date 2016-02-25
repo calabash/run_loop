@@ -132,6 +132,26 @@ describe RunLoop::App do
     end
   end
 
+  describe "codesign" do
+    it "#codesign_info" do
+      expect(RunLoop::Codesign).to receive(:info).with(app.path).and_return(:info)
+
+      expect(app.codesign_info).to be == :info
+    end
+
+    it "#developer_signed?" do
+      expect(RunLoop::Codesign).to receive(:developer?).with(app.path).and_return(:value)
+
+      expect(app.developer_signed?).to be == :value
+    end
+
+    it "#distribution_signed?" do
+      expect(RunLoop::Codesign).to receive(:distribution?).with(app.path).and_return(:value)
+
+      expect(app.distribution_signed?).to be == :value
+    end
+  end
+
   it '#sha1' do
     expect(RunLoop::Directory).to receive(:directory_digest).with(app.path).and_return 'sha1'
 
