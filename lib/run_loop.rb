@@ -14,6 +14,7 @@ require 'run_loop/fifo'
 require 'run_loop/core'
 require 'run_loop/version'
 require 'run_loop/plist_buddy'
+require "run_loop/codesign"
 require 'run_loop/app'
 require 'run_loop/ipa'
 require 'run_loop/sim_control'

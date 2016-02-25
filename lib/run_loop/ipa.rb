@@ -51,6 +51,21 @@ module RunLoop
       app.calabash_server_version
     end
 
+    # @!visibility private
+    def codesign_info
+      app.codesign_info
+    end
+
+    # @!visibility private
+    def developer_signed?
+      app.developer_signed?
+    end
+
+    # @!visibility private
+    def distribution_signed?
+      app.distribution_signed?
+    end
+
     private
 
     # @!visibility private

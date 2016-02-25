@@ -96,6 +96,21 @@ Bundle must:
     end
 
     # @!visibility private
+    def codesign_info
+      RunLoop::Codesign.info(path)
+    end
+
+    # @!visibility private
+    def developer_signed?
+      RunLoop::Codesign.developer?(path)
+    end
+
+    # @!visibility private
+    def distribution_signed?
+      RunLoop::Codesign.distribution?(path)
+    end
+
+    # @!visibility private
     # Collects the paths to executables in the bundle.
     def executables
       executables = []
