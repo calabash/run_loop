@@ -115,12 +115,13 @@ describe RunLoop::Codesign do
     end
 
     it ".exec" do
-      path = "tmp/file.txt"
+      path = File.expand_path("./tmp/file.txt")
+      FileUtils.mkdir_p("./tmp")
       FileUtils.touch(path)
       args = ["--display", "--verbose=4", path]
       actual = RunLoop::Codesign.send(:exec, args)
       expected = "tmp/file.txt: code object is not signed at all"
-      expect(actual).to be == expected
+      expect(actual[/#{expected}/, 0]).to be_truthy
     end
   end
 
@@ -136,7 +137,7 @@ describe RunLoop::Codesign do
 
       expect do
         RunLoop::Codesign.send(:expect_path_exists, path)
-      end.not_to raise_error ArgumentError
+      end.not_to raise_error
     end
   end
 end
