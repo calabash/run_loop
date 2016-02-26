@@ -500,6 +500,7 @@ $ bundle exec run-loop simctl manage-processes
       end
     end
   end
+
   # Returns the current simulator name.
   #
   # @return [String] A String suitable for searching for a pid, quitting, or
@@ -540,8 +541,6 @@ $ bundle exec run-loop simctl manage-processes
   # @note Will only search for the current Xcode simulator.
   #
   # @return [Integer, nil] The pid as a String or nil if no process is found.
-  #
-  # @todo Convert this to force UTF8
   def running_simulator_pid
     process_name = "MacOS/#{sim_name}"
 

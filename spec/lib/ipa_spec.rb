@@ -42,6 +42,29 @@ describe RunLoop::Ipa do
     expect(version).to be_a_kind_of(RunLoop::Version)
   end
 
+  describe "codesign" do
+
+    let(:app) { ipa.send(:app) }
+
+    it "#codesign_info" do
+      expect(app).to receive(:codesign_info).and_return(:info)
+
+      expect(ipa.codesign_info).to be == :info
+    end
+
+    it "#developer_signed?" do
+      expect(app).to receive(:developer_signed?).and_return(:value)
+
+      expect(ipa.developer_signed?).to be == :value
+    end
+
+    it "#distribution_signed?" do
+      expect(app).to receive(:distribution_signed?).and_return(:value)
+
+      expect(ipa.distribution_signed?).to be == :value
+    end
+  end
+
   describe 'private' do
     it '#tmpdir' do
       tmp_dir = ipa.send(:tmpdir)

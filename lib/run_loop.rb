@@ -14,6 +14,7 @@ require 'run_loop/fifo'
 require 'run_loop/core'
 require 'run_loop/version'
 require 'run_loop/plist_buddy'
+require "run_loop/codesign"
 require 'run_loop/app'
 require 'run_loop/ipa'
 require 'run_loop/sim_control'
@@ -30,6 +31,11 @@ require 'run_loop/simctl/plists'
 require 'run_loop/template'
 require "run_loop/locale"
 require "run_loop/language"
+require "run_loop/xcuitest"
+require "run_loop/http/error"
+require "run_loop/http/server"
+require "run_loop/http/request"
+require "run_loop/http/retriable_client"
 
 module RunLoop
 

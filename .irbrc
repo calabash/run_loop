@@ -107,6 +107,25 @@ def delete_simulator(name)
   true
 end
 
+if !ENV["XCUITEST_WORKSPACE"]
+  moody = File.expand_path(File.join("~/", "git", "calabash", "xcuitest", "CBXDriver.xcworkspace"))
+  prometus = File.expand_path(File.join("~/", "calabash-xcuitest-server", "CBXDriver.xcworkspace"))
+
+  if File.directory?(moody)
+    ENV["XCUITEST_WORKSPACE"] = moody
+  elsif File.directory?(prometus)
+    ENV["XCUITEST_WORKSPACE"] = prometus
+  end
+end
+
+puts "XCUITest workspace = #{ENV["XCUITEST_WORKSPACE"]}"
+
+def xcuitest
+  RunLoop::XCUITest.new("com.apple.Preferences")
+end
+
+verbose
+
 motd=["Let's get this done!", 'Ready to rumble.', 'Enjoy.', 'Remember to breathe.',
       'Take a deep breath.', "Isn't it time for a break?", 'Can I get you a coffee?',
       'What is a calabash anyway?', 'Smile! You are on camera!', 'Let op! Wild Rooster!',

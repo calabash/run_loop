@@ -4,6 +4,7 @@ require 'run_loop/cli/errors'
 require 'run_loop/cli/instruments'
 require 'run_loop/cli/simctl'
 require "run_loop/cli/locale"
+require "run_loop/cli/codesign"
 
 trap 'SIGINT' do
   puts 'Trapped SIGINT - exiting'
@@ -34,6 +35,9 @@ module RunLoop
 
       desc "locale", "Tools for interacting with locales"
       subcommand "locale", RunLoop::CLI::Locale
+
+      desc "codesign", "Tools for interacting with codesign"
+      subcommand "codesign", RunLoop::CLI::Codesign
 
     end
   end
