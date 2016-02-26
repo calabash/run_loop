@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.0.7
+
+* Obtaining codesigning information about App and Ipa #388
+* Raise error if Xcode#developer\_dir path does not exist #387
+
 ### 2.0.6
 
 * Xcrun: handle command output that contains non-UTF8 characters #382 @ark-konopacki
