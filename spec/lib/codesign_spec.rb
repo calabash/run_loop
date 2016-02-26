@@ -137,7 +137,7 @@ describe RunLoop::Codesign do
 
       expect do
         RunLoop::Codesign.send(:expect_path_exists, path)
-      end.not_to raise_error ArgumentError
+      end.not_to raise_error
     end
   end
 end
