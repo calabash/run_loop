@@ -49,6 +49,12 @@ require "run_loop/locale"
 require "run_loop/language"
 require "run_loop/physical_device/life_cycle"
 require "run_loop/physical_device/ios_device_manager"
+require "run_loop/xcuitest"
+require "run_loop/http/error"
+require "run_loop/http/server"
+require "run_loop/http/request"
+require "run_loop/http/retriable_client"
+require "run_loop/sqlite"
 
 module RunLoop
 

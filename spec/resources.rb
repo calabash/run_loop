@@ -125,6 +125,22 @@ class Resources
     RunLoop::Device.new("iPhone 4s", version, "CE5BA25E-9434-475A-8947-ECC3918E64E3")
   end
 
+  def global_preferences_plist
+    source = File.join(resources_dir, "GlobalPreferences.plist")
+    target = File.join(local_tmp_dir, "GlobalPreferences.plist")
+    FileUtils.rm_rf(target)
+    FileUtils.cp(source, target)
+    target
+  end
+
+  def example_db
+    source = File.join(resources_dir, "example.db")
+    target = File.join(local_tmp_dir, "example.db")
+    FileUtils.rm_rf(target)
+    FileUtils.cp(source, target)
+    target
+  end
+
   def device(version="8.3")
     RunLoop::Device.new("denis", version, "893688959205dc7eb48d603c558ede919ad8dd0c")
   end
