@@ -322,6 +322,40 @@ version: #{version}
     end
 
     # @!visibility private
+    def simulator_tcc_db
+      @simulator_tcc_db ||= lambda do
+        return nil if physical_device?
+        path = File.join(simulator_root_dir, "data/Library/TCC/TCC.db")
+        simulator_ensure_tcc_db(path)
+      end.call
+    end
+
+    # @!visibility private
+    # Is this the first launch of this Simulator?
+    #
+    # TODO Needs unit and integration tests.
+    def simulator_first_launch?
+      megabytes = simulator_data_dir_size
+
+      if version >= RunLoop::Version.new('9.0')
+        megabytes < 20
+      elsif version >= RunLoop::Version.new('8.0')
+        megabytes < 12
+      else
+        megabytes < 8
+      end
+    end
+
+    # @!visibility private
+    # The size of the simulator data/ directory.
+    #
+    # TODO needs unit tests.
+    def simulator_data_dir_size
+      path = File.join(simulator_root_dir, 'data')
+      RunLoop::Directory.size(path, :mb)
+    end
+
+    # @!visibility private
     #
     # Waits for three conditions:
     #
@@ -637,6 +671,28 @@ failed with this output:
     def simulator_is_ipad?
       simulator_device_type[/iPad/, 0]
     end
+
+    # @!visibility private
+    def simulator_install_tcc_db(path)
+      dir = File.expand_path(File.dirname(__FILE__))
+      source = File.join(dir, "tcc", "TCC.db")
+
+      FileUtils.mkdir_p(File.expand_path(File.dirname(path)))
+      FileUtils.cp(source, path)
+      path
+    end
+
+    # @!visibility private
+    def simulator_ensure_tcc_db(path)
+      if File.exist?(path)
+        path
+      else
+        simulator_install_tcc_db(path)
+      end
+    end
+
+    # @!visibility private
+    CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
 
     # @!visibility private
     def self.ensure_physical_device_connected(identifier, options)

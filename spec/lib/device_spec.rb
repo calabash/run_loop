@@ -333,6 +333,56 @@ describe RunLoop::Device do
         expect(actual[/\.GlobalPreferences.plist/, 0]).to be_truthy
       end
     end
+
+    describe "#simulator_tcc_db" do
+      it "is nil if a physical device" do
+        expect(physical.simulator_tcc_db).to be_falsey
+      end
+
+      it "is non-nil for simulators" do
+        expected = "#{simulator.udid}/data/Library/TCC/TCC.db"
+        expect(simulator).to receive(:simulator_ensure_tcc_db).and_return(expected)
+
+        actual = simulator.simulator_tcc_db
+        expect(actual[/#{simulator.udid}/,0]).to be_truthy
+        expect(actual[/TCC\/TCC\.db/, 0]).to be_truthy
+      end
+    end
+
+    it "#simulator_install_tcc_db" do
+      dir = File.expand_path(File.dirname(__FILE__))
+      path = File.join(dir, "..", "..", "lib", "run_loop", "tcc", "TCC.db")
+      source = File.expand_path(path)
+      expect(File.exist?(path)).to be_truthy
+
+      target = File.expand_path("tmp/TCC/TCC.db")
+      target_dir = File.expand_path(File.dirname(target))
+
+      expect(FileUtils).to receive(:mkdir_p).with(target_dir).and_return(true)
+      expect(FileUtils).to receive(:cp).with(source, target).and_return(true)
+
+      actual = simulator.send(:simulator_install_tcc_db, target)
+      expect(actual).to be == target
+    end
+
+    describe "#simulator_ensure_tcc_db" do
+      let(:path) { "some/path/to/TCC.db" }
+      it "does nothing if TCC.db exists" do
+        expect(File).to receive(:exist?).with(path).and_return(true)
+        expect(simulator).not_to receive(:simulator_install_tcc_db)
+
+        actual = simulator.send(:simulator_ensure_tcc_db, path)
+        expect(actual).to be == path
+      end
+
+      it "installs TCC.db if it does not exist" do
+        expect(File).to receive(:exist?).with(path).and_return(false)
+        expect(simulator).to receive(:simulator_install_tcc_db).and_return(path)
+
+        actual = simulator.send(:simulator_ensure_tcc_db, path)
+        expect(actual).to be == path
+      end
+    end
   end
 
   describe "#simulator_languages" do

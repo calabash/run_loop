@@ -6,6 +6,7 @@ bash_scripts = ["scripts/udidetect",
                 "scripts/read-cmd.sh",
                 "scripts/timeout3"]
 plists = Dir.glob('plists/**/*.plist')
+tcc_files = Dir.glob("{lib}/**/TCC.db")
 
 device_agent = ["lib/run_loop/device_agent/bin/iOSDeviceManager",
                 "lib/run_loop/device_agent/bin/CLI.json",
@@ -39,7 +40,7 @@ into a valid version, e.g. 1.2.3 or 1.2.3.pre10
   s.summary     = %q{The bridge between Calabash iOS and Xcode command-line
 tools like instruments and simctl.}
   s.files = ruby_files + java_scripts + bash_scripts + plists + device_agent +
-  ["LICENSE"] + vendor_licenses
+  ["LICENSE"] + vendor_licenses + tcc_file
   s.require_paths = ['lib']
   s.licenses    = ['MIT']
   s.executables = 'run-loop'
