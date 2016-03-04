@@ -9,6 +9,62 @@ describe RunLoop::TCC do
   let(:device) { Resources.shared.default_simulator }
   let(:tcc) { RunLoop::TCC.new(device, app) }
 
+  describe "public API" do
+
+    before do
+      allow(RunLoop::TCC).to receive(:tcc).and_return(tcc)
+    end
+
+    it ".services" do
+      actual = RunLoop::TCC.services
+      expected = [:calendar, :camera, :contacts, :microphone, :motion, :photos, :reminders, :twitter]
+
+      expect(actual).to be == expected
+    end
+
+    describe ".allow" do
+      it "by default allows all services" do
+        services = [:a, :b, :c]
+        expect(RunLoop::TCC).to receive(:services).and_return(services)
+        expect(tcc).to receive(:allow_service).with(:a).and_return(true)
+        expect(tcc).to receive(:allow_service).with(:b).and_return(true)
+        expect(tcc).to receive(:allow_service).with(:c).and_return(true)
+
+        expect(RunLoop::TCC.allow(device, app)).to be == services
+      end
+
+      it "respects the service arg" do
+        services = [:a, :b, :c]
+        expect(tcc).to receive(:allow_service).with(:a).and_return(true)
+        expect(tcc).to receive(:allow_service).with(:b).and_return(true)
+        expect(tcc).to receive(:allow_service).with(:c).and_return(true)
+
+        expect(RunLoop::TCC.allow(device, app, services)).to be == services
+      end
+    end
+
+    describe ".deny" do
+      it "by default allows all services" do
+        services = [:a, :b, :c]
+        expect(RunLoop::TCC).to receive(:services).and_return(services)
+        expect(tcc).to receive(:deny_service).with(:a).and_return(true)
+        expect(tcc).to receive(:deny_service).with(:b).and_return(true)
+        expect(tcc).to receive(:deny_service).with(:c).and_return(true)
+
+        expect(RunLoop::TCC.deny(device, app)).to be == services
+      end
+
+      it "respects the service arg" do
+        services = [:a, :b, :c]
+        expect(tcc).to receive(:deny_service).with(:a).and_return(true)
+        expect(tcc).to receive(:deny_service).with(:b).and_return(true)
+        expect(tcc).to receive(:deny_service).with(:c).and_return(true)
+
+        expect(RunLoop::TCC.deny(device, app, services)).to be == services
+      end
+    end
+  end
+
   describe ".new" do
     it "sets the device and app attributes" do
       expect(tcc.send(:device)).to be == device
@@ -200,6 +256,81 @@ describe RunLoop::TCC do
     expect(device).to receive(:simulator_tcc_db).and_return(path)
 
     expect(tcc.send(:db)).to be == path
+  end
+
+  describe "#ensure_device" do
+    let(:device) { RunLoop::Device.new("a", "9.2", "udid") }
+    let(:id) { "id" }
+
+    describe "raises an error when" do
+      it "device is a physical device" do
+         expect(device).to receive(:physical_device?).and_return(true)
+
+         expect do
+           RunLoop::TCC.send(:ensure_device, device)
+         end.to raise_error ArgumentError,
+         /Cannot manage Privacy Settings on physical devices/
+      end
+
+      it "no simulator can be found" do
+        expect do
+          RunLoop::TCC.send(:ensure_device, id)
+        end.to raise_error ArgumentError,
+        /Could not find a device with a UDID or name matching/
+      end
+    end
+
+    describe "returns device when device is a" do
+      it "RunLoop::Device simulator" do
+        expect(device).to receive(:physical_device?).and_return(false)
+
+        expect(RunLoop::TCC.send(:ensure_device, device)).to be == device
+      end
+
+      it "valid simulator identifier" do
+        expect(RunLoop::Device).to receive(:device_with_identifier).with(id).and_return(device)
+        expect(device).to receive(:physical_device?).and_return(false)
+
+        expect(RunLoop::TCC.send(:ensure_device, id)).to be == device
+      end
+    end
+  end
+
+  describe "#ensure_app" do
+    let(:path) { Resources.shared.cal_app_bundle_path }
+    let(:app) { RunLoop::App.new(path) }
+
+    describe "raises an error when" do
+      it "app is a RunLoop::Ipa" do
+        expect(app).to receive(:is_a?).with(RunLoop::Ipa).and_return(true)
+
+        expect do
+          RunLoop::TCC.send(:ensure_app, app)
+        end.to raise_error ArgumentError,
+        /Cannot manage Privacy Settings on .ipa/
+      end
+
+      it "app is a path, but it is not valid" do
+        path = "path/to/invalid/my.app"
+
+        expect do
+          RunLoop::TCC.send(:ensure_app, path)
+        end.to raise_error ArgumentError,
+        /App does not exist at path or is not an app bundle/
+      end
+    end
+
+    describe "returns an app when" do
+      it "app is a RunLoop::App" do
+        expect(RunLoop::TCC.send(:ensure_app, app)).to be == app
+      end
+
+      it "app is a path to a valid app bundle" do
+        expect(RunLoop::App).to receive(:new).with(path).and_return(app)
+
+        expect(RunLoop::TCC.send(:ensure_app, path)).to be == app
+      end
+    end
   end
 end
 

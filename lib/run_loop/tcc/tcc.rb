@@ -14,6 +14,80 @@ module RunLoop
       :twitter => "kTCCServiceTwitter"
     }
 
+    # Returns a list of known services as keys that can be passed
+    # to RunLoop::TCC.allow or RunLoop::TCC.deny.
+    def self.services
+      PRIVACY_SERVICES.map do |key, _|
+        key
+      end
+    end
+
+    # Prohibits the `device` from popping a Privacy Alert for `service`.
+    #
+    # Only works on iOS Simulator.
+    #
+    # There is a set of known services like :camera, :microphone, and :twitter,
+    # but you can pass arbritary services - this may or may not have an effect
+    # on your application.
+    #
+    # @param [String, RunLoop::Device] device
+    # @param [String, RunLoop::App] app
+    # @param [Array] services An array of services.  The default is to allow
+    #   all services.
+    #
+    # @raise [ArgumentError] If device is a physical device.
+    # @raise [ArgumentError] If not device with identifier can be found.
+    # @raise [ArgumentError] If app is an ipa.
+    # @raise [ArgumentError] If app is a path that in invalid.
+    def self.allow(device, app, services = [])
+      _device = self.ensure_device(device)
+      _app = self.ensure_app(app)
+
+      if services.empty?
+        _services = self.services
+      else
+        _services = services
+      end
+
+      tcc = self.tcc(device, app)
+
+      _services.each do |service|
+        tcc.allow_service(service)
+      end
+      _services
+    end
+
+    # Force the `device` to pop a Privacy Alert for `service`.
+    #
+    # Only works on iOS Simulator.
+    #
+    # @param [String, RunLoop::Device] device
+    # @param [String, RunLoop::App] app
+    # @param [Array] services An array of services.  The default is to deny
+    #   all services.
+    #
+    # @raise [ArgumentError] If device is a physical device.
+    # @raise [ArgumentError] If not device with identifier can be found.
+    # @raise [ArgumentError] If app is an ipa.
+    # @raise [ArgumentError] If app is a path that in invalid.
+    def self.deny(device, app, services = [])
+      _device = self.ensure_device(device)
+      _app = self.ensure_app(app)
+
+      if services.empty?
+        _services = self.services
+      else
+        _services = services
+      end
+
+      tcc = self.tcc(device, app)
+
+      _services.each do |service|
+        tcc.deny_service(service)
+      end
+      _services
+    end
+
     # @!visibility private
     def initialize(device, app)
       @device = device
@@ -146,5 +220,42 @@ module RunLoop
     def db
       device.simulator_tcc_db
     end
+
+    # @!visibility private
+    def self.tcc(device, app)
+      RunLoop::TCC.new(device, app)
+    end
+
+    # @!visibility private
+    def self.ensure_device(device)
+      if device.is_a?(RunLoop::Device)
+        simulator = device
+      else
+        simulator = RunLoop::Device.device_with_identifier(device)
+      end
+
+      if simulator.physical_device?
+        raise ArgumentError,
+          "Cannot manage Privacy Settings on physical devices"
+      end
+
+      simulator
+    end
+
+    # @!visibility private
+    def self.ensure_app(app)
+      if app.is_a?(RunLoop::Ipa)
+        raise ArgumentError,
+          "Cannot manage Privacy Settings on .ipa"
+      end
+
+      if app.is_a?(RunLoop::App)
+        target = app
+      else
+        target = RunLoop::App.new(app)
+      end
+      target
+    end
   end
 end
+
