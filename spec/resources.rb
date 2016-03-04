@@ -222,6 +222,15 @@ class Resources
     end
   end
 
+  def default_simulator
+    @default_sim ||= lambda do
+      name = RunLoop::Core.default_simulator(xcode)
+      sim_control.simulators.find do |sim|
+        sim.instruments_identifier(xcode) == name
+      end
+    end.call
+  end
+
   def with_developer_dir(developer_dir, &block)
     original_developer_dir = ENV['DEVELOPER_DIR']
     begin

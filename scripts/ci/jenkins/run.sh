@@ -33,7 +33,8 @@ $RBENV_EXEC bundle exec rspec \
   spec/integration/codesign_spec.rb \
   spec/integration/core_spec.rb \
   spec/integration/simctl_spec.rb \
-  spec/integration/device_agent/client_spec.rb
+  spec/integration/device_agent/client_spec.rb \
+  spec/integration/tcc/tcc_spec.rb
 
 # CLI tests
 
