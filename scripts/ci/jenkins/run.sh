@@ -52,4 +52,7 @@ execute "$RBENV_EXEC bundle exec run-loop instruments help"
 execute "$RBENV_EXEC bundle exec run-loop simctl help"
 execute "$RBENV_EXEC bundle exec run-loop codesign help"
 execute "$RBENV_EXEC bundle exec run-loop codesign info spec/resources/CalSmoke.ipa"
+execute "$RBENV_EXEC bundle exec run-loop tcc help"
+execute "$RBENV_EXEC bundle exec run-loop tcc services"
+execute "$RBENV_EXEC bundle exec run-loop tcc allow --app spec/resources/CalSmoke.app"
 

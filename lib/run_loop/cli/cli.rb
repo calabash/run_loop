@@ -5,6 +5,7 @@ require 'run_loop/cli/instruments'
 require 'run_loop/cli/simctl'
 require "run_loop/cli/locale"
 require "run_loop/cli/codesign"
+require "run_loop/cli/tcc"
 
 trap 'SIGINT' do
   puts 'Trapped SIGINT - exiting'
@@ -38,6 +39,9 @@ module RunLoop
 
       desc "codesign", "Tools for interacting with codesign"
       subcommand "codesign", RunLoop::CLI::Codesign
+
+      desc "tcc", "Tools for interacting with simulator privacy settings"
+      subcommand "tcc", RunLoop::CLI::TCC
 
     end
   end
