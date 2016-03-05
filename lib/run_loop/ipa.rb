@@ -45,6 +45,11 @@ module RunLoop
       app.executable_name
     end
 
+    # Returns the arches for the binary.
+    def arches
+      app.arches
+    end
+
     # Inspects the app's executables for the server version
     # @return[RunLoop::Version] a version instance
     def calabash_server_version
