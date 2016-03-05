@@ -67,6 +67,20 @@ module RunLoop
       end
     end
 
+    # Returns the value of SOLUTION which can be used to specify a
+    # Xamarin Studio .sln
+    #
+    # This is useful if your project has multiple solutions (.sln)
+    # and Calabash cannot detect the correct one.
+    def self.solution
+      value = ENV["SOLUTION"]
+      if value.nil? || value == ""
+        nil
+      else
+        File.expand_path(value)
+      end
+    end
+
     # Returns the value of TRACE_TEMPLATE; the Instruments template to use
     # during testing.
     def self.trace_template

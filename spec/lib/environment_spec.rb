@@ -199,6 +199,29 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".solution" do
+    describe "returns nil if SOLUTION variable is" do
+      it "the empty string" do
+         stub_env({"SOLUTION" => ""})
+         expect(RunLoop::Environment.solution).to be_falsey
+      end
+
+      it "is undefined" do
+         stub_env({"SOLUTION" => nil})
+         expect(RunLoop::Environment.solution).to be_falsey
+      end
+    end
+
+    it "return absolute path" do
+      stub_env({"SOLUTION" => "build"})
+      dir = File.expand_path(File.dirname(__FILE__))
+
+      expected = File.expand_path(File.join(dir, "..", "..", "build"))
+      actual = RunLoop::Environment.solution
+      expect(actual).to be == expected
+    end
+  end
+
   describe '.developer_dir' do
     it 'return value' do
       stub_env('DEVELOPER_DIR', '/some/xcode/path')
