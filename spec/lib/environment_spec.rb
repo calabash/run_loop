@@ -153,6 +153,52 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".xcodeproj" do
+    describe "returns nil if XCODEPROJ variable is" do
+      it "the empty string" do
+         stub_env({"XCODEPROJ" => ""})
+         expect(RunLoop::Environment.xcodeproj).to be_falsey
+      end
+
+      it "is undefined" do
+         stub_env({"XCODEPROJ" => nil})
+         expect(RunLoop::Environment.xcodeproj).to be_falsey
+      end
+    end
+
+    it "return absolute path" do
+      stub_env({"XCODEPROJ" => "my.xcodeproj"})
+      dir = File.expand_path(File.dirname(__FILE__))
+
+      expected = File.expand_path(File.join(dir, "..", "..", "my.xcodeproj"))
+      actual = RunLoop::Environment.xcodeproj
+      expect(actual).to be == expected
+    end
+  end
+
+  describe ".derived_data" do
+    describe "returns nil if DERIVED_DATA variable is" do
+      it "the empty string" do
+         stub_env({"DERIVED_DATA" => ""})
+         expect(RunLoop::Environment.derived_data).to be_falsey
+      end
+
+      it "is undefined" do
+         stub_env({"DERIVED_DATA" => nil})
+         expect(RunLoop::Environment.derived_data).to be_falsey
+      end
+    end
+
+    it "return absolute path" do
+      stub_env({"DERIVED_DATA" => "build"})
+      dir = File.expand_path(File.dirname(__FILE__))
+
+      expected = File.expand_path(File.join(dir, "..", "..", "build"))
+      actual = RunLoop::Environment.derived_data
+      expect(actual).to be == expected
+    end
+  end
+
   describe '.developer_dir' do
     it 'return value' do
       stub_env('DEVELOPER_DIR', '/some/xcode/path')
