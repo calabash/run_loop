@@ -85,6 +85,11 @@ Bundle must:
       identifier
     end
 
+    # Returns the arches for the binary.
+    def arches
+      @arches ||= lipo.info
+    end
+
     # Inspects the app's file for the server version
     def calabash_server_version
       version = nil
@@ -130,6 +135,11 @@ Bundle must:
     end
 
     private
+
+    # @!visibility private
+    def lipo
+      @lipo ||= RunLoop::Lipo.new(path)
+    end
 
     # @!visibility private
     def plist_buddy

@@ -119,6 +119,11 @@ describe RunLoop::App do
     end
   end
 
+  it "#arches" do
+    arches = app.arches
+    expect(arches).to be == ["i386", "x86_64"]
+  end
+
   context '#calabash_server_version' do
     subject { RunLoop::App.new(Resources.shared.cal_app_bundle_path).calabash_server_version }
     it { should be_kind_of(RunLoop::Version) }
@@ -297,6 +302,12 @@ describe RunLoop::App do
     it "returns false" do
       expect(app.send(:core_data_asset?, "path/to/foo")).to be_falsey
     end
+  end
+
+  it "#lipo" do
+    actual = app.send(:lipo)
+    expect(actual).to be_a_kind_of(RunLoop::Lipo)
+    expect(app.instance_variable_get(:@lipo)).to be == actual
   end
 end
 
