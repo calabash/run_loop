@@ -25,7 +25,8 @@ Bundle must:
 
 1. be a directory that exists,
 2. have a .app extension,
-3. and contain an Info.plist.
+3. contain an Info.plist,
+4. and the app binary (CFBundleExecutable) must exist
 }
       end
     end
@@ -49,10 +50,12 @@ Bundle must:
     def self.valid?(app_bundle_path)
       return false if app_bundle_path.nil?
 
-      File.exist?(app_bundle_path) &&
-        File.directory?(app_bundle_path) &&
-        File.extname(app_bundle_path) == '.app' &&
-        File.exist?(File.join(app_bundle_path, "Info.plist"))
+      return false if !File.directory?(app_bundle_path)
+      return false if !File.extname(app_bundle_path) == ".app"
+
+      return false if !self.info_plist_exist?(app_bundle_path)
+      return false if !self.executable_file_exist?(app_bundle_path)
+      true
     end
 
     # Returns the Info.plist path.
@@ -135,6 +138,25 @@ Bundle must:
     end
 
     private
+
+    # @!visibility private
+    def self.info_plist_exist?(app_bundle_path)
+      info_plist = File.join(app_bundle_path, "Info.plist")
+      File.exist?(info_plist)
+    end
+
+    # @!visibility private
+    def self.executable_file_exist?(app_bundle_path)
+      return false if !self.info_plist_exist?(app_bundle_path)
+      info_plist = File.join(app_bundle_path, "Info.plist")
+      pbuddy = RunLoop::PlistBuddy.new
+      name = pbuddy.plist_read("CFBundleExecutable", info_plist)
+      if name
+        File.exist?(File.join(app_bundle_path, name))
+      else
+        false
+      end
+    end
 
     # @!visibility private
     def lipo
