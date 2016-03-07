@@ -93,6 +93,18 @@ Bundle must:
       @arches ||= lipo.info
     end
 
+    # True if the app has been built for the simulator
+    def simulator?
+      arches.include?("i386") || arches.include?("x86_64")
+    end
+
+    # True if the app has been built for physical devices
+    def physical_device?
+      arches.any? do |arch|
+        arch[/arm/, 0]
+      end
+    end
+
     # Inspects the app's file for the server version
     def calabash_server_version
       version = nil
