@@ -17,6 +17,65 @@ describe RunLoop::App do
     end
   end
 
+  describe "private validation class methods" do
+    let(:path) { "path/to/My.app" }
+    let(:info) { File.join(path, "Info.plist") }
+    let(:name) { "My" }
+    let(:exec) { File.join(path, "My") }
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+
+    before do
+      allow(RunLoop::PlistBuddy).to receive(:new).and_return(pbuddy)
+    end
+
+    describe ".info_plist_exists?" do
+      it "true" do
+        expect(File).to receive(:exist?).with(info).and_return(true)
+
+        expect(RunLoop::App.send(:info_plist_exist?, path)).to be_truthy
+      end
+
+      it "false" do
+        expect(File).to receive(:exist?).with(info).and_return(false)
+
+        expect(RunLoop::App.send(:info_plist_exist?, path)).to be_falsey
+      end
+    end
+
+    describe ".executable_file_exists?" do
+      describe "false" do
+        it "plist does not exist" do
+          expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(false)
+
+          expect(RunLoop::App.send(:executable_file_exist?, path)).to be_falsey
+        end
+
+        it "Info.plist does not contain the CFBundleExecutable key" do
+          expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(true)
+          expect(pbuddy).to receive(:plist_read).with("CFBundleExecutable", info).and_return(nil)
+
+          expect(RunLoop::App.send(:executable_file_exist?, path)).to be_falsey
+        end
+
+        it "executable file does not exist" do
+          expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(true)
+          expect(pbuddy).to receive(:plist_read).with("CFBundleExecutable", info).and_return(name)
+          expect(File).to receive(:exist?).with(exec).and_return(false)
+
+          expect(RunLoop::App.send(:executable_file_exist?, path)).to be_falsey
+        end
+      end
+
+      it "true" do
+        expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(true)
+        expect(pbuddy).to receive(:plist_read).with("CFBundleExecutable", info).and_return(name)
+        expect(File).to receive(:exist?).with(exec).and_return(true)
+
+        expect(RunLoop::App.send(:executable_file_exist?, path)).to be_truthy
+      end
+    end
+  end
+
   context ".valid?" do
     subject { RunLoop::App.valid?(path) }
 
@@ -40,14 +99,25 @@ describe RunLoop::App do
       it { is_expected.to be_falsey }
     end
 
-    context "bundle does not contain an Info.plist" do
-      let(:path) do
-        tmp_dir = Dir.mktmpdir
-        bundle = File.join(tmp_dir, "foo.app")
-        FileUtils.mkdir_p(bundle)
-        bundle
+    describe "structure" do
+      let(:path) { Resources.shared.app_bundle_path }
+
+      it "bundle does not contain an info plist" do
+        expect(RunLoop::App).to receive(:info_plist_exist?).and_return(false)
+
+        expect(RunLoop::App.valid?(path)).to be_falsey
       end
-      it { is_expected.to be_falsey }
+
+      it "bundle does not contain the app executable file" do
+        expect(RunLoop::App).to receive(:executable_file_exist?).and_return(false)
+
+        expect(RunLoop::App.valid?(path)).to be_falsey
+      end
+    end
+
+    it "true" do
+      path = Resources.shared.app_bundle_path
+      expect(RunLoop::App.valid?(path)).to be_truthy
     end
   end
 
