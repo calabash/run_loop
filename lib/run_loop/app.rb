@@ -66,7 +66,7 @@ Bundle must:
     # @raise [RuntimeError] If the plist cannot be read or the
     #   CFBundleIdentifier is empty or does not exist.
     def bundle_identifier
-      identifier = plist_buddy.plist_read('CFBundleIdentifier', info_plist_path)
+      identifier = plist_buddy.plist_read("CFBundleIdentifier", info_plist_path)
       unless identifier
         raise "Expected key 'CFBundleIdentifier' in '#{info_plist_path}'"
       end
@@ -78,11 +78,11 @@ Bundle must:
     # @raise [RuntimeError] If the plist cannot be read or the
     #   CFBundleExecutable is empty or does not exist.
     def executable_name
-      identifier = plist_buddy.plist_read('CFBundleExecutable', info_plist_path)
-      unless identifier
+      name = plist_buddy.plist_read("CFBundleExecutable", info_plist_path)
+      unless name
         raise "Expected key 'CFBundleExecutable' in '#{info_plist_path}'"
       end
-      identifier
+      name
     end
 
     # Returns the arches for the binary.
