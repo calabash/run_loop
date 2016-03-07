@@ -207,6 +207,62 @@ describe RunLoop::App do
     end
   end
 
+  describe "#simulator_app?" do
+    it "false" do
+      expect(app).to receive(:arches).twice.and_return(["arm64", "armv7"])
+
+      expect(app.simulator?).to be_falsey
+    end
+
+    describe "true" do
+      it "i386" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["i386"])
+
+        expect(app.simulator?).to be_truthy
+      end
+
+      it "x86_64" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["x86_64"])
+
+        expect(app.simulator?).to be_truthy
+      end
+
+      it "both" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["x86_64", "i386"])
+
+        expect(app.simulator?).to be_truthy
+      end
+    end
+  end
+
+  describe "#physical_device_app?" do
+    it "false" do
+      expect(app).to receive(:arches).at_least(:once).and_return(["x86_64", "i386"])
+
+      expect(app.physical_device?).to be_falsey
+    end
+
+    describe "true" do
+      it "arm64" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["arm64"])
+
+        expect(app.physical_device?).to be_truthy
+      end
+
+      it "armv7" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["armv7"])
+
+        expect(app.physical_device?).to be_truthy
+      end
+
+      it "armv7s" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["armv7s"])
+
+        expect(app.physical_device?).to be_truthy
+      end
+    end
+  end
+
   describe "codesign" do
     it "#codesign_info" do
       expect(RunLoop::Codesign).to receive(:info).with(app.path).and_return(:info)
