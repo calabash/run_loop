@@ -224,7 +224,17 @@ Bundle must:
 
     # @!visibility private
     def image?(file)
-      file[/jpeg|jpg|gif|png|tiff|svg|pdf|car|iTunesArtwork/, 0]
+      extension = File.extname(file)
+
+      extension == ".jpeg" ||
+      extension == ".jpg" ||
+      extension == ".gif" ||
+      extension == ".png" ||
+      extension == ".tiff" ||
+      extension == ".svg" ||
+      extension == ".pdf" ||
+      extension == ".car" ||
+      file[/iTunesArtwork/, 0]
     end
 
     # @!visibility private
