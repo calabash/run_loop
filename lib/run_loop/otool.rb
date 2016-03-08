@@ -42,7 +42,7 @@ must exist and not be a directory.
     # @!visibility private
     def arch_info
       args = ["otool", "-hv", "-arch", "all", path]
-      opts = { :log_cmd => true }
+      opts = { :log_cmd => false }
 
       hash = xcrun.exec(args, opts)
 
