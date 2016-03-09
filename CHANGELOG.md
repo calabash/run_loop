@@ -1,5 +1,12 @@
 ## Change Log
 
+### 2.0.8
+
+* App: improve exectuable detection in app bundles #401
+* Automatic .app detection #396
+* App: valid apps have an executable file (CFBundleExecutable) #393
+* App and Ipa can return arches #392
+
 ### 2.0.7
 
 * Obtaining codesigning information about App and Ipa #388
