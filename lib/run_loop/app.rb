@@ -234,9 +234,11 @@ Bundle must:
     # @!visibility private
     def lproj_asset?(file)
       extension = File.extname(file)
+      dir_extension = File.extname(File.dirname(file))
 
-      file[/lproj/, 0] ||
-        file[/storyboard/, 0] ||
+      dir_extension == ".lproj" ||
+        dir_extension == ".storyboard" ||
+        dir_extension == ".storyboardc" ||
         extension == ".strings" ||
         extension == ".xib" ||
         extension == ".nib"

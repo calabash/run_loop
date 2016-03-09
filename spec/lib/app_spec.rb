@@ -396,6 +396,7 @@ describe RunLoop::App do
       expect(app.send(:lproj_asset?, "path/to/My.nib")).to be_truthy
       expect(app.send(:lproj_asset?, "path/to/My.xib")).to be_truthy
       expect(app.send(:lproj_asset?, "path/to/Main.storyboardc/any_file")).to be_truthy
+      expect(app.send(:lproj_asset?, "path/to/Main.storyboard/any_file")).to be_truthy
       expect(app.send(:lproj_asset?, "path/to/Localizable.strings")).to be_truthy
     end
 
