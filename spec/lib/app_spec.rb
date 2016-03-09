@@ -1,6 +1,7 @@
 describe RunLoop::App do
 
-  let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
+  let(:bundle_path) { Resources.shared.app_bundle_path }
+  let(:app) { RunLoop::App.new(bundle_path) }
   let(:bundle_id) { 'sh.calaba.CalSmoke' }
 
   describe '.new' do
@@ -331,14 +332,18 @@ describe RunLoop::App do
   end
 
   it "#skip_executable_check?" do
-    expect(app).to receive(:image?).and_return(false)
-    expect(app).to receive(:text?).and_return(false)
-    expect(app).to receive(:plist?).and_return(false)
-    expect(app).to receive(:lproj_asset?).and_return(false)
-    expect(app).to receive(:code_signing_asset?).and_return(false)
-    expect(app).to receive(:core_data_asset?).and_return(false)
+    path = "path/to/file"
+    expect(File).to receive(:directory?).at_least(:once).with(bundle_path).and_return(true)
+    expect(File).to receive(:directory?).with(path).and_return(false)
+    expect(app).to receive(:image?).with(path).and_return(false)
+    expect(app).to receive(:text?).with(path).and_return(false)
+    expect(app).to receive(:plist?).with(path).and_return(false)
+    expect(app).to receive(:lproj_asset?).with(path).and_return(false)
+    expect(app).to receive(:code_signing_asset?).with(path).and_return(false)
+    expect(app).to receive(:core_data_asset?).with(path).and_return(false)
+    expect(app).to receive(:font?).with(path).and_return(false)
 
-    expect(app.send(:skip_executable_check?, "path/to/file")).to be_falsey
+    expect(app.send(:skip_executable_check?, path)).to be_falsey
   end
 
   describe "#image?" do
@@ -396,6 +401,7 @@ describe RunLoop::App do
       expect(app.send(:lproj_asset?, "path/to/My.nib")).to be_truthy
       expect(app.send(:lproj_asset?, "path/to/My.xib")).to be_truthy
       expect(app.send(:lproj_asset?, "path/to/Main.storyboardc/any_file")).to be_truthy
+      expect(app.send(:lproj_asset?, "path/to/Main.storyboard/any_file")).to be_truthy
       expect(app.send(:lproj_asset?, "path/to/Localizable.strings")).to be_truthy
     end
 
@@ -423,10 +429,22 @@ describe RunLoop::App do
       expect(app.send(:core_data_asset?, "path/to/my.mom")).to be_truthy
       expect(app.send(:core_data_asset?, "path/to/CoreData.momd/SomeFile")).to be_truthy
       expect(app.send(:core_data_asset?, "path/to/my.db")).to be_truthy
+      expect(app.send(:core_data_asset?, "path/to/my.omo")).to be_truthy
     end
 
     it "returns false" do
       expect(app.send(:core_data_asset?, "path/to/foo")).to be_falsey
+    end
+  end
+
+  describe "#font?" do
+    it "returns trues" do
+      expect(app.send(:font?, "path/to/my.tff")).to be_truthy
+      expect(app.send(:font?, "path/to/my.otf")).to be_truthy
+    end
+
+    it "returns false" do
+      expect(app.send(:font?, "path/to/my.file")).to be_falsey
     end
   end
 

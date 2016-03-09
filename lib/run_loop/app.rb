@@ -135,7 +135,6 @@ Bundle must:
     def executables
       executables = []
       Dir.glob("#{path}/**/*") do |file|
-        next if File.directory?(file)
         next if skip_executable_check?(file)
         if otool(file).executable?
           executables << file
@@ -194,17 +193,20 @@ Bundle must:
 
     # @!visibility private
     def skip_executable_check?(file)
-      image?(file) ||
+      File.directory?(file) ||
+        image?(file) ||
         text?(file) ||
         plist?(file) ||
         lproj_asset?(file) ||
         code_signing_asset?(file) ||
-        core_data_asset?(file)
+        core_data_asset?(file) ||
+        font?(file)
     end
 
     # @!visibility private
     def text?(file)
        extension = File.extname(file)
+       filename = File.basename(file)
 
        extension == ".txt" ||
          extension == ".md" ||
@@ -214,7 +216,10 @@ Bundle must:
          extension == ".yaml" ||
          extension == ".yml" ||
          extension == ".rtf" ||
-         file[/NOTICE|LICENSE|README|ABOUT/, 0]
+
+         ["NOTICE", "LICENSE", "README", "ABOUT"].any? do |elm|
+           filename[/#{elm}/]
+         end
     end
 
     # @!visibility private
@@ -230,9 +235,11 @@ Bundle must:
     # @!visibility private
     def lproj_asset?(file)
       extension = File.extname(file)
+      dir_extension = File.extname(File.dirname(file))
 
-      file[/lproj/, 0] ||
-        file[/storyboard/, 0] ||
+      dir_extension == ".lproj" ||
+        dir_extension == ".storyboard" ||
+        dir_extension == ".storyboardc" ||
         extension == ".strings" ||
         extension == ".xib" ||
         extension == ".nib"
@@ -242,21 +249,31 @@ Bundle must:
     def code_signing_asset?(file)
       name = File.basename(file)
       extension = File.extname(file)
+      dirname = File.basename(File.dirname(file))
 
       name == "PkgInfo" ||
         name == "embedded" ||
         extension == ".mobileprovision" ||
         extension == ".xcent" ||
-        file[/_CodeSignature/, 0]
+        dirname == "_CodeSignature"
     end
 
     # @!visibility private
     def core_data_asset?(file)
       extension = File.extname(file)
+      dir_extension = File.extname(File.dirname(file))
 
-      file[/momd/, 0] ||
+      dir_extension == ".momd" ||
         extension == ".mom" ||
-        extension == ".db"
+        extension == ".db" ||
+        extension == ".omo"
+    end
+
+    # @!visibility private
+    def font?(file)
+      extension = File.extname(file)
+
+      extension == ".tff" || extension == ".otf"
     end
   end
 end
