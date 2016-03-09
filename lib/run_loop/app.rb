@@ -205,6 +205,7 @@ Bundle must:
     # @!visibility private
     def text?(file)
        extension = File.extname(file)
+       filename = File.basename(file)
 
        extension == ".txt" ||
          extension == ".md" ||
@@ -214,7 +215,10 @@ Bundle must:
          extension == ".yaml" ||
          extension == ".yml" ||
          extension == ".rtf" ||
-         file[/NOTICE|LICENSE|README|ABOUT/, 0]
+
+         ["NOTICE", "LICENSE", "README", "ABOUT"].any? do |elm|
+           filename[/#{elm}/]
+         end
     end
 
     # @!visibility private
