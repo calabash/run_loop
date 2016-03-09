@@ -248,12 +248,13 @@ Bundle must:
     def code_signing_asset?(file)
       name = File.basename(file)
       extension = File.extname(file)
+      dirname = File.basename(File.dirname(file))
 
       name == "PkgInfo" ||
         name == "embedded" ||
         extension == ".mobileprovision" ||
         extension == ".xcent" ||
-        file[/_CodeSignature/, 0]
+        dirname == "_CodeSignature"
     end
 
     # @!visibility private
