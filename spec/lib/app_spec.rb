@@ -1,6 +1,7 @@
 describe RunLoop::App do
 
-  let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
+  let(:bundle_path) { Resources.shared.app_bundle_path }
+  let(:app) { RunLoop::App.new(bundle_path) }
   let(:bundle_id) { 'sh.calaba.CalSmoke' }
 
   describe '.new' do
@@ -331,14 +332,17 @@ describe RunLoop::App do
   end
 
   it "#skip_executable_check?" do
-    expect(app).to receive(:image?).and_return(false)
-    expect(app).to receive(:text?).and_return(false)
-    expect(app).to receive(:plist?).and_return(false)
-    expect(app).to receive(:lproj_asset?).and_return(false)
-    expect(app).to receive(:code_signing_asset?).and_return(false)
-    expect(app).to receive(:core_data_asset?).and_return(false)
+    path = "path/to/file"
+    expect(File).to receive(:directory?).at_least(:once).with(bundle_path).and_return(true)
+    expect(File).to receive(:directory?).with(path).and_return(false)
+    expect(app).to receive(:image?).with(path).and_return(false)
+    expect(app).to receive(:text?).with(path).and_return(false)
+    expect(app).to receive(:plist?).with(path).and_return(false)
+    expect(app).to receive(:lproj_asset?).with(path).and_return(false)
+    expect(app).to receive(:code_signing_asset?).with(path).and_return(false)
+    expect(app).to receive(:core_data_asset?).with(path).and_return(false)
 
-    expect(app.send(:skip_executable_check?, "path/to/file")).to be_falsey
+    expect(app.send(:skip_executable_check?, path)).to be_falsey
   end
 
   describe "#image?" do

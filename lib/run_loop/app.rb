@@ -135,7 +135,6 @@ Bundle must:
     def executables
       executables = []
       Dir.glob("#{path}/**/*") do |file|
-        next if File.directory?(file)
         next if skip_executable_check?(file)
         if otool(file).executable?
           executables << file
@@ -194,7 +193,8 @@ Bundle must:
 
     # @!visibility private
     def skip_executable_check?(file)
-      image?(file) ||
+      File.directory?(file) ||
+        image?(file) ||
         text?(file) ||
         plist?(file) ||
         lproj_asset?(file) ||
