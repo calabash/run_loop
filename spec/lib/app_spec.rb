@@ -341,6 +341,7 @@ describe RunLoop::App do
     expect(app).to receive(:lproj_asset?).with(path).and_return(false)
     expect(app).to receive(:code_signing_asset?).with(path).and_return(false)
     expect(app).to receive(:core_data_asset?).with(path).and_return(false)
+    expect(app).to receive(:font?).with(path).and_return(false)
 
     expect(app.send(:skip_executable_check?, path)).to be_falsey
   end
@@ -433,6 +434,17 @@ describe RunLoop::App do
 
     it "returns false" do
       expect(app.send(:core_data_asset?, "path/to/foo")).to be_falsey
+    end
+  end
+
+  describe "#font?" do
+    it "returns trues" do
+      expect(app.send(:font?, "path/to/my.tff")).to be_truthy
+      expect(app.send(:font?, "path/to/my.otf")).to be_truthy
+    end
+
+    it "returns false" do
+      expect(app.send(:font?, "path/to/my.file")).to be_falsey
     end
   end
 

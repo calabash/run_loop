@@ -199,7 +199,8 @@ Bundle must:
         plist?(file) ||
         lproj_asset?(file) ||
         code_signing_asset?(file) ||
-        core_data_asset?(file)
+        core_data_asset?(file) ||
+        font?(file)
     end
 
     # @!visibility private
@@ -266,6 +267,13 @@ Bundle must:
         extension == ".mom" ||
         extension == ".db" ||
         extension == ".omo"
+    end
+
+    # @!visibility private
+    def font?(file)
+      extension = File.extname(file)
+
+      extension == ".tff" || extension == ".otf"
     end
   end
 end
