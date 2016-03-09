@@ -424,6 +424,7 @@ describe RunLoop::App do
       expect(app.send(:core_data_asset?, "path/to/my.mom")).to be_truthy
       expect(app.send(:core_data_asset?, "path/to/CoreData.momd/SomeFile")).to be_truthy
       expect(app.send(:core_data_asset?, "path/to/my.db")).to be_truthy
+      expect(app.send(:core_data_asset?, "path/to/my.omo")).to be_truthy
     end
 
     it "returns false" do

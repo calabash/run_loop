@@ -260,10 +260,12 @@ Bundle must:
     # @!visibility private
     def core_data_asset?(file)
       extension = File.extname(file)
+      dir_extension = File.extname(File.dirname(file))
 
-      file[/momd/, 0] ||
+      dir_extension == ".momd" ||
         extension == ".mom" ||
-        extension == ".db"
+        extension == ".db" ||
+        extension == ".omo"
     end
   end
 end
