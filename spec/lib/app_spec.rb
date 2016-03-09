@@ -1,6 +1,7 @@
 describe RunLoop::App do
 
-  let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
+  let(:bundle_path) { Resources.shared.app_bundle_path }
+  let(:app) { RunLoop::App.new(bundle_path) }
   let(:bundle_id) { 'sh.calaba.CalSmoke' }
 
   describe '.new' do
@@ -14,6 +15,65 @@ describe RunLoop::App do
       expect do
         expect(RunLoop::App.new("path/does/not/exist"))
       end.to raise_error ArgumentError, /App does not exist at path or is not an app bundle/
+    end
+  end
+
+  describe "private validation class methods" do
+    let(:path) { "path/to/My.app" }
+    let(:info) { File.join(path, "Info.plist") }
+    let(:name) { "My" }
+    let(:exec) { File.join(path, "My") }
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+
+    before do
+      allow(RunLoop::PlistBuddy).to receive(:new).and_return(pbuddy)
+    end
+
+    describe ".info_plist_exists?" do
+      it "true" do
+        expect(File).to receive(:exist?).with(info).and_return(true)
+
+        expect(RunLoop::App.send(:info_plist_exist?, path)).to be_truthy
+      end
+
+      it "false" do
+        expect(File).to receive(:exist?).with(info).and_return(false)
+
+        expect(RunLoop::App.send(:info_plist_exist?, path)).to be_falsey
+      end
+    end
+
+    describe ".executable_file_exists?" do
+      describe "false" do
+        it "plist does not exist" do
+          expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(false)
+
+          expect(RunLoop::App.send(:executable_file_exist?, path)).to be_falsey
+        end
+
+        it "Info.plist does not contain the CFBundleExecutable key" do
+          expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(true)
+          expect(pbuddy).to receive(:plist_read).with("CFBundleExecutable", info).and_return(nil)
+
+          expect(RunLoop::App.send(:executable_file_exist?, path)).to be_falsey
+        end
+
+        it "executable file does not exist" do
+          expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(true)
+          expect(pbuddy).to receive(:plist_read).with("CFBundleExecutable", info).and_return(name)
+          expect(File).to receive(:exist?).with(exec).and_return(false)
+
+          expect(RunLoop::App.send(:executable_file_exist?, path)).to be_falsey
+        end
+      end
+
+      it "true" do
+        expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(true)
+        expect(pbuddy).to receive(:plist_read).with("CFBundleExecutable", info).and_return(name)
+        expect(File).to receive(:exist?).with(exec).and_return(true)
+
+        expect(RunLoop::App.send(:executable_file_exist?, path)).to be_truthy
+      end
     end
   end
 
@@ -40,14 +100,25 @@ describe RunLoop::App do
       it { is_expected.to be_falsey }
     end
 
-    context "bundle does not contain an Info.plist" do
-      let(:path) do
-        tmp_dir = Dir.mktmpdir
-        bundle = File.join(tmp_dir, "foo.app")
-        FileUtils.mkdir_p(bundle)
-        bundle
+    describe "structure" do
+      let(:path) { Resources.shared.app_bundle_path }
+
+      it "bundle does not contain an info plist" do
+        expect(RunLoop::App).to receive(:info_plist_exist?).and_return(false)
+
+        expect(RunLoop::App.valid?(path)).to be_falsey
       end
-      it { is_expected.to be_falsey }
+
+      it "bundle does not contain the app executable file" do
+        expect(RunLoop::App).to receive(:executable_file_exist?).and_return(false)
+
+        expect(RunLoop::App.valid?(path)).to be_falsey
+      end
+    end
+
+    it "true" do
+      path = Resources.shared.app_bundle_path
+      expect(RunLoop::App.valid?(path)).to be_truthy
     end
   end
 
@@ -119,6 +190,11 @@ describe RunLoop::App do
     end
   end
 
+  it "#arches" do
+    arches = app.arches
+    expect(arches).to be == ["i386", "x86_64"]
+  end
+
   context '#calabash_server_version' do
     subject { RunLoop::App.new(Resources.shared.cal_app_bundle_path).calabash_server_version }
     it { should be_kind_of(RunLoop::Version) }
@@ -128,6 +204,62 @@ describe RunLoop::App do
       it 'calabash server not included in app' do
         app = RunLoop::App.new(path)
         expect(app.calabash_server_version).to be_nil
+      end
+    end
+  end
+
+  describe "#simulator_app?" do
+    it "false" do
+      expect(app).to receive(:arches).twice.and_return(["arm64", "armv7"])
+
+      expect(app.simulator?).to be_falsey
+    end
+
+    describe "true" do
+      it "i386" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["i386"])
+
+        expect(app.simulator?).to be_truthy
+      end
+
+      it "x86_64" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["x86_64"])
+
+        expect(app.simulator?).to be_truthy
+      end
+
+      it "both" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["x86_64", "i386"])
+
+        expect(app.simulator?).to be_truthy
+      end
+    end
+  end
+
+  describe "#physical_device_app?" do
+    it "false" do
+      expect(app).to receive(:arches).at_least(:once).and_return(["x86_64", "i386"])
+
+      expect(app.physical_device?).to be_falsey
+    end
+
+    describe "true" do
+      it "arm64" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["arm64"])
+
+        expect(app.physical_device?).to be_truthy
+      end
+
+      it "armv7" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["armv7"])
+
+        expect(app.physical_device?).to be_truthy
+      end
+
+      it "armv7s" do
+        expect(app).to receive(:arches).at_least(:once).and_return(["armv7s"])
+
+        expect(app.physical_device?).to be_truthy
       end
     end
   end
@@ -200,14 +332,18 @@ describe RunLoop::App do
   end
 
   it "#skip_executable_check?" do
-    expect(app).to receive(:image?).and_return(false)
-    expect(app).to receive(:text?).and_return(false)
-    expect(app).to receive(:plist?).and_return(false)
-    expect(app).to receive(:lproj_asset?).and_return(false)
-    expect(app).to receive(:code_signing_asset?).and_return(false)
-    expect(app).to receive(:core_data_asset?).and_return(false)
+    path = "path/to/file"
+    expect(File).to receive(:directory?).at_least(:once).with(bundle_path).and_return(true)
+    expect(File).to receive(:directory?).with(path).and_return(false)
+    expect(app).to receive(:image?).with(path).and_return(false)
+    expect(app).to receive(:text?).with(path).and_return(false)
+    expect(app).to receive(:plist?).with(path).and_return(false)
+    expect(app).to receive(:lproj_asset?).with(path).and_return(false)
+    expect(app).to receive(:code_signing_asset?).with(path).and_return(false)
+    expect(app).to receive(:core_data_asset?).with(path).and_return(false)
+    expect(app).to receive(:font?).with(path).and_return(false)
 
-    expect(app.send(:skip_executable_check?, "path/to/file")).to be_falsey
+    expect(app.send(:skip_executable_check?, path)).to be_falsey
   end
 
   describe "#image?" do
@@ -265,6 +401,7 @@ describe RunLoop::App do
       expect(app.send(:lproj_asset?, "path/to/My.nib")).to be_truthy
       expect(app.send(:lproj_asset?, "path/to/My.xib")).to be_truthy
       expect(app.send(:lproj_asset?, "path/to/Main.storyboardc/any_file")).to be_truthy
+      expect(app.send(:lproj_asset?, "path/to/Main.storyboard/any_file")).to be_truthy
       expect(app.send(:lproj_asset?, "path/to/Localizable.strings")).to be_truthy
     end
 
@@ -292,11 +429,29 @@ describe RunLoop::App do
       expect(app.send(:core_data_asset?, "path/to/my.mom")).to be_truthy
       expect(app.send(:core_data_asset?, "path/to/CoreData.momd/SomeFile")).to be_truthy
       expect(app.send(:core_data_asset?, "path/to/my.db")).to be_truthy
+      expect(app.send(:core_data_asset?, "path/to/my.omo")).to be_truthy
     end
 
     it "returns false" do
       expect(app.send(:core_data_asset?, "path/to/foo")).to be_falsey
     end
+  end
+
+  describe "#font?" do
+    it "returns trues" do
+      expect(app.send(:font?, "path/to/my.tff")).to be_truthy
+      expect(app.send(:font?, "path/to/my.otf")).to be_truthy
+    end
+
+    it "returns false" do
+      expect(app.send(:font?, "path/to/my.file")).to be_falsey
+    end
+  end
+
+  it "#lipo" do
+    actual = app.send(:lipo)
+    expect(actual).to be_a_kind_of(RunLoop::Lipo)
+    expect(app.instance_variable_get(:@lipo)).to be == actual
   end
 end
 

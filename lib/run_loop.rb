@@ -17,6 +17,10 @@ require 'run_loop/plist_buddy'
 require "run_loop/codesign"
 require 'run_loop/app'
 require 'run_loop/ipa'
+require "run_loop/detect_aut/errors"
+require "run_loop/detect_aut/xamarin_studio"
+require "run_loop/detect_aut/xcode"
+require "run_loop/detect_aut/detect"
 require 'run_loop/sim_control'
 require 'run_loop/device'
 require 'run_loop/instruments'

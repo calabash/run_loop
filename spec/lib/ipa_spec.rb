@@ -37,6 +37,10 @@ describe RunLoop::Ipa do
     expect(ipa.executable_name).to be == 'CalSmoke-cal'
   end
 
+  it "#arches" do
+    expect(ipa.arches).to be == ["armv7", "armv7s", "arm64"]
+  end
+
   it "calabash_server_version" do
     version = ipa.calabash_server_version
     expect(version).to be_a_kind_of(RunLoop::Version)
