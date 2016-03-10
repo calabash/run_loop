@@ -25,15 +25,8 @@ module RunLoop
           search_dirs = [solution_directory]
           apps = candidate_apps(search_dirs.first)
         else
-          apps = []
-          search_dirs = []
-        end
-
-        # If this is a Xamarin project, we've already searched the local
-        # directory tree for .app.
-        if apps.empty? && !xamarin_project?
-          search_dirs << File.expand_path("./")
-          apps = candidate_apps(File.expand_path("./"))
+          search_dirs = [Dir.pwd]
+          apps = candidate_apps(search_dirs.first)
         end
 
         if apps.empty?

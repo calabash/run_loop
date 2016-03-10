@@ -3,7 +3,7 @@ describe RunLoop::DetectAUT::Detect do
   let(:app) { RunLoop::App.new(Resources.shared.cal_app_bundle_path) }
   let(:obj) { RunLoop::DetectAUT::Detect.new }
 
-  describe "#simulator" do
+  describe "#app_for_simulator" do
     it "respects the APP variable" do
       expect(RunLoop::Environment).to receive(:path_to_app_bundle).and_return(app.path)
 
@@ -86,21 +86,10 @@ describe RunLoop::DetectAUT::Detect do
       end
 
       describe "found no apps" do
-        it "found an app by recursively searching down from the local directory" do
-          apps = [app]
-          expect(obj).to receive(:detect_xcode_apps).and_return([[], search_dirs])
-          expect(obj).to receive(:candidate_apps).with(File.expand_path("./")).and_return(apps)
-          expect(obj).to receive(:select_most_recent_app).with(apps).and_return(app)
-
-          expect(obj.app_for_simulator).to be == app
-        end
 
         it "did not find any apps in DerivedData or by search recursively down from the directory" do
           depth = RunLoop::DetectAUT::Detect::DEFAULTS[:search_depth]
           expect(obj).to receive(:detect_xcode_apps).and_return([[], search_dirs])
-          local_path = File.expand_path("./")
-          search_dirs << local_path
-          expect(obj).to receive(:candidate_apps).with(local_path).and_return([])
           expect(obj).to receive(:raise_no_simulator_app_found).with(search_dirs, depth).and_call_original
 
           expect do
