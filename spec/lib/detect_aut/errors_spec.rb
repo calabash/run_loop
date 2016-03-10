@@ -27,7 +27,7 @@ describe RunLoop::DetectAUT::Errors do
 
   it "#raise_no_simulator_app_found" do
     expect do
-      obj.raise_no_simulator_app_found(["path/a", "path/b", "path/c"])
+      obj.raise_no_simulator_app_found(["path/a", "path/b", "path/c"], 4)
     end.to raise_error RunLoop::NoSimulatorAppFoundError
   end
 end

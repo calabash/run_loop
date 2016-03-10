@@ -80,37 +80,76 @@ describe RunLoop::DetectAUT::Xcode do
 
   it "#find_xcodeproj" do
     glob = "#{Dir.pwd}/**/*.xcodeproj"
-    expect(Dir).to receive(:glob).with(glob).and_return([])
 
-    expect(obj.find_xcodeproj).to be == []
+    glob_result = [
+      "path/to/ProjectA.xcodeproj",
+      "path/to/ProjectB.xcodeproj",
+      "path/to/ProjectC.xcodeproj"
+    ]
+
+    expect(Dir).to receive(:glob).with(glob).and_return(glob_result)
+
+    expect(obj).to receive(:ignore_xcodeproj?).with(glob_result[0]).and_return(true)
+    expect(obj).to receive(:ignore_xcodeproj?).with(glob_result[1]).and_return(false)
+    expect(obj).to receive(:ignore_xcodeproj?).with(glob_result[2]).and_return(true)
+
+    expect(obj.find_xcodeproj).to be == ["path/to/ProjectB.xcodeproj"]
+  end
+
+  describe "#ignore_xcodeproj?" do
+    it "ignores CordovaLib" do
+      path = "path/CordovaLib/Cordova.xcodeproj"
+      expect(obj.ignore_xcodeproj?(path)).to be_truthy
+    end
+
+    it "ignores Pods" do
+      path = "path/Pods/Pods.xcodeproj"
+      expect(obj.ignore_xcodeproj?(path)).to be_truthy
+    end
+
+    it "ignores Carthage" do
+      path = "path/Carthage/AFNetworking/AFNetworking.xcodeproj"
+      expect(obj.ignore_xcodeproj?(path)).to be_truthy
+    end
+
+    it "returns false" do
+      path = "path/ProjectA.xcodeproj"
+      expect(obj.ignore_xcodeproj?(path)).to be_falsey
+    end
   end
 
   describe "#detect_xcode_apps" do
     let(:derived) { ["path/a", "path/b", "path/c"] }
     let(:prefs) { "path/prefs" }
 
-    it "only derived data" do
+    before do
+      allow(Dir).to receive(:pwd).and_return("./")
+    end
+
+    it "only derived data and local directory" do
       expect(obj).to receive(:candidate_apps).with(derived[0]).and_return(["a"])
       expect(obj).to receive(:candidate_apps).with(derived[1]).and_return(["b"])
       expect(obj).to receive(:candidate_apps).with(derived[2]).and_return(["c"])
+      expect(obj).to receive(:candidate_apps).with("./").and_return(["d"])
       expect(obj).to receive(:derived_data_search_dirs).and_return(derived)
       expect(obj).to receive(:xcode_preferences_search_dir).and_return(nil)
 
-      e_apps = ["a", "b", "c"]
-      e_search_dirs = derived
+      e_apps = ["a", "b", "c", "d"]
+      e_search_dirs = derived +  ["./"]
 
       a_apps, a_search_dirs = obj.detect_xcode_apps
       expect(a_apps).to be == e_apps
       expect(a_search_dirs).to be == e_search_dirs
     end
 
-    it "only xcode preferences dir" do
+    it "only xcode preferences dir and local directory" do
       expect(obj).to receive(:derived_data_search_dirs).and_return([])
       expect(obj).to receive(:xcode_preferences_search_dir).and_return(prefs)
       expect(obj).to receive(:candidate_apps).with(prefs).and_return(["d"])
+      expect(obj).to receive(:candidate_apps).with("./").and_return(["e"])
 
-      e_apps = ["d"]
-      e_search_dirs = [prefs]
+      e_apps = ["d", "e"]
+      e_search_dirs = [prefs] + ["./"]
 
       a_apps, a_search_dirs = obj.detect_xcode_apps
       expect(a_apps).to be == e_apps
@@ -124,9 +163,10 @@ describe RunLoop::DetectAUT::Xcode do
       expect(obj).to receive(:candidate_apps).with(derived[1]).and_return(["b"])
       expect(obj).to receive(:candidate_apps).with(derived[2]).and_return(["c"])
       expect(obj).to receive(:candidate_apps).with(prefs).and_return(["d"])
+      expect(obj).to receive(:candidate_apps).with("./").and_return(["e"])
 
-      e_apps = ["a", "b", "c", "d"]
-      e_search_dirs = derived.dup << prefs
+      e_apps = ["a", "b", "c", "d", "e"]
+      e_search_dirs = derived.dup + [prefs] + ["./"]
 
       a_apps, a_search_dirs = obj.detect_xcode_apps
       expect(a_apps).to be == e_apps
