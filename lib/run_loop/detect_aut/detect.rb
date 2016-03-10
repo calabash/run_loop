@@ -10,6 +10,11 @@ module RunLoop
       include RunLoop::DetectAUT::Xcode
 
       # @!visibility private
+      DEFAULTS = {
+        :search_depth => 5
+      }
+
+      # @!visibility private
       def app_for_simulator
         path = RunLoop::Environment.path_to_app_bundle
         return RunLoop::App.new(path) if path
@@ -20,19 +25,12 @@ module RunLoop
           search_dirs = [solution_directory]
           apps = candidate_apps(search_dirs.first)
         else
-          apps = []
-          search_dirs = []
-        end
-
-        # If this is a Xamarin project, we've already searched the local
-        # directory tree for .app.
-        if apps.empty? && !xamarin_project?
-          search_dirs << File.expand_path("./")
-          apps = candidate_apps(File.expand_path("./"))
+          search_dirs = [Dir.pwd]
+          apps = candidate_apps(search_dirs.first)
         end
 
         if apps.empty?
-          raise_no_simulator_app_found(search_dirs)
+          raise_no_simulator_app_found(search_dirs, DEFAULTS[:search_depth])
         end
 
         app = select_most_recent_app(apps)
@@ -65,7 +63,12 @@ module RunLoop
       # @param [String] base_dir where to start the recursive search
       def candidate_apps(base_dir)
         candidates = []
-        Dir.glob("#{base_dir}/**/*.app").each do |bundle_path|
+
+        globs = globs_for_app_search(base_dir)
+        Dir.glob(globs).each do |bundle_path|
+          # Gems, like run-loop, can contain *.app if the user is building
+          # from :git =>, :github =>, or :path => sources.
+          next if bundle_path[/vendor\/cache/, 0] != nil
           app = app_or_nil(bundle_path)
           candidates << app if app
         end
@@ -90,6 +93,14 @@ module RunLoop
       def mtime(app)
         path = File.join(app.path, app.executable_name)
         File.mtime(path)
+      end
+
+      # @!visibility private
+      def globs_for_app_search(base_dir)
+        search_depth = DEFAULTS[:search_depth]
+        Array.new(search_depth) do |depth|
+          File.join(base_dir, *Array.new(depth) { |_| "*"}, "*.app")
+        end
       end
     end
   end

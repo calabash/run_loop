@@ -59,7 +59,7 @@ $ XCODEPROJ=MyiOSApp.xcodeproj
       raise RunLoop::MultipleXcodeprojError,
 %Q[Found multiple .xcodeproj directories:
 
-#{projects.each { |path| puts "    #{path}" }}
+#{projects.join($-0)}
 
 Which project contains the target of the application you are trying to test?
 
@@ -106,19 +106,18 @@ $ SOLUTION=~/some/other/directory/MyApp.sln
 
       # @!visibility private
       # Raised when no app can found by the discovery algorithm
-      def raise_no_simulator_app_found(search_directories)
+      def raise_no_simulator_app_found(search_directories, search_depth)
         raise RunLoop::NoSimulatorAppFoundError,
-              %Q[Searched these directories:
+%Q[Recursively searched these directories to depth #{search_depth}:
 
-#{search_directories.each { |path| puts "    #{path}" }}
+#{search_directories.join($-0)}
 
-but could not find any .app for the simulator that contains the Calabash iOS
-server.
+but could not find any .app for the simulator that links the Calabash iOS server.
 
 Make sure you have built your app for a simulator target from Xcode.
 
-If you testing a stand-alone .app (you don't have an Xcode project), put your
-.app in the same directory (or below) the directory you run `cucumber` from.
+If you are testing a stand-alone .app (you don't have an Xcode project), put
+your .app in the same directory (or below) the directory you run `cucumber` from.
 ]
       end
     end
