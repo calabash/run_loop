@@ -116,8 +116,8 @@ but could not find any .app for the simulator that links the Calabash iOS server
 
 Make sure you have built your app for a simulator target from Xcode.
 
-If you testing a stand-alone .app (you don't have an Xcode project), put your
-.app in the same directory (or below) the directory you run `cucumber` from.
+If you are testing a stand-alone .app (you don't have an Xcode project), put
+your .app in the same directory (or below) the directory you run `cucumber` from.
 ]
       end
     end
