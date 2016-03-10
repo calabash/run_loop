@@ -80,9 +80,42 @@ describe RunLoop::DetectAUT::Xcode do
 
   it "#find_xcodeproj" do
     glob = "#{Dir.pwd}/**/*.xcodeproj"
-    expect(Dir).to receive(:glob).with(glob).and_return([])
 
-    expect(obj.find_xcodeproj).to be == []
+    glob_result = [
+      "path/to/ProjectA.xcodeproj",
+      "path/to/ProjectB.xcodeproj",
+      "path/to/ProjectC.xcodeproj"
+    ]
+
+    expect(Dir).to receive(:glob).with(glob).and_return(glob_result)
+
+    expect(obj).to receive(:ignore_xcodeproj?).with(glob_result[0]).and_return(true)
+    expect(obj).to receive(:ignore_xcodeproj?).with(glob_result[1]).and_return(false)
+    expect(obj).to receive(:ignore_xcodeproj?).with(glob_result[2]).and_return(true)
+
+    expect(obj.find_xcodeproj).to be == ["path/to/ProjectB.xcodeproj"]
+  end
+
+  describe "#ignore_xcodeproj?" do
+    it "ignores CordovaLib" do
+      path = "path/CordovaLib/Cordova.xcodeproj"
+      expect(obj.ignore_xcodeproj?(path)).to be_truthy
+    end
+
+    it "ignores Pods" do
+      path = "path/Pods/Pods.xcodeproj"
+      expect(obj.ignore_xcodeproj?(path)).to be_truthy
+    end
+
+    it "ignores Carthage" do
+      path = "path/Carthage/AFNetworking/AFNetworking.xcodeproj"
+      expect(obj.ignore_xcodeproj?(path)).to be_truthy
+    end
+
+    it "returns false" do
+      path = "path/ProjectA.xcodeproj"
+      expect(obj.ignore_xcodeproj?(path)).to be_falsey
+    end
   end
 
   describe "#detect_xcode_apps" do

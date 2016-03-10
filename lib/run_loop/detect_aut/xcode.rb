@@ -30,7 +30,19 @@ module RunLoop
 
       # @!visibility private
       def find_xcodeproj
-        Dir.glob("#{Dir.pwd}/**/*.xcodeproj")
+        xcode_projects = []
+        Dir.glob("#{Dir.pwd}/**/*.xcodeproj").each do |path|
+          next if ignore_xcodeproj?(path)
+          xcode_projects << path
+        end
+        xcode_projects
+      end
+
+      # @!visibility private
+      def ignore_xcodeproj?(path)
+        path[/CordovaLib/, 0] ||
+          path[/Pods/, 0] ||
+          path[/Carthage/, 0]
       end
 
       # @!visibility private
