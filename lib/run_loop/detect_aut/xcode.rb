@@ -42,6 +42,9 @@ module RunLoop
           dirs_to_search << dir_from_prefs
         end
 
+        dirs_to_search << Dir.pwd
+        dirs_to_search.uniq!
+
         apps = []
         dirs_to_search.each do |dir|
           # defined in detect_aut/apps.rb
