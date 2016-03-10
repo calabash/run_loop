@@ -63,7 +63,12 @@ module RunLoop
       # @param [String] base_dir where to start the recursive search
       def candidate_apps(base_dir)
         candidates = []
-        Dir.glob("#{base_dir}/**/*.app").each do |bundle_path|
+
+        globs = globs_for_app_search(base_dir)
+        Dir.glob(globs).each do |bundle_path|
+          # Gems, like run-loop, can contain *.app if the user is building
+          # from :git =>, :github =>, or :path => sources.
+          next if bundle_path[/vendor\/cache/, 0] != nil
           app = app_or_nil(bundle_path)
           candidates << app if app
         end
