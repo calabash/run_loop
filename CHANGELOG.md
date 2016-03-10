@@ -1,5 +1,9 @@
 ## Change Log
 
+### 2.0.9
+
+* Improve automatic .app detection #405
+
 ### 2.0.8
 
 * App: improve executable detection in app bundles #401
