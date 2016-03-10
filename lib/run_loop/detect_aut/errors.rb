@@ -106,9 +106,9 @@ $ SOLUTION=~/some/other/directory/MyApp.sln
 
       # @!visibility private
       # Raised when no app can found by the discovery algorithm
-      def raise_no_simulator_app_found(search_directories)
+      def raise_no_simulator_app_found(search_directories, search_depth)
         raise RunLoop::NoSimulatorAppFoundError,
-              %Q[Searched these directories:
+%Q[Recursively searched these directories to depth #{search_depth}:
 
 #{search_directories.join($-0)}
 

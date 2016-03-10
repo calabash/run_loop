@@ -57,9 +57,10 @@ describe RunLoop::DetectAUT::Detect do
       end
 
       it "found no apps" do
+        depth = RunLoop::DetectAUT::Detect::DEFAULTS[:search_depth]
         expect(obj).to receive(:solution_directory).and_return(search_dirs.first)
         expect(obj).to receive(:candidate_apps).with(search_dirs.first).and_return([])
-        expect(obj).to receive(:raise_no_simulator_app_found).with(search_dirs).and_call_original
+        expect(obj).to receive(:raise_no_simulator_app_found).with(search_dirs, depth).and_call_original
 
         expect do
           obj.app_for_simulator
@@ -95,11 +96,12 @@ describe RunLoop::DetectAUT::Detect do
         end
 
         it "did not find any apps in DerivedData or by search recursively down from the directory" do
+          depth = RunLoop::DetectAUT::Detect::DEFAULTS[:search_depth]
           expect(obj).to receive(:detect_xcode_apps).and_return([[], search_dirs])
           local_path = File.expand_path("./")
           search_dirs << local_path
           expect(obj).to receive(:candidate_apps).with(local_path).and_return([])
-          expect(obj).to receive(:raise_no_simulator_app_found).with(search_dirs).and_call_original
+          expect(obj).to receive(:raise_no_simulator_app_found).with(search_dirs, depth).and_call_original
 
           expect do
             obj.app_for_simulator
