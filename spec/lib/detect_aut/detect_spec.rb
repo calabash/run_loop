@@ -165,4 +165,35 @@ describe RunLoop::DetectAUT::Detect do
 
     obj.mtime(app)
   end
+
+  describe "#globs_for_app_search" do
+    it "array of globs that based on default search depth" do
+      expected_count = RunLoop::DetectAUT::Detect::DEFAULTS[:search_depth]
+      expected = [
+        "./*.app",
+        "./*/*.app",
+        "./*/*/*.app",
+        "./*/*/*/*.app",
+        "./*/*/*/*/*.app"
+      ]
+      expect(expected.count).to be == expected_count
+
+      actual = obj.send(:globs_for_app_search, "./")
+      expect(actual).to be == expected
+    end
+
+    it "respects changes to DEFAULTS[:search_depth]" do
+      stub_const("RunLoop::DetectAUT::Detect::DEFAULTS",  {search_depth: 2})
+
+      expected_count = RunLoop::DetectAUT::Detect::DEFAULTS[:search_depth]
+      expected = [
+        "./*.app",
+        "./*/*.app",
+      ]
+      expect(expected.count).to be == expected_count
+
+      actual = obj.send(:globs_for_app_search, "./")
+      expect(actual).to be == expected
+    end
+  end
 end

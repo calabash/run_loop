@@ -10,6 +10,11 @@ module RunLoop
       include RunLoop::DetectAUT::Xcode
 
       # @!visibility private
+      DEFAULTS = {
+        :search_depth => 5
+      }
+
+      # @!visibility private
       def app_for_simulator
         path = RunLoop::Environment.path_to_app_bundle
         return RunLoop::App.new(path) if path
@@ -32,7 +37,7 @@ module RunLoop
         end
 
         if apps.empty?
-          raise_no_simulator_app_found(search_dirs)
+          raise_no_simulator_app_found(search_dirs, DEFAULTS[:search_depth])
         end
 
         app = select_most_recent_app(apps)
@@ -90,6 +95,14 @@ module RunLoop
       def mtime(app)
         path = File.join(app.path, app.executable_name)
         File.mtime(path)
+      end
+
+      # @!visibility private
+      def globs_for_app_search(base_dir)
+        search_depth = DEFAULTS[:search_depth]
+        Array.new(search_depth) do |depth|
+          File.join(base_dir, *Array.new(depth) { |_| "*"}, "*.app")
+        end
       end
     end
   end
