@@ -59,7 +59,7 @@ $ XCODEPROJ=MyiOSApp.xcodeproj
       raise RunLoop::MultipleXcodeprojError,
 %Q[Found multiple .xcodeproj directories:
 
-#{projects.each { |path| puts "    #{path}" }}
+#{projects.join($-0)}
 
 Which project contains the target of the application you are trying to test?
 
@@ -110,10 +110,9 @@ $ SOLUTION=~/some/other/directory/MyApp.sln
         raise RunLoop::NoSimulatorAppFoundError,
               %Q[Searched these directories:
 
-#{search_directories.each { |path| puts "    #{path}" }}
+#{search_directories.join($-0)}
 
-but could not find any .app for the simulator that contains the Calabash iOS
-server.
+but could not find any .app for the simulator that links the Calabash iOS server.
 
 Make sure you have built your app for a simulator target from Xcode.
 
