@@ -94,7 +94,12 @@ module RunLoop
     # Returns the value of TRACE_TEMPLATE; the Instruments template to use
     # during testing.
     def self.trace_template
-      ENV['TRACE_TEMPLATE']
+      value = ENV['TRACE_TEMPLATE']
+      if value.nil? || value == ""
+        nil
+      else
+        File.expand_path(value)
+      end
     end
 
     # Returns the value of UIA_TIMEOUT.  Use this control how long to wait

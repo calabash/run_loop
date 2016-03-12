@@ -92,9 +92,24 @@ describe RunLoop::Environment do
   end
 
 
-  it '.trace_template' do
-    stub_env('TRACE_TEMPLATE', '/my/tracetemplate')
-    expect(RunLoop::Environment.trace_template).to be == '/my/tracetemplate'
+  describe '.trace_template' do
+    it "returns TRACE_TEMPLATE expanded" do
+      stub_env('TRACE_TEMPLATE', './my/tracetemplate')
+      expected = File.join(Dir.pwd, "my", "tracetemplate")
+      expect(RunLoop::Environment.trace_template).to be == expected
+    end
+
+    describe "returns nil" do
+      it "is undefined" do
+        stub_env({'TRACE_TEMPLATE' => nil})
+        expect(RunLoop::Environment.trace_template).to be == nil
+      end
+
+      it "is the empty string" do
+        stub_env({'TRACE_TEMPLATE' => ""})
+        expect(RunLoop::Environment.trace_template).to be == nil
+      end
+    end
   end
 
   describe '.uia_timeout' do
