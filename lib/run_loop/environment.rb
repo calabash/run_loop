@@ -57,7 +57,7 @@ module RunLoop
     def self.xcodeproj
       value = ENV["XCODEPROJ"]
       if value.nil? || value == ""
-        return nil
+        nil
       else
         File.expand_path(value)
       end
