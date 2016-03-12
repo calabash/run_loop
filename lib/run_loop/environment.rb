@@ -40,7 +40,12 @@ module RunLoop
 
     # Returns the value of DEVICE_ENDPOINT
     def self.device_endpoint
-      ENV["DEVICE_ENDPOINT"]
+      value = ENV["DEVICE_ENDPOINT"]
+      if value.nil? || value == ""
+        nil
+      else
+        value
+      end
     end
 
     # Returns the value of XCODEPROJ which can be used to specify an Xcode
