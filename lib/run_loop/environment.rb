@@ -30,7 +30,12 @@ module RunLoop
 
     # Returns the value of DEVICE_TARGET
     def self.device_target
-      ENV["DEVICE_TARGET"]
+      value = ENV["DEVICE_TARGET"]
+      if value.nil? || value == ""
+        nil
+      else
+        value
+      end
     end
 
     # Returns the value of DEVICE_ENDPOINT

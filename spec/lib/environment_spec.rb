@@ -52,9 +52,23 @@ describe RunLoop::Environment do
     end
   end
 
-  it ".device_target" do
-    stub_env({"DEVICE_TARGET" => "target"})
-    expect(RunLoop::Environment.device_target).to be == "target"
+  describe ".device_target" do
+    it ".device_target" do
+      stub_env({"DEVICE_TARGET" => "target"})
+      expect(RunLoop::Environment.device_target).to be == "target"
+    end
+
+    describe "returns nil" do
+      it "is undefined" do
+        stub_env({"DEVICE_TARGET" => nil})
+        expect(RunLoop::Environment.device_target).to be == nil
+      end
+
+      it "is the empty string" do
+        stub_env({"DEVICE_TARGET" => ""})
+        expect(RunLoop::Environment.device_target).to be == nil
+      end
+    end
   end
 
   it ".device_endpoint" do
