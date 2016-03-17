@@ -1,5 +1,9 @@
 ## Change Log
 
+### 2.0.10
+
+* Rescue pipe\_io if Errno::EPIPE error is encountered #407 @TeresaP
+
 ### 2.0.9
 
 * Improve automatic .app detection #405
