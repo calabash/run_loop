@@ -22,10 +22,7 @@ module RunLoop
               wrote = pipe_io.write_nonblock msg
               bytes_written += wrote
               msg = msg[wrote..-1]
-            rescue Errno::EPIPE
-              pipe_io.flush
-              retry
-            rescue IO::WaitWritable, Errno::EINTR
+            rescue IO::WaitWritable, Errno::EINTR, Errno::EPIPE
               timeout_left = timeout - (Time.now - begin_at)
               raise WriteTimedOut if timeout_left <= 0
               IO.select nil, [pipe_io], nil, timeout_left
