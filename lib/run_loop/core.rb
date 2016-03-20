@@ -71,21 +71,12 @@ module RunLoop
     # Raise an error if the application binary is not compatible with the
     # target simulator.
     #
-    # @note This method is implemented for CoreSimulator environments only;
-    #  for Xcode < 6.0 this method does nothing.
-    #
     # @param [RunLoop::Device] device The device to install on.
     # @param [RunLoop::App] app The app to install.
-    # @param [RunLoop::Xcode] xcode The active Xcode.
     #
     # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
     #  application binary is not compatible with the target simulator.
-    def self.expect_simulator_compatible_arch(device, app, xcode)
-      if !xcode.version_gte_6?
-        RunLoop.log_warn("Checking for compatible arches is only available in CoreSimulator environments")
-        return
-      end
-
+    def self.expect_simulator_compatible_arch(device, app)
       lipo = RunLoop::Lipo.new(app.path)
       lipo.expect_compatible_arch(device)
 
@@ -129,7 +120,7 @@ module RunLoop
       end
 
       # Validate the architecture.
-      self.expect_simulator_compatible_arch(device, app, xcode)
+      self.expect_simulator_compatible_arch(device, app)
 
       # Quits the simulator.
       core_sim = RunLoop::CoreSimulator.new(device, app)
