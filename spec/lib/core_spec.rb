@@ -42,12 +42,6 @@ describe RunLoop::Core do
   end
 
   describe '.default_simulator' do
-    it 'Xcode < 6.0' do
-      expected = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
-      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
-    end
-
     it 'Xcode 6.0*' do
       expected = 'iPhone 5s (8.0 Simulator)'
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v60

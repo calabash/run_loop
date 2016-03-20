@@ -427,10 +427,8 @@ Logfile: #{log_file}
         "iPhone 5s (8.2 Simulator)"
       elsif xcode.version_gte_61?
         "iPhone 5s (8.1 Simulator)"
-      elsif xcode.version_gte_6?
-        "iPhone 5s (8.0 Simulator)"
       else
-        "iPhone Retina (4-inch) - Simulator - iOS 7.1"
+        "iPhone 5s (8.0 Simulator)"
       end
     end
 
