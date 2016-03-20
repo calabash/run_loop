@@ -156,11 +156,9 @@ module RunLoop
       self.prepare(options)
 
       logger = options[:logger]
-      sim_control ||= options[:sim_control] || RunLoop::SimControl.new
-
-      xcode ||= options[:xcode] || sim_control.xcode
-
-      instruments = RunLoop::Instruments.new
+      sim_control = RunLoop::SimControl.new
+      xcode = sim_control.xcode
+      instruments = options[:instruments] || RunLoop::Instruments.new
       instruments.kill_instruments(xcode)
 
       device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
