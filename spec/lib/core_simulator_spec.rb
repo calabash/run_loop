@@ -938,14 +938,7 @@ describe RunLoop::CoreSimulator do
 
       it '6.0 <= Xcode < 7.0' do
         expect(core_sim.xcode).to receive(:version_gte_7?).and_return false
-        expect(core_sim.xcode).to receive(:version_gte_6?).and_return true
         expect(core_sim.send(:sim_name)).to be == 'iOS Simulator'
-      end
-
-      it 'Xcode < 6.0' do
-        expect(core_sim.xcode).to receive(:version_gte_7?).and_return false
-        expect(core_sim.xcode).to receive(:version_gte_6?).and_return false
-        expect(core_sim.send(:sim_name)).to be == 'iPhone Simulator'
       end
     end
 
@@ -966,19 +959,8 @@ describe RunLoop::CoreSimulator do
 
         it '6.0 <= Xcode < 7.0' do
           expect(core_sim.xcode).to receive(:version_gte_7?).and_return false
-          expect(core_sim.xcode).to receive(:version_gte_6?).and_return true
 
           expected = '/Xcode/Applications/iOS Simulator.app'
-          expect(core_sim.send(:sim_app_path)).to be == expected
-          expect(core_sim.instance_variable_get(:@sim_app_path)).to be == expected
-          expect(core_sim.send(:sim_app_path)).to be == expected
-        end
-
-        it 'Xcode < 6.0' do
-          expect(core_sim.xcode).to receive(:version_gte_7?).and_return false
-          expect(core_sim.xcode).to receive(:version_gte_6?).and_return false
-
-          expected = '/Xcode/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app'
           expect(core_sim.send(:sim_app_path)).to be == expected
           expect(core_sim.instance_variable_get(:@sim_app_path)).to be == expected
           expect(core_sim.send(:sim_app_path)).to be == expected

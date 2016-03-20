@@ -42,12 +42,6 @@ describe RunLoop::Core do
   end
 
   describe '.default_simulator' do
-    it 'Xcode < 6.0' do
-      expected = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
-      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
-    end
-
     it 'Xcode 6.0*' do
       expected = 'iPhone 5s (8.0 Simulator)'
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v60
@@ -108,7 +102,6 @@ describe RunLoop::Core do
     let(:app) { options[:app] }
 
     before do
-      expect(xcode).to receive(:version).and_return xcode.v51
       expect(RunLoop::Core).to receive(:default_simulator).with(xcode).and_return 'Simulator'
     end
 
@@ -308,42 +301,26 @@ describe RunLoop::Core do
   end
 
   describe '.expect_simulator_compatible_arch' do
-    let(:xcode) { RunLoop::Xcode.new }
-
     let(:device) { RunLoop::Device.new('Sim', '8.0', 'UDID') }
 
-    it 'is not implemented for Xcode < 6.0' do
-      expect(xcode).to receive(:version_gte_6?).and_return false
+    let(:fat_arm_app) { RunLoop::App.new(Resources.shared.app_bundle_path_arm_FAT) }
+    let(:i386_app) { RunLoop::App.new(Resources.shared.app_bundle_path_i386) }
 
-      actual = RunLoop::Core.expect_simulator_compatible_arch(nil, nil, xcode)
-      expect(actual).to be_falsey
+    it 'raises an error' do
+      expect(device).to receive(:instruction_set).and_return 'nonsense'
+
+      expect do
+        RunLoop::Core.expect_simulator_compatible_arch(device, fat_arm_app)
+      end.to raise_error RunLoop::IncompatibleArchitecture,
+                         /does not contain a compatible architecture for target device/
     end
 
-    describe 'CoreSimulator' do
+    it 'compatible' do
+      expect(device).to receive(:instruction_set).and_return 'i386'
 
-      let(:fat_arm_app) { RunLoop::App.new(Resources.shared.app_bundle_path_arm_FAT) }
-      let(:i386_app) { RunLoop::App.new(Resources.shared.app_bundle_path_i386) }
-
-      before do
-        expect(xcode).to receive(:version_gte_6?).and_return true
-      end
-
-      it 'raises an error' do
-        expect(device).to receive(:instruction_set).and_return 'nonsense'
-
-        expect do
-          RunLoop::Core.expect_simulator_compatible_arch(device, fat_arm_app, xcode)
-        end.to raise_error RunLoop::IncompatibleArchitecture,
-                           /does not contain a compatible architecture for target device/
-      end
-
-      it 'compatible' do
-        expect(device).to receive(:instruction_set).and_return 'i386'
-
-        expect do
-          RunLoop::Core.expect_simulator_compatible_arch(device, i386_app, xcode)
-        end.not_to raise_error
-      end
+      expect do
+        RunLoop::Core.expect_simulator_compatible_arch(device, i386_app)
+      end.not_to raise_error
     end
   end
 end

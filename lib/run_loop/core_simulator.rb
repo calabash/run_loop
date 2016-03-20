@@ -508,11 +508,9 @@ $ bundle exec run-loop simctl manage-processes
   def sim_name
     @sim_name ||= lambda {
       if xcode.version_gte_7?
-        'Simulator'
-      elsif xcode.version_gte_6?
-        'iOS Simulator'
+        "Simulator"
       else
-        'iPhone Simulator'
+        "iOS Simulator"
       end
     }.call
   end
@@ -527,10 +525,8 @@ $ bundle exec run-loop simctl manage-processes
       dev_dir = xcode.developer_dir
       if xcode.version_gte_7?
         "#{dev_dir}/Applications/Simulator.app"
-      elsif xcode.version_gte_6?
-        "#{dev_dir}/Applications/iOS Simulator.app"
       else
-        "#{dev_dir}/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app"
+        "#{dev_dir}/Applications/iOS Simulator.app"
       end
     }.call
   end

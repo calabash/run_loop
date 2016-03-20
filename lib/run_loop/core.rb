@@ -71,21 +71,12 @@ module RunLoop
     # Raise an error if the application binary is not compatible with the
     # target simulator.
     #
-    # @note This method is implemented for CoreSimulator environments only;
-    #  for Xcode < 6.0 this method does nothing.
-    #
     # @param [RunLoop::Device] device The device to install on.
     # @param [RunLoop::App] app The app to install.
-    # @param [RunLoop::Xcode] xcode The active Xcode.
     #
     # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
     #  application binary is not compatible with the target simulator.
-    def self.expect_simulator_compatible_arch(device, app, xcode)
-      if !xcode.version_gte_6?
-        RunLoop.log_warn("Checking for compatible arches is only available in CoreSimulator environments")
-        return
-      end
-
+    def self.expect_simulator_compatible_arch(device, app)
       lipo = RunLoop::Lipo.new(app.path)
       lipo.expect_compatible_arch(device)
 
@@ -105,68 +96,58 @@ module RunLoop
         sim_control.quit_sim
       end
 
-      if !xcode.version_gte_6?
-        # Xcode 5.1.1
+      app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
+      app = RunLoop::App.new(app_bundle_path)
 
-        # Will quit the simulator!
-        sim_control.enable_accessibility_on_sims({:verbose => false})
-      else
-
-        # CoreSimulator
-
-        app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
-        app = RunLoop::App.new(app_bundle_path)
-
-        unless app.valid?
-          if !File.exist?(app.path)
-            message = "App '#{app_bundle_path}' does not exist."
-          else
-            message = "App '#{app_bundle_path}' is not a valid .app bundle"
-          end
-          raise RuntimeError, message
+      unless app.valid?
+        if !File.exist?(app.path)
+          message = "App '#{app_bundle_path}' does not exist."
+        else
+          message = "App '#{app_bundle_path}' is not a valid .app bundle"
         end
-
-        udid = launch_options[:udid]
-
-        device = sim_control.simulators.find do |sim|
-          sim.udid == udid || sim.instruments_identifier(xcode) == udid
-        end
-
-        if device.nil?
-          raise RuntimeError,
-                "Could not find simulator with name or UDID that matches: '#{udid}'"
-        end
-
-        # Validate the architecture.
-        self.expect_simulator_compatible_arch(device, app, xcode)
-
-        # Quits the simulator.
-        core_sim = RunLoop::CoreSimulator.new(device, app)
-
-        # :reset is a legacy variable; has been replaced with :reset_app_sandbox
-        if launch_options[:reset] || launch_options[:reset_app_sandbox]
-          core_sim.reset_app_sandbox
-        end
-
-        # Will quit the simulator if it is running.
-        # @todo fix accessibility_enabled? so we don't have to quit the sim
-        # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
-        # https://github.com/calabash/run_loop/issues/167
-        sim_control.ensure_accessibility(device)
-
-        # Will quit the simulator if it is running.
-        # @todo fix software_keyboard_enabled? so we don't have to quit the sim
-        # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
-        # https://github.com/calabash/run_loop/issues/168
-        sim_control.ensure_software_keyboard(device)
-
-        # Launches the simulator if the app is not installed.
-        core_sim.install
-
-        # If CoreSimulator has already launched the simulator, it will not
-        # launching it again.
-        core_sim.launch_simulator
+        raise RuntimeError, message
       end
+
+      udid = launch_options[:udid]
+
+      device = sim_control.simulators.find do |sim|
+        sim.udid == udid || sim.instruments_identifier(xcode) == udid
+      end
+
+      if device.nil?
+        raise RuntimeError,
+              "Could not find simulator with name or UDID that matches: '#{udid}'"
+      end
+
+      # Validate the architecture.
+      self.expect_simulator_compatible_arch(device, app)
+
+      # Quits the simulator.
+      core_sim = RunLoop::CoreSimulator.new(device, app)
+
+      # :reset is a legacy variable; has been replaced with :reset_app_sandbox
+      if launch_options[:reset] || launch_options[:reset_app_sandbox]
+        core_sim.reset_app_sandbox
+      end
+
+      # Will quit the simulator if it is running.
+      # @todo fix accessibility_enabled? so we don't have to quit the sim
+      # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
+      # https://github.com/calabash/run_loop/issues/167
+      sim_control.ensure_accessibility(device)
+
+      # Will quit the simulator if it is running.
+      # @todo fix software_keyboard_enabled? so we don't have to quit the sim
+      # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
+      # https://github.com/calabash/run_loop/issues/168
+      sim_control.ensure_software_keyboard(device)
+
+      # Launches the simulator if the app is not installed.
+      core_sim.install
+
+      # If CoreSimulator has already launched the simulator, it will not
+      # launching it again.
+      core_sim.launch_simulator
     end
 
     def self.run_with_options(options)
@@ -390,18 +371,14 @@ Logfile: #{log_file}
       # Check for named simulators and Xcode >= 7.0 simulators.
       sim_control = run_options[:sim_control] || RunLoop::SimControl.new
       xcode = sim_control.xcode
-      if xcode.version_gte_6?
-        simulator = sim_control.simulators.find do |sim|
-          [
-            sim.instruments_identifier(xcode) == value,
-            sim.udid == value,
-            sim.name == value
-          ].any?
-        end
-        !simulator.nil?
-      else
-        false
+      simulator = sim_control.simulators.find do |sim|
+        [
+          sim.instruments_identifier(xcode) == value,
+          sim.udid == value,
+          sim.name == value
+        ].any?
       end
+      !simulator.nil?
     end
 
 
@@ -450,10 +427,8 @@ Logfile: #{log_file}
         "iPhone 5s (8.2 Simulator)"
       elsif xcode.version_gte_61?
         "iPhone 5s (8.1 Simulator)"
-      elsif xcode.version_gte_6?
-        "iPhone 5s (8.0 Simulator)"
       else
-        "iPhone Retina (4-inch) - Simulator - iOS 7.1"
+        "iPhone 5s (8.0 Simulator)"
       end
     end
 
@@ -466,43 +441,13 @@ Logfile: #{log_file}
         raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
       end
 
-      udid = nil
+      if device_target.nil? || device_target.empty? || device_target == 'simulator'
+        device_target = self.default_simulator(xcode)
+      end
+      udid = device_target
 
-      if xcode.version_gte_51?
-        if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          device_target = self.default_simulator(xcode)
-        end
-        udid = device_target
-
-        unless self.simulator_target?(options)
-          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-        end
-      else
-        #TODO: this can be removed - Xcode < 5.1.1 not supported.
-        if device_target == 'simulator'
-
-          unless File.exist?(bundle_dir_or_bundle_id)
-            raise "Unable to find app in directory #{bundle_dir_or_bundle_id} when trying to launch simulator"
-          end
-
-
-          device = options[:device] || :iphone
-          device = device && device.to_sym
-
-          plistbuddy='/usr/libexec/PlistBuddy'
-          plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
-          if device == :iphone
-            uidevicefamily=1
-          else
-            uidevicefamily=2
-          end
-          system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
-          system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
-          system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
-        else
-          udid = device_target
-          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-        end
+      unless self.simulator_target?(options)
+        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
       end
       return udid, bundle_dir_or_bundle_id
     end

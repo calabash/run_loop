@@ -162,10 +162,8 @@ Please update your sources.))
 
         if xcode.version_gte_7?
           "#{name} (#{version_part})"
-        elsif xcode.version_gte_6?
-          "#{name} (#{version_part} Simulator)"
         else
-          udid
+          "#{name} (#{version_part} Simulator)"
         end
       end
     end

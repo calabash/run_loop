@@ -348,12 +348,9 @@ describe RunLoop::Instruments do
 
     before do
       expect(instruments).to receive(:xcrun).and_return xcrun
-      expect(instruments).to receive(:xcode).and_return xcode
     end
 
     it 'Xcode >= 6.0' do
-      expect(xcode).to receive(:version_gte_6?).at_least(:once).and_return true
-
       # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
       hash =
             {
@@ -364,22 +361,6 @@ describe RunLoop::Instruments do
       expect(xcrun).to receive(:exec).with(args, options).and_return hash
 
       expected = RunLoop::RSpec::Instruments::TEMPLATES_GTE_60[:expected]
-      expect(instruments.templates).to be == expected
-      expect(instruments.instance_variable_get(:@instruments_templates)).to be == expected
-    end
-
-    it '5.1 <= Xcode < 6.0' do
-      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
-
-      # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
-      hash =
-            {
-                  :out => RunLoop::RSpec::Instruments::TEMPLATES_511[:output],
-                  :err => ''
-            }
-      expect(xcrun).to receive(:exec).with(args, options).and_return hash
-
-      expected = RunLoop::RSpec::Instruments::TEMPLATES_511[:expected]
       expect(instruments.templates).to be == expected
       expect(instruments.instance_variable_get(:@instruments_templates)).to be == expected
     end
