@@ -479,6 +479,223 @@ describe RunLoop::Device do
         expect(simulator.instance_variable_get(:@state)).to be == 'State'
       end
     end
+
+    describe "sorting out what device to launch" do
+      let(:options)  do
+        {
+          :device => "device",
+          :device_target => "device target",
+          :udid => "udid"
+        }
+      end
+
+      let(:xcode) { Resources.shared.xcode }
+      let(:simctl) { Resources.shared.sim_control }
+      let(:instruments) { Resources.shared.instruments }
+      let(:args) do
+        {
+          :sim_control => simctl,
+          :instruments => instruments
+        }
+      end
+
+      let(:device) do
+        RunLoop::Device.new("denis", "8.3", "893688959205dc7eb48d603c558ede919ad8dd0c")
+      end
+
+      let(:simulator) do
+        RunLoop::Device.new("iPhone 4s", "8.3", "CE5BA25E-9434-475A-8947-ECC3918E64E3")
+      end
+
+      describe ".detect_physical_device_on_usb" do
+        let(:udid) { "udid" }
+        let(:hash) { {:out => "#{udid}#{$-0}" } }
+
+        it "connected device" do
+          expect(CommandRunner).to receive(:run).and_return(hash)
+
+          actual = RunLoop::Device.send(:detect_physical_device_on_usb)
+          expect(actual).to be == udid
+        end
+
+        it "no connected device" do
+          hash[:out] = "#{$-0}"
+          expect(CommandRunner).to receive(:run).and_return(hash)
+
+          actual = RunLoop::Device.send(:detect_physical_device_on_usb)
+          expect(actual).to be == nil
+        end
+
+        it "integration" do
+          actual = RunLoop::Device.send(:detect_physical_device_on_usb)
+          puts "udidetect => #{actual}"
+        end
+      end
+
+      describe ".device_from_options" do
+        it ":device" do
+          actual = RunLoop::Device.send(:device_from_options, options)
+          expect(actual).to be == options[:device]
+        end
+
+        it ":device_target" do
+          options[:device] = nil
+          actual = RunLoop::Device.send(:device_from_options, options)
+          expect(actual).to be == options[:device_target]
+        end
+
+        it ":udid" do
+          options[:device] = nil
+          options[:device_target] = nil
+          actual = RunLoop::Device.send(:device_from_options, options)
+          expect(actual).to be == options[:udid]
+        end
+      end
+
+      it ".device_from_environment" do
+        expect(RunLoop::Environment).to receive(:device_target).and_return(:env)
+
+        actual = RunLoop::Device.send(:device_from_environment)
+        expect(actual).to be == :env
+      end
+
+      describe ".ensure_physical_device_connected" do
+        it "device is connected" do
+
+        end
+
+        it "device is not connected" do
+
+        end
+      end
+
+      describe ".detect_device" do
+        it "options contains a RunLoop::Device" do
+          expect(RunLoop::Device).to receive(:device_from_opts_or_env).and_return(simulator)
+
+          actual = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+          expect(actual).to be == simulator
+        end
+
+        describe "options or env say 'device'" do
+          before do
+            allow(RunLoop::Device).to receive(:device_from_opts_or_env).and_return("device")
+          end
+
+          it "device is connected" do
+            udid = device.udid
+            expect(RunLoop::Device).to receive(:detect_physical_device_on_usb).and_return(udid)
+            expect(RunLoop::Device).to receive(:device_with_identifier).with(udid, args).and_return(device)
+
+            actual = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+            expect(actual).to be == device
+          end
+
+          it "device is not connected" do
+            udid = device.udid
+            expect(RunLoop::Device).to receive(:detect_physical_device_on_usb).and_return(nil)
+
+            expect do
+              RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+            end.to raise_error ArgumentError,
+                               /Expected a physical device to be connected via USB/
+          end
+        end
+
+        describe "no info or 'simulator'" do
+          before do
+            expect(RunLoop::Core).to receive(:default_simulator).and_return(:simulator)
+            expect(RunLoop::Device).to receive(:device_with_identifier).with(:simulator, args).and_return(simulator)
+          end
+
+          it "nil" do
+            expect(RunLoop::Device).to receive(:device_from_opts_or_env).with(options).and_return(nil)
+
+            actual = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+            expect(actual).to be == simulator
+          end
+
+          it "empty string" do
+            expect(RunLoop::Device).to receive(:device_from_opts_or_env).with(options).and_return("")
+
+            actual = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+            expect(actual).to be == simulator
+          end
+
+          it "simulator" do
+            expect(RunLoop::Device).to receive(:device_from_opts_or_env).with(options).and_return("simulator")
+
+            actual = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+            expect(actual).to be == simulator
+          end
+        end
+
+        describe "passed some kind of legit identifier" do
+          it "matches a simulator or device" do
+            default_sim = RunLoop::Core.default_simulator
+            expect(RunLoop::Device).to receive(:device_from_opts_or_env).with(options).and_return(default_sim)
+
+            actual = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+            expect(actual.simulator?).to be_truthy
+          end
+
+          it "does match a simulator or device" do
+            expect(RunLoop::Device).to receive(:device_from_opts_or_env).with(options).and_return("no matching")
+
+            expect do
+              RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+            end.to raise_error ArgumentError,
+                               /Could not find a device with a UDID or name matching/
+          end
+        end
+      end
+
+      describe ".ensure_physical_device_connected" do
+        it "DEVICE_TARGET=device" do
+          expect(RunLoop::Device).to receive(:device_from_environment).and_return("device")
+
+          expect do
+            RunLoop::Device.send(:ensure_physical_device_connected, nil, options)
+          end.to raise_error ArgumentError,  /DEVICE_TARGET=device/
+        end
+
+        it "DEVICE_TARGET=< udid >" do
+          expect(RunLoop::Device).to receive(:device_from_environment).and_return(device.udid)
+
+          expect do
+            RunLoop::Device.send(:ensure_physical_device_connected, nil, options)
+          end.to raise_error ArgumentError,
+                             /DEVICE_TARGET=#{device.udid} did not match any connected device/
+        end
+
+        describe "DEVICE_TARGET= but options imply a physical device" do
+          before do
+            allow(RunLoop::Device).to receive(:device_from_environment).and_return(nil)
+          end
+
+          it ":device" do
+            expect do
+              RunLoop::Device.send(:ensure_physical_device_connected, nil, options)
+            end.to raise_error ArgumentError, /:device => "device"/
+          end
+
+          it ":device_target" do
+            options[:device] = nil
+            expect do
+              RunLoop::Device.send(:ensure_physical_device_connected, nil, options)
+            end.to raise_error ArgumentError, /:device_target => "device"/
+          end
+
+          it ":udid" do
+            options[:device] = nil
+            options[:device_target] = nil
+            expect do
+              RunLoop::Device.send(:ensure_physical_device_connected, nil, options)
+            end.to raise_error ArgumentError, /:udid => "device"/
+          end
+        end
+      end
+    end
   end
 end
 
