@@ -108,7 +108,6 @@ describe RunLoop::Core do
     let(:app) { options[:app] }
 
     before do
-      expect(xcode).to receive(:version).and_return xcode.v51
       expect(RunLoop::Core).to receive(:default_simulator).with(xcode).and_return 'Simulator'
     end
 

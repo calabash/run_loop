@@ -466,43 +466,13 @@ Logfile: #{log_file}
         raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
       end
 
-      udid = nil
+      if device_target.nil? || device_target.empty? || device_target == 'simulator'
+        device_target = self.default_simulator(xcode)
+      end
+      udid = device_target
 
-      if xcode.version_gte_51?
-        if device_target.nil? || device_target.empty? || device_target == 'simulator'
-          device_target = self.default_simulator(xcode)
-        end
-        udid = device_target
-
-        unless self.simulator_target?(options)
-          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-        end
-      else
-        #TODO: this can be removed - Xcode < 5.1.1 not supported.
-        if device_target == 'simulator'
-
-          unless File.exist?(bundle_dir_or_bundle_id)
-            raise "Unable to find app in directory #{bundle_dir_or_bundle_id} when trying to launch simulator"
-          end
-
-
-          device = options[:device] || :iphone
-          device = device && device.to_sym
-
-          plistbuddy='/usr/libexec/PlistBuddy'
-          plistfile="#{bundle_dir_or_bundle_id}/Info.plist"
-          if device == :iphone
-            uidevicefamily=1
-          else
-            uidevicefamily=2
-          end
-          system("#{plistbuddy} -c 'Delete :UIDeviceFamily' '#{plistfile}'")
-          system("#{plistbuddy} -c 'Add :UIDeviceFamily array' '#{plistfile}'")
-          system("#{plistbuddy} -c 'Add :UIDeviceFamily:0 integer #{uidevicefamily}' '#{plistfile}'")
-        else
-          udid = device_target
-          bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-        end
+      unless self.simulator_target?(options)
+        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
       end
       return udid, bundle_dir_or_bundle_id
     end
