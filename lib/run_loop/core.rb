@@ -57,6 +57,7 @@ module RunLoop
       SCRIPTS[key]
     end
 
+    # @deprecated 2.0.10
     def self.detect_connected_device
       begin
         Timeout::timeout(1, RunLoop::TimeoutError) do
