@@ -198,20 +198,14 @@ module RunLoop
       @instruments_templates ||= lambda do
         args = ['instruments', '-s', 'templates']
         hash = xcrun.exec(args, log_cmd: true)
-        if xcode.version_gte_6?
-          hash[:out].chomp.split("\n").map do |elm|
-            stripped = elm.strip.tr('"', '')
-            if stripped == '' || stripped == 'Known Templates:'
-              nil
-            else
-              stripped
-            end
-          end.compact
-        else
-          hash[:out].strip.split("\n").delete_if do |path|
-            not path =~ /tracetemplate/
-          end.map { |elm| elm.strip }
-        end
+        hash[:out].chomp.split("\n").map do |elm|
+          stripped = elm.strip.tr('"', '')
+          if stripped == '' || stripped == 'Known Templates:'
+            nil
+          else
+            stripped
+          end
+        end.compact
       end.call
     end
 
