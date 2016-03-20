@@ -380,18 +380,14 @@ Logfile: #{log_file}
       # Check for named simulators and Xcode >= 7.0 simulators.
       sim_control = run_options[:sim_control] || RunLoop::SimControl.new
       xcode = sim_control.xcode
-      if xcode.version_gte_6?
-        simulator = sim_control.simulators.find do |sim|
-          [
-            sim.instruments_identifier(xcode) == value,
-            sim.udid == value,
-            sim.name == value
-          ].any?
-        end
-        !simulator.nil?
-      else
-        false
+      simulator = sim_control.simulators.find do |sim|
+        [
+          sim.instruments_identifier(xcode) == value,
+          sim.udid == value,
+          sim.name == value
+        ].any?
       end
+      !simulator.nil?
     end
 
 
