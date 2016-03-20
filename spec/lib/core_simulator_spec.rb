@@ -938,14 +938,7 @@ describe RunLoop::CoreSimulator do
 
       it '6.0 <= Xcode < 7.0' do
         expect(core_sim.xcode).to receive(:version_gte_7?).and_return false
-        expect(core_sim.xcode).to receive(:version_gte_6?).and_return true
         expect(core_sim.send(:sim_name)).to be == 'iOS Simulator'
-      end
-
-      it 'Xcode < 6.0' do
-        expect(core_sim.xcode).to receive(:version_gte_7?).and_return false
-        expect(core_sim.xcode).to receive(:version_gte_6?).and_return false
-        expect(core_sim.send(:sim_name)).to be == 'iPhone Simulator'
       end
     end
 

@@ -508,11 +508,9 @@ $ bundle exec run-loop simctl manage-processes
   def sim_name
     @sim_name ||= lambda {
       if xcode.version_gte_7?
-        'Simulator'
-      elsif xcode.version_gte_6?
-        'iOS Simulator'
+        "Simulator"
       else
-        'iPhone Simulator'
+        "iOS Simulator"
       end
     }.call
   end
