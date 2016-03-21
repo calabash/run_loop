@@ -390,7 +390,7 @@ describe RunLoop::DetectAUT::Detect do
 
             expect(hash[:app]).to be == app
             expect(hash[:bundle_id]).to be == app_bundle_id
-            expect(hash[:ipa]).to be == false
+            expect(hash[:is_ipa]).to be == false
           end
 
           it "Ipa" do
@@ -400,7 +400,7 @@ describe RunLoop::DetectAUT::Detect do
 
             expect(hash[:app]).to be == ipa
             expect(hash[:bundle_id]).to be == ipa_bundle_id
-            expect(hash[:ipa]).to be == true
+            expect(hash[:is_ipa]).to be == true
           end
         end
 
@@ -411,7 +411,7 @@ describe RunLoop::DetectAUT::Detect do
 
           expect(hash[:app]).to be == nil
           expect(hash[:bundle_id]).to be == app_bundle_id
-          expect(hash[:ipa]).to be == false
+          expect(hash[:is_ipa]).to be == false
         end
       end
     end

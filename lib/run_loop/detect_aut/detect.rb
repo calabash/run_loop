@@ -10,13 +10,13 @@ module RunLoop
         {
           :app => app,
           :bundle_id => app.bundle_identifier,
-          :ipa => app.is_a?(RunLoop::Ipa)
+          :is_ipa => app.is_a?(RunLoop::Ipa)
         }
       else
         {
           :app => nil,
           :bundle_id => app,
-          :ipa => false
+          :is_ipa => false
         }
       end
     end
