@@ -145,8 +145,8 @@ module RunLoop
       self.prepare(options)
 
       logger = options[:logger]
-      sim_control = RunLoop::SimControl.new
-      xcode = sim_control.xcode
+      sim_control = options[:sim_control] || options[:simctl] || RunLoop::SimControl.new
+      xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
       instruments.kill_instruments(xcode)
 
