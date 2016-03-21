@@ -48,6 +48,11 @@ module RunLoop
       end
     end
 
+    # Should the app data be reset between Scenarios?
+    def self.reset_between_scenarios?
+      ENV["RESET_BETWEEN_SCENARIOS"] == "1"
+    end
+
     # Returns the value of XCODEPROJ which can be used to specify an Xcode
     # project directory (my.xcodeproj).
     #

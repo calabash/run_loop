@@ -91,6 +91,20 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".reset_between_scenarios?" do
+    it "true" do
+      stub_env({"RESET_BETWEEN_SCENARIOS" => "1"})
+      expect(RunLoop::Environment.reset_between_scenarios?).to be_truthy
+    end
+
+    it "false" do
+      stub_env({"RESET_BETWEEN_SCENARIOS" => ""})
+      expect(RunLoop::Environment.reset_between_scenarios?).to be_falsey
+
+      stub_env({"RESET_BETWEEN_SCENARIOS" => 1})
+      expect(RunLoop::Environment.reset_between_scenarios?).to be_falsey
+    end
+  end
 
   describe '.trace_template' do
     it "returns TRACE_TEMPLATE expanded" do
