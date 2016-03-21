@@ -57,21 +57,6 @@ module RunLoop
       SCRIPTS[key]
     end
 
-    # Raise an error if the application binary is not compatible with the
-    # target simulator.
-    #
-    # @param [RunLoop::Device] device The device to install on.
-    # @param [RunLoop::App] app The app to install.
-    #
-    # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
-    #  application binary is not compatible with the target simulator.
-    def self.expect_simulator_compatible_arch(device, app)
-      lipo = RunLoop::Lipo.new(app.path)
-      lipo.expect_compatible_arch(device)
-
-      RunLoop.log_debug("Simulator instruction set '#{device.instruction_set}' is compatible with '#{lipo.info}'")
-    end
-
     def self.run_with_options(options)
       before = Time.now
 
@@ -724,6 +709,22 @@ Logfile: #{log_file}
 
       # If CoreSimulator has already launched the simulator, it will not launch it again.
       core_sim.launch_simulator
+    end
+
+    # @!visibility private
+    # Raise an error if the application binary is not compatible with the
+    # target simulator.
+    #
+    # @param [RunLoop::Device] device The device to install on.
+    # @param [RunLoop::App] app The app to install.
+    #
+    # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
+    #  application binary is not compatible with the target simulator.
+    def self.expect_simulator_compatible_arch(device, app)
+      lipo = RunLoop::Lipo.new(app.path)
+      lipo.expect_compatible_arch(device)
+
+      RunLoop.log_debug("Simulator instruction set '#{device.instruction_set}' is compatible with '#{lipo.info}'")
     end
   end
 end
