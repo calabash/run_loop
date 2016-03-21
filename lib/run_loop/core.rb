@@ -331,44 +331,6 @@ Logfile: #{log_file}
       true
     end
 
-    # @!visibility private
-    # Are we targeting a simulator?
-    #
-    # @note  The behavior of this method is different than the corresponding
-    #   method in Calabash::Cucumber::Launcher method.  If
-    #   `:device_target => {nil | ''}`, then the calabash-ios method returns
-    #   _false_.  I am basing run-loop's behavior off the behavior in
-    #   `self.udid_and_bundle_for_launcher`
-    #
-    # @see {Core::RunLoop.udid_and_bundle_for_launcher}
-    #
-    # @todo sim_control argument is no longer necessary and can be removed.
-    def self.simulator_target?(run_options, sim_control=nil)
-      value = run_options[:device_target]
-
-      # Match the behavior of udid_and_bundle_for_launcher.
-      return true if value.nil? or value == ''
-
-      # 5.1 <= Xcode < 7.0
-      return true if value.downcase.include?('simulator')
-
-      # Not a physical device.
-      return false if value[DEVICE_UDID_REGEX, 0] != nil
-
-      # Check for named simulators and Xcode >= 7.0 simulators.
-      sim_control = run_options[:sim_control] || RunLoop::SimControl.new
-      xcode = sim_control.xcode
-      simulator = sim_control.simulators.find do |sim|
-        [
-          sim.instruments_identifier(xcode) == value,
-          sim.udid == value,
-          sim.name == value
-        ].any?
-      end
-      !simulator.nil?
-    end
-
-
     # Extracts the value of :inject_dylib from options Hash.
     # @param options [Hash] arguments passed to {RunLoop.run}
     # @return [String, nil] If the options contains :inject_dylibs and it is a
@@ -625,7 +587,7 @@ Logfile: #{log_file}
     end
 
     # @deprecated 2.1.0
-    # Replaced with Device.detect_phyical_device_on_usb
+    # Replaced with Device.detect_physical_device_on_usb
     def self.detect_connected_device
       begin
         Timeout::timeout(1, RunLoop::TimeoutError) do
@@ -635,6 +597,46 @@ Logfile: #{log_file}
         `killall udidetect &> /dev/null`
       end
       nil
+    end
+
+    # @deprecated 2.1.0
+    # @!visibility private
+    # Are we targeting a simulator?
+    #
+    # @note  The behavior of this method is different than the corresponding
+    #   method in Calabash::Cucumber::Launcher method.  If
+    #   `:device_target => {nil | ''}`, then the calabash-ios method returns
+    #   _false_.  I am basing run-loop's behavior off the behavior in
+    #   `self.udid_and_bundle_for_launcher`
+    #
+    # @see {Core::RunLoop.udid_and_bundle_for_launcher}
+    #
+    # @todo sim_control argument is no longer necessary and can be removed.
+    def self.simulator_target?(run_options, sim_control=nil)
+      # TODO Enable deprecation warning
+      # RunLoop.deprecated("2.1.0", "No replacement")
+      value = run_options[:device_target]
+
+      # Match the behavior of udid_and_bundle_for_launcher.
+      return true if value.nil? or value == ''
+
+      # 5.1 <= Xcode < 7.0
+      return true if value.downcase.include?('simulator')
+
+      # Not a physical device.
+      return false if value[DEVICE_UDID_REGEX, 0] != nil
+
+      # Check for named simulators and Xcode >= 7.0 simulators.
+      sim_control = run_options[:sim_control] || RunLoop::SimControl.new
+      xcode = sim_control.xcode
+      simulator = sim_control.simulators.find do |sim|
+        [
+          sim.instruments_identifier(xcode) == value,
+          sim.udid == value,
+          sim.name == value
+        ].any?
+      end
+      !simulator.nil?
     end
 
     # @!visibility private
