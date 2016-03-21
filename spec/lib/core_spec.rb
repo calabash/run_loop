@@ -165,34 +165,6 @@ describe RunLoop::Core do
     end
   end
 
-  describe '.udid_and_bundle_for_launcher' do
-    let(:options) { {:app => Resources.shared.cal_app_bundle_path} }
-    let(:app) { options[:app] }
-
-    before do
-      expect(RunLoop::Core).to receive(:default_simulator).with(xcode).and_return 'Simulator'
-    end
-
-
-    it 'target is nil' do
-      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher(nil, options, sim_control)
-      expect(udid).to be == 'Simulator'
-      expect(app_bundle).to be == app
-    end
-
-    it "target is ''" do
-      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('', options, sim_control)
-      expect(udid).to be == 'Simulator'
-      expect(app_bundle).to be == app
-    end
-
-    it "target is 'simulator'" do
-      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('simulator', options, sim_control)
-      expect(udid).to be == 'Simulator'
-      expect(app_bundle).to be == app
-    end
-  end
-
   describe '.above_or_eql_version?' do
     subject(:a) { RunLoop::Version.new('5.1.1') }
     subject(:b) { RunLoop::Version.new('6.0') }

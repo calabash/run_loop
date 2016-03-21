@@ -419,25 +419,6 @@ Logfile: #{log_file}
       end
     end
 
-    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
-      xcode = sim_control.xcode
-
-      bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
-
-      unless bundle_dir_or_bundle_id
-        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
-      end
-
-      if device_target.nil? || device_target.empty? || device_target == 'simulator'
-        device_target = self.default_simulator(xcode)
-      end
-      udid = device_target
-
-      unless self.simulator_target?(options)
-        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-      end
-      return udid, bundle_dir_or_bundle_id
-    end
 
     def self.create_uia_pipe(repl_path)
       begin
@@ -643,7 +624,7 @@ Logfile: #{log_file}
       raise message.join("\n")
     end
 
-    # @deprecated 2.0.10
+    # @deprecated 2.1.0
     # Replaced with Device.detect_phyical_device_on_usb
     def self.detect_connected_device
       begin
@@ -654,6 +635,31 @@ Logfile: #{log_file}
         `killall udidetect &> /dev/null`
       end
       nil
+    end
+
+    # @!visibility private
+    # @deprecated 2.1.0
+    #
+    # Do not call this method.
+    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
+      RunLoop.deprecated("2.1.0", "No replacement")
+      xcode = sim_control.xcode
+
+      bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
+
+      unless bundle_dir_or_bundle_id
+        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
+      end
+
+      if device_target.nil? || device_target.empty? || device_target == 'simulator'
+        device_target = self.default_simulator(xcode)
+      end
+      udid = device_target
+
+      unless self.simulator_target?(options)
+        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
+      end
+      return udid, bundle_dir_or_bundle_id
     end
 
     # @deprecated 1.0.5
