@@ -66,14 +66,15 @@ module RunLoop
       sim_control = options[:sim_control] || options[:simctl] || RunLoop::SimControl.new
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
+
+      # Find the Device under test, the App under test, UIA strategy, and reset options
+      device = RunLoop::Device.detect_device(options, xcode, sim_control, instruments)
+      app_details = RunLoop::DetectAUT.detect_app_under_test(options)
+      uia_strategy = self.detect_uia_strategy(options, device, xcode)
+      reset_options = self.detect_reset_options(options)
+
       instruments.kill_instruments(xcode)
 
-      device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
-      if device_target && device_target.to_s.downcase == 'device'
-        device_target = detect_connected_device
-      end
-
-      log_file = options[:log_path]
       timeout = options[:timeout] || 30
 
       results_dir = options[:results_dir] || RunLoop::DotDir.make_results_dir
@@ -97,8 +98,6 @@ module RunLoop
       repl_path = File.join(results_dir, 'repl-cmd.pipe')
       FileUtils.rm_f(repl_path)
 
-      uia_strategy = options[:uia_strategy]
-
       if uia_strategy == :host
         create_uia_pipe(repl_path)
       else
@@ -115,23 +114,17 @@ module RunLoop
         file.puts code
       end
 
-      udid = options[:udid]
-      bundle_dir_or_bundle_id = options[:bundle_dir_or_bundle_id]
-
-      if !(udid && bundle_dir_or_bundle_id)
-        # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
-        udid, bundle_dir_or_bundle_id = self.udid_and_bundle_for_launcher(device_target, options, sim_control)
-      end
-
       args = options.fetch(:args, [])
 
-      log_file ||= File.join(results_dir, 'run_loop.out')
+      log_file = options[:log_path] || File.join(results_dir, 'run_loop.out')
 
       discovered_options =
         {
-          :udid => udid,
+          :udid => device.udid,
+          :device => device,
           :results_dir_trace => results_dir_trace,
-          :bundle_dir_or_bundle_id => bundle_dir_or_bundle_id,
+          :bundle_id => app_details[:bundle_id],
+          :app => app_details[:app]  || app_details[:bundle_id],
           :results_dir => results_dir,
           :script => script,
           :log_file => log_file,
@@ -139,15 +132,15 @@ module RunLoop
         }
       merged_options = options.merge(discovered_options)
 
-      if self.simulator_target?(merged_options)
-        self.prepare_simulator(merged_options, sim_control)
+      if device.simulator?
+        self.prepare_simulator(app_details[:app], device, xcode, sim_control, reset_options)
       end
 
       self.log_run_loop_options(merged_options, xcode)
 
       automation_template = automation_template(instruments)
 
-      RunLoop::Logging.log_header(logger, "Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
+      RunLoop::Logging.log_header(logger, "Starting on #{device.name} App: #{app_details[:bundle_id]}")
 
       pid = instruments.spawn(automation_template, merged_options, log_file)
 
@@ -155,14 +148,16 @@ module RunLoop
         f.write pid
       end
 
-      run_loop = {:pid => pid,
-                  :index => 1,
-                  :uia_strategy => uia_strategy,
-                  :udid => udid,
-                  :app => bundle_dir_or_bundle_id,
-                  :repl_path => repl_path,
-                  :log_file => log_file,
-                  :results_dir => results_dir}
+      run_loop = {
+        :pid => pid,
+        :index => 1,
+        :uia_strategy => uia_strategy,
+        :udid => device.udid,
+        :app => app_details[:bundle_id],
+        :repl_path => repl_path,
+        :log_file => log_file,
+        :results_dir => results_dir
+      }
 
       uia_timeout = options[:uia_timeout] || RunLoop::Environment.uia_timeout || 10
 
