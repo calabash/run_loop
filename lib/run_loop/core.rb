@@ -736,5 +736,16 @@ Logfile: #{log_file}
       end
       strategy
     end
+
+    # @!visibility private
+    #
+    # @param [Hash] options The launch options passed to .run_with_options
+    def self.detect_reset_options(options)
+      return options[:reset] if options.has_key?(:reset)
+
+      return options[:reset_app_sandbox] if options.has_key?(:reset_app_sandbox)
+
+      RunLoop::Environment.reset_between_scenarios?
+    end
   end
 end

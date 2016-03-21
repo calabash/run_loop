@@ -391,4 +391,50 @@ describe RunLoop::Core do
       end.not_to raise_error
     end
   end
+
+  describe ".detect_reset_options" do
+    let(:options) { {reset: true, reset_app_sandbox: true} }
+
+    describe ":reset" do
+      it "true" do
+        expect(RunLoop::Core.detect_reset_options(options)).to be_truthy
+      end
+
+      it "false" do
+        options[:reset] = false
+        expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
+      end
+    end
+
+    describe ":reset_app_sandbox" do
+      before { options.delete(:reset) }
+      it "true" do
+        expect(RunLoop::Core.detect_reset_options(options)).to be_truthy
+      end
+
+      it "false" do
+        options[:reset_app_sandbox] = false
+        expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
+      end
+    end
+
+    describe "RESET_BETWEEN_SCENARIOS" do
+      before do
+        options.delete(:reset)
+        options.delete(:reset_app_sandbox)
+      end
+
+      it "'1'" do
+        expect(RunLoop::Environment).to receive(:reset_between_scenarios?).and_return(true)
+
+        expect(RunLoop::Core.detect_reset_options(options)).to be_truthy
+      end
+
+      it "not '1'" do
+        expect(RunLoop::Environment).to receive(:reset_between_scenarios?).and_return(false)
+
+        expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
+      end
+    end
+  end
 end
