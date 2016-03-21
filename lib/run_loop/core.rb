@@ -72,73 +72,6 @@ module RunLoop
       RunLoop.log_debug("Simulator instruction set '#{device.instruction_set}' is compatible with '#{lipo.info}'")
     end
 
-    # Prepares the simulator for running.
-    #
-    # 1. enabling accessibility and software keyboard
-    # 2. installing / uninstalling apps
-    def self.prepare_simulator(launch_options, sim_control)
-
-      xcode = sim_control.xcode
-
-      # Respect option passed from Calabash
-      if launch_options[:relaunch_simulator]
-        sim_control.quit_sim
-      end
-
-      app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
-      app = RunLoop::App.new(app_bundle_path)
-
-      unless app.valid?
-        if !File.exist?(app.path)
-          message = "App '#{app_bundle_path}' does not exist."
-        else
-          message = "App '#{app_bundle_path}' is not a valid .app bundle"
-        end
-        raise RuntimeError, message
-      end
-
-      udid = launch_options[:udid]
-
-      device = sim_control.simulators.find do |sim|
-        sim.udid == udid || sim.instruments_identifier(xcode) == udid
-      end
-
-      if device.nil?
-        raise RuntimeError,
-              "Could not find simulator with name or UDID that matches: '#{udid}'"
-      end
-
-      # Validate the architecture.
-      self.expect_simulator_compatible_arch(device, app)
-
-      # Quits the simulator.
-      core_sim = RunLoop::CoreSimulator.new(device, app)
-
-      # :reset is a legacy variable; has been replaced with :reset_app_sandbox
-      if launch_options[:reset] || launch_options[:reset_app_sandbox]
-        core_sim.reset_app_sandbox
-      end
-
-      # Will quit the simulator if it is running.
-      # @todo fix accessibility_enabled? so we don't have to quit the sim
-      # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
-      # https://github.com/calabash/run_loop/issues/167
-      sim_control.ensure_accessibility(device)
-
-      # Will quit the simulator if it is running.
-      # @todo fix software_keyboard_enabled? so we don't have to quit the sim
-      # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
-      # https://github.com/calabash/run_loop/issues/168
-      sim_control.ensure_software_keyboard(device)
-
-      # Launches the simulator if the app is not installed.
-      core_sim.install
-
-      # If CoreSimulator has already launched the simulator, it will not
-      # launching it again.
-      core_sim.launch_simulator
-    end
-
     def self.run_with_options(options)
       before = Time.now
 
@@ -754,6 +687,43 @@ Logfile: #{log_file}
       return options[:reset_app_sandbox] if options.has_key?(:reset_app_sandbox)
 
       RunLoop::Environment.reset_between_scenarios?
+    end
+
+    # Prepares the simulator for running.
+    #
+    # 1. enabling accessibility and software keyboard
+    # 2. installing / uninstalling apps
+    def self.prepare_simulator(app, device, xcode, simctl, reset_options)
+
+      # Validate the architecture.
+      self.expect_simulator_compatible_arch(device, app)
+
+      # Quits the simulator.
+      core_sim = RunLoop::CoreSimulator.new(device, app, :xcode => xcode)
+
+      # Calabash 0.x can only reset the app sandbox (true/false).
+      # Calabash 2.x has advanced reset options.
+      if reset_options
+        core_sim.reset_app_sandbox
+      end
+
+      # Will quit the simulator if it is running.
+      # @todo fix accessibility_enabled? so we don't have to quit the sim
+      # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
+      # https://github.com/calabash/run_loop/issues/167
+      simctl.ensure_accessibility(device)
+
+      # Will quit the simulator if it is running.
+      # @todo fix software_keyboard_enabled? so we don't have to quit the sim
+      # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
+      # https://github.com/calabash/run_loop/issues/168
+      simctl.ensure_software_keyboard(device)
+
+      # Launches the simulator if the app is not installed.
+      core_sim.install
+
+      # If CoreSimulator has already launched the simulator, it will not launch it again.
+      core_sim.launch_simulator
     end
   end
 end
