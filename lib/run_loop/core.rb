@@ -57,18 +57,6 @@ module RunLoop
       SCRIPTS[key]
     end
 
-    # @deprecated 2.0.10
-    def self.detect_connected_device
-      begin
-        Timeout::timeout(1, RunLoop::TimeoutError) do
-          return `#{File.join(scripts_path, 'udidetect')}`.chomp
-        end
-      rescue RunLoop::TimeoutError => _
-        `killall udidetect &> /dev/null`
-      end
-      nil
-    end
-
     # Raise an error if the application binary is not compatible with the
     # target simulator.
     #
@@ -653,6 +641,19 @@ Logfile: #{log_file}
                  '$ xcrun xcodebuild -version',
                  "$ xcrun instruments -s templates\n"]
       raise message.join("\n")
+    end
+
+    # @deprecated 2.0.10
+    # Replaced with Device.detect_phyical_device_on_usb
+    def self.detect_connected_device
+      begin
+        Timeout::timeout(1, RunLoop::TimeoutError) do
+          return `#{File.join(scripts_path, 'udidetect')}`.chomp
+        end
+      rescue RunLoop::TimeoutError => _
+        `killall udidetect &> /dev/null`
+      end
+      nil
     end
 
     # @deprecated 1.0.5
