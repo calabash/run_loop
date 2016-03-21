@@ -114,7 +114,15 @@ class Resources
   end
 
   def bundle_id
-    @bundle_id = 'com.xamarin.CalSmoke-cal'
+    @bundle_id ||= 'com.xamarin.CalSmoke-cal'
+  end
+
+  def simulator
+    RunLoop::Device.new("iPhone 4s", "8.3", "CE5BA25E-9434-475A-8947-ECC3918E64E3")
+  end
+
+  def device
+    RunLoop::Device.new("denis", "8.3", "893688959205dc7eb48d603c558ede919ad8dd0c")
   end
 
   def global_preferences_plist

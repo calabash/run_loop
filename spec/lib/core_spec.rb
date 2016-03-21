@@ -41,6 +41,74 @@ describe RunLoop::Core do
     end
   end
 
+  describe "UIA strategy" do
+    let(:xcode) { Resources.shared.xcode }
+    let(:device) { Resources.shared.device }
+    let(:simulator) { Resources.shared.simulator }
+    let(:ios8) { RunLoop::Version.new("8.0") }
+    let(:ios9) { RunLoop::Version.new("9.0") }
+    let(:ios7) { RunLoop::Version.new("7.0") }
+
+    describe ".default_uia_strategy" do
+      it ":host for Xcode >= 7.0" do
+        expect(xcode).to receive(:version_gte_7?).and_return(true)
+
+        expect(RunLoop::Core.default_uia_strategy(device, xcode)).to be == :host
+      end
+
+      describe "all other Xcode versions" do
+        before do
+          expect(xcode).to receive(:version_gte_7?).at_least(:once).and_return(false)
+        end
+
+        describe "physical devices" do
+           it ":host for iOS >= 8.0" do
+             expect(device).to receive(:version).and_return(ios8)
+             expect(RunLoop::Core.default_uia_strategy(device, xcode)).to be == :host
+
+             expect(device).to receive(:version).and_return(ios9)
+             expect(RunLoop::Core.default_uia_strategy(device, xcode)).to be == :host
+           end
+
+          it ":preferences for iOS < 8.0" do
+            expect(device).to receive(:version).and_return(ios7)
+            expect(RunLoop::Core.default_uia_strategy(device, xcode)).to be == :preferences
+          end
+        end
+
+        it "simulators in < Xcode 7 environments" do
+          # implies < iOS 9
+          expect(RunLoop::Core.default_uia_strategy(simulator, xcode)).to be == :preferences
+        end
+      end
+    end
+
+    describe ".detect_uia_strategy" do
+      let(:options) { {:uia_strategy => :shared_element } }
+
+      it "respects :uia_strategy option" do
+        actual = RunLoop::Core.detect_uia_strategy(options, device, xcode)
+        expect(actual).to be == options[:uia_strategy]
+      end
+
+      it "falls back on default strategy" do
+        options[:uia_strategy] = nil
+        expect(RunLoop::Core).to receive(:default_uia_strategy).and_return(:shared_element)
+
+        actual = RunLoop::Core.detect_uia_strategy(options, device, xcode)
+        expect(actual).to be == :shared_element
+      end
+
+      it "raises error if strategy is unknown" do
+        options[:uia_strategy] = :unknown
+
+        expect do
+          RunLoop::Core.detect_uia_strategy(options, device, xcode)
+        end.to raise_error ArgumentError, /Invalid strategy/
+      end
+    end
+  end
+
   describe '.default_simulator' do
     it 'Xcode 6.0*' do
       expected = 'iPhone 5s (8.0 Simulator)'

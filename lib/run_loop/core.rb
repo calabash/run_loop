@@ -699,10 +699,42 @@ Logfile: #{log_file}
 
     private
 
+    # @!visibility private
+    #
+    # @param [Hash] options The launch options passed to .run_with_options
     def self.prepare(run_options)
       RunLoop::DotDir.rotate_result_directories
       RunLoop::Instruments.rotate_cache_directories
       true
+    end
+
+    # @!visibility private
+    #
+    # @param [RunLoop::Device] device The device under test.
+    # @param [RunLoop::Xcode] xcode The active Xcode
+    def self.default_uia_strategy(device, xcode)
+      if xcode.version_gte_7?
+        :host
+      elsif device.physical_device? && device.version >= RunLoop::Version.new("8.0")
+        :host
+      else
+        :preferences
+      end
+    end
+
+    # @!visibility private
+    #
+    # @param [Hash] options The launch options passed to .run_with_options
+    # @param [RunLoop::Device] device The device under test.
+    # @param [RunLoop::Xcode] xcode The active Xcode.
+    def self.detect_uia_strategy(options, device, xcode)
+      strategy = options[:uia_strategy] || self.default_uia_strategy(device, xcode)
+
+      if ![:host, :preferences, :shared_element].include?(strategy)
+        raise ArgumentError,
+              "Invalid strategy: expected '#{strategy}' to be :host, :preferences, or :shared_element"
+      end
+      strategy
     end
   end
 end
