@@ -57,105 +57,24 @@ module RunLoop
       SCRIPTS[key]
     end
 
-    # Raise an error if the application binary is not compatible with the
-    # target simulator.
-    #
-    # @param [RunLoop::Device] device The device to install on.
-    # @param [RunLoop::App] app The app to install.
-    #
-    # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
-    #  application binary is not compatible with the target simulator.
-    def self.expect_simulator_compatible_arch(device, app)
-      lipo = RunLoop::Lipo.new(app.path)
-      lipo.expect_compatible_arch(device)
-
-      RunLoop.log_debug("Simulator instruction set '#{device.instruction_set}' is compatible with '#{lipo.info}'")
-    end
-
-    # Prepares the simulator for running.
-    #
-    # 1. enabling accessibility and software keyboard
-    # 2. installing / uninstalling apps
-    def self.prepare_simulator(launch_options, sim_control)
-
-      xcode = sim_control.xcode
-
-      # Respect option passed from Calabash
-      if launch_options[:relaunch_simulator]
-        sim_control.quit_sim
-      end
-
-      app_bundle_path = launch_options[:bundle_dir_or_bundle_id]
-      app = RunLoop::App.new(app_bundle_path)
-
-      unless app.valid?
-        if !File.exist?(app.path)
-          message = "App '#{app_bundle_path}' does not exist."
-        else
-          message = "App '#{app_bundle_path}' is not a valid .app bundle"
-        end
-        raise RuntimeError, message
-      end
-
-      udid = launch_options[:udid]
-
-      device = sim_control.simulators.find do |sim|
-        sim.udid == udid || sim.instruments_identifier(xcode) == udid
-      end
-
-      if device.nil?
-        raise RuntimeError,
-              "Could not find simulator with name or UDID that matches: '#{udid}'"
-      end
-
-      # Validate the architecture.
-      self.expect_simulator_compatible_arch(device, app)
-
-      # Quits the simulator.
-      core_sim = RunLoop::CoreSimulator.new(device, app)
-
-      # :reset is a legacy variable; has been replaced with :reset_app_sandbox
-      if launch_options[:reset] || launch_options[:reset_app_sandbox]
-        core_sim.reset_app_sandbox
-      end
-
-      # Will quit the simulator if it is running.
-      # @todo fix accessibility_enabled? so we don't have to quit the sim
-      # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
-      # https://github.com/calabash/run_loop/issues/167
-      sim_control.ensure_accessibility(device)
-
-      # Will quit the simulator if it is running.
-      # @todo fix software_keyboard_enabled? so we don't have to quit the sim
-      # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
-      # https://github.com/calabash/run_loop/issues/168
-      sim_control.ensure_software_keyboard(device)
-
-      # Launches the simulator if the app is not installed.
-      core_sim.install
-
-      # If CoreSimulator has already launched the simulator, it will not
-      # launching it again.
-      core_sim.launch_simulator
-    end
-
     def self.run_with_options(options)
       before = Time.now
 
       self.prepare(options)
 
       logger = options[:logger]
-      sim_control = RunLoop::SimControl.new
-      xcode = sim_control.xcode
+      sim_control = options[:sim_control] || options[:simctl] || RunLoop::SimControl.new
+      xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
+
+      # Find the Device under test, the App under test, UIA strategy, and reset options
+      device = RunLoop::Device.detect_device(options, xcode, sim_control, instruments)
+      app_details = RunLoop::DetectAUT.detect_app_under_test(options)
+      uia_strategy = self.detect_uia_strategy(options, device, xcode)
+      reset_options = self.detect_reset_options(options)
+
       instruments.kill_instruments(xcode)
 
-      device_target = options[:udid] || options[:device_target] || detect_connected_device || 'simulator'
-      if device_target && device_target.to_s.downcase == 'device'
-        device_target = detect_connected_device
-      end
-
-      log_file = options[:log_path]
       timeout = options[:timeout] || 30
 
       results_dir = options[:results_dir] || RunLoop::DotDir.make_results_dir
@@ -179,8 +98,6 @@ module RunLoop
       repl_path = File.join(results_dir, 'repl-cmd.pipe')
       FileUtils.rm_f(repl_path)
 
-      uia_strategy = options[:uia_strategy]
-
       if uia_strategy == :host
         create_uia_pipe(repl_path)
       else
@@ -197,23 +114,17 @@ module RunLoop
         file.puts code
       end
 
-      udid = options[:udid]
-      bundle_dir_or_bundle_id = options[:bundle_dir_or_bundle_id]
-
-      if !(udid && bundle_dir_or_bundle_id)
-        # Compute udid and bundle_dir / bundle_id from options and target depending on Xcode version
-        udid, bundle_dir_or_bundle_id = self.udid_and_bundle_for_launcher(device_target, options, sim_control)
-      end
-
       args = options.fetch(:args, [])
 
-      log_file ||= File.join(results_dir, 'run_loop.out')
+      log_file = options[:log_path] || File.join(results_dir, 'run_loop.out')
 
       discovered_options =
         {
-          :udid => udid,
+          :udid => device.udid,
+          :device => device,
           :results_dir_trace => results_dir_trace,
-          :bundle_dir_or_bundle_id => bundle_dir_or_bundle_id,
+          :bundle_id => app_details[:bundle_id],
+          :app => app_details[:app]  || app_details[:bundle_id],
           :results_dir => results_dir,
           :script => script,
           :log_file => log_file,
@@ -221,15 +132,15 @@ module RunLoop
         }
       merged_options = options.merge(discovered_options)
 
-      if self.simulator_target?(merged_options)
-        self.prepare_simulator(merged_options, sim_control)
+      if device.simulator?
+        self.prepare_simulator(app_details[:app], device, xcode, sim_control, reset_options)
       end
 
       self.log_run_loop_options(merged_options, xcode)
 
       automation_template = automation_template(instruments)
 
-      RunLoop::Logging.log_header(logger, "Starting on #{device_target} App: #{bundle_dir_or_bundle_id}")
+      RunLoop::Logging.log_header(logger, "Starting on #{device.name} App: #{app_details[:bundle_id]}")
 
       pid = instruments.spawn(automation_template, merged_options, log_file)
 
@@ -237,14 +148,16 @@ module RunLoop
         f.write pid
       end
 
-      run_loop = {:pid => pid,
-                  :index => 1,
-                  :uia_strategy => uia_strategy,
-                  :udid => udid,
-                  :app => bundle_dir_or_bundle_id,
-                  :repl_path => repl_path,
-                  :log_file => log_file,
-                  :results_dir => results_dir}
+      run_loop = {
+        :pid => pid,
+        :index => 1,
+        :uia_strategy => uia_strategy,
+        :udid => device.udid,
+        :app => app_details[:bundle_id],
+        :repl_path => repl_path,
+        :log_file => log_file,
+        :results_dir => results_dir
+      }
 
       uia_timeout = options[:uia_timeout] || RunLoop::Environment.uia_timeout || 10
 
@@ -331,44 +244,6 @@ Logfile: #{log_file}
       true
     end
 
-    # @!visibility private
-    # Are we targeting a simulator?
-    #
-    # @note  The behavior of this method is different than the corresponding
-    #   method in Calabash::Cucumber::Launcher method.  If
-    #   `:device_target => {nil | ''}`, then the calabash-ios method returns
-    #   _false_.  I am basing run-loop's behavior off the behavior in
-    #   `self.udid_and_bundle_for_launcher`
-    #
-    # @see {Core::RunLoop.udid_and_bundle_for_launcher}
-    #
-    # @todo sim_control argument is no longer necessary and can be removed.
-    def self.simulator_target?(run_options, sim_control=nil)
-      value = run_options[:device_target]
-
-      # Match the behavior of udid_and_bundle_for_launcher.
-      return true if value.nil? or value == ''
-
-      # 5.1 <= Xcode < 7.0
-      return true if value.downcase.include?('simulator')
-
-      # Not a physical device.
-      return false if value[DEVICE_UDID_REGEX, 0] != nil
-
-      # Check for named simulators and Xcode >= 7.0 simulators.
-      sim_control = run_options[:sim_control] || RunLoop::SimControl.new
-      xcode = sim_control.xcode
-      simulator = sim_control.simulators.find do |sim|
-        [
-          sim.instruments_identifier(xcode) == value,
-          sim.udid == value,
-          sim.name == value
-        ].any?
-      end
-      !simulator.nil?
-    end
-
-
     # Extracts the value of :inject_dylib from options Hash.
     # @param options [Hash] arguments passed to {RunLoop.run}
     # @return [String, nil] If the options contains :inject_dylibs and it is a
@@ -419,25 +294,6 @@ Logfile: #{log_file}
       end
     end
 
-    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
-      xcode = sim_control.xcode
-
-      bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
-
-      unless bundle_dir_or_bundle_id
-        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
-      end
-
-      if device_target.nil? || device_target.empty? || device_target == 'simulator'
-        device_target = self.default_simulator(xcode)
-      end
-      udid = device_target
-
-      unless self.simulator_target?(options)
-        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-      end
-      return udid, bundle_dir_or_bundle_id
-    end
 
     def self.create_uia_pipe(repl_path)
       begin
@@ -643,8 +499,8 @@ Logfile: #{log_file}
       raise message.join("\n")
     end
 
-    # @deprecated 2.0.10
-    # Replaced with Device.detect_phyical_device_on_usb
+    # @deprecated 2.1.0
+    # Replaced with Device.detect_physical_device_on_usb
     def self.detect_connected_device
       begin
         Timeout::timeout(1, RunLoop::TimeoutError) do
@@ -654,6 +510,71 @@ Logfile: #{log_file}
         `killall udidetect &> /dev/null`
       end
       nil
+    end
+
+    # @deprecated 2.1.0
+    # @!visibility private
+    # Are we targeting a simulator?
+    #
+    # @note  The behavior of this method is different than the corresponding
+    #   method in Calabash::Cucumber::Launcher method.  If
+    #   `:device_target => {nil | ''}`, then the calabash-ios method returns
+    #   _false_.  I am basing run-loop's behavior off the behavior in
+    #   `self.udid_and_bundle_for_launcher`
+    #
+    # @see {Core::RunLoop.udid_and_bundle_for_launcher}
+    #
+    # @todo sim_control argument is no longer necessary and can be removed.
+    def self.simulator_target?(run_options, sim_control=nil)
+      # TODO Enable deprecation warning
+      # RunLoop.deprecated("2.1.0", "No replacement")
+      value = run_options[:device_target]
+
+      # Match the behavior of udid_and_bundle_for_launcher.
+      return true if value.nil? or value == ''
+
+      # 5.1 <= Xcode < 7.0
+      return true if value.downcase.include?('simulator')
+
+      # Not a physical device.
+      return false if value[DEVICE_UDID_REGEX, 0] != nil
+
+      # Check for named simulators and Xcode >= 7.0 simulators.
+      sim_control = run_options[:sim_control] || RunLoop::SimControl.new
+      xcode = sim_control.xcode
+      simulator = sim_control.simulators.find do |sim|
+        [
+          sim.instruments_identifier(xcode) == value,
+          sim.udid == value,
+          sim.name == value
+        ].any?
+      end
+      !simulator.nil?
+    end
+
+    # @!visibility private
+    # @deprecated 2.1.0
+    #
+    # Do not call this method.
+    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
+      RunLoop.deprecated("2.1.0", "No replacement")
+      xcode = sim_control.xcode
+
+      bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
+
+      unless bundle_dir_or_bundle_id
+        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
+      end
+
+      if device_target.nil? || device_target.empty? || device_target == 'simulator'
+        device_target = self.default_simulator(xcode)
+      end
+      udid = device_target
+
+      unless self.simulator_target?(options)
+        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
+      end
+      return udid, bundle_dir_or_bundle_id
     end
 
     # @deprecated 1.0.5
@@ -735,6 +656,70 @@ Logfile: #{log_file}
               "Invalid strategy: expected '#{strategy}' to be :host, :preferences, or :shared_element"
       end
       strategy
+    end
+
+    # @!visibility private
+    #
+    # @param [Hash] options The launch options passed to .run_with_options
+    def self.detect_reset_options(options)
+      return options[:reset] if options.has_key?(:reset)
+
+      return options[:reset_app_sandbox] if options.has_key?(:reset_app_sandbox)
+
+      RunLoop::Environment.reset_between_scenarios?
+    end
+
+    # Prepares the simulator for running.
+    #
+    # 1. enabling accessibility and software keyboard
+    # 2. installing / uninstalling apps
+    def self.prepare_simulator(app, device, xcode, simctl, reset_options)
+
+      # Validate the architecture.
+      self.expect_simulator_compatible_arch(device, app)
+
+      # Quits the simulator.
+      core_sim = RunLoop::CoreSimulator.new(device, app, :xcode => xcode)
+
+      # Calabash 0.x can only reset the app sandbox (true/false).
+      # Calabash 2.x has advanced reset options.
+      if reset_options
+        core_sim.reset_app_sandbox
+      end
+
+      # Will quit the simulator if it is running.
+      # @todo fix accessibility_enabled? so we don't have to quit the sim
+      # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
+      # https://github.com/calabash/run_loop/issues/167
+      simctl.ensure_accessibility(device)
+
+      # Will quit the simulator if it is running.
+      # @todo fix software_keyboard_enabled? so we don't have to quit the sim
+      # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
+      # https://github.com/calabash/run_loop/issues/168
+      simctl.ensure_software_keyboard(device)
+
+      # Launches the simulator if the app is not installed.
+      core_sim.install
+
+      # If CoreSimulator has already launched the simulator, it will not launch it again.
+      core_sim.launch_simulator
+    end
+
+    # @!visibility private
+    # Raise an error if the application binary is not compatible with the
+    # target simulator.
+    #
+    # @param [RunLoop::Device] device The device to install on.
+    # @param [RunLoop::App] app The app to install.
+    #
+    # @raise [RunLoop::IncompatibleArchitecture] Raises an error if the
+    #  application binary is not compatible with the target simulator.
+    def self.expect_simulator_compatible_arch(device, app)
+      lipo = RunLoop::Lipo.new(app.path)
+      lipo.expect_compatible_arch(device)
+
+      RunLoop.log_debug("Simulator instruction set '#{device.instruction_set}' is compatible with '#{lipo.info}'")
     end
   end
 end

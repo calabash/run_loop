@@ -165,34 +165,6 @@ describe RunLoop::Core do
     end
   end
 
-  describe '.udid_and_bundle_for_launcher' do
-    let(:options) { {:app => Resources.shared.cal_app_bundle_path} }
-    let(:app) { options[:app] }
-
-    before do
-      expect(RunLoop::Core).to receive(:default_simulator).with(xcode).and_return 'Simulator'
-    end
-
-
-    it 'target is nil' do
-      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher(nil, options, sim_control)
-      expect(udid).to be == 'Simulator'
-      expect(app_bundle).to be == app
-    end
-
-    it "target is ''" do
-      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('', options, sim_control)
-      expect(udid).to be == 'Simulator'
-      expect(app_bundle).to be == app
-    end
-
-    it "target is 'simulator'" do
-      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('simulator', options, sim_control)
-      expect(udid).to be == 'Simulator'
-      expect(app_bundle).to be == app
-    end
-  end
-
   describe '.above_or_eql_version?' do
     subject(:a) { RunLoop::Version.new('5.1.1') }
     subject(:b) { RunLoop::Version.new('6.0') }
@@ -389,6 +361,52 @@ describe RunLoop::Core do
       expect do
         RunLoop::Core.expect_simulator_compatible_arch(device, i386_app)
       end.not_to raise_error
+    end
+  end
+
+  describe ".detect_reset_options" do
+    let(:options) { {reset: true, reset_app_sandbox: true} }
+
+    describe ":reset" do
+      it "true" do
+        expect(RunLoop::Core.detect_reset_options(options)).to be_truthy
+      end
+
+      it "false" do
+        options[:reset] = false
+        expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
+      end
+    end
+
+    describe ":reset_app_sandbox" do
+      before { options.delete(:reset) }
+      it "true" do
+        expect(RunLoop::Core.detect_reset_options(options)).to be_truthy
+      end
+
+      it "false" do
+        options[:reset_app_sandbox] = false
+        expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
+      end
+    end
+
+    describe "RESET_BETWEEN_SCENARIOS" do
+      before do
+        options.delete(:reset)
+        options.delete(:reset_app_sandbox)
+      end
+
+      it "'1'" do
+        expect(RunLoop::Environment).to receive(:reset_between_scenarios?).and_return(true)
+
+        expect(RunLoop::Core.detect_reset_options(options)).to be_truthy
+      end
+
+      it "not '1'" do
+        expect(RunLoop::Environment).to receive(:reset_between_scenarios?).and_return(false)
+
+        expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
+      end
     end
   end
 end

@@ -300,29 +300,7 @@ module RunLoop
       array = ['instruments']
       array << '-w'
 
-      # Xcode 7 simulators must be launched with UDID to avoid
-      # Ambiguous device name/identifier errors (from instruments)
-      if xcode.version_gte_7?
-        udid = options[:udid]
-
-        if udid[DEVICE_UDID_REGEX, 0]
-          array << udid
-        else
-          match = simulators.find do |simulator|
-            [simulator.name == udid,
-             simulator.udid == udid,
-             simulator.instruments_identifier(xcode) == udid].any?
-          end
-
-          if match
-            array << match.udid
-          else
-            array << udid
-          end
-        end
-      else
-        array << options[:udid]
-      end
+      array << options[:udid]
 
       trace = options[:results_dir_trace]
       if trace
@@ -333,7 +311,7 @@ module RunLoop
       array << '-t'
       array << automation_template
 
-      array << options[:bundle_dir_or_bundle_id]
+      array << options[:bundle_id]
 
       {
             'UIARESULTSPATH' => options[:results_dir],
