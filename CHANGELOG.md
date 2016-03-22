@@ -1,7 +1,14 @@
 ## Change Log
 
-### 2.0.10
+### 2.1.0
 
+* Core.run\_with\_options improve the way AUT and DUT are inferred #414
+* Core.detecti\_uia\_strategy given options and RunLoop::Device #413
+* DetectAUT.detect\_app\_under\_test #412
+* Device is responsible for inferring which device to target #411
+* Drop Xcode 5 checks #410
+* Environment: handle empty strings for DEVICE\_TARGET, DEVICE\_ENDPOINT, and
+  TRACE\_TEMPLATE #408
 * Rescue pipe\_io if Errno::EPIPE error is encountered #407 @TeresaP
 
 ### 2.0.9
