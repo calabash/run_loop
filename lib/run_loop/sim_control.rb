@@ -37,9 +37,9 @@ module RunLoop
     end
 
     # @!visibility private
-    # @deprecated 2.0.10
+    # @deprecated 2.1.0
     def xcode_version_gte_51?
-      RunLoop.deprecated("2.0.10", "No replacement.")
+      RunLoop.deprecated("2.1.0", "No replacement.")
       xcode.version_gte_51?
     end
 
