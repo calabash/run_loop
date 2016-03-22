@@ -216,8 +216,11 @@ Logfile: #{log_file}
       dylib_path = self.dylib_path_from_options(merged_options)
 
       if dylib_path
-        RunLoop::LLDB.kill_lldb_processes
-        app = RunLoop::App.new(options[:app])
+        if device.physical_device?
+          raise RuntimeError, "Injecting a dylib is not supported when targeting a device"
+        end
+
+        app = app_details[:app]
         lldb = RunLoop::DylibInjector.new(app.executable_name, dylib_path)
         lldb.retriable_inject_dylib
       end
