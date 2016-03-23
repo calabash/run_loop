@@ -57,7 +57,7 @@ class RunLoop::CoreSimulator
               # This process is a daemon, and requires 'KILL' to terminate.
               # Killing the process is fast, but it takes a long time to
               # restart.
-              # ['com.apple.CoreSimulator.CoreSimulatorService', false],
+              ['com.apple.CoreSimulator.CoreSimulatorService', false],
 
               # Probably do not need to quit this, but it is tempting to do so.
               #['com.apple.CoreSimulator.SimVerificationService', false],
