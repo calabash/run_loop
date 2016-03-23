@@ -142,16 +142,6 @@ module RunLoop
     private
 
     # @!visibility private
-    def simctl
-      @simctl ||= RunLoop::SimControl.new
-    end
-
-    # @!visibility private
-    def instruments
-      @instruments ||= RunLoop::Instruments.new
-    end
-
-    # @!visibility private
     def xcrun
       RunLoop::Xcrun.new
     end
