@@ -229,6 +229,27 @@ module RunLoop
       value = ENV["CI"]
       !!value && value != ''
     end
+
+    # !@visibility private
+    # Returns the value of CBXWS.  This can be used to override the default
+    # CBXDriver.xcworkspace.  You should only set this if you are actively
+    # developing the CBXDriver.
+    def self.cbxws
+      value = ENV["CBXWS"]
+      if value.nil? || value == ""
+        nil
+      else
+        path = File.expand_path(value)
+        if !File.directory?(path)
+          raise RuntimeError, %Q[CBXWS is set, but there is no workspace at
+#{path}
+
+Only set CBXWS if you are developing new features in the CBXRunner.
+
+Check your environment.]
+        end
+        path
+      end
+    end
   end
 end
-
