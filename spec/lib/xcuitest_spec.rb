@@ -5,6 +5,14 @@ describe RunLoop::XCUITest do
   let(:device) { Resources.shared.default_simulator }
   let(:xcuitest) { RunLoop::XCUITest.new(bundle_id, device) }
 
+  let(:response) do
+    Class.new do
+      def body; "body"; end
+      def to_s; "#<HTTP::Response: #{body}>" ; end
+      def inspect; to_s; end
+    end.new
+  end
+
   it ".new" do
     expect(xcuitest.instance_variable_get(:@bundle_id)).to be == bundle_id
     expect(xcuitest.instance_variable_get(:@device)).to be == device
@@ -68,13 +76,6 @@ describe RunLoop::XCUITest do
     let(:options) { xcuitest.send(:ping_options) }
     let(:client) { xcuitest.send(:client, options) }
     let(:request) { xcuitest.send(:request, "shutdown") }
-    let(:response) do
-      Class.new do
-        def body; "body"; end
-        def to_s; "#<HTTP::Response: #{body}>" ; end
-        def inspect; to_s; end
-      end.new
-    end
 
     before do
       expect(xcuitest).to receive(:client).with(options).and_return(client)
@@ -94,6 +95,24 @@ describe RunLoop::XCUITest do
       expect(xcuitest.send(:shutdown)).to be == nil
     end
   end
+
+  describe "health" do
+    let(:options) { xcuitest.send(:http_options) }
+    let(:client) { xcuitest.send(:client, options) }
+    let(:request) { xcuitest.send(:request, "health") }
+
+    before do
+      expect(xcuitest).to receive(:client).with(options).and_return(client)
+      expect(xcuitest).to receive(:request).with("health").and_return(request)
+    end
+
+    it "succeeds" do
+      expect(client).to receive(:get).with(request).and_return(response)
+
+      expect(xcuitest.send(:health)).to be == response.body
+    end
+  end
+
 
   describe "file system" do
     let(:dot_dir) { File.expand_path(File.join("tmp", ".run-loop-xcuitest")) }

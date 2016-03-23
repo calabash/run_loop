@@ -6,7 +6,8 @@ module RunLoop
     # @!visibility private
     DEFAULTS = {
       :port => 27753,
-      :simulator_ip => "127.0.0.1"
+      :simulator_ip => "127.0.0.1",
+      :http_timeout => RunLoop::Environment.ci? ? 120 : 60
     }
 
     # @!visibility private
@@ -83,20 +84,7 @@ module RunLoop
       end
 
       RunLoop.log_debug("Waiting for CBX-Runner to build...")
-
-      server = RunLoop::HTTP::Server.new(driver_url)
-      request = RunLoop::HTTP::Request.new("/health", {})
-
-      options = {
-        :timeout => 60,
-        :interval => 0.1,
-        :retries => 600
-      }
-
-      client = RunLoop::HTTP::RetriableClient.new(server, options)
-      response = client.get(request)
-
-      RunLoop.log_debug("CBX-Runner driver says, \"#{response.body}\"")
+      health
       pid.to_i
     end
 
@@ -172,6 +160,15 @@ module RunLoop
     end
 
     # @!visibility private
+    def http_options
+      {
+        :timeout => DEFAULTS[:http_timeout],
+        :interval => 0.1,
+        :retries => DEFAULTS[:http_timeout]/0.1
+      }
+    end
+
+    # @!visibility private
     def shutdown
       options = ping_options
       request = request("shutdown")
@@ -184,6 +181,16 @@ module RunLoop
         RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
         nil
       end
+    end
+
+    # @!visibility private
+    def health
+      options = http_options
+      request = request("health")
+      client = client(options)
+      response = client.get(request)
+      RunLoop.log_debug("CBX-Runner driver says, \"#{response.body}\"")
+      response.body
     end
 
     # @!visibility private
