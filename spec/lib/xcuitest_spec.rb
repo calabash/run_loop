@@ -31,9 +31,10 @@ describe RunLoop::XCUITest do
     it "uses 127.0.0.1 for simulator targets" do
       expect(device).to receive(:simulator?).at_least(:once).and_return(true)
 
-      actual = xcuitest.url
+      actual = xcuitest.send(:url)
       expected = "http://127.0.0.1:27753"
       expect(actual).to be == expected
+      expect(xcuitest.instance_variable_get(:@url)).to be == expected
     end
   end
 

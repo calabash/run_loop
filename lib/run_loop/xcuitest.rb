@@ -39,28 +39,6 @@ module RunLoop
     end
 
     # @!visibility private
-    def url
-      if device.simulator?
-        "http://#{DEFAULTS[:simulator_ip]}:#{DEFAULTS[:port]}"
-      else
-        calabash_endpoint = RunLoop::Environment.device_endpoint
-        if calabash_endpoint
-          base = calabash_endpoint.split(":")[0..1].join(":")
-          "http://#{base}:#{DEFAULTS[:port]}"
-        else
-          device_name = device.name.gsub(/['\s]/, "")
-          encoding_options = {
-            :invalid           => :replace,  # Replace invalid byte sequences
-            :undef             => :replace,  # Replace anything not defined in ASCII
-            :replace           => ''        # Use a blank for those replacements
-          }
-          encoded = device_name.encode(Encoding.find("ASCII"), encoding_options)
-          "http://#{encoded}.local:27753"
-        end
-      end
-    end
-
-    # @!visibility private
     def launch_cbx_runner
 
       driver_url = url
@@ -176,6 +154,31 @@ module RunLoop
     # @!visibility private
     def xcrun
       RunLoop::Xcrun.new
+    end
+
+    # @!visibility private
+    def url
+      @url ||= lambda do
+        if device.simulator?
+          "http://#{DEFAULTS[:simulator_ip]}:#{DEFAULTS[:port]}"
+        else
+          # This block is untested.
+          calabash_endpoint = RunLoop::Environment.device_endpoint
+          if calabash_endpoint
+            base = calabash_endpoint.split(":")[0..1].join(":")
+            "http://#{base}:#{DEFAULTS[:port]}"
+          else
+            device_name = device.name.gsub(/['\s]/, "")
+            encoding_options = {
+              :invalid           => :replace,  # Replace invalid byte sequences
+              :undef             => :replace,  # Replace anything not defined in ASCII
+              :replace           => ""         # Use a blank for those replacements
+            }
+            encoded = device_name.encode(Encoding.find("ASCII"), encoding_options)
+            "http://#{encoded}.local:27753"
+          end
+        end
+      end.call
     end
 
     # @!visibility private
