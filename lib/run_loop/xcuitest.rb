@@ -59,7 +59,7 @@ module RunLoop
     end
 
     # @!visibility private
-    def launch_calabus_driver
+    def launch_cbx_runner
 
       driver_url = url
       server = RunLoop::HTTP::Server.new(driver_url)
@@ -72,10 +72,10 @@ module RunLoop
 
       begin
         response = client.post(request)
-        RunLoop.log_debug("Calabus driver says, \"#{response.body}\"")
+        RunLoop.log_debug("CBX-Runner says, \"#{response.body}\"")
         sleep(2.0)
       rescue => e
-        RunLoop.log_debug("Driver shutdown raised #{e}")
+        RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
       end
 
       workspace = XCUITest.workspace
@@ -137,17 +137,17 @@ module RunLoop
       client = RunLoop::HTTP::RetriableClient.new(server, options)
       response = client.get(request)
 
-      RunLoop.log_debug("Calabus driver says, \"#{response.body}\"")
+      RunLoop.log_debug("CBX-Runner driver says, \"#{response.body}\"")
       pid.to_i
     end
 
-    def launch_app
+    def launch_aut
       server = RunLoop::HTTP::Server.new(url)
       request = RunLoop::HTTP::Request.request("/session", {:bundleID => bundle_id})
       client = RunLoop::HTTP::RetriableClient.new(server)
       response = client.post(request)
 
-      RunLoop.log_debug("Calabus driver says, \"#{response.body}\"")
+      RunLoop.log_debug("CBX-Runner says, \"#{response.body}\"")
     end
 
     # @!visibility private
