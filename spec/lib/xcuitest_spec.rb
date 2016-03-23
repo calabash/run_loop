@@ -2,10 +2,12 @@
 describe RunLoop::XCUITest do
 
   let(:bundle_id) { "com.apple.Preferences" }
-  let(:xcuitest) { RunLoop::XCUITest.new(bundle_id) }
+  let(:device) { Resources.shared.default_simulator }
+  let(:xcuitest) { RunLoop::XCUITest.new(bundle_id, device) }
 
   it ".new" do
     expect(xcuitest.instance_variable_get(:@bundle_id)).to be == bundle_id
+    expect(xcuitest.instance_variable_get(:@device)).to be == device
   end
 
   describe ".workspace" do
@@ -26,34 +28,12 @@ describe RunLoop::XCUITest do
   end
 
   describe "#url" do
-    let(:device) { RunLoop::Device.new("denis", "9.0", "udid") }
-
     it "uses 127.0.0.1 for simulator targets" do
       expect(device).to receive(:simulator?).at_least(:once).and_return(true)
-      expect(xcuitest).to receive(:target).and_return(device)
 
       actual = xcuitest.url
       expected = "http://127.0.0.1:27753"
       expect(actual).to be == expected
-    end
-  end
-
-  describe "#target" do
-    it "raises an error if no device can be found" do
-      expect(RunLoop::Device).to receive(:device_with_identifier).and_return(nil)
-
-      expect do
-        xcuitest.target
-      end.to raise_error RuntimeError, /Could not find a device/
-    end
-
-    it "uses the default simulator if DEVICE_TARGET is undefined" do
-      expect(RunLoop::Environment).to receive(:device_target).and_return(nil)
-
-      actual = xcuitest.target
-      default = RunLoop::Core.default_simulator
-
-      expect(default[/#{actual.name}/, 0]).to be_truthy
     end
   end
 

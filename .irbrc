@@ -120,8 +120,9 @@ end
 
 puts "XCUITest workspace = #{ENV["CBXWS"]}"
 
-def xcuitest
-  RunLoop::XCUITest.new("com.apple.Preferences")
+def xcuitest(bundle_id="com.apple.Preferences")
+  device = RunLoop::Device.detect_device({}, xcode, simcontrol, instruments)
+  RunLoop::XCUITest.new(bundle_id, device)
 end
 
 verbose

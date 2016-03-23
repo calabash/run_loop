@@ -28,15 +28,19 @@ module RunLoop
     end
 
     # @!visibility private
-    def initialize(bundle_id)
+    #
+    # The app with `bundle_id` needs to be installed.
+    #
+    # @param [String] bundle_id The identifier of the app under test.
+    # @param [RunLoop::Device] device The device device.
+    def initialize(bundle_id, device)
       @bundle_id = bundle_id
+      @device = device
     end
 
     # @!visibility private
-    # TODO: move to Device ?
-    # TODO: needs tests for device case
     def url
-      if target.simulator?
+      if device.simulator?
         "http://#{DEFAULTS[:simulator_ip]}:#{DEFAULTS[:port]}"
       else
         calabash_endpoint = RunLoop::Environment.device_endpoint
@@ -44,7 +48,7 @@ module RunLoop
           base = calabash_endpoint.split(":")[0..1].join(":")
           "http://#{base}:#{DEFAULTS[:port]}"
         else
-          device_name = target.name.gsub(/['\s]/, "")
+          device_name = device.name.gsub(/['\s]/, "")
           encoding_options = {
             :invalid           => :replace,  # Replace invalid byte sequences
             :undef             => :replace,  # Replace anything not defined in ASCII
@@ -82,15 +86,14 @@ module RunLoop
         raise RuntimeError, "No workspace found"
       end
 
-      destination = target.udid
+      destination = device.udid
 
-      # might be nil
-      if target.simulator?
+      if device.simulator?
         # quits the simulator
-        sim = CoreSimulator.new(target, "")
+        sim = CoreSimulator.new(device, "")
         sim.launch_simulator
       else
-
+        # anything special about physical devices?
       end
 
       args = [
@@ -117,8 +120,8 @@ module RunLoop
       pid = Process.spawn(*args, options)
       Process.detach(pid)
 
-      if target.simulator?
-        target.simulator_wait_for_stable_state
+      if device.simulator?
+        device.simulator_wait_for_stable_state
       end
 
       RunLoop.log_debug("Waiting for CBX-Runner to build...")
@@ -149,32 +152,13 @@ module RunLoop
     end
 
     # @!visibility private
-    def target
-      @device ||= lambda do
-        target = RunLoop::Environment.device_target
-
-        if !target
-          target = RunLoop::Core.default_simulator
-        end
-
-        options = {
-          :sim_control => simctl,
-          :instruments => instruments
-        }
-
-        device = RunLoop::Device.device_with_identifier(target, options)
-
-        if !device
-          raise RuntimeError, "Could not find a device"
-        end
-
-        device
-      end.call
+    def bundle_id
+      @bundle_id
     end
 
     # @!visibility private
-    def bundle_id
-      @bundle_id
+    def device
+      @device
     end
 
     private
