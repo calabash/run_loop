@@ -758,6 +758,15 @@ describe RunLoop::CoreSimulator do
       end
     end
 
+    it "#launch_app_with_simctl" do
+      args = ["simctl", "launch", device.udid, app.bundle_identifier]
+      timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:launch_app_timeout]
+      options = { :log_cmd => true, :timeout => timeout }
+      expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return({})
+
+      expect(core_sim.send(:launch_app_with_simctl)).to be == {}
+    end
+
     describe '.wait_for_simulator_state' do
       before do
         stub_const("RunLoop::CoreSimulator::WAIT_FOR_SIMULATOR_STATE_INTERVAL", 0)
