@@ -393,25 +393,46 @@ $ bundle exec run-loop simctl manage-processes
     # relaunch it.
     launch_simulator
 
-    args = ['simctl', 'launch', device.udid, app.bundle_identifier]
-    timeout = DEFAULT_OPTIONS[:launch_app_timeout]
-    hash = xcrun.exec(args, log_cmd: true, timeout: timeout)
+    tries = RunLoop::Environment.ci? ? 5 : 3
+    last_error = nil
 
-    exit_status = hash[:exit_status]
+    RunLoop.log_debug("Trying #{tries} times to launch #{app.bundle_identifier} on #{device}")
 
-    if exit_status != 0
-      RunLoop.log_error(hash[:out])
-      raise RuntimeError, "Could not launch #{app.bundle_identifier} on #{device}"
+    tries.times do
+      hash = launch_app_with_simctl
+      exit_status = hash[:exit_status]
+      if exit_status != 0
+        RunLoop.log_debug("Failed to launch app.")
+        out.split($-0).each do |line|
+          RunLoop.log_debug("    #{line}")
+        end
+        # Simulator is probably in a bad state, but this will be super disruptive.
+        # Let's try a softer approach first - sleep.
+        # self.terminate_core_simulator_processes
+        sleep(0.5)
+        last_error = out
+      else
+        last_error = nil
+        break
+      end
+    end
+
+    if last_error
+      raise RuntimeError, %Q[Could not launch #{app.bundle_identifier} on #{device}
+
+#{last_error}
+
+]
     end
 
     options = {
-          :timeout => 10,
-          :raise_on_timeout => true
+      :timeout => 10,
+      :raise_on_timeout => true
     }
 
     RunLoop::ProcessWaiter.new(app.executable_name, options).wait_for_any
-
     device.simulator_wait_for_stable_state
+
     true
   end
 
@@ -586,6 +607,13 @@ Command had no output
 
     device.simulator_wait_for_stable_state
     installed_app_bundle_dir
+  end
+
+  # @!visibility private
+  def launch_app_with_simctl
+    args = ['simctl', 'launch', device.udid, app.bundle_identifier]
+    timeout = DEFAULT_OPTIONS[:launch_app_timeout]
+    xcrun.exec(args, log_cmd: true, timeout: timeout)
   end
 
   # Required for support of iOS 7 CoreSimulators.  Can be removed when
