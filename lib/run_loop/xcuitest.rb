@@ -41,30 +41,10 @@ module RunLoop
     # @!visibility private
     def launch_cbx_runner
 
-      driver_url = url
-      server = RunLoop::HTTP::Server.new(driver_url)
-      request = RunLoop::HTTP::Request.new("/shutdown", {})
-      options = {
-         :timeout => 0.5,
-         :retries => 1
-      }
-      client = RunLoop::HTTP::RetriableClient.new(server, options)
-
-      begin
-        response = client.post(request)
-        RunLoop.log_debug("CBX-Runner says, \"#{response.body}\"")
-        sleep(2.0)
-      rescue => e
-        RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
-      end
-
       workspace = XCUITest.workspace
-
-      if !workspace || !File.directory?(workspace)
-        raise RuntimeError, "No workspace found"
-      end
-
       destination = device.udid
+
+      shutdown
 
       if device.simulator?
         # quits the simulator
@@ -169,6 +149,41 @@ module RunLoop
           end
         end
       end.call
+    end
+
+    # @!visibility private
+    def server
+      @server ||= RunLoop::HTTP::Server.new(url)
+    end
+
+    # @!visibility private
+    def client(options={})
+      RunLoop::HTTP::RetriableClient.new(server, options)
+    end
+
+    # @!visibility private
+    def request(route, parameters={})
+      RunLoop::HTTP::Request.new(route, parameters)
+    end
+
+    # @!visibility private
+    def ping_options
+      @ping_options ||= { :timeout => 0.5, :retries => 1 }
+    end
+
+    # @!visibility private
+    def shutdown
+      options = ping_options
+      request = request("shutdown")
+      client = client(options)
+      begin
+        response = client.post(request)
+        RunLoop.log_debug("CBX-Runner says, \"#{response.body}\"")
+        response.body
+      rescue => e
+        RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
+        nil
+      end
     end
 
     # @!visibility private

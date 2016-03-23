@@ -38,6 +38,63 @@ describe RunLoop::XCUITest do
     end
   end
 
+  it "#server" do
+    url = "http://example.com"
+    expect(xcuitest).to receive(:url).and_return(url)
+
+    actual = xcuitest.send(:server)
+    expect(actual).to be_a_kind_of(RunLoop::HTTP::Server)
+    expect(xcuitest.instance_variable_get(:@server)).to be == actual
+    expect(xcuitest.send(:server)).to be == actual
+  end
+
+  it "#client" do
+    options = { :timeout => 5 }
+    server = xcuitest.send(:server)
+    expect(RunLoop::HTTP::RetriableClient).to receive(:new).with(server, options).and_call_original
+
+    expect(xcuitest.send(:client, options)).to be_a_kind_of(RunLoop::HTTP::RetriableClient)
+  end
+
+  it "#request" do
+    parameters = {:a => "a", :b => "b"}
+    route = "route"
+    expect(RunLoop::HTTP::Request).to receive(:new).with(route, parameters).and_call_original
+
+    expect(xcuitest.send(:request, route, parameters)).to be_a_kind_of(RunLoop::HTTP::Request)
+  end
+
+  describe "shutdown" do
+    let(:options) { xcuitest.send(:ping_options) }
+    let(:client) { xcuitest.send(:client, options) }
+    let(:request) { xcuitest.send(:request, "shutdown") }
+    let(:response) do
+      Class.new do
+        def body; "body"; end
+        def to_s; "#<HTTP::Response: #{body}>" ; end
+        def inspect; to_s; end
+      end.new
+    end
+
+    before do
+      expect(xcuitest).to receive(:client).with(options).and_return(client)
+      expect(xcuitest).to receive(:request).with("shutdown").and_return(request)
+    end
+
+    it "can connect" do
+      expect(client).to receive(:post).with(request).and_return(response)
+
+      expect(xcuitest.send(:shutdown)).to be == response.body
+    end
+
+    it "cannot connect" do
+      expect(client).to receive(:post).with(request).and_raise(StandardError,
+                                                               "Could not connect")
+
+      expect(xcuitest.send(:shutdown)).to be == nil
+    end
+  end
+
   describe "file system" do
     let(:dot_dir) { File.expand_path(File.join("tmp", ".run-loop-xcuitest")) }
     let(:xcuitest_dir) { File.join(dot_dir, "xcuitest") }
