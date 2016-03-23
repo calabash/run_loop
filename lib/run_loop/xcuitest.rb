@@ -39,54 +39,6 @@ module RunLoop
       @device = device
     end
 
-    # @!visibility private
-    def launch_cbx_runner
-
-      workspace = XCUITest.workspace
-      destination = device.udid
-
-      shutdown
-
-      if device.simulator?
-        # quits the simulator
-        sim = CoreSimulator.new(device, "")
-        sim.launch_simulator
-      else
-        # anything special about physical devices?
-      end
-
-      args = [
-        "xcrun",
-        "xcodebuild",
-        "-scheme", "CBXAppStub",
-        "-workspace", workspace,
-        "-config", "Debug",
-        "-destination", "id=#{destination}",
-        "clean",
-        "test"
-      ]
-
-      log_file = XCUITest.log_file
-
-      options = {
-        :out => log_file,
-        :err => log_file
-      }
-
-      command = args.join(" ")
-      RunLoop.log_unix_cmd("#{command} >& #{log_file}")
-
-      pid = Process.spawn(*args, options)
-      Process.detach(pid)
-
-      if device.simulator?
-        device.simulator_wait_for_stable_state
-      end
-
-      RunLoop.log_debug("Waiting for CBX-Runner to build...")
-      health
-      pid.to_i
-    end
 
     def launch_aut
       server = RunLoop::HTTP::Server.new(url)
@@ -191,6 +143,56 @@ module RunLoop
       response = client.get(request)
       RunLoop.log_debug("CBX-Runner driver says, \"#{response.body}\"")
       response.body
+    end
+
+    # @!visibility private
+    def xcodebuild
+      args = [
+        "xcrun",
+        "xcodebuild",
+        "-scheme", "CBXAppStub",
+        "-workspace", workspace,
+        "-config", "Debug",
+        "-destination", "id=#{device.udid}",
+        "clean",
+        "test"
+      ]
+
+      log_file = XCUITest.log_file
+
+      options = {
+        :out => log_file,
+        :err => log_file
+      }
+
+      command = args.join(" ")
+      RunLoop.log_unix_cmd("#{command} >& #{log_file}")
+
+      pid = Process.spawn(*args, options)
+      Process.detach(pid)
+      pid
+    end
+
+    # @!visibility private
+    def launch_cbx_runner
+      # Fail fast if CBXWS is not defined.
+      # WIP - we will distribute the workspace somehow.
+      self.workspace
+
+      shutdown
+
+      if device.simulator?
+        # quits the simulator
+        sim = CoreSimulator.new(device, "")
+        sim.launch_simulator
+      else
+        # anything special about physical devices?
+      end
+
+      pid = xcodebuild
+      RunLoop.log_debug("Waiting for CBX-Runner to build...")
+      health
+      pid.to_i
     end
 
     # @!visibility private
