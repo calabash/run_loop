@@ -506,5 +506,37 @@ describe RunLoop::Environment do
       end
     end
   end
+
+  describe "CBXWS" do
+    it "not defined" do
+      stub_env({"CBXWS" => nil})
+
+      expect(RunLoop::Environment.send(:cbxws)).to be_falsey
+    end
+
+    describe "defined" do
+      let(:path) { "path/to/CBXDriver.xcworkspace" }
+      let(:expanded) { "/#{path}" }
+
+      before do
+        stub_env({"CBXWS" => path})
+        expect(File).to receive(:expand_path).with(path).and_return(expanded)
+      end
+
+      it "defined by path does not exist" do
+        expect(File).to receive(:directory?).with(expanded).and_return(false)
+
+        expect do
+          RunLoop::Environment.send(:cbxws)
+        end.to raise_error RuntimeError, /CBXWS is set, but there is no workspace at/
+      end
+
+      it "defined and exists" do
+        expect(File).to receive(:directory?).with(expanded).and_return(true)
+
+        expect(RunLoop::Environment.send(:cbxws)).to be == expanded
+      end
+    end
+  end
 end
 

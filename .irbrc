@@ -107,21 +107,28 @@ def delete_simulator(name)
   true
 end
 
-if !ENV["XCUITEST_WORKSPACE"]
+if !ENV["CBXWS"]
   moody = File.expand_path(File.join("~/", "git", "calabash", "xcuitest", "CBXDriver.xcworkspace"))
   prometus = File.expand_path(File.join("~/", "calabash-xcuitest-server", "CBXDriver.xcworkspace"))
 
   if File.directory?(moody)
-    ENV["XCUITEST_WORKSPACE"] = moody
+    ENV["CBXWS"] = moody
   elsif File.directory?(prometus)
-    ENV["XCUITEST_WORKSPACE"] = prometus
+    ENV["CBXWS"] = prometus
   end
 end
 
-puts "XCUITest workspace = #{ENV["XCUITEST_WORKSPACE"]}"
+puts "XCUITest workspace = #{ENV["CBXWS"]}"
 
-def xcuitest
-  RunLoop::XCUITest.new("com.apple.Preferences")
+def xcuitest(bundle_id="com.apple.Preferences")
+  device = RunLoop::Device.detect_device({}, xcode, simcontrol, instruments)
+  RunLoop::XCUITest.new(bundle_id, device)
+end
+
+def holmes(bundle_id="com.apple.Preferences")
+  device = RunLoop::Device.detect_device({}, xcode, simcontrol, instruments)
+  xcuitest = RunLoop::XCUITest.new(bundle_id, device)
+  xcuitest.launch
 end
 
 verbose

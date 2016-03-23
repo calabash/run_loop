@@ -125,6 +125,14 @@ class Resources
     RunLoop::Device.new("denis", "8.3", "893688959205dc7eb48d603c558ede919ad8dd0c")
   end
 
+  def default_simulator
+    options = {
+     :sim_control => sim_control,
+     :instruments => instruments
+    }
+    RunLoop::Device.device_with_identifier(RunLoop::Core.default_simulator, options)
+  end
+
   def global_preferences_plist
     source = File.join(resources_dir, "GlobalPreferences.plist")
     target = File.join(local_tmp_dir, "GlobalPreferences.plist")
