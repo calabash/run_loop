@@ -18,12 +18,19 @@ describe RunLoop::XCUITest do
     expect(xcuitest.instance_variable_get(:@device)).to be == device
   end
 
-  describe ".workspace" do
+  it "#launch" do
+    expect(xcuitest).to receive(:launch_cbx_runner).and_return(true)
+    expect(xcuitest).to receive(:launch_aut).and_return(true)
+
+    expect(xcuitest.launch).to be_truthy
+  end
+
+  describe "#workspace" do
     it "raises an error if CBXWS is not defined" do
       expect(RunLoop::Environment).to receive(:cbxws).and_return(nil)
 
       expect do
-        RunLoop::XCUITest.workspace
+        xcuitest.workspace
       end.to raise_error RuntimeError, /TODO: figure out how to distribute the CBX-Runner/
     end
 
@@ -31,7 +38,7 @@ describe RunLoop::XCUITest do
       path = "path/to/CBXDriver.xcworkspace"
       expect(RunLoop::Environment).to receive(:cbxws).and_return(path)
 
-      expect(RunLoop::XCUITest.workspace).to be == path
+      expect(xcuitest.workspace).to be == path
     end
   end
 
@@ -40,7 +47,7 @@ describe RunLoop::XCUITest do
       expect(device).to receive(:simulator?).at_least(:once).and_return(true)
 
       actual = xcuitest.send(:url)
-      expected = "http://127.0.0.1:27753"
+      expected = "http://127.0.0.1:27753/"
       expect(actual).to be == expected
       expect(xcuitest.instance_variable_get(:@url)).to be == expected
     end
@@ -67,7 +74,7 @@ describe RunLoop::XCUITest do
   it "#request" do
     parameters = {:a => "a", :b => "b"}
     route = "route"
-    expect(RunLoop::HTTP::Request).to receive(:new).with(route, parameters).and_call_original
+    expect(RunLoop::HTTP::Request).to receive(:request).with(route, parameters).and_call_original
 
     expect(xcuitest.send(:request, route, parameters)).to be_a_kind_of(RunLoop::HTTP::Request)
   end
@@ -112,7 +119,6 @@ describe RunLoop::XCUITest do
       expect(xcuitest.send(:health)).to be == response.body
     end
   end
-
 
   describe "file system" do
     let(:dot_dir) { File.expand_path(File.join("tmp", ".run-loop-xcuitest")) }

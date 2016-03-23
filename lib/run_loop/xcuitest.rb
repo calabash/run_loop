@@ -10,13 +10,6 @@ module RunLoop
       :http_timeout => RunLoop::Environment.ci? ? 120 : 60
     }
 
-    # @!visibility private
-    def self.workspace
-      workspace = RunLoop::Environment.send(:cbxws)
-      return workspace if workspace
-
-      raise "TODO: figure out how to distribute the CBX-Runner"
-    end
 
     # @!visibility private
     def self.log_file
@@ -39,16 +32,6 @@ module RunLoop
       @device = device
     end
 
-
-    def launch_aut
-      server = RunLoop::HTTP::Server.new(url)
-      request = RunLoop::HTTP::Request.request("/session", {:bundleID => bundle_id})
-      client = RunLoop::HTTP::RetriableClient.new(server)
-      response = client.post(request)
-
-      RunLoop.log_debug("CBX-Runner says, \"#{response.body}\"")
-    end
-
     # @!visibility private
     def bundle_id
       @bundle_id
@@ -57,6 +40,27 @@ module RunLoop
     # @!visibility private
     def device
       @device
+    end
+
+    # @!visibility private
+    def workspace
+      @workspace ||= lambda do
+        path = RunLoop::Environment.send(:cbxws)
+        if path
+          path
+        else
+          raise "TODO: figure out how to distribute the CBX-Runner"
+        end
+      end.call
+    end
+
+    def launch
+      start = Time.now
+      launch_cbx_runner
+      launch_aut
+      elapsed = Time.now - start
+      RunLoop.log_debug("Took #{elapsed} seconds to launch #{bundle_id} on #{device}")
+      true
     end
 
     private
@@ -70,13 +74,13 @@ module RunLoop
     def url
       @url ||= lambda do
         if device.simulator?
-          "http://#{DEFAULTS[:simulator_ip]}:#{DEFAULTS[:port]}"
+          "http://#{DEFAULTS[:simulator_ip]}:#{DEFAULTS[:port]}/"
         else
           # This block is untested.
           calabash_endpoint = RunLoop::Environment.device_endpoint
           if calabash_endpoint
             base = calabash_endpoint.split(":")[0..1].join(":")
-            "http://#{base}:#{DEFAULTS[:port]}"
+            "http://#{base}:#{DEFAULTS[:port]}/"
           else
             device_name = device.name.gsub(/['\s]/, "")
             encoding_options = {
@@ -85,7 +89,7 @@ module RunLoop
               :replace           => ""         # Use a blank for those replacements
             }
             encoded = device_name.encode(Encoding.find("ASCII"), encoding_options)
-            "http://#{encoded}.local:27753"
+            "http://#{encoded}.local:27753/"
           end
         end
       end.call
@@ -103,7 +107,7 @@ module RunLoop
 
     # @!visibility private
     def request(route, parameters={})
-      RunLoop::HTTP::Request.new(route, parameters)
+      RunLoop::HTTP::Request.request(route, parameters)
     end
 
     # @!visibility private
@@ -116,7 +120,7 @@ module RunLoop
       {
         :timeout => DEFAULTS[:http_timeout],
         :interval => 0.1,
-        :retries => DEFAULTS[:http_timeout]/0.1
+        :retries => (DEFAULTS[:http_timeout]/0.1).to_i
       }
     end
 
@@ -177,7 +181,7 @@ module RunLoop
     def launch_cbx_runner
       # Fail fast if CBXWS is not defined.
       # WIP - we will distribute the workspace somehow.
-      self.workspace
+      workspace
 
       shutdown
 
@@ -193,6 +197,29 @@ module RunLoop
       RunLoop.log_debug("Waiting for CBX-Runner to build...")
       health
       pid.to_i
+    end
+
+    # @!visibility private
+    def launch_aut
+      client = client(http_options)
+      request = request("session", {:bundleID => bundle_id})
+
+      begin
+        response = client.post(request)
+        RunLoop.log_debug("Launched #{bundle_id} on #{device}")
+        RunLoop.log_debug("#{response.body}")
+        if device.simulator?
+          device.simulator_wait_for_stable_state
+        end
+        response.body
+      rescue => e
+        raise e.class, %Q[Could not launch #{bundle_id} on #{device}:
+
+#{e.message}
+
+Something went wrong.
+]
+      end
     end
 
     # @!visibility private

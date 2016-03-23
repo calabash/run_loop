@@ -125,6 +125,12 @@ def xcuitest(bundle_id="com.apple.Preferences")
   RunLoop::XCUITest.new(bundle_id, device)
 end
 
+def holmes(bundle_id="com.apple.Preferences")
+  device = RunLoop::Device.detect_device({}, xcode, simcontrol, instruments)
+  xcuitest = RunLoop::XCUITest.new(bundle_id, device)
+  xcuitest.launch
+end
+
 verbose
 
 motd=["Let's get this done!", 'Ready to rumble.', 'Enjoy.', 'Remember to breathe.',
