@@ -9,23 +9,17 @@ describe RunLoop::XCUITest do
   end
 
   describe ".workspace" do
-    describe "return nil" do
-      it "XCUITEST_WORKSPACE is not defined" do
-        stub_env({"XCUITEST_WORKSPACE" => nil})
+    it "raises an error if CBXWS is not defined" do
+      expect(RunLoop::Environment).to receive(:cbxws).and_return(nil)
 
-        expect(RunLoop::XCUITest.workspace).to be == nil
-      end
-
-      it "XCUITEST_PROJ is ''" do
-        stub_env({"XCUITEST_WORKSPACE" => ""})
-
-        expect(RunLoop::XCUITest.workspace).to be == nil
-      end
+      expect do
+        RunLoop::XCUITest.workspace
+      end.to raise_error RuntimeError, /TODO: figure out how to distribute the CBX-Runner/
     end
 
-    it "returns the path to the xcproj" do
-      path = "path/to/xcodeproj"
-      stub_env({"XCUITEST_WORKSPACE" => path})
+    it "returns the path to the CBXDriver.xcworkspace" do
+      path = "path/to/CBXDriver.xcworkspace"
+      expect(RunLoop::Environment).to receive(:cbxws).and_return(path)
 
       expect(RunLoop::XCUITest.workspace).to be == path
     end

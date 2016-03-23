@@ -11,12 +11,10 @@ module RunLoop
 
     # @!visibility private
     def self.workspace
-      value = ENV["XCUITEST_WORKSPACE"]
-      if value.nil? || value == ""
-        return nil
-      else
-        value
-      end
+      workspace = RunLoop::Environment.send(:cbxws)
+      return workspace if workspace
+
+      raise "TODO: figure out how to distribute the CBX-Runner"
     end
 
     # @!visibility private
@@ -46,7 +44,7 @@ module RunLoop
           base = calabash_endpoint.split(":")[0..1].join(":")
           "http://#{base}:#{DEFAULTS[:port]}"
         else
-          device_name = target.name.gsub(/[\'\s]/, "")
+          device_name = target.name.gsub(/['\s]/, "")
           encoding_options = {
             :invalid           => :replace,  # Replace invalid byte sequences
             :undef             => :replace,  # Replace anything not defined in ASCII
