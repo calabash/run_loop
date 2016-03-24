@@ -2,6 +2,24 @@
 
 ### 2.1.0
 
+This release fixes a bug that might put the iOS Simulator into a bad state.
+An iOS Simulator could potentially have a .app installed in its directory
+structure, but the app would not appear in Springboard or be detected by
+simctl.  We have fixed the bug for Xcode 7.  There is no possible fix for
+Xcode 6.  In order to ensure that your iOS Simulators are in a good shape we
+recommend that all users run:
+
+```
+# Will take ~10 minutes depending on the number of installed simulators.
+#
+# Don't forget to run this on your CI machines.
+#
+# You only have to run this command once!
+$ DEBUG=1 run-loop simctl doctor
+```
+
+We apologize for the inconvenience.
+
 * Core.run\_with\_options improve the way AUT and DUT are inferred #414
 * Core.detecti\_uia\_strategy given options and RunLoop::Device #413
 * DetectAUT.detect\_app\_under\_test #412

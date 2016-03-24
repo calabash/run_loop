@@ -296,6 +296,8 @@ describe RunLoop::CoreSimulator do
     let(:device) { RunLoop::Device.new('iPhone 5s', '8.1',
                                        'A08334BE-77BD-4A2F-BA25-A0E8251A1A80') }
     let(:core_sim) { RunLoop::CoreSimulator.new(device, app) }
+    let(:simctl) { RunLoop::Simctl.new(device) }
+    let(:xcode) { RunLoop::Xcode.new }
 
     describe '#uninstall_app_and_sandbox' do
       it 'does nothing if the app is not installed' do
@@ -436,6 +438,70 @@ describe RunLoop::CoreSimulator do
         end
       end
 
+      describe "#installed_app_bundle_dir" do
+        let(:app_dir) do
+          path = File.join(Resources.shared.local_tmp_dir, "Containers/Bundle/Application")
+          FileUtils.mkdir_p(path)
+          path
+        end
+
+        let(:bundle_id) { app.bundle_identifier }
+
+        before do
+          expect(core_sim).to receive(:device_applications_dir).and_return(app_dir)
+          allow(core_sim).to receive(:xcode).and_return(xcode)
+        end
+
+        it "device applications dir does not exist" do
+          expect(File).to receive(:exist?).with(app_dir).and_return(false)
+
+          expect(core_sim.send(:installed_app_bundle_dir)).to be == nil
+        end
+
+        describe "Xcode >= 7" do
+
+          before do
+            expect(xcode).to receive(:version_gte_7?).and_return(true)
+          end
+
+          it "app installed" do
+            expect(RunLoop::Simctl).to receive(:new).with(device).and_return(simctl)
+            expect(simctl).to receive(:app_container).with(bundle_id).and_return(:path)
+
+            expect(core_sim.send(:installed_app_bundle_dir)).to be == :path
+          end
+
+          it "app not installed" do
+            expect(RunLoop::Simctl).to receive(:new).with(device).and_return(simctl)
+            expect(simctl).to receive(:app_container).with(bundle_id).and_return(nil)
+
+            expect(core_sim.send(:installed_app_bundle_dir)).to be == nil
+          end
+        end
+
+        describe "Xcode < 7" do
+          let(:glob) { "#{app_dir}/**/*.app" }
+
+          before do
+            expect(xcode).to receive(:version_gte_7?).and_return(false)
+          end
+
+          it "app not installed" do
+            expect(Dir).to receive(:glob).with(glob).and_return([])
+
+            expect(core_sim.send(:installed_app_bundle_dir)).to be == nil
+          end
+
+          it "app is installed" do
+            FileUtils.cp_r(app.path, app_dir)
+
+            actual = core_sim.send(:installed_app_bundle_dir)
+            expected = "#{app_dir}/#{File.basename(app.path)}"
+            expect(actual).to be == expected
+          end
+        end
+      end
+
       describe '#app_sandbox_dir' do
         it 'returns nil if there is no app bundle' do
           expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
@@ -552,19 +618,10 @@ describe RunLoop::CoreSimulator do
         RunLoop::Device.new('iPhone 5s', '8.4', '6386C48A-E029-4C1A-932D-355F652F66B9')
       end
 
-      let(:sdk_71_device_with_app) do
-        RunLoop::Device.new('iPhone 5s', '7.1', 'B88A172B-CF92-4D3A-8A88-96FF4A6303D3')
-      end
-
-      let(:sdk_71_device_without_app) do
-        RunLoop::Device.new('iPhone 5', '7.1', '8DE4DF9B-09A4-4CFF-88E1-C62C88DD1503')
-      end
-
       before do
         source = File.join(Resources.shared.resources_dir, 'CoreSimulator')
         FileUtils.cp_r(source, tmp_dir)
-        stub_const('RunLoop::CoreSimulator::CORE_SIMULATOR_DEVICE_DIR',
-                   directory)
+        stub_const('RunLoop::CoreSimulator::CORE_SIMULATOR_DEVICE_DIR', directory)
       end
 
       # Not yet.
@@ -586,77 +643,21 @@ describe RunLoop::CoreSimulator do
       #   expect(logs.count).to be == 2
       # end
 
-
-      describe '#installed_app_bundle_dir' do
-        describe 'iOS >= 8' do
-          it 'app is installed' do
-            core_sim = RunLoop::CoreSimulator.new(device_with_app, app)
-
-            actual = core_sim.send(:installed_app_bundle_dir)
-            expect(actual).to be_truthy
-            expect(File.exist?(actual)).to be_truthy
-          end
-
-          it 'app is not installed' do
-            core_sim = RunLoop::CoreSimulator.new(device_without_app, app)
-
-            actual = core_sim.send(:installed_app_bundle_dir)
-            expect(actual).to be_falsey
-          end
-        end
-
-        describe 'iOS < 8' do
-          it 'app is installed' do
-            core_sim = RunLoop::CoreSimulator.new(sdk_71_device_with_app, app)
-
-            actual = core_sim.send(:installed_app_bundle_dir)
-            expect(actual).to be_truthy
-            expect(File.exist?(actual)).to be_truthy
-          end
-
-          it 'app is not installed' do
-            core_sim = RunLoop::CoreSimulator.new(sdk_71_device_without_app, app)
-
-            actual = core_sim.send(:installed_app_bundle_dir)
-            expect(actual).to be_falsey
-          end
-        end
-      end
-
       describe '#app_sandbox_dir' do
+        it 'app is installed' do
+          core_sim = RunLoop::CoreSimulator.new(device_with_app, app)
+          expect(core_sim).to receive(:installed_app_bundle_dir).and_return("path/My.app")
 
-        describe 'iOS >= 8' do
-          it 'app is installed' do
-            core_sim = RunLoop::CoreSimulator.new(device_with_app, app)
-
-            actual = core_sim.send(:app_sandbox_dir)
-            expect(actual).to be_truthy
-            expect(File.exist?(actual)).to be_truthy
-          end
-
-          it 'app is not installed' do
-            core_sim = RunLoop::CoreSimulator.new(device_without_app, app)
-
-            actual = core_sim.send(:app_sandbox_dir)
-            expect(actual).to be_falsey
-          end
+          actual = core_sim.send(:app_sandbox_dir)
+          expect(actual).to be_truthy
+          expect(File.exist?(actual)).to be_truthy
         end
 
-        describe 'iOS < 8' do
-          it 'app is installed' do
-            core_sim = RunLoop::CoreSimulator.new(sdk_71_device_with_app, app)
+        it 'app is not installed' do
+          core_sim = RunLoop::CoreSimulator.new(device_without_app, app)
 
-            actual = core_sim.send(:app_sandbox_dir)
-            expect(actual).to be_truthy
-            expect(File.exist?(actual)).to be_truthy
-          end
-
-          it 'app is not installed' do
-            core_sim = RunLoop::CoreSimulator.new(sdk_71_device_without_app, app)
-
-            actual = core_sim.send(:app_sandbox_dir)
-            expect(actual).to be_falsey
-          end
+          actual = core_sim.send(:app_sandbox_dir)
+          expect(actual).to be_falsey
         end
       end
 
