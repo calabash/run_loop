@@ -188,33 +188,6 @@ describe RunLoop::Instruments do
     end
   end
 
-  describe '#kill_signal' do
-    it 'the current Xcode version' do
-      xcode = RunLoop::Xcode.new
-      expected =  xcode.version_gte_6? ? 'QUIT' : 'TERM'
-      expect(instruments.send(:kill_signal, xcode)).to be == expected
-    end
-
-    describe 'regression' do
-      xcode_installs = Resources.shared.alt_xcode_install_paths
-      if xcode_installs.empty?
-        it 'no alternative versions of Xcode found' do
-          expect(true).to be == true
-        end
-      else
-        xcode_installs.each do |developer_dir|
-          it "#{developer_dir}" do
-            Resources.shared.with_developer_dir(developer_dir) do
-              xcode = RunLoop::Xcode.new
-              expected =  xcode.version_gte_6? ? 'QUIT' : 'TERM'
-              expect(instruments.send(:kill_signal, xcode)).to be == expected
-            end
-          end
-        end
-      end
-    end
-  end
-
   describe '#spawn_arguments' do
     let(:xcode) { instruments.xcode }
     let(:automation_template) { 'Automation' }

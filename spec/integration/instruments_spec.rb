@@ -6,6 +6,7 @@ describe RunLoop::Instruments do
 
   before(:each) do
     Resources.shared.kill_fake_instruments_process
+    allow(RunLoop::Environment).to receive(:debug?).and_return(true)
   end
 
   describe '#kill_instruments' do
@@ -25,7 +26,7 @@ describe RunLoop::Instruments do
         Resources.shared.launch_with_options(options) do |hash|
           expect(hash).not_to be nil
           expect(instruments.instruments_running?).to be == true
-          instruments.kill_instruments(sim_control.xcode)
+          instruments.kill_instruments
           expect(instruments.instruments_running?).to be == false
         end
       end
@@ -48,7 +49,7 @@ describe RunLoop::Instruments do
                 Resources.shared.launch_with_options(options) do |hash|
                   expect(hash).not_to be nil
                   expect(instruments.instruments_running?).to be == true
-                  instruments.kill_instruments(sim_control.xcode)
+                  instruments.kill_instruments
                   expect(instruments.instruments_running?).to be == false
                 end
               end
