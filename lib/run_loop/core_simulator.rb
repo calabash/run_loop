@@ -744,15 +744,20 @@ Command had no output
   def installed_app_bundle_dir
     sim_app_dir = device_applications_dir
     return nil if !File.exist?(sim_app_dir)
-    Dir.glob("#{sim_app_dir}/**/*.app").find do |path|
-      RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
+
+    if xcode.version_gte_7?
+      simctl = RunLoop::Simctl.new(device)
+      simctl.app_container(app.bundle_identifier)
+    else
+      Dir.glob("#{sim_app_dir}/**/*.app").find do |path|
+        RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
+      end
     end
   end
 
   # 1. Does nothing if the app is not installed.
   # 2. Does nothing if the app the same as the app that is installed
   # 3. Installs app if it is different from the installed app
-  #
   def ensure_app_same
     installed_app_bundle = installed_app_bundle_dir
 
