@@ -25,7 +25,20 @@ module RunLoop
 
     # @!visibility private
     def to_s
-      "#<IPA: #{bundle_identifier}: '#{path}'>"
+      cf_bundle_version = bundle_version
+      cf_bundle_short_version = short_bundle_version
+
+      if cf_bundle_version && cf_bundle_short_version
+        version = "#{cf_bundle_version.to_s}/#{cf_bundle_short_version}"
+      elsif cf_bundle_version
+        version = cf_bundle_version.to_s
+      elsif cf_bundle_short_version
+        version = cf_bundle_short_version
+      else
+        version = ""
+      end
+
+      "#<IPA #{bundle_identifier} #{version} #{path}>"
     end
 
     # @!visibility private

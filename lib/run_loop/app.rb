@@ -33,7 +33,20 @@ Bundle must:
 
     # @!visibility private
     def to_s
-      "#<APP: #{path}>"
+      cf_bundle_version = bundle_version
+      cf_bundle_short_version = short_bundle_version
+
+      if cf_bundle_version && cf_bundle_short_version
+        version = "#{cf_bundle_version.to_s} / #{cf_bundle_short_version}"
+      elsif cf_bundle_version
+        version = cf_bundle_version.to_s
+      elsif cf_bundle_short_version
+        version = cf_bundle_short_version
+      else
+        version = ""
+      end
+
+      "#<APP #{bundle_identifier} #{version} #{path}>"
     end
 
     # @!visibility private
@@ -154,7 +167,11 @@ Bundle must:
       begin
         version = RunLoop::Version.new(string)
       rescue
-        RunLoop.log_debug("Could not create Version instance from #{string}.")
+        if string && string != ""
+          RunLoop.log_debug("CFBundleShortVersionString: '#{string}' is not a well formed version string")
+        else
+          RunLoop.log_debug("CFBundleShortVersionString is not defined in Info.plist")
+        end
         version = nil
       end
       version
@@ -182,7 +199,11 @@ Bundle must:
       begin
         version = RunLoop::Version.new(string)
       rescue
-        RunLoop.log_debug("Could not create Version instance from #{string}.")
+        if string && string != ""
+          RunLoop.log_debug("CFBundleVersionString: '#{string}' is not a well formed version string")
+        else
+          RunLoop.log_debug("CFBundleVersionString is not defined in Info.plist")
+        end
         version = nil
       end
       version
