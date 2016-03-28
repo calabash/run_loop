@@ -69,6 +69,23 @@ describe RunLoop::Ipa do
     end
   end
 
+  describe "version info" do
+    let(:app) { ipa.send(:app) }
+    let(:version) { RunLoop::Version.new("1.2.3") }
+
+    it "#marketing_version" do
+      expect(app).to receive(:marketing_version).and_return(version)
+
+      expect(ipa.marketing_version).to be == version
+    end
+
+    it "#build_version" do
+      expect(app).to receive(:build_version).and_return(version)
+
+      expect(ipa.build_version).to be == version
+    end
+  end
+
   describe 'private' do
     it '#tmpdir' do
       tmp_dir = ipa.send(:tmpdir)
