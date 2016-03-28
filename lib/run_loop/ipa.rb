@@ -71,6 +71,22 @@ module RunLoop
       app.distribution_signed?
     end
 
+    # @!visibility private
+    def marketing_version
+      app.marketing_version
+    end
+
+    # See #marketing_version
+    alias_method :short_bundle_version, :marketing_version
+
+    # @!visibility private
+    def build_version
+      app.build_version
+    end
+
+    # See #build_version
+    alias_method :bundle_version, :build_version
+
     private
 
     # @!visibility private
