@@ -130,6 +130,67 @@ Bundle must:
       RunLoop::Codesign.distribution?(path)
     end
 
+    # Returns the CFBundleShortVersionString of the app as Version instance.
+    #
+    # Apple docs:
+    #
+    # CFBundleShortVersionString specifies the release version number of the
+    # bundle, which identifies a released iteration of the app. The release
+    # version number is a string comprised of three period-separated integers.
+    #
+    # The first integer represents major revisions to the app, such as revisions
+    # that implement new features or major changes. The second integer denotes
+    # revisions that implement less prominent features. The third integer
+    # represents maintenance releases.
+    #
+    # The value for this key differs from the value for CFBundleVersion, which
+    # identifies an iteration (released or unreleased) of the app. This key can
+    # be localized by including it in your InfoPlist.strings files.
+    #
+    # @return [RunLoop::Version, nil] Returns a Version instance if the
+    #  CFBundleShortVersion string is well formed and nil if not.
+    def marketing_version
+      string = plist_buddy.plist_read("CFBundleShortVersionString", info_plist_path)
+      begin
+        version = RunLoop::Version.new(string)
+      rescue
+        RunLoop.log_debug("Could not create Version instance from #{string}.")
+        version = nil
+      end
+      version
+    end
+
+    # See #marketing_version
+    alias_method :short_bundle_version, :marketing_version
+
+    # Returns the CFBundleVersionString of the app as Version instance.
+    #
+    # Apple docs:
+    #
+    # CFBundleVersion specifies the build version number of the bundle, which
+    # identifies an iteration (released or unreleased) of the bundle. The build
+    # version number should be a string comprised of three non-negative,
+    # period-separated integers with the first integer being greater than zero.
+    # The string should only contain numeric (0-9) and period (.) characters.
+    # Leading zeros are truncated from each integer and will be ignored (that
+    # is, 1.02.3 is equivalent to 1.2.3).
+    #
+    # @return [RunLoop::Version, nil] Returns a Version instance if the
+    #  CFBundleVersion string is well formed and nil if not.
+    def build_version
+      string = plist_buddy.plist_read("CFBundleVersionString", info_plist_path)
+      begin
+        version = RunLoop::Version.new(string)
+      rescue
+        RunLoop.log_debug("Could not create Version instance from #{string}.")
+        version = nil
+      end
+      version
+    end
+
+    # See #build_version
+    alias_method :bundle_version, :build_version
+
     # @!visibility private
     # Collects the paths to executables in the bundle.
     def executables

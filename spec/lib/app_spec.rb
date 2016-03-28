@@ -208,6 +208,50 @@ describe RunLoop::App do
     end
   end
 
+  describe "#marketing_version" do
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+    let(:args) { ["CFBundleShortVersionString", app.info_plist_path] }
+
+    before do
+      allow(app).to receive(:plist_buddy).and_return(pbuddy)
+    end
+
+    it "valid CFBundleShortVersionString" do
+      expect(pbuddy).to receive(:plist_read).with(*args).twice.and_return("8.0")
+
+      expect(app.marketing_version).to be == RunLoop::Version.new("8.0")
+      expect(app.short_bundle_version).to be == RunLoop::Version.new("8.0")
+    end
+
+    it "invalid CFBundleShortVersionString" do
+      expect(pbuddy).to receive(:plist_read).with(*args).and_return("a.b.c")
+
+      expect(app.marketing_version).to be == nil
+    end
+  end
+
+  describe "#build_version" do
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+    let(:args) { ["CFBundleVersionString", app.info_plist_path] }
+
+    before do
+      allow(app).to receive(:plist_buddy).and_return(pbuddy)
+    end
+
+    it "valid CFBundleVersionString" do
+      expect(pbuddy).to receive(:plist_read).with(*args).twice.and_return("8.0")
+
+      expect(app.build_version).to be == RunLoop::Version.new("8.0")
+      expect(app.bundle_version).to be == RunLoop::Version.new("8.0")
+    end
+
+    it "invalid CFBundleShortVersionString" do
+      expect(pbuddy).to receive(:plist_read).with(*args).and_return("a.b.c")
+
+      expect(app.build_version).to be == nil
+    end
+  end
+
   describe "#simulator_app?" do
     it "false" do
       expect(app).to receive(:arches).twice.and_return(["arm64", "armv7"])
