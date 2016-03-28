@@ -167,7 +167,7 @@ class RunLoop::CoreSimulator
   #
   # @param [RunLoop::Device] simulator The simulator to erase
   # @param [Hash] options Control the behavior of the method.
-  # @option options [Numeric] :timout (180) How long tow wait for simctl to
+  # @option options [Numeric] :timeout (180) How long tow wait for simctl to
   #   shutdown and erase the simulator.  The timeout is apply separately to
   #   each command.
   #
