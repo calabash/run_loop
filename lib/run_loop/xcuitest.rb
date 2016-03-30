@@ -32,6 +32,14 @@ module RunLoop
       @device = device
     end
 
+    def to_s
+      "#<XCUITest #{url} : #{bundle_id} : #{device}>"
+    end
+
+    def inspect
+      to_s
+    end
+
     # @!visibility private
     def bundle_id
       @bundle_id
