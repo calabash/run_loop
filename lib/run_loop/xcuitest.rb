@@ -224,9 +224,12 @@ module RunLoop
         # anything special about physical devices?
       end
 
+      start = Time.now
       pid = xcodebuild
       RunLoop.log_debug("Waiting for CBX-Runner to build...")
       health
+
+      RunLoop.log_debug("Took #{Time.now - start} seconds to build and launch")
       pid.to_i
     end
 
