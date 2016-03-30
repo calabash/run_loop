@@ -7,7 +7,8 @@ module RunLoop
     DEFAULTS = {
       :port => 27753,
       :simulator_ip => "127.0.0.1",
-      :http_timeout => RunLoop::Environment.ci? ? 120 : 60
+      :http_timeout => RunLoop::Environment.ci? ? 120 : 60,
+      :version => "1.0"
     }
 
     # @!visibility private
@@ -166,8 +167,18 @@ module RunLoop
     end
 
     # @!visibility private
+    def versioned_route(route)
+      if ["health", "ping", "sessionIdentifier"].include?(route)
+        route
+      else
+        "#{DEFAULTS[:version]}/#{route}"
+      end
+    end
+
+    # @!visibility private
     def request(route, parameters={})
-      RunLoop::HTTP::Request.request(route, parameters)
+      versioned = versioned_route(route)
+      RunLoop::HTTP::Request.request(versioned, parameters)
     end
 
     # @!visibility private
