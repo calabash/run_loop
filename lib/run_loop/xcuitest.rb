@@ -10,6 +10,35 @@ module RunLoop
       :http_timeout => RunLoop::Environment.ci? ? 120 : 60
     }
 
+    # @!visibility private
+    def self.run(options={})
+      # logger = options[:logger]
+      simctl = options[:sim_control] || options[:simctl] || RunLoop::SimControl.new
+      xcode = options[:xcode] || RunLoop::Xcode.new
+      instruments = options[:instruments] || RunLoop::Instruments.new
+
+      # Find the Device under test, the App under test, UIA strategy, and reset options
+      device = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+      app_details = RunLoop::DetectAUT.detect_app_under_test(options)
+      reset_options = RunLoop::Core.send(:detect_reset_options, options)
+
+      app = app_details[:app]
+      bundle_id = app_details[:bundle_id]
+
+      if device.simulator? && app
+        core_sim = RunLoop::CoreSimulator.new(device, app, :xcode => xcode)
+        if reset_options
+          core_sim.reset_app_sandbox
+        end
+
+        simctl.ensure_software_keyboard(device)
+        core_sim.install
+      end
+
+      xcuitest = RunLoop::XCUITest.new(bundle_id, device)
+      xcuitest.launch
+      xcuitest
+    end
 
     # @!visibility private
     def self.log_file
