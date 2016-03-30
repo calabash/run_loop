@@ -234,7 +234,7 @@ module RunLoop
     end
 
     # @!visibility private
-    def launch_aut(bundle_id=bundle_id)
+    def launch_aut(bundle_id = @bundle_id)
       client = client(http_options)
       request = request("session", {:bundleID => bundle_id})
 
