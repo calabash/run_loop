@@ -25,6 +25,43 @@ describe RunLoop::XCUITest do
     expect(xcuitest.launch).to be_truthy
   end
 
+  describe "#running?" do
+    let(:options) { xcuitest.send(:ping_options) }
+    it "returns health if running" do
+      body = { :health => "good" }
+      expect(xcuitest).to receive(:health).with(options).and_return(body)
+
+      expect(xcuitest.running?).to be == body
+    end
+
+    it "returns nil if not running" do
+      expect(xcuitest).to receive(:health).with(options).and_raise(RuntimeError)
+
+      expect(xcuitest.running?).to be == nil
+    end
+  end
+
+  describe "#stop" do
+    it "returns shutdown if running" do
+      body = { :health => "shutting down" }
+      expect(xcuitest).to receive(:shutdown).and_return(body)
+
+      expect(xcuitest.stop).to be == body
+    end
+
+    it "returns nil if not running" do
+      expect(xcuitest).to receive(:shutdown).and_raise(RuntimeError)
+
+      expect(xcuitest.stop).to be == nil
+    end
+  end
+
+  it "#launch_other_app" do
+    expect(xcuitest).to receive(:launch_aut).with(bundle_id).and_return(true)
+
+    expect(xcuitest.launch_other_app(bundle_id)).to be_truthy
+  end
+
   describe "#workspace" do
     it "raises an error if CBXWS is not defined" do
       expect(RunLoop::Environment).to receive(:cbxws).and_return(nil)

@@ -63,6 +63,29 @@ module RunLoop
       true
     end
 
+    # @!visibility private
+    def running?
+      begin
+        health(ping_options)
+      rescue => _
+        nil
+      end
+    end
+
+    # @!visibility private
+    def stop
+      begin
+        shutdown
+      rescue => _
+        nil
+      end
+    end
+
+    # @!visibility private
+    def launch_other_app(bundle_id)
+      launch_aut(bundle_id)
+    end
+
     private
 
     # @!visibility private
@@ -140,10 +163,10 @@ module RunLoop
     end
 
     # @!visibility private
-    def health
-      options = http_options
+    def health(options={})
+      merged_options = http_options.merge(options)
       request = request("health")
-      client = client(options)
+      client = client(merged_options)
       response = client.get(request)
       RunLoop.log_debug("CBX-Runner driver says, \"#{response.body}\"")
       response.body
@@ -200,7 +223,7 @@ module RunLoop
     end
 
     # @!visibility private
-    def launch_aut
+    def launch_aut(bundle_id=bundle_id)
       client = client(http_options)
       request = request("session", {:bundleID => bundle_id})
 
