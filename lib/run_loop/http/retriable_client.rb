@@ -101,6 +101,10 @@ module RunLoop
         request(request, :post, options)
       end
 
+      def delete(request, options={})
+        request(request, :delete, options)
+      end
+
       private
 
       def request(request, request_method, options={})
