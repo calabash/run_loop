@@ -127,8 +127,15 @@ end
 
 def holmes(bundle_id="com.apple.Preferences")
   device = RunLoop::Device.detect_device({}, xcode, simcontrol, instruments)
-  xcuitest = RunLoop::XCUITest.new(bundle_id, device)
-  xcuitest.launch
+  options = {
+    :device => device.udid,
+    :xcuitest => true,
+    :xcode => xcode,
+    :simctl => simcontrol,
+    :instruments => instruments,
+    :app => bundle_id
+  }
+  RunLoop.run(options)
 end
 
 verbose
