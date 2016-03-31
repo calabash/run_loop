@@ -130,29 +130,29 @@ describe RunLoop::XCUITest do
     expect(xcuitest.send(:request, route, parameters)).to be_a_kind_of(RunLoop::HTTP::Request)
   end
 
-  describe "shutdown" do
-    let(:options) { xcuitest.send(:ping_options) }
-    let(:client) { xcuitest.send(:client, options) }
-    let(:request) { xcuitest.send(:request, "shutdown") }
-
-    before do
-      expect(xcuitest).to receive(:client).with(options).and_return(client)
-      expect(xcuitest).to receive(:request).with("shutdown").and_return(request)
-    end
-
-    it "can connect" do
-      expect(client).to receive(:post).with(request).and_return(response)
-
-      expect(xcuitest.send(:shutdown)).to be == response.body
-    end
-
-    it "cannot connect" do
-      expect(client).to receive(:post).with(request).and_raise(StandardError,
-                                                               "Could not connect")
-
-      expect(xcuitest.send(:shutdown)).to be == nil
-    end
-  end
+  # describe "shutdown" do
+  #   let(:options) { xcuitest.send(:ping_options) }
+  #   let(:client) { xcuitest.send(:client, options) }
+  #   let(:request) { xcuitest.send(:request, "shutdown") }
+  #
+  #   before do
+  #     expect(xcuitest).to receive(:client).with(options).and_return(client)
+  #     expect(xcuitest).to receive(:request).with("shutdown").and_return(request)
+  #   end
+  #
+  #   it "can connect" do
+  #     expect(client).to receive(:post).with(request).and_return(response)
+  #
+  #     expect(xcuitest.send(:shutdown)).to be == response.body
+  #   end
+  #
+  #   it "cannot connect" do
+  #     expect(client).to receive(:post).with(request).and_raise(StandardError,
+  #                                                              "Could not connect")
+  #
+  #     expect(xcuitest.send(:shutdown)).to be == nil
+  #   end
+  # end
 
   describe "health" do
     let(:options) { xcuitest.send(:http_options) }

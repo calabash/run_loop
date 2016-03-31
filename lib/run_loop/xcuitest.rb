@@ -3,6 +3,8 @@ module RunLoop
   # @!visibility private
   class XCUITest
 
+    class HTTPError < RuntimeError; end
+
     # @!visibility private
     DEFAULTS = {
       :port => 27753,
@@ -124,6 +126,55 @@ module RunLoop
       launch_aut(bundle_id)
     end
 
+    # @!visibility private
+    def query(mark)
+      options = http_options
+      parameters = { :text => mark }
+      request = request("query", parameters)
+      client = client(options)
+      response = client.post(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def tap_mark(mark)
+      options = http_options
+      parameters = {
+        :gesture => "tap",
+        :text => mark
+      }
+      request = request("gesture", parameters)
+      client(options)
+      response = client.post(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def tap_coordinate(x, y)
+      options = http_options
+      parameters = {
+        :gesture => "tap_coordinate",
+        :coordinate => {x: x, y: y}
+      }
+      request = request("gesture", parameters)
+      client(options)
+      response = client.post(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def tap_query_result(hash)
+      rect = hash["rect"]
+      h = rect["height"]
+      w = rect["width"]
+      x = rect["x"]
+      y = rect["y"]
+
+      touchx = x + (h/2)
+      touchy = y + (w/2)
+      tap_coordinate(touchx, touchy)
+    end
+
     private
 
     # @!visibility private
@@ -196,14 +247,41 @@ module RunLoop
     end
 
     # @!visibility private
+    def session_delete
+      options = ping_options
+      request = request("delete")
+      client = client(options)
+      begin
+        response = client.delete(request)
+        body = expect_200_response(response)
+        RunLoop.log_debug("CBX-Runner says, #{body}")
+        body
+      rescue => e
+        RunLoop.log_debug("CBX-Runner session delete error: #{e}")
+        nil
+      end
+    end
+
+    # @!visibility private
+    # TODO expect 200 response and parse body (atm the body in not valid JSON)
     def shutdown
+      session_delete
       options = ping_options
       request = request("shutdown")
       client = client(options)
       begin
         response = client.post(request)
-        RunLoop.log_debug("CBX-Runner says, \"#{response.body}\"")
-        response.body
+        body = response.body
+        RunLoop.log_debug("CBX-Runner says, \"#{body}\"")
+        5.times do
+          begin
+            health
+            sleep(0.2)
+          rescue => _
+            break
+          end
+        end
+        body
       rescue => e
         RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
         nil
@@ -211,13 +289,15 @@ module RunLoop
     end
 
     # @!visibility private
+    # TODO expect 200 response and parse body (atm the body is not valid JSON)
     def health(options={})
       merged_options = http_options.merge(options)
       request = request("health")
       client = client(merged_options)
       response = client.get(request)
-      RunLoop.log_debug("CBX-Runner driver says, \"#{response.body}\"")
-      response.body
+      body = response.body
+      RunLoop.log_debug("CBX-Runner driver says, \"#{body}\"")
+      body
     end
 
     # @!visibility private
@@ -228,7 +308,8 @@ module RunLoop
         "-scheme", "CBXAppStub",
         "-workspace", workspace,
         "-config", "Debug",
-        "-destination", "id=#{device.udid}",
+        "-destination",
+        "id=#{device.udid}",
         "clean",
         "test"
       ]
@@ -285,7 +366,7 @@ module RunLoop
         if device.simulator?
           device.simulator_wait_for_stable_state
         end
-        response.body
+        expect_200_response(response)
       rescue => e
         raise e.class, %Q[Could not launch #{bundle_id} on #{device}:
 
@@ -294,6 +375,31 @@ module RunLoop
 Something went wrong.
 ]
       end
+    end
+
+    # @!visibility private
+    def response_body_to_hash(response)
+      body = response.body
+      begin
+        JSON.parse(body)
+      rescue TypeError, JSON::ParserError => _
+        raise RunLoop::XCUITest::HTTPError,
+              "Could not parse response '#{body}'; the app has probably crashed"
+      end
+    end
+
+    # @!visibility private
+    def expect_200_response(response)
+      body = response_body_to_hash(response)
+      return body if response.status_code < 300
+
+      raise RunLoop::XCUITest::HTTPError,
+        %Q[Expected status code < 200, found #{response.status_code}.
+
+Server replied with:
+
+#{body}
+]
     end
 
     # @!visibility private
