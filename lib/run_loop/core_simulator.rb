@@ -94,6 +94,9 @@ class RunLoop::CoreSimulator
               # launchd_sim process.
               ['launchd_sim', false],
 
+              # Required for XCUITest termination; the simulator hangs otherwise.
+              ["xpcproxy", false],
+
               # assetsd instances clobber each other and are not properly
               # killed when quiting the simulator.
               ['assetsd', false],
