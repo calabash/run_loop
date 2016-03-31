@@ -18,8 +18,16 @@ recommend that all users run:
 $ DEBUG=1 run-loop simctl doctor
 ```
 
-We apologize for the inconvenience.
+I apologize for the inconvenience, this mistake is on me. -jjm
 
+* Experimental interface for launching CBX-Runner and sending commands
+  #423
+* App and Ipa can return version info #422
+* CLI: simctl doctor erases sims first #421
+* Improve installed app check for Xcode 7 simulators #420
+* Instruments#kill\_instruments no longer branches on Xcode version #420
+* CoreSim#launch - retry on errors #418
+* Interface for launching CBX-Runner #417
 * Core.run\_with\_options improve the way AUT and DUT are inferred #414
 * Core.detecti\_uia\_strategy given options and RunLoop::Device #413
 * DetectAUT.detect\_app\_under\_test #412
