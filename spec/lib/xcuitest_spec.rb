@@ -2,64 +2,172 @@
 describe RunLoop::XCUITest do
 
   let(:bundle_id) { "com.apple.Preferences" }
-  let(:xcuitest) { RunLoop::XCUITest.new(bundle_id) }
+  let(:device) { Resources.shared.default_simulator }
+  let(:xcuitest) { RunLoop::XCUITest.new(bundle_id, device) }
+
+  let(:response) do
+    Class.new do
+      def body; "body"; end
+      def to_s; "#<HTTP::Response: #{body}>" ; end
+      def inspect; to_s; end
+    end.new
+  end
 
   it ".new" do
     expect(xcuitest.instance_variable_get(:@bundle_id)).to be == bundle_id
+    expect(xcuitest.instance_variable_get(:@device)).to be == device
   end
 
-  describe ".workspace" do
-    describe "return nil" do
-      it "XCUITEST_WORKSPACE is not defined" do
-        stub_env({"XCUITEST_WORKSPACE" => nil})
+  it "#launch" do
+    expect(xcuitest).to receive(:launch_cbx_runner).and_return(true)
+    expect(xcuitest).to receive(:launch_aut).and_return(true)
 
-        expect(RunLoop::XCUITest.workspace).to be == nil
-      end
+    expect(xcuitest.launch).to be_truthy
+  end
 
-      it "XCUITEST_PROJ is ''" do
-        stub_env({"XCUITEST_WORKSPACE" => ""})
+  describe "#running?" do
+    let(:options) { xcuitest.send(:ping_options) }
+    it "returns health if running" do
+      body = { :health => "good" }
+      expect(xcuitest).to receive(:health).with(options).and_return(body)
 
-        expect(RunLoop::XCUITest.workspace).to be == nil
-      end
+      expect(xcuitest.running?).to be == body
     end
 
-    it "returns the path to the xcproj" do
-      path = "path/to/xcodeproj"
-      stub_env({"XCUITEST_WORKSPACE" => path})
+    it "returns nil if not running" do
+      expect(xcuitest).to receive(:health).with(options).and_raise(RuntimeError)
 
-      expect(RunLoop::XCUITest.workspace).to be == path
+      expect(xcuitest.running?).to be == nil
+    end
+  end
+
+  describe "#stop" do
+    it "returns shutdown if running" do
+      body = { :health => "shutting down" }
+      expect(xcuitest).to receive(:shutdown).and_return(body)
+
+      expect(xcuitest.stop).to be == body
+    end
+
+    it "returns nil if not running" do
+      expect(xcuitest).to receive(:shutdown).and_raise(RuntimeError)
+
+      expect(xcuitest.stop).to be == nil
+    end
+  end
+
+  it "#launch_other_app" do
+    expect(xcuitest).to receive(:launch_aut).with(bundle_id).and_return(true)
+
+    expect(xcuitest.launch_other_app(bundle_id)).to be_truthy
+  end
+
+  describe "#workspace" do
+    it "raises an error if CBXWS is not defined" do
+      expect(RunLoop::Environment).to receive(:cbxws).and_return(nil)
+
+      expect do
+        xcuitest.workspace
+      end.to raise_error RuntimeError, /TODO: figure out how to distribute the CBX-Runner/
+    end
+
+    it "returns the path to the CBXDriver.xcworkspace" do
+      path = "path/to/CBXDriver.xcworkspace"
+      expect(RunLoop::Environment).to receive(:cbxws).and_return(path)
+
+      expect(xcuitest.workspace).to be == path
     end
   end
 
   describe "#url" do
-    let(:device) { RunLoop::Device.new("denis", "9.0", "udid") }
-
     it "uses 127.0.0.1 for simulator targets" do
       expect(device).to receive(:simulator?).at_least(:once).and_return(true)
-      expect(xcuitest).to receive(:target).and_return(device)
 
-      actual = xcuitest.url
-      expected = "http://127.0.0.1:27753"
+      actual = xcuitest.send(:url)
+      expected = "http://127.0.0.1:27753/"
       expect(actual).to be == expected
+      expect(xcuitest.instance_variable_get(:@url)).to be == expected
     end
   end
 
-  describe "#target" do
-    it "raises an error if no device can be found" do
-      expect(RunLoop::Device).to receive(:device_with_identifier).and_return(nil)
+  it "#server" do
+    url = "http://example.com"
+    expect(xcuitest).to receive(:url).and_return(url)
 
-      expect do
-        xcuitest.target
-      end.to raise_error RuntimeError, /Could not find a device/
+    actual = xcuitest.send(:server)
+    expect(actual).to be_a_kind_of(RunLoop::HTTP::Server)
+    expect(xcuitest.instance_variable_get(:@server)).to be == actual
+    expect(xcuitest.send(:server)).to be == actual
+  end
+
+  it "#client" do
+    options = { :timeout => 5 }
+    server = xcuitest.send(:server)
+    expect(RunLoop::HTTP::RetriableClient).to receive(:new).with(server, options).and_call_original
+
+    expect(xcuitest.send(:client, options)).to be_a_kind_of(RunLoop::HTTP::RetriableClient)
+  end
+
+  describe "#versioned_route" do
+    it "exceptions" do
+      expect(xcuitest.send(:versioned_route, "health")).to be == "health"
+      expect(xcuitest.send(:versioned_route, "ping")).to be == "ping"
+      expect(xcuitest.send(:versioned_route, "sessionIdentifier")).to be == "sessionIdentifier"
     end
 
-    it "uses the default simulator if DEVICE_TARGET is undefined" do
-      expect(RunLoop::Environment).to receive(:device_target).and_return(nil)
+    it "any other route" do
+      stub_const("RunLoop::XCUITest::DEFAULTS", {:version => "0.1"})
+      expect(xcuitest.send(:versioned_route, "route")).to be == "0.1/route"
+    end
+  end
 
-      actual = xcuitest.target
-      default = RunLoop::Core.default_simulator
+  it "#request" do
+    parameters = {:a => "a", :b => "b"}
+    route = "route"
+    expect(xcuitest).to receive(:versioned_route).with(route).and_return(route)
+    expect(RunLoop::HTTP::Request).to receive(:request).with(route, parameters).and_call_original
 
-      expect(default[/#{actual.name}/, 0]).to be_truthy
+    expect(xcuitest.send(:request, route, parameters)).to be_a_kind_of(RunLoop::HTTP::Request)
+  end
+
+  # describe "shutdown" do
+  #   let(:options) { xcuitest.send(:ping_options) }
+  #   let(:client) { xcuitest.send(:client, options) }
+  #   let(:request) { xcuitest.send(:request, "shutdown") }
+  #
+  #   before do
+  #     expect(xcuitest).to receive(:client).with(options).and_return(client)
+  #     expect(xcuitest).to receive(:request).with("shutdown").and_return(request)
+  #   end
+  #
+  #   it "can connect" do
+  #     expect(client).to receive(:post).with(request).and_return(response)
+  #
+  #     expect(xcuitest.send(:shutdown)).to be == response.body
+  #   end
+  #
+  #   it "cannot connect" do
+  #     expect(client).to receive(:post).with(request).and_raise(StandardError,
+  #                                                              "Could not connect")
+  #
+  #     expect(xcuitest.send(:shutdown)).to be == nil
+  #   end
+  # end
+
+  describe "health" do
+    let(:options) { xcuitest.send(:http_options) }
+    let(:client) { xcuitest.send(:client, options) }
+    let(:request) { xcuitest.send(:request, "health") }
+
+    before do
+      expect(xcuitest).to receive(:client).with(options).and_return(client)
+      expect(xcuitest).to receive(:request).with("health").and_return(request)
+    end
+
+    it "succeeds" do
+      expect(client).to receive(:get).with(request).and_return(response)
+
+      expect(xcuitest.send(:health)).to be == response.body
     end
   end
 

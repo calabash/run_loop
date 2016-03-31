@@ -57,7 +57,7 @@ class RunLoop::CoreSimulator
               # This process is a daemon, and requires 'KILL' to terminate.
               # Killing the process is fast, but it takes a long time to
               # restart.
-              # ['com.apple.CoreSimulator.CoreSimulatorService', false],
+              ['com.apple.CoreSimulator.CoreSimulatorService', false],
 
               # Probably do not need to quit this, but it is tempting to do so.
               #['com.apple.CoreSimulator.SimVerificationService', false],
@@ -93,6 +93,12 @@ class RunLoop::CoreSimulator
               # is a first pass at investigating what it would mean to kill the
               # launchd_sim process.
               ['launchd_sim', false],
+
+              # Required for XCUITest termination; the simulator hangs otherwise.
+              ["xpcproxy", false],
+
+              # Causes crash reports on Xcode < 7.0
+              ["apsd", true],
 
               # assetsd instances clobber each other and are not properly
               # killed when quiting the simulator.
@@ -167,7 +173,7 @@ class RunLoop::CoreSimulator
   #
   # @param [RunLoop::Device] simulator The simulator to erase
   # @param [Hash] options Control the behavior of the method.
-  # @option options [Numeric] :timout (180) How long tow wait for simctl to
+  # @option options [Numeric] :timeout (180) How long tow wait for simctl to
   #   shutdown and erase the simulator.  The timeout is apply separately to
   #   each command.
   #
@@ -393,25 +399,46 @@ $ bundle exec run-loop simctl manage-processes
     # relaunch it.
     launch_simulator
 
-    args = ['simctl', 'launch', device.udid, app.bundle_identifier]
-    timeout = DEFAULT_OPTIONS[:launch_app_timeout]
-    hash = xcrun.exec(args, log_cmd: true, timeout: timeout)
+    tries = RunLoop::Environment.ci? ? 5 : 3
+    last_error = nil
 
-    exit_status = hash[:exit_status]
+    RunLoop.log_debug("Trying #{tries} times to launch #{app.bundle_identifier} on #{device}")
 
-    if exit_status != 0
-      RunLoop.log_error(hash[:out])
-      raise RuntimeError, "Could not launch #{app.bundle_identifier} on #{device}"
+    tries.times do
+      hash = launch_app_with_simctl
+      exit_status = hash[:exit_status]
+      if exit_status != 0
+        RunLoop.log_debug("Failed to launch app.")
+        out.split($-0).each do |line|
+          RunLoop.log_debug("    #{line}")
+        end
+        # Simulator is probably in a bad state, but this will be super disruptive.
+        # Let's try a softer approach first - sleep.
+        # self.terminate_core_simulator_processes
+        sleep(0.5)
+        last_error = out
+      else
+        last_error = nil
+        break
+      end
+    end
+
+    if last_error
+      raise RuntimeError, %Q[Could not launch #{app.bundle_identifier} on #{device}
+
+#{last_error}
+
+]
     end
 
     options = {
-          :timeout => 10,
-          :raise_on_timeout => true
+      :timeout => 10,
+      :raise_on_timeout => true
     }
 
     RunLoop::ProcessWaiter.new(app.executable_name, options).wait_for_any
-
     device.simulator_wait_for_stable_state
+
     true
   end
 
@@ -508,11 +535,9 @@ $ bundle exec run-loop simctl manage-processes
   def sim_name
     @sim_name ||= lambda {
       if xcode.version_gte_7?
-        'Simulator'
-      elsif xcode.version_gte_6?
-        'iOS Simulator'
+        "Simulator"
       else
-        'iPhone Simulator'
+        "iOS Simulator"
       end
     }.call
   end
@@ -527,10 +552,8 @@ $ bundle exec run-loop simctl manage-processes
       dev_dir = xcode.developer_dir
       if xcode.version_gte_7?
         "#{dev_dir}/Applications/Simulator.app"
-      elsif xcode.version_gte_6?
-        "#{dev_dir}/Applications/iOS Simulator.app"
       else
-        "#{dev_dir}/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app"
+        "#{dev_dir}/Applications/iOS Simulator.app"
       end
     }.call
   end
@@ -590,6 +613,13 @@ Command had no output
 
     device.simulator_wait_for_stable_state
     installed_app_bundle_dir
+  end
+
+  # @!visibility private
+  def launch_app_with_simctl
+    args = ['simctl', 'launch', device.udid, app.bundle_identifier]
+    timeout = DEFAULT_OPTIONS[:launch_app_timeout]
+    xcrun.exec(args, log_cmd: true, timeout: timeout)
   end
 
   # Required for support of iOS 7 CoreSimulators.  Can be removed when
@@ -720,15 +750,20 @@ Command had no output
   def installed_app_bundle_dir
     sim_app_dir = device_applications_dir
     return nil if !File.exist?(sim_app_dir)
-    Dir.glob("#{sim_app_dir}/**/*.app").find do |path|
-      RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
+
+    if xcode.version_gte_7?
+      simctl = RunLoop::Simctl.new(device)
+      simctl.app_container(app.bundle_identifier)
+    else
+      Dir.glob("#{sim_app_dir}/**/*.app").find do |path|
+        RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
+      end
     end
   end
 
   # 1. Does nothing if the app is not installed.
   # 2. Does nothing if the app the same as the app that is installed
   # 3. Installs app if it is different from the installed app
-  #
   def ensure_app_same
     installed_app_bundle = installed_app_bundle_dir
 

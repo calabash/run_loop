@@ -4,6 +4,24 @@ module RunLoop
   module DetectAUT
 
     # @!visibility private
+    def self.detect_app_under_test(options)
+      app = self.detect_app(options)
+      if app.is_a?(RunLoop::App) || app.is_a?(RunLoop::Ipa)
+        {
+          :app => app,
+          :bundle_id => app.bundle_identifier,
+          :is_ipa => app.is_a?(RunLoop::Ipa)
+        }
+      else
+        {
+          :app => nil,
+          :bundle_id => app,
+          :is_ipa => false
+        }
+      end
+    end
+
+    # @!visibility private
     class Detect
       include RunLoop::DetectAUT::Errors
       include RunLoop::DetectAUT::XamarinStudio
@@ -101,6 +119,60 @@ module RunLoop
         Array.new(search_depth) do |depth|
           File.join(base_dir, *Array.new(depth) { |_| "*"}, "*.app")
         end
+      end
+    end
+
+    private
+
+    # @!visibility private
+    def self.app_from_options(options)
+      options[:app] || options[:bundle_id]
+    end
+
+    # @!visibility private
+    def self.app_from_environment
+      RunLoop::Environment.path_to_app_bundle ||
+        RunLoop::Environment.bundle_id
+    end
+
+    # @!visibility private
+    def self.app_from_constant
+      (defined?(APP_BUNDLE_PATH) && APP_BUNDLE_PATH) ||
+        (defined?(APP) && APP)
+    end
+
+    # @!visibility private
+    def self.app_from_opts_or_env_or_constant(options)
+       self.app_from_options(options) ||
+         self.app_from_environment ||
+         self.app_from_constant
+    end
+
+    # @!visibility private
+    def self.detector
+      RunLoop::DetectAUT::Detect.new
+    end
+
+    # @!visibility private
+    def self.detect_app(options)
+      app = self.app_from_opts_or_env_or_constant(options)
+
+      # Options or constant defined an instance of App or Ipa
+      return app if app && (app.is_a?(RunLoop::App) || app.is_a?(RunLoop::Ipa))
+
+      # User provided no information, so we attempt to auto detect
+      if app.nil? || app == ""
+        return self.detector.app_for_simulator
+      end
+
+      extension = File.extname(app)
+      if extension == ".ipa" && File.exist?(app)
+        RunLoop::Ipa.new(app)
+      elsif extension == ".app" && File.exist?(app)
+        RunLoop::App.new(app)
+      else
+        # Probably a bundle identifier.
+        app
       end
     end
   end

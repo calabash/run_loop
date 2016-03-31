@@ -52,20 +52,78 @@ describe RunLoop::Environment do
     end
   end
 
-  it ".device_target" do
-    stub_env({"DEVICE_TARGET" => "target"})
-    expect(RunLoop::Environment.device_target).to be == "target"
+  describe ".device_target" do
+    it "returns DEVICE_TARGET" do
+      stub_env({"DEVICE_TARGET" => "target"})
+      expect(RunLoop::Environment.device_target).to be == "target"
+    end
+
+    describe "returns nil" do
+      it "is undefined" do
+        stub_env({"DEVICE_TARGET" => nil})
+        expect(RunLoop::Environment.device_target).to be == nil
+      end
+
+      it "is the empty string" do
+        stub_env({"DEVICE_TARGET" => ""})
+        expect(RunLoop::Environment.device_target).to be == nil
+      end
+    end
   end
 
-  it ".device_endpoint" do
-    url = "http://denis.local:27753"
-    stub_env({"DEVICE_ENDPOINT" => url})
-    expect(RunLoop::Environment.device_endpoint).to be == url
+  describe ".device_endpoint" do
+    it "returns DEVICE_ENDPOINT" do
+      url = "http://denis.local:27753"
+      stub_env({"DEVICE_ENDPOINT" => url})
+      expect(RunLoop::Environment.device_endpoint).to be == url
+    end
+
+    describe "returns nil" do
+      it "is undefined" do
+        stub_env({"DEVICE_ENDPOINT" => nil})
+        expect(RunLoop::Environment.device_endpoint).to be == nil
+      end
+
+      it "is the empty string" do
+        stub_env({"DEVICE_ENDPOINT" => ""})
+        expect(RunLoop::Environment.device_endpoint).to be == nil
+      end
+    end
   end
 
-  it '.trace_template' do
-    stub_env('TRACE_TEMPLATE', '/my/tracetemplate')
-    expect(RunLoop::Environment.trace_template).to be == '/my/tracetemplate'
+  describe ".reset_between_scenarios?" do
+    it "true" do
+      stub_env({"RESET_BETWEEN_SCENARIOS" => "1"})
+      expect(RunLoop::Environment.reset_between_scenarios?).to be_truthy
+    end
+
+    it "false" do
+      stub_env({"RESET_BETWEEN_SCENARIOS" => ""})
+      expect(RunLoop::Environment.reset_between_scenarios?).to be_falsey
+
+      stub_env({"RESET_BETWEEN_SCENARIOS" => 1})
+      expect(RunLoop::Environment.reset_between_scenarios?).to be_falsey
+    end
+  end
+
+  describe '.trace_template' do
+    it "returns TRACE_TEMPLATE expanded" do
+      stub_env('TRACE_TEMPLATE', './my/tracetemplate')
+      expected = File.join(Dir.pwd, "my", "tracetemplate")
+      expect(RunLoop::Environment.trace_template).to be == expected
+    end
+
+    describe "returns nil" do
+      it "is undefined" do
+        stub_env({'TRACE_TEMPLATE' => nil})
+        expect(RunLoop::Environment.trace_template).to be == nil
+      end
+
+      it "is the empty string" do
+        stub_env({'TRACE_TEMPLATE' => ""})
+        expect(RunLoop::Environment.trace_template).to be == nil
+      end
+    end
   end
 
   describe '.uia_timeout' do
@@ -445,6 +503,38 @@ describe RunLoop::Environment do
         stub_env({"CI" => ""})
 
         expect(RunLoop::Environment.send(:ci_var_defined?)).to be == false
+      end
+    end
+  end
+
+  describe "CBXWS" do
+    it "not defined" do
+      stub_env({"CBXWS" => nil})
+
+      expect(RunLoop::Environment.send(:cbxws)).to be_falsey
+    end
+
+    describe "defined" do
+      let(:path) { "path/to/CBXDriver.xcworkspace" }
+      let(:expanded) { "/#{path}" }
+
+      before do
+        stub_env({"CBXWS" => path})
+        expect(File).to receive(:expand_path).with(path).and_return(expanded)
+      end
+
+      it "defined by path does not exist" do
+        expect(File).to receive(:directory?).with(expanded).and_return(false)
+
+        expect do
+          RunLoop::Environment.send(:cbxws)
+        end.to raise_error RuntimeError, /CBXWS is set, but there is no workspace at/
+      end
+
+      it "defined and exists" do
+        expect(File).to receive(:directory?).with(expanded).and_return(true)
+
+        expect(RunLoop::Environment.send(:cbxws)).to be == expanded
       end
     end
   end

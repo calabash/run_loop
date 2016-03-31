@@ -30,12 +30,27 @@ module RunLoop
 
     # Returns the value of DEVICE_TARGET
     def self.device_target
-      ENV["DEVICE_TARGET"]
+      value = ENV["DEVICE_TARGET"]
+      if value.nil? || value == ""
+        nil
+      else
+        value
+      end
     end
 
     # Returns the value of DEVICE_ENDPOINT
     def self.device_endpoint
-      ENV["DEVICE_ENDPOINT"]
+      value = ENV["DEVICE_ENDPOINT"]
+      if value.nil? || value == ""
+        nil
+      else
+        value
+      end
+    end
+
+    # Should the app data be reset between Scenarios?
+    def self.reset_between_scenarios?
+      ENV["RESET_BETWEEN_SCENARIOS"] == "1"
     end
 
     # Returns the value of XCODEPROJ which can be used to specify an Xcode
@@ -47,7 +62,7 @@ module RunLoop
     def self.xcodeproj
       value = ENV["XCODEPROJ"]
       if value.nil? || value == ""
-        return nil
+        nil
       else
         File.expand_path(value)
       end
@@ -84,7 +99,12 @@ module RunLoop
     # Returns the value of TRACE_TEMPLATE; the Instruments template to use
     # during testing.
     def self.trace_template
-      ENV['TRACE_TEMPLATE']
+      value = ENV['TRACE_TEMPLATE']
+      if value.nil? || value == ""
+        nil
+      else
+        File.expand_path(value)
+      end
     end
 
     # Returns the value of UIA_TIMEOUT.  Use this control how long to wait
@@ -209,6 +229,27 @@ module RunLoop
       value = ENV["CI"]
       !!value && value != ''
     end
+
+    # !@visibility private
+    # Returns the value of CBXWS.  This can be used to override the default
+    # CBXDriver.xcworkspace.  You should only set this if you are actively
+    # developing the CBXDriver.
+    def self.cbxws
+      value = ENV["CBXWS"]
+      if value.nil? || value == ""
+        nil
+      else
+        path = File.expand_path(value)
+        if !File.directory?(path)
+          raise RuntimeError, %Q[CBXWS is set, but there is no workspace at
+#{path}
+
+Only set CBXWS if you are developing new features in the CBXRunner.
+
+Check your environment.]
+        end
+        path
+      end
+    end
   end
 end
-

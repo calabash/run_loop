@@ -185,4 +185,235 @@ describe RunLoop::DetectAUT::Detect do
       expect(actual).to be == expected
     end
   end
+
+  describe "detecting the AUT" do
+    let(:app_path) { Resources.shared.app_bundle_path }
+    let(:app) { RunLoop::App.new(app_path) }
+    let(:app_bundle_id) { app.bundle_identifier }
+
+    let(:ipa_path) { Resources.shared.ipa_path }
+    let(:ipa) { RunLoop::Ipa.new(ipa_path) }
+    let(:ipa_bundle_id) { ipa.bundle_identifier }
+    let(:options) do
+      {
+        :app => app_path,
+        :bundle_id => app_bundle_id
+      }
+    end
+
+    describe ".app_from_options" do
+      it ":app" do
+        actual = RunLoop::DetectAUT.send(:app_from_options, options)
+        expect(actual).to be == options[:app]
+      end
+
+      it ":bundle_id" do
+        options[:app] = nil
+        actual = RunLoop::DetectAUT.send(:app_from_options, options)
+        expect(actual).to be == options[:bundle_id]
+      end
+    end
+
+    describe ".app_from_environment" do
+      it "APP or APP_BUNDLE_PATH" do
+        expect(RunLoop::Environment).to receive(:path_to_app_bundle).and_return(app_path)
+
+        actual = RunLoop::DetectAUT.send(:app_from_environment)
+        expect(actual).to be == app_path
+      end
+
+      it "BUNDLE_ID" do
+        expect(RunLoop::Environment).to receive(:path_to_app_bundle).and_return(nil)
+        expect(RunLoop::Environment).to receive(:bundle_id).and_return(app_bundle_id)
+
+        actual = RunLoop::DetectAUT.send(:app_from_environment)
+        expect(actual).to be == app_bundle_id
+      end
+    end
+
+    # Untestable?
+    # describe ".app_from_constant" do
+    #   let(:world_with_app) do
+    #     Class.new do
+    #       APP = Resources.shared.app_bundle_path
+    #       def self.app_from_constant
+    #         RunLoop::DetectAUT.send(:app_from_constant)
+    #       end
+    #     end
+    #   end
+    #
+    #   let(:world_with_app_bundle_path) do
+    #     Class.new do
+    #       APP_BUNDLE_PATH = Resources.shared.app_bundle_path
+    #       def self.app_from_constant
+    #         RunLoop::DetectAUT.send(:app_from_constant)
+    #       end
+    #     end
+    #   end
+    #
+    #   after do
+    #     if Object.constants.include?(world_with_app)
+    #       Object.send(:remove_const, world_with_app)
+    #     end
+    #
+    #     if Object.constants.include?(world_with_app_bundle_path)
+    #       Object.send(:remove_const, world_with_app_bundle_path)
+    #     end
+    #   end
+    #
+    #   it "APP and APP_BUNDLE_PATH not defined" do
+    #     actual = RunLoop::DetectAUT.send(:app_from_constant)
+    #     expect(actual).to be == nil
+    #   end
+    #
+    #   it "APP defined and non-nil" do
+    #     actual = world_with_app.send(:app_from_constant)
+    #     expect(actual).to be == app_path
+    #   end
+    #
+    #   it "APP_BUNDLE_PATH defined and non-nil" do
+    #     actual = world_with_app_bundle_path.send(:app_from_constant)
+    #     expect(actual).to be == app_path
+    #   end
+    # end
+
+    describe ".app_from_opts_or_env_or_constant" do
+      it "app is defined in options" do
+        expect(RunLoop::DetectAUT).to receive(:app_from_options).and_return(app)
+
+        actual = RunLoop::DetectAUT.send(:app_from_opts_or_env_or_constant, options)
+        expect(actual).to be == app
+      end
+
+      it "app is defined in environment" do
+        expect(RunLoop::DetectAUT).to receive(:app_from_options).and_return(nil)
+        expect(RunLoop::DetectAUT).to receive(:app_from_environment).and_return(app)
+
+        actual = RunLoop::DetectAUT.send(:app_from_opts_or_env_or_constant, options)
+        expect(actual).to be == app
+      end
+
+      it "app is defined as constant" do
+        expect(RunLoop::DetectAUT).to receive(:app_from_options).and_return(nil)
+        expect(RunLoop::DetectAUT).to receive(:app_from_environment).and_return(nil)
+        expect(RunLoop::DetectAUT).to receive(:app_from_constant).and_return(app)
+
+        actual = RunLoop::DetectAUT.send(:app_from_opts_or_env_or_constant, options)
+        expect(actual).to be == app
+      end
+
+      it "app is not defined anywhere" do
+        expect(RunLoop::DetectAUT).to receive(:app_from_options).and_return(nil)
+        expect(RunLoop::DetectAUT).to receive(:app_from_environment).and_return(nil)
+        expect(RunLoop::DetectAUT).to receive(:app_from_constant).and_return(nil)
+
+        actual = RunLoop::DetectAUT.send(:app_from_opts_or_env_or_constant, options)
+        expect(actual).to be == nil
+      end
+    end
+
+    describe ".detect_app" do
+      describe "defined some where" do
+        it "is an App" do
+          expect(RunLoop::DetectAUT).to receive(:app_from_opts_or_env_or_constant).with(options).and_return(app)
+
+          actual = RunLoop::DetectAUT.send(:detect_app, options)
+          expect(actual).to be == app
+        end
+
+        it "is an Ipa" do
+          expect(RunLoop::DetectAUT).to receive(:app_from_opts_or_env_or_constant).with(options).and_return(ipa)
+
+          actual = RunLoop::DetectAUT.send(:detect_app, options)
+          expect(actual).to be == ipa
+        end
+
+        it "is an app path" do
+          expect(RunLoop::DetectAUT).to receive(:app_from_opts_or_env_or_constant).with(options).and_return(app_path)
+
+          actual = RunLoop::DetectAUT.send(:detect_app, options)
+          expect(actual).to be_a_kind_of(RunLoop::App)
+          expect(actual.bundle_identifier).to be == app.bundle_identifier
+        end
+
+        it "is an ipa path" do
+          expect(RunLoop::DetectAUT).to receive(:app_from_opts_or_env_or_constant).with(options).and_return(ipa_path)
+
+          actual = RunLoop::DetectAUT.send(:detect_app, options)
+          expect(actual).to be_a_kind_of(RunLoop::Ipa)
+          expect(actual.bundle_identifier).to be == ipa.bundle_identifier
+        end
+
+        it "is a bundle identifier" do
+          expect(RunLoop::DetectAUT).to receive(:app_from_opts_or_env_or_constant).with(options).and_return(app_bundle_id)
+
+          actual = RunLoop::DetectAUT.send(:detect_app, options)
+          expect(actual).to be == app_bundle_id
+        end
+      end
+
+      describe "it is not defined" do
+        let(:detector) { RunLoop::DetectAUT::Detect.new }
+
+        before do
+          allow(RunLoop::DetectAUT).to receive(:detector).and_return(detector)
+        end
+
+        it "is auto detected" do
+          expect(detector).to receive(:app_for_simulator).twice.and_return(app)
+
+          expect(RunLoop::DetectAUT).to receive(:app_from_opts_or_env_or_constant).with(options).and_return(nil)
+          actual = RunLoop::DetectAUT.send(:detect_app, options)
+          expect(actual).to be == app
+
+          expect(RunLoop::DetectAUT).to receive(:app_from_opts_or_env_or_constant).with(options).and_return("")
+          actual = RunLoop::DetectAUT.send(:detect_app, options)
+          expect(actual).to be == app
+        end
+
+        it "is not auto detected" do
+          expect(RunLoop::DetectAUT).to receive(:app_from_opts_or_env_or_constant).with(options).and_return("")
+          expect(detector).to receive(:app_for_simulator).and_raise(RuntimeError)
+
+          expect do
+            RunLoop::DetectAUT.send(:detect_app, options)
+          end.to raise_error RuntimeError
+        end
+      end
+
+      describe ".detect_app_under_test" do
+        describe "App or Ipa instance" do
+          it "App" do
+            expect(RunLoop::DetectAUT).to receive(:detect_app).with(options).and_return(app)
+
+            hash = RunLoop::DetectAUT.detect_app_under_test(options)
+
+            expect(hash[:app]).to be == app
+            expect(hash[:bundle_id]).to be == app_bundle_id
+            expect(hash[:is_ipa]).to be == false
+          end
+
+          it "Ipa" do
+            expect(RunLoop::DetectAUT).to receive(:detect_app).with(options).and_return(ipa)
+
+            hash = RunLoop::DetectAUT.detect_app_under_test(options)
+
+            expect(hash[:app]).to be == ipa
+            expect(hash[:bundle_id]).to be == ipa_bundle_id
+            expect(hash[:is_ipa]).to be == true
+          end
+        end
+
+        it "bundle identifier" do
+          expect(RunLoop::DetectAUT).to receive(:detect_app).with(options).and_return(app_bundle_id)
+
+          hash = RunLoop::DetectAUT.detect_app_under_test(options)
+
+          expect(hash[:app]).to be == nil
+          expect(hash[:bundle_id]).to be == app_bundle_id
+          expect(hash[:is_ipa]).to be == false
+        end
+      end
+    end
+  end
 end

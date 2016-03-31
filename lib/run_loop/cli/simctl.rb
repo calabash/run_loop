@@ -56,20 +56,25 @@ module RunLoop
         debug = options[:debug]
         device = options[:device]
 
+        manage_processes
+
         if device
           RunLoop::Environment.with_debugging(debug) do
+            RunLoop::CoreSimulator.erase(device)
             launch_simulator(device, xcode)
           end
         else
-          launch_each_simulator
+          RunLoop::Environment.with_debugging(debug) do
+            erase_and_launch_each_simulator
+          end
         end
 
-        manage_processes
       end
 
       no_commands do
-        def launch_each_simulator
+        def erase_and_launch_each_simulator
           sim_control.simulators.each do |simulator|
+            RunLoop::CoreSimulator.erase(simulator)
             launch_simulator(simulator, xcode)
           end
         end

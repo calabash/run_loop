@@ -62,7 +62,7 @@ module RunLoop
   # .log_info is already taken by the XTC logger. (>_O)
   # green
   def self.log_info2(msg)
-    puts self.green(" INFO: #{msg}") if msg
+    puts self.green("INFO: #{msg}") if msg
   end
 
   # red

@@ -124,15 +124,11 @@ module RunLoop
     # Send a kill signal to any running `instruments` processes.
     #
     # Only one instruments process can be running at any one time.
-    #
-    # @param [RunLoop::Xcode] xcode Used to make check the
-    #  active Xcode version.
-    def kill_instruments(xcode = RunLoop::Xcode.new)
-      kill_signal = kill_signal(xcode)
+    def kill_instruments(_=nil)
       instruments_pids.each do |pid|
-        terminator = RunLoop::ProcessTerminator.new(pid, kill_signal, 'instruments')
+        terminator = RunLoop::ProcessTerminator.new(pid, "QUIT", "instruments")
         unless terminator.kill_process
-          terminator = RunLoop::ProcessTerminator.new(pid, 'KILL', 'instruments')
+          terminator = RunLoop::ProcessTerminator.new(pid, "KILL", "instruments")
           terminator.kill_process
         end
       end
@@ -198,20 +194,14 @@ module RunLoop
       @instruments_templates ||= lambda do
         args = ['instruments', '-s', 'templates']
         hash = xcrun.exec(args, log_cmd: true)
-        if xcode.version_gte_6?
-          hash[:out].chomp.split("\n").map do |elm|
-            stripped = elm.strip.tr('"', '')
-            if stripped == '' || stripped == 'Known Templates:'
-              nil
-            else
-              stripped
-            end
-          end.compact
-        else
-          hash[:out].strip.split("\n").delete_if do |path|
-            not path =~ /tracetemplate/
-          end.map { |elm| elm.strip }
-        end
+        hash[:out].chomp.split("\n").map do |elm|
+          stripped = elm.strip.tr('"', '')
+          if stripped == '' || stripped == 'Known Templates:'
+            nil
+          else
+            stripped
+          end
+        end.compact
       end.call
     end
 
@@ -306,29 +296,7 @@ module RunLoop
       array = ['instruments']
       array << '-w'
 
-      # Xcode 7 simulators must be launched with UDID to avoid
-      # Ambiguous device name/identifier errors (from instruments)
-      if xcode.version_gte_7?
-        udid = options[:udid]
-
-        if udid[DEVICE_UDID_REGEX, 0]
-          array << udid
-        else
-          match = simulators.find do |simulator|
-            [simulator.name == udid,
-             simulator.udid == udid,
-             simulator.instruments_identifier(xcode) == udid].any?
-          end
-
-          if match
-            array << match.udid
-          else
-            array << udid
-          end
-        end
-      else
-        array << options[:udid]
-      end
+      array << options[:udid]
 
       trace = options[:results_dir_trace]
       if trace
@@ -339,7 +307,7 @@ module RunLoop
       array << '-t'
       array << automation_template
 
-      array << options[:bundle_dir_or_bundle_id]
+      array << options[:bundle_id]
 
       {
             'UIARESULTSPATH' => options[:results_dir],
@@ -395,29 +363,6 @@ module RunLoop
           nil
         end
       end.compact.sort
-    end
-
-    # @!visibility private
-    # The kill signal should be sent to instruments.
-    #
-    # When testing against iOS 8, sending -9 or 'TERM' causes the ScriptAgent
-    # process on the device to emit the following error until the device is
-    # rebooted.
-    #
-    # ```
-    # MobileGestaltHelper[909] <Error>: libMobileGestalt MobileGestalt.c:273: server_access_check denied access to question UniqueDeviceID for pid 796 
-    # ScriptAgent[796] <Error>: libMobileGestalt MobileGestaltSupport.m:170: pid 796 (ScriptAgent) does not have sandbox access for re6Zb+zwFKJNlkQTUeT+/w and IS NOT appropriately entitled
-    # ScriptAgent[703] <Error>: libMobileGestalt MobileGestalt.c:534: no access to UniqueDeviceID (see <rdar://problem/11744455>)
-    # ```
-    #
-    # @see https://github.com/calabash/run_loop/issues/34
-    #
-    # @param [RunLoop::Xcode] xcode The Xcode tools to use to determine
-    #  what version of Xcode is active.
-    # @return [String] Either 'QUIT' or 'TERM', depending on the Xcode
-    #  version.
-    def kill_signal(xcode = RunLoop::Xcode.new)
-      xcode.version_gte_6? ? 'QUIT' : 'TERM'
     end
 
     # @!visibility private

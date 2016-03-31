@@ -70,31 +70,7 @@ module RunLoop
     end
 
     def uikit_bundle_l10n_path
-      developer_dir = xcode.developer_dir
-      if !developer_dir
-        nil
-      else
-        if xcode.version_gte_6?
-          File.join(developer_dir, UIKIT_AXBUNDLE_PATH_CORE_SIM)
-        else
-          ['7.1', '7.0', '6.1'].map do |sdk|
-            path = axbundle_path_for_sdk(developer_dir, sdk)
-            if File.exist?(path)
-              path
-            else
-              nil
-            end
-          end.compact.first
-        end
-      end
-    end
-
-    # Xcode 5.1.1 path.
-    def axbundle_path_for_sdk(developer_dir, sdk)
-      File.join(developer_dir,
-                'Platforms/iPhoneSimulator.platform/Developer/SDKs',
-                "iPhoneSimulator#{sdk}.sdk",
-                'System/Library/AccessibilityBundles/UIKit.axbundle')
+      File.join(xcode.developer_dir, UIKIT_AXBUNDLE_PATH_CORE_SIM)
     end
 
     def is_full_name?(two_letter_country_code)

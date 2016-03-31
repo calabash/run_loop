@@ -188,133 +188,39 @@ describe RunLoop::Instruments do
     end
   end
 
-  describe '#kill_signal' do
-    it 'the current Xcode version' do
-      xcode = RunLoop::Xcode.new
-      expected =  xcode.version_gte_6? ? 'QUIT' : 'TERM'
-      expect(instruments.send(:kill_signal, xcode)).to be == expected
-    end
-
-    describe 'regression' do
-      xcode_installs = Resources.shared.alt_xcode_install_paths
-      if xcode_installs.empty?
-        it 'no alternative versions of Xcode found' do
-          expect(true).to be == true
-        end
-      else
-        xcode_installs.each do |developer_dir|
-          it "#{developer_dir}" do
-            Resources.shared.with_developer_dir(developer_dir) do
-              xcode = RunLoop::Xcode.new
-              expected =  xcode.version_gte_6? ? 'QUIT' : 'TERM'
-              expect(instruments.send(:kill_signal, xcode)).to be == expected
-            end
-          end
-        end
-      end
-    end
-  end
-
   describe '#spawn_arguments' do
     let(:xcode) { instruments.xcode }
     let(:automation_template) { 'Automation' }
+    let(:simulator) { Resources.shared.simulator }
+    let(:device) { Resources.shared.device }
+
     let (:launch_options) do
       {
-            :app => '/path/to/my.app',
-            :script => 'run_loop.js',
-            :udid => 'iPhone 5s (8.1 Simulator)',
-            :results_dir_trace => 'trace',
-            :bundle_dir_or_bundle_id => '/path/to/my.app',
-            :results_dir => 'result',
-            :args => ['-NSDoubleLocalizedStrings', 'YES']
+        :app => '/path/to/my.app',
+        :script => 'run_loop.js',
+        :udid => simulator.udid,
+        :results_dir_trace => 'trace',
+        :bundle_id => '/path/to/my.app',
+        :results_dir => 'result',
+        :args => ['-NSDoubleLocalizedStrings', 'YES']
       }
     end
 
-    it 'Xcode < 7' do
-      expect(xcode).to receive(:version).at_least(:once).and_return(xcode.v64)
-
+    it "conses up an array" do
       actual = instruments.send(:spawn_arguments, automation_template, launch_options)
       expected =
-            [
-                  'instruments',
-                  '-w', launch_options[:udid],
-                  '-D', launch_options[:results_dir_trace],
-                  '-t', automation_template,
-                  launch_options[:bundle_dir_or_bundle_id],
-                  '-e', 'UIARESULTSPATH', launch_options[:results_dir],
-                  '-e', 'UIASCRIPT', launch_options[:script],
-                  '-NSDoubleLocalizedStrings',
-                  'YES'
-            ]
+        [
+          'instruments',
+          '-w', launch_options[:udid],
+          '-D', launch_options[:results_dir_trace],
+          '-t', automation_template,
+          launch_options[:bundle_id],
+          '-e', 'UIARESULTSPATH', launch_options[:results_dir],
+          '-e', 'UIASCRIPT', launch_options[:script],
+          '-NSDoubleLocalizedStrings',
+          'YES'
+        ]
       expect(actual).to be == expected
-    end
-
-    describe 'Xcode > 7.0' do
-      it 'physical device - pass the udid through' do
-        launch_options[:udid] = '43be3f89d9587e9468c24672777ff6211bd91124'
-        launch_options[:bundle_dir_or_bundle_id] = 'sh.calaba.CalSmoke-cal'
-
-
-        expect(xcode).to receive(:version).at_least(:once).and_return(xcode.v70)
-
-        actual = instruments.send(:spawn_arguments, automation_template, launch_options)
-        expected =
-              [
-                    'instruments',
-                    '-w', launch_options[:udid],
-                    '-D', launch_options[:results_dir_trace],
-                    '-t', automation_template,
-                    launch_options[:bundle_dir_or_bundle_id],
-                    '-e', 'UIARESULTSPATH', launch_options[:results_dir],
-                    '-e', 'UIASCRIPT', launch_options[:script],
-                    '-NSDoubleLocalizedStrings',
-                    'YES'
-              ]
-        expect(actual).to be == expected
-      end
-
-      it 'matched simulator - substitute the device udid' do
-        expect(xcode).to receive(:version).at_least(:once).and_return(xcode.v70)
-
-        launch_options[:udid] = 'iPhone 6 (9.0)'
-        device = RunLoop::Device.new('iPhone 6', '9.0', '6E43E3CF-25F5-41CC-A833-588F043AE749')
-        expect(instruments).to receive(:simulators).and_return([device])
-
-        actual = instruments.send(:spawn_arguments, automation_template, launch_options)
-        expected =
-              [
-                    'instruments',
-                    '-w', device.udid,
-                    '-D', launch_options[:results_dir_trace],
-                    '-t', automation_template,
-                    launch_options[:bundle_dir_or_bundle_id],
-                    '-e', 'UIARESULTSPATH', launch_options[:results_dir],
-                    '-e', 'UIASCRIPT', launch_options[:script],
-                    '-NSDoubleLocalizedStrings',
-                    'YES'
-              ]
-        expect(actual).to be == expected
-      end
-
-      it 'unmatched simulator - pass the udid through' do
-        expect(xcode).to receive(:version).at_least(:once).and_return(xcode.v70)
-        expect(instruments).to receive(:simulators).and_return([])
-
-        actual = instruments.send(:spawn_arguments, automation_template, launch_options)
-        expected =
-              [
-                    'instruments',
-                    '-w', launch_options[:udid],
-                    '-D', launch_options[:results_dir_trace],
-                    '-t', automation_template,
-                    launch_options[:bundle_dir_or_bundle_id],
-                    '-e', 'UIARESULTSPATH', launch_options[:results_dir],
-                    '-e', 'UIASCRIPT', launch_options[:script],
-                    '-NSDoubleLocalizedStrings',
-                    'YES'
-              ]
-        expect(actual).to be == expected
-      end
     end
   end
 
@@ -348,12 +254,9 @@ describe RunLoop::Instruments do
 
     before do
       expect(instruments).to receive(:xcrun).and_return xcrun
-      expect(instruments).to receive(:xcode).and_return xcode
     end
 
     it 'Xcode >= 6.0' do
-      expect(xcode).to receive(:version_gte_6?).at_least(:once).and_return true
-
       # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
       hash =
             {
@@ -364,22 +267,6 @@ describe RunLoop::Instruments do
       expect(xcrun).to receive(:exec).with(args, options).and_return hash
 
       expected = RunLoop::RSpec::Instruments::TEMPLATES_GTE_60[:expected]
-      expect(instruments.templates).to be == expected
-      expect(instruments.instance_variable_get(:@instruments_templates)).to be == expected
-    end
-
-    it '5.1 <= Xcode < 6.0' do
-      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
-
-      # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
-      hash =
-            {
-                  :out => RunLoop::RSpec::Instruments::TEMPLATES_511[:output],
-                  :err => ''
-            }
-      expect(xcrun).to receive(:exec).with(args, options).and_return hash
-
-      expected = RunLoop::RSpec::Instruments::TEMPLATES_511[:expected]
       expect(instruments.templates).to be == expected
       expect(instruments.instance_variable_get(:@instruments_templates)).to be == expected
     end

@@ -37,7 +37,9 @@ module RunLoop
     end
 
     # @!visibility private
+    # @deprecated 2.1.0
     def xcode_version_gte_51?
+      RunLoop.deprecated("2.1.0", "No replacement.")
       xcode.version_gte_51?
     end
 
@@ -401,10 +403,6 @@ module RunLoop
     end
 
     def software_keyboard_enabled?(device)
-      unless xcode_version_gte_51?
-        raise RuntimeError, 'Keyboard enabling is only available on Xcode >= 6'
-      end
-
       plist = device.simulator_preferences_plist_path
       return false unless File.exist?(plist)
 

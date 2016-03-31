@@ -175,10 +175,12 @@ module RunLoop
       version >= v60
     end
 
+    # @deprecated 2.1.0
     # Is the active Xcode version 5.1 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 5.1
     def version_gte_51?
+      RunLoop.deprecated("2.1.0", "No replacement")
       version >= v51
     end
 

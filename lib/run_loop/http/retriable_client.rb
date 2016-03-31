@@ -101,6 +101,10 @@ module RunLoop
         request(request, :post, options)
       end
 
+      def delete(request, options={})
+        request(request, :delete, options)
+      end
+
       private
 
       def request(request, request_method, options={})
@@ -134,7 +138,7 @@ module RunLoop
             return client.send(request_method, @server.endpoint + request.route,
                                request.params, header)
           rescue *RETRY_ON => e
-            RunLoop.log_debug("Rescued http error: #{e}")
+            #RunLoop.log_debug("Rescued http error: #{e}")
 
             if first_try
               if @on_error[e.class]

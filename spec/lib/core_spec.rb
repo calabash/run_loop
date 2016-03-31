@@ -41,13 +41,75 @@ describe RunLoop::Core do
     end
   end
 
-  describe '.default_simulator' do
-    it 'Xcode < 6.0' do
-      expected = 'iPhone Retina (4-inch) - Simulator - iOS 7.1'
-      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v51
-      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
+  describe "UIA strategy" do
+    let(:xcode) { Resources.shared.xcode }
+    let(:device) { Resources.shared.device }
+    let(:simulator) { Resources.shared.simulator }
+    let(:ios8) { RunLoop::Version.new("8.0") }
+    let(:ios9) { RunLoop::Version.new("9.0") }
+    let(:ios7) { RunLoop::Version.new("7.0") }
+
+    describe ".default_uia_strategy" do
+      it ":host for Xcode >= 7.0" do
+        expect(xcode).to receive(:version_gte_7?).and_return(true)
+
+        expect(RunLoop::Core.default_uia_strategy(device, xcode)).to be == :host
+      end
+
+      describe "all other Xcode versions" do
+        before do
+          expect(xcode).to receive(:version_gte_7?).at_least(:once).and_return(false)
+        end
+
+        describe "physical devices" do
+           it ":host for iOS >= 8.0" do
+             expect(device).to receive(:version).and_return(ios8)
+             expect(RunLoop::Core.default_uia_strategy(device, xcode)).to be == :host
+
+             expect(device).to receive(:version).and_return(ios9)
+             expect(RunLoop::Core.default_uia_strategy(device, xcode)).to be == :host
+           end
+
+          it ":preferences for iOS < 8.0" do
+            expect(device).to receive(:version).and_return(ios7)
+            expect(RunLoop::Core.default_uia_strategy(device, xcode)).to be == :preferences
+          end
+        end
+
+        it "simulators in < Xcode 7 environments" do
+          # implies < iOS 9
+          expect(RunLoop::Core.default_uia_strategy(simulator, xcode)).to be == :preferences
+        end
+      end
     end
 
+    describe ".detect_uia_strategy" do
+      let(:options) { {:uia_strategy => :shared_element } }
+
+      it "respects :uia_strategy option" do
+        actual = RunLoop::Core.detect_uia_strategy(options, device, xcode)
+        expect(actual).to be == options[:uia_strategy]
+      end
+
+      it "falls back on default strategy" do
+        options[:uia_strategy] = nil
+        expect(RunLoop::Core).to receive(:default_uia_strategy).and_return(:shared_element)
+
+        actual = RunLoop::Core.detect_uia_strategy(options, device, xcode)
+        expect(actual).to be == :shared_element
+      end
+
+      it "raises error if strategy is unknown" do
+        options[:uia_strategy] = :unknown
+
+        expect do
+          RunLoop::Core.detect_uia_strategy(options, device, xcode)
+        end.to raise_error ArgumentError, /Invalid strategy/
+      end
+    end
+  end
+
+  describe '.default_simulator' do
     it 'Xcode 6.0*' do
       expected = 'iPhone 5s (8.0 Simulator)'
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v60
@@ -100,35 +162,6 @@ describe RunLoop::Core do
       expected = 'iPhone 6s (9.3)'
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v73
       expect(RunLoop::Core.default_simulator(xcode)).to be == expected
-    end
-  end
-
-  describe '.udid_and_bundle_for_launcher' do
-    let(:options) { {:app => Resources.shared.cal_app_bundle_path} }
-    let(:app) { options[:app] }
-
-    before do
-      expect(xcode).to receive(:version).and_return xcode.v51
-      expect(RunLoop::Core).to receive(:default_simulator).with(xcode).and_return 'Simulator'
-    end
-
-
-    it 'target is nil' do
-      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher(nil, options, sim_control)
-      expect(udid).to be == 'Simulator'
-      expect(app_bundle).to be == app
-    end
-
-    it "target is ''" do
-      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('', options, sim_control)
-      expect(udid).to be == 'Simulator'
-      expect(app_bundle).to be == app
-    end
-
-    it "target is 'simulator'" do
-      udid, app_bundle = RunLoop::Core.udid_and_bundle_for_launcher('simulator', options, sim_control)
-      expect(udid).to be == 'Simulator'
-      expect(app_bundle).to be == app
     end
   end
 
@@ -308,41 +341,71 @@ describe RunLoop::Core do
   end
 
   describe '.expect_simulator_compatible_arch' do
-    let(:xcode) { RunLoop::Xcode.new }
-
     let(:device) { RunLoop::Device.new('Sim', '8.0', 'UDID') }
 
-    it 'is not implemented for Xcode < 6.0' do
-      expect(xcode).to receive(:version_gte_6?).and_return false
+    let(:fat_arm_app) { RunLoop::App.new(Resources.shared.app_bundle_path_arm_FAT) }
+    let(:i386_app) { RunLoop::App.new(Resources.shared.app_bundle_path_i386) }
 
-      actual = RunLoop::Core.expect_simulator_compatible_arch(nil, nil, xcode)
-      expect(actual).to be_falsey
+    it 'raises an error' do
+      expect(device).to receive(:instruction_set).and_return 'nonsense'
+
+      expect do
+        RunLoop::Core.expect_simulator_compatible_arch(device, fat_arm_app)
+      end.to raise_error RunLoop::IncompatibleArchitecture,
+                         /does not contain a compatible architecture for target device/
     end
 
-    describe 'CoreSimulator' do
+    it 'compatible' do
+      expect(device).to receive(:instruction_set).and_return 'i386'
 
-      let(:fat_arm_app) { RunLoop::App.new(Resources.shared.app_bundle_path_arm_FAT) }
-      let(:i386_app) { RunLoop::App.new(Resources.shared.app_bundle_path_i386) }
+      expect do
+        RunLoop::Core.expect_simulator_compatible_arch(device, i386_app)
+      end.not_to raise_error
+    end
+  end
 
+  describe ".detect_reset_options" do
+    let(:options) { {reset: true, reset_app_sandbox: true} }
+
+    describe ":reset" do
+      it "true" do
+        expect(RunLoop::Core.detect_reset_options(options)).to be_truthy
+      end
+
+      it "false" do
+        options[:reset] = false
+        expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
+      end
+    end
+
+    describe ":reset_app_sandbox" do
+      before { options.delete(:reset) }
+      it "true" do
+        expect(RunLoop::Core.detect_reset_options(options)).to be_truthy
+      end
+
+      it "false" do
+        options[:reset_app_sandbox] = false
+        expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
+      end
+    end
+
+    describe "RESET_BETWEEN_SCENARIOS" do
       before do
-        expect(xcode).to receive(:version_gte_6?).and_return true
+        options.delete(:reset)
+        options.delete(:reset_app_sandbox)
       end
 
-      it 'raises an error' do
-        expect(device).to receive(:instruction_set).and_return 'nonsense'
+      it "'1'" do
+        expect(RunLoop::Environment).to receive(:reset_between_scenarios?).and_return(true)
 
-        expect do
-          RunLoop::Core.expect_simulator_compatible_arch(device, fat_arm_app, xcode)
-        end.to raise_error RunLoop::IncompatibleArchitecture,
-                           /does not contain a compatible architecture for target device/
+        expect(RunLoop::Core.detect_reset_options(options)).to be_truthy
       end
 
-      it 'compatible' do
-        expect(device).to receive(:instruction_set).and_return 'i386'
+      it "not '1'" do
+        expect(RunLoop::Environment).to receive(:reset_between_scenarios?).and_return(false)
 
-        expect do
-          RunLoop::Core.expect_simulator_compatible_arch(device, i386_app, xcode)
-        end.not_to raise_error
+        expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
       end
     end
   end

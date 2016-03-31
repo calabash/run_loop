@@ -25,7 +25,20 @@ module RunLoop
 
     # @!visibility private
     def to_s
-      "#<IPA: #{bundle_identifier}: '#{path}'>"
+      cf_bundle_version = bundle_version
+      cf_bundle_short_version = short_bundle_version
+
+      if cf_bundle_version && cf_bundle_short_version
+        version = "#{cf_bundle_version.to_s}/#{cf_bundle_short_version}"
+      elsif cf_bundle_version
+        version = cf_bundle_version.to_s
+      elsif cf_bundle_short_version
+        version = cf_bundle_short_version
+      else
+        version = ""
+      end
+
+      "#<IPA #{bundle_identifier} #{version} #{path}>"
     end
 
     # @!visibility private
@@ -70,6 +83,22 @@ module RunLoop
     def distribution_signed?
       app.distribution_signed?
     end
+
+    # @!visibility private
+    def marketing_version
+      app.marketing_version
+    end
+
+    # See #marketing_version
+    alias_method :short_bundle_version, :marketing_version
+
+    # @!visibility private
+    def build_version
+      app.build_version
+    end
+
+    # See #build_version
+    alias_method :bundle_version, :build_version
 
     private
 
