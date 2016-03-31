@@ -97,6 +97,9 @@ class RunLoop::CoreSimulator
               # Required for XCUITest termination; the simulator hangs otherwise.
               ["xpcproxy", false],
 
+              # Causes crash reports on Xcode < 7.0
+              ["apsd", true],
+
               # assetsd instances clobber each other and are not properly
               # killed when quiting the simulator.
               ['assetsd', false],
