@@ -3,13 +3,45 @@ module RunLoop
   # @!visibility private
   class XCUITest
 
+    class HTTPError < RuntimeError; end
+
     # @!visibility private
     DEFAULTS = {
       :port => 27753,
       :simulator_ip => "127.0.0.1",
-      :http_timeout => RunLoop::Environment.ci? ? 120 : 60
+      :http_timeout => RunLoop::Environment.ci? ? 120 : 60,
+      :version => "1.0"
     }
 
+    # @!visibility private
+    def self.run(options={})
+      # logger = options[:logger]
+      simctl = options[:sim_control] || options[:simctl] || RunLoop::SimControl.new
+      xcode = options[:xcode] || RunLoop::Xcode.new
+      instruments = options[:instruments] || RunLoop::Instruments.new
+
+      # Find the Device under test, the App under test, UIA strategy, and reset options
+      device = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+      app_details = RunLoop::DetectAUT.detect_app_under_test(options)
+      reset_options = RunLoop::Core.send(:detect_reset_options, options)
+
+      app = app_details[:app]
+      bundle_id = app_details[:bundle_id]
+
+      if device.simulator? && app
+        core_sim = RunLoop::CoreSimulator.new(device, app, :xcode => xcode)
+        if reset_options
+          core_sim.reset_app_sandbox
+        end
+
+        simctl.ensure_software_keyboard(device)
+        core_sim.install
+      end
+
+      xcuitest = RunLoop::XCUITest.new(bundle_id, device)
+      xcuitest.launch
+      xcuitest
+    end
 
     # @!visibility private
     def self.log_file
@@ -30,6 +62,14 @@ module RunLoop
     def initialize(bundle_id, device)
       @bundle_id = bundle_id
       @device = device
+    end
+
+    def to_s
+      "#<XCUITest #{url} : #{bundle_id} : #{device}>"
+    end
+
+    def inspect
+      to_s
     end
 
     # @!visibility private
@@ -61,6 +101,78 @@ module RunLoop
       elapsed = Time.now - start
       RunLoop.log_debug("Took #{elapsed} seconds to launch #{bundle_id} on #{device}")
       true
+    end
+
+    # @!visibility private
+    def running?
+      begin
+        health(ping_options)
+      rescue => _
+        nil
+      end
+    end
+
+    # @!visibility private
+    def stop
+      begin
+        shutdown
+      rescue => _
+        nil
+      end
+    end
+
+    # @!visibility private
+    def launch_other_app(bundle_id)
+      launch_aut(bundle_id)
+    end
+
+    # @!visibility private
+    def query(mark)
+      options = http_options
+      parameters = { :text => mark }
+      request = request("query", parameters)
+      client = client(options)
+      response = client.post(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def tap_mark(mark)
+      options = http_options
+      parameters = {
+        :gesture => "tap",
+        :text => mark
+      }
+      request = request("gesture", parameters)
+      client(options)
+      response = client.post(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def tap_coordinate(x, y)
+      options = http_options
+      parameters = {
+        :gesture => "tap_coordinate",
+        :coordinate => {x: x, y: y}
+      }
+      request = request("gesture", parameters)
+      client(options)
+      response = client.post(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def tap_query_result(hash)
+      rect = hash["rect"]
+      h = rect["height"]
+      w = rect["width"]
+      x = rect["x"]
+      y = rect["y"]
+
+      touchx = x + (h/2)
+      touchy = y + (w/2)
+      tap_coordinate(touchx, touchy)
     end
 
     private
@@ -106,8 +218,18 @@ module RunLoop
     end
 
     # @!visibility private
+    def versioned_route(route)
+      if ["health", "ping", "sessionIdentifier"].include?(route)
+        route
+      else
+        "#{DEFAULTS[:version]}/#{route}"
+      end
+    end
+
+    # @!visibility private
     def request(route, parameters={})
-      RunLoop::HTTP::Request.request(route, parameters)
+      versioned = versioned_route(route)
+      RunLoop::HTTP::Request.request(versioned, parameters)
     end
 
     # @!visibility private
@@ -125,14 +247,41 @@ module RunLoop
     end
 
     # @!visibility private
+    def session_delete
+      options = ping_options
+      request = request("delete")
+      client = client(options)
+      begin
+        response = client.delete(request)
+        body = expect_200_response(response)
+        RunLoop.log_debug("CBX-Runner says, #{body}")
+        body
+      rescue => e
+        RunLoop.log_debug("CBX-Runner session delete error: #{e}")
+        nil
+      end
+    end
+
+    # @!visibility private
+    # TODO expect 200 response and parse body (atm the body in not valid JSON)
     def shutdown
+      session_delete
       options = ping_options
       request = request("shutdown")
       client = client(options)
       begin
         response = client.post(request)
-        RunLoop.log_debug("CBX-Runner says, \"#{response.body}\"")
-        response.body
+        body = response.body
+        RunLoop.log_debug("CBX-Runner says, \"#{body}\"")
+        5.times do
+          begin
+            health
+            sleep(0.2)
+          rescue => _
+            break
+          end
+        end
+        body
       rescue => e
         RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
         nil
@@ -140,13 +289,15 @@ module RunLoop
     end
 
     # @!visibility private
-    def health
-      options = http_options
+    # TODO expect 200 response and parse body (atm the body is not valid JSON)
+    def health(options={})
+      merged_options = http_options.merge(options)
       request = request("health")
-      client = client(options)
+      client = client(merged_options)
       response = client.get(request)
-      RunLoop.log_debug("CBX-Runner driver says, \"#{response.body}\"")
-      response.body
+      body = response.body
+      RunLoop.log_debug("CBX-Runner driver says, \"#{body}\"")
+      body
     end
 
     # @!visibility private
@@ -157,7 +308,8 @@ module RunLoop
         "-scheme", "CBXAppStub",
         "-workspace", workspace,
         "-config", "Debug",
-        "-destination", "id=#{device.udid}",
+        "-destination",
+        "id=#{device.udid}",
         "clean",
         "test"
       ]
@@ -193,14 +345,17 @@ module RunLoop
         # anything special about physical devices?
       end
 
+      start = Time.now
       pid = xcodebuild
       RunLoop.log_debug("Waiting for CBX-Runner to build...")
       health
+
+      RunLoop.log_debug("Took #{Time.now - start} seconds to build and launch")
       pid.to_i
     end
 
     # @!visibility private
-    def launch_aut
+    def launch_aut(bundle_id = @bundle_id)
       client = client(http_options)
       request = request("session", {:bundleID => bundle_id})
 
@@ -211,7 +366,7 @@ module RunLoop
         if device.simulator?
           device.simulator_wait_for_stable_state
         end
-        response.body
+        expect_200_response(response)
       rescue => e
         raise e.class, %Q[Could not launch #{bundle_id} on #{device}:
 
@@ -220,6 +375,31 @@ module RunLoop
 Something went wrong.
 ]
       end
+    end
+
+    # @!visibility private
+    def response_body_to_hash(response)
+      body = response.body
+      begin
+        JSON.parse(body)
+      rescue TypeError, JSON::ParserError => _
+        raise RunLoop::XCUITest::HTTPError,
+              "Could not parse response '#{body}'; the app has probably crashed"
+      end
+    end
+
+    # @!visibility private
+    def expect_200_response(response)
+      body = response_body_to_hash(response)
+      return body if response.status_code < 300
+
+      raise RunLoop::XCUITest::HTTPError,
+        %Q[Expected status code < 200, found #{response.status_code}.
+
+Server replied with:
+
+#{body}
+]
     end
 
     # @!visibility private

@@ -676,6 +676,8 @@ Logfile: #{log_file}
     #
     # 1. enabling accessibility and software keyboard
     # 2. installing / uninstalling apps
+    #
+    # TODO: move to CoreSimulator?
     def self.prepare_simulator(app, device, xcode, simctl, reset_options)
 
       # Validate the architecture.
