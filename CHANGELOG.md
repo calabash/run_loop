@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.1.1
+
+* Relax deprecation warnings @TeresaP, @jane-openreply, and others
+* RESET\_BETWEEN\_SCENARIOS has stopped working #426 @ankurgamit
+
 ### 2.1.0
 
 This release fixes a bug that might put the iOS Simulator into a bad state.
