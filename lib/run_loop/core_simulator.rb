@@ -751,12 +751,48 @@ Command had no output
     sim_app_dir = device_applications_dir
     return nil if !File.exist?(sim_app_dir)
 
-    if xcode.version_gte_7?
-      simctl = RunLoop::Simctl.new(device)
-      simctl.app_container(app.bundle_identifier)
-    else
-      Dir.glob("#{sim_app_dir}/**/*.app").find do |path|
-        RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
+    app_bundle_dir = Dir.glob("#{sim_app_dir}/**/*.app").find do |path|
+      RunLoop::App.new(path).bundle_identifier == app.bundle_identifier
+    end
+
+    app_bundle_dir = ensure_complete_app_installation(app_bundle_dir)
+
+    app_bundle_dir
+  end
+
+  # Cleans up bad installations of an app.  For unknown reasons, an app bundle
+  # can exist, but be unrecognized by CoreSimulator.  If we detect a case like
+  # this, we need to clean up the installation.
+  def ensure_complete_app_installation(app_bundle_dir)
+    return nil if app_bundle_dir.nil?
+    return app_bundle_dir if complete_app_install?(app_bundle_dir)
+
+    # Remove the directory that contains the app bundle
+    base_dir = File.dirname(app_bundle_dir)
+    FileUtils.rm_rf(base_dir)
+
+    # Clean up Containers/Data/Application
+    remove_stale_data_containers
+
+    nil
+  end
+
+  # Detect an incomplete app installation.
+  def complete_app_install?(app_bundle_dir)
+    base_dir = File.dirname(app_bundle_dir)
+    plist = File.join(base_dir, METADATA_PLIST)
+    File.exist?(plist)
+  end
+
+  # Remove stale data directories that might have appeared as a result of an
+  # incomplete app installation.
+  # See #ensure_complete_app_installation
+  def remove_stale_data_containers
+    containers_data_dir = File.join(device_data_dir, "Containers", "Data", "Application")
+    apps = Dir.glob("#{containers_data_dir}/**/#{METADATA_PLIST}")
+    apps.each do |metadata_plist|
+      if pbuddy.plist_read("MCMMetadataIdentifier", metadata_plist) == app.bundle_identifier
+        FileUtils.rm_rf(File.dirname(metadata_plist))
       end
     end
   end

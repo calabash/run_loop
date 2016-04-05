@@ -53,6 +53,14 @@ module RunLoop
     #
     # This method is not supported on Xcode < 7 - returns nil.
     #
+    # Simulator must be booted in El Cap, which makes this method useless for us
+    # because we have to do a bunch of pre-launch checks for sandbox resetting.
+    #
+    # Testing has shown that moving the device in and out of the booted state
+    # takes a long time (seconds) and is unpredictable.
+    #
+    # TODO ensure a booted state.
+    #
     # @param [String] bundle_id The CFBundleIdentifier of the app.
     # @return [String] The path to the .app bundle if it exists; nil otherwise.
     def app_container(bundle_id)
