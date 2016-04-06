@@ -24,6 +24,9 @@ describe RunLoop::DotDir do
 
       expect(actual).to be == expected
       expect(File.exist?(actual)).to be_truthy
+      current = File.join(dot_dir, "results", "current")
+      expect(File.symlink?(current)).to be_truthy
+      expect(File.readlink(current)).to be == actual
     end
 
     it "on the XTC it uses a var directory" do
@@ -119,6 +122,10 @@ describe RunLoop::DotDir do
             FileUtils.mkdir_p(file)
             generated << file
           end
+          path = generated.last
+          current = File.join(@dot_dir, "results", "current")
+          FileUtils.ln_s(path, File.join(@dot_dir, "results", "current"))
+          generated << current
           generated
         end
       end.new(dot_dir)
@@ -143,6 +150,8 @@ describe RunLoop::DotDir do
       end.sort_by { |f| File.mtime(f) }
 
       expect(actual).to be == generated
+      current = File.join(dot_dir, "results", "current")
+      expect(File.symlink?(current)).to be_truthy
     end
 
     it "does nothing on the XTC" do
