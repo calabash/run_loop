@@ -17,6 +17,10 @@ module RunLoop::DotDir
       results_dir = File.join(self.directory, 'results')
       next_results_dir = self.next_timestamped_dirname(results_dir)
       FileUtils.mkdir_p(next_results_dir)
+
+      current = File.join(self.directory, "results", "current")
+      FileUtils.rm_rf(current)
+      FileUtils.ln_s(next_results_dir, current)
     end
 
     next_results_dir
@@ -32,7 +36,7 @@ module RunLoop::DotDir
     RunLoop.log_debug("Searching for run-loop results with glob: #{glob}")
 
     directories = Dir.glob(glob).select do |path|
-      File.directory?(path)
+      File.directory?(path) && !File.symlink?(path)
     end
 
     oldest_first = directories.sort_by { |f| File.mtime(f) }
