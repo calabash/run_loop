@@ -45,7 +45,7 @@ UIATarget.onAlert = function (alert) {
 };
 
 
-Log.result('success',true,true);
+Log.result('success', true);
 
 var _calabashSharedTextField = null,
     __calabashSharedTextFieldName = '__calabash_uia_channel',
@@ -114,7 +114,7 @@ while (true) {
         }
         catch(err) {
             failureMessage = "Failure: "+ err.toString() + "  " + (err.stack ? err.stack.toString() : "");
-            Log.output({"output":failureMessage}, true);
+            Log.output({"output":failureMessage});
             _failure(err, _actualIndex);
         }
     }

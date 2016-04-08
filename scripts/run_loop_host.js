@@ -23,7 +23,7 @@ var _expectedIndex = 0,//expected index of next command
 <%= render_template("lib/on_alert.js"); %>
 
 UIATarget.onAlert = function (alert) {
-    Log.output({"output":"on alert"}, true);
+    Log.output({"output":"on alert");
     var target = UIATarget.localTarget();
     target.pushTimeout(10);
     function dismissPrivacyAlert(retry_count) {
@@ -74,7 +74,12 @@ while (true) {
     }
     if (_process.exitCode != 0) {
         if (_process.exitCode != 15) {
-            Log.output("unable to execute: " + timeoutScriptPath + " " +readPipeScriptPath + " " + commandPath + " exitCode " + _process.exitCode + ". Error: " + _process.stderr + _process.stdout);
+            Log.output("unable to execute: " +
+                  timeoutScriptPath + " " +
+                  readPipeScriptPath + " " +
+                  commandPath + " exitCode "
+                  + _process.exitCode + ". Error: " +
+                  _process.stderr + _process.stdout);
         }
     }
     else {
@@ -98,7 +103,9 @@ while (true) {
 
         }
         catch (err) {
-            Log.result("error", "Input: " + (_exp ? _exp.toString() : "null") + ". Error: " + err.toString() + "  " + (err.stack ? err.stack.toString() : ""));
+            Log.result("error", "Input: " + (_exp ? _exp.toString() : "null") +
+                  ". Error: " + err.toString() + "  " +
+                  (err.stack ? err.stack.toString() : ""));
             _expectedIndex++;
             continue;
         }

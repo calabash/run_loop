@@ -340,6 +340,37 @@ describe RunLoop::Core do
     end
   end
 
+  describe ".detect_flush_uia_log_option" do
+    let (:options) { {} }
+    describe ":no_flush legacy key" do
+      it ":no_flush => false" do
+        options[:no_flush] = false
+        expect(RunLoop::Core.send(:detect_flush_uia_log_option, options)).to be_truthy
+      end
+
+      it ":no_flush => true" do
+        options[:no_flush] = true
+        expect(RunLoop::Core.send(:detect_flush_uia_log_option, options)).to be_falsey
+      end
+    end
+
+    describe ":flush_uia_logs" do
+      it "key does not exist" do
+        expect(RunLoop::Core.send(:detect_flush_uia_log_option, options)).to be_truthy
+      end
+
+      it ":flush_uia_logs => true" do
+        options[:flush_uia_logs] = true
+        expect(RunLoop::Core.send(:detect_flush_uia_log_option, options)).to be_truthy
+      end
+
+      it ":flush_uia_logs => false" do
+        options[:flush_uia_logs] = false
+        expect(RunLoop::Core.send(:detect_flush_uia_log_option, options)).to be_falsey
+      end
+    end
+  end
+
   describe '.expect_simulator_compatible_arch' do
     let(:device) { RunLoop::Device.new('Sim', '8.0', 'UDID') }
 
