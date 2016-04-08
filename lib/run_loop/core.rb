@@ -663,6 +663,31 @@ Logfile: #{log_file}
 
     # @!visibility private
     #
+    # UIAutomation buffers log output in some very strange ways.  RunLoop
+    # attempts to work around this buffering by forcing characters onto the
+    # UIALogger buffer.  Once the buffer is full, UIAutomation will dump its
+    # contents.  It is essential that the communication between UIAutomation
+    # and RunLoop be synchronized.
+    #
+    # Casual users should never set the :flush_uia_logs key; they should use the
+    # defaults.
+    #
+    # :no_flush is supported (for now) as alternative key.
+    #
+    # @param [Hash] options The launch options passed to .run_with_options
+    def self.detect_flush_uia_log_option(options)
+      if options.has_key?(:no_flush)
+        # Confusing.
+        # :no_flush == false means, flush the logs.
+        # :no_flush == true means, don't flush the logs.
+        return !options[:no_flush]
+      end
+
+      return options.fetch(:flush_uia_logs, true)
+    end
+
+    # @!visibility private
+    #
     # @param [Hash] options The launch options passed to .run_with_options
     def self.detect_reset_options(options)
       return options[:reset] if options.has_key?(:reset)
