@@ -3,7 +3,7 @@
 <%= render_template("lib/on_alert.js"); %>
 
 UIATarget.onAlert = function (alert) {
-    Log.output({"output":"on alert"}, true);
+    Log.output({"output":"on alert"});
     var target = UIATarget.localTarget();
     target.pushTimeout(10);
     function dismissPrivacyAlert(retry_count) {
