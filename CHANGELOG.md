@@ -2,6 +2,10 @@
 
 ### 2.1.1
 
+* CoreSim: patch retry on failed app launch 5300542
+* Restore UIALogger flushing and ensure variables are substituted
+  properly. #430
+* DotDir: symlink to current result #429
 * Relax deprecation warnings @TeresaP, @jane-openreply, and others
 * RESET\_BETWEEN\_SCENARIOS has stopped working #426 @ankurgamit
 

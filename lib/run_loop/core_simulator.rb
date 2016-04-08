@@ -408,6 +408,7 @@ $ bundle exec run-loop simctl manage-processes
       hash = launch_app_with_simctl
       exit_status = hash[:exit_status]
       if exit_status != 0
+        out = hash[:out]
         RunLoop.log_debug("Failed to launch app.")
         out.split($-0).each do |line|
           RunLoop.log_debug("    #{line}")
