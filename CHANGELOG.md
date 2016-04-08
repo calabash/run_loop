@@ -2,6 +2,9 @@
 
 ### 2.1.1
 
+* Restore UIALogger flushing and ensure variables are substituted
+  properly. #430
+* DotDir: symlink to current result #429
 * Relax deprecation warnings @TeresaP, @jane-openreply, and others
 * RESET\_BETWEEN\_SCENARIOS has stopped working #426 @ankurgamit
 
