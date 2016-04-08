@@ -86,4 +86,10 @@ describe RunLoop::Simctl do
     expect(actual).to be_a_kind_of(RunLoop::Xcode)
     expect(simctl.instance_variable_get(:@xcode)).to be == actual
   end
+
+  it "#sim_control" do
+    actual = simctl.send(:sim_control)
+    expect(actual).to be_a_kind_of(RunLoop::SimControl)
+    expect(simctl.instance_variable_get(:@sim_control)).to be == actual
+  end
 end

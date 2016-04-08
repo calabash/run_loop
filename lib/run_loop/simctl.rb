@@ -50,6 +50,10 @@ module RunLoop
     end
 
     # @!visibility private
+    def simulators
+    end
+
+    # @!visibility private
     #
     # This method is not supported on Xcode < 7 - returns nil.
     #
@@ -92,6 +96,13 @@ module RunLoop
     # @!visibility private
     def xcode
       @xcode ||= RunLoop::Xcode.new
+    end
+
+    # @!visibility private
+    # Support for Xcode < 7 when trying to collect simulators.  Xcode 7 allows
+    # a --json option which is much easier to parse.
+    def sim_control
+      @sim_control ||= RunLoop::SimControl.new
     end
   end
 end
