@@ -89,11 +89,20 @@ module RunLoop
 
       script = File.join(results_dir, '_run_loop.js')
 
-      code = UIAScriptTemplate.new(SCRIPTS_PATH, options[:script]).result
-      code = code.gsub(/\$PATH/, results_dir)
-      code = code.gsub(/\$READ_SCRIPT_PATH/, READ_SCRIPT_PATH)
-      code = code.gsub(/\$TIMEOUT_SCRIPT_PATH/, TIMEOUT_SCRIPT_PATH)
-      code = code.gsub(/\$MODE/, 'FLUSH') unless options[:no_flush]
+      javascript = UIAScriptTemplate.new(SCRIPTS_PATH, options[:script]).result
+      UIAScriptTemplate.sub_path_var!(javascript, results_dir)
+      UIAScriptTemplate.sub_read_script_path_var!(javascript, READ_SCRIPT_PATH)
+      UIAScriptTemplate.sub_timeout_script_path_var!(javascript, TIMEOUT_SCRIPT_PATH)
+
+      # Using a :no_* option is confusing.
+      # TODO Replace :no_flush with :flush_uia_logs; it should default to true
+      if RunLoop::Environment.xtc?
+        UIAScriptTemplate.sub_mode_var!(javascript, "FLUSH") unless options[:no_flush]
+      else
+        if self.detect_flush_uia_log_option(options)
+          UIAScriptTemplate.sub_flush_uia_logs_var!(javascript, "FLUSH_LOGS")
+        end
+      end
 
       repl_path = File.join(results_dir, 'repl-cmd.pipe')
       FileUtils.rm_f(repl_path)
@@ -111,7 +120,7 @@ module RunLoop
         if include_calabash_script?(options)
           file.puts IO.read(cal_script)
         end
-        file.puts code
+        file.puts javascript
       end
 
       args = options.fetch(:args, [])
