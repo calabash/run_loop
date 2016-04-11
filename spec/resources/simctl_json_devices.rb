@@ -2,7 +2,14 @@ module RunLoop
   module RSpec
     module Simctl
 
-      SIMCTL_DEVICE_JSON_XCODE7 = %q[{"devices" : {
+      SIMCTL_DEVICE_JSON_XCODE7 =
+%q[2016-04-11 16:17:48.474 simctl[98400:32684208] CoreSimulator is attempting to unload a stale CoreSimulatorService job.  Existing job (com.apple.CoreSimulator.CoreSimulatorService.117.15.1.lkhDXxRPp5yy) is from an older version and is being removed to prevent problems.
+2016-04-11 16:17:48.732 simctl[98400:32684208] CoreSimulator is attempting to unload a stale CoreSimulatorService job.  Existing job (com.apple.CoreSimulator.CoreSimulatorService.117.15.1.dltcnwGXJZL4) is from an older version and is being removed to prevent problems.
+2016-04-11 16:17:48.988 simctl[98400:32684208] CoreSimulator is attempting to unload a stale CoreSimulatorService job.  Existing job (com.apple.CoreSimulator.CoreSimulatorService.179.1.E8ttyeDeVgWK) is from an older version and is being removed to prevent problems.
+2016-04-11 16:17:49.245 simctl[98400:32684208] CoreSimulator is attempting to unload a stale CoreSimulatorService job.  Existing job (com.apple.CoreSimulator.CoreSimulatorService.191.4.1.sUuqCSHdtoM8) is from an older version and is being removed to prevent problems.
+2016-04-11 16:17:49.512 simctl[98400:32684208] CoreSimulator is attempting to unload a stale CoreSimulatorService job.  Detected Xcode.app relocation or CoreSimulatorService version change.  Framework path (/Xcode/7.3/Xcode.app/Contents/Developer/Library/PrivateFrameworks/CoreSimulator.framework) and version (209.19) does not match existing job path (/Xcode/7.2.1/Xcode.app/Contents/Developer/Library/PrivateFrameworks/CoreSimulator.framework/Versions/A/XPCServices/com.apple.CoreSimulator.CoreSimulatorService.xpc/Contents/MacOS/com.apple.CoreSimulator.CoreSimulatorService) and version (201.3).
+2016-04-11 16:17:49.770 simctl[98400:32684208] Failed to locate a valid instance of CoreSimulatorService in the bootstrap.  Adding it now.
+{"devices" : {
     "iOS 8.1" : [
       {
         "state" : "Shutdown",
