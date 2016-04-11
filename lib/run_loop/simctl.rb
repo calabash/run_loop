@@ -30,18 +30,16 @@ module RunLoop
     end
 
     # @!visibility private
-    attr_accessor :device
+    attr_reader :device
 
     # @!visibility private
-    #
-    # @param [RunLoop::Device] device Cannot be nil.
-    def initialize(device)
-      @device = device
+    def initialize
+
     end
 
     # @!visibility private
     def to_s
-      "#<Simctl: #{device.name} #{device.udid}>"
+      "#<Simctl: #{xcode.version}>"
     end
 
     # @!visibility private
@@ -66,8 +64,9 @@ module RunLoop
     # TODO ensure a booted state.
     #
     # @param [String] bundle_id The CFBundleIdentifier of the app.
+    # @param [RunLoop::Device] device The device under test.
     # @return [String] The path to the .app bundle if it exists; nil otherwise.
-    def app_container(bundle_id)
+    def app_container(device, bundle_id)
       return nil if !xcode.version_gte_7?
       cmd = ["simctl", "get_app_container", device.udid, bundle_id]
       hash = execute(cmd, DEFAULTS)

@@ -296,7 +296,7 @@ describe RunLoop::CoreSimulator do
     let(:device) { RunLoop::Device.new('iPhone 5s', '8.1',
                                        'A08334BE-77BD-4A2F-BA25-A0E8251A1A80') }
     let(:core_sim) { RunLoop::CoreSimulator.new(device, app) }
-    let(:simctl) { RunLoop::Simctl.new(device) }
+    let(:simctl) { RunLoop::Simctl.new }
     let(:xcode) { RunLoop::Xcode.new }
 
     describe '#uninstall_app_and_sandbox' do

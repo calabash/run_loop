@@ -1,7 +1,7 @@
 
 describe RunLoop::Simctl do
   let(:device) { Resources.shared.default_simulator }
-  let(:simctl) { RunLoop::Simctl.new(device) }
+  let(:simctl) { RunLoop::Simctl.new }
   let(:xcrun) { RunLoop::Xcrun.new }
   let(:xcode) { RunLoop::Xcode.new }
   let(:defaults) { RunLoop::Simctl::DEFAULTS }
@@ -20,8 +20,6 @@ describe RunLoop::Simctl do
   end
 
   it ".new" do
-    actual = simctl.device
-    expect(simctl.instance_variable_get(:@device)).to be == actual
   end
 
   describe "#app_container" do
@@ -48,20 +46,20 @@ describe RunLoop::Simctl do
       it "app is installed" do
         expect(simctl).to receive(:execute).with(cmd, defaults).and_return(hash)
 
-        expect(simctl.app_container(bundle_id)).to be == hash[:out].strip
+        expect(simctl.app_container(device, bundle_id)).to be == hash[:out].strip
       end
 
       it "app is not installed" do
         hash[:exit_status] = 1
         expect(simctl).to receive(:execute).with(cmd, defaults).and_return(hash)
-        expect(simctl.app_container(bundle_id)).to be == nil
+        expect(simctl.app_container(device, bundle_id)).to be == nil
       end
     end
 
     it "Xcode < 7" do
       expect(xcode).to receive(:version_gte_7?).and_return(false)
 
-      expect(simctl.app_container(bundle_id)).to be == nil
+      expect(simctl.app_container(device, bundle_id)).to be == nil
     end
   end
 
