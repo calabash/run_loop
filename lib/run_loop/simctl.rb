@@ -30,23 +30,32 @@ module RunLoop
     end
 
     # @!visibility private
-    attr_accessor :device
+    attr_reader :device
 
     # @!visibility private
-    #
-    # @param [RunLoop::Device] device Cannot be nil.
-    def initialize(device)
-      @device = device
+    def initialize
+      @ios_devices = []
+      @tvos_devices = []
+      @watchos_devices = []
     end
 
     # @!visibility private
     def to_s
-      "#<Simctl: #{device.name} #{device.udid}>"
+      "#<Simctl: #{xcode.version}>"
     end
 
     # @!visibility private
     def inspect
       to_s
+    end
+
+    # @!visibility private
+    def simulators
+      simulators = ios_devices
+      if simulators.empty?
+       simulators = fetch_devices![:ios]
+      end
+      simulators
     end
 
     # @!visibility private
@@ -62,8 +71,9 @@ module RunLoop
     # TODO ensure a booted state.
     #
     # @param [String] bundle_id The CFBundleIdentifier of the app.
+    # @param [RunLoop::Device] device The device under test.
     # @return [String] The path to the .app bundle if it exists; nil otherwise.
-    def app_container(bundle_id)
+    def app_container(device, bundle_id)
       return nil if !xcode.version_gte_7?
       cmd = ["simctl", "get_app_container", device.udid, bundle_id]
       hash = execute(cmd, DEFAULTS)
@@ -79,9 +89,133 @@ module RunLoop
     private
 
     # @!visibility private
+    attr_reader :ios_devices, :tvos_devices, :watchos_devices
+
+    # @!visibility private
     def execute(array, options)
       merged = DEFAULTS.merge(options)
       xcrun.exec(array, merged)
+    end
+
+    # @!visibility private
+    #
+    # Starting in Xcode 7, simctl allows a --json option for listing devices.
+    #
+    # On Xcode 6, we will fall back to SimControl which does a line-by-line
+    # processing of `simctl list devices`. tvOS and watchOS devices are not
+    # available on Xcode < 7.
+    #
+    # This is a destructive operation on `@ios_devices`, `@tvos_devices`, and
+    # `@watchos_devices`.  Callers should check for existing devices to avoid
+    # the overhead of calling `simctl list devices --json`.
+    def fetch_devices!
+      if !xcode.version_gte_7?
+        return {
+          :ios => sim_control.simulators,
+          :tvos => [],
+          :watchos => []
+        }
+      end
+
+      @ios_devices = []
+      @tvos_devices = []
+      @watchos_devices = []
+
+      cmd = ["simctl", "list", "devices", "--json"]
+      hash = execute(cmd, DEFAULTS)
+
+      out = hash[:out]
+      exit_status = hash[:exit_status]
+      if exit_status != 0
+        raise RuntimeError, %Q[simctl exited #{exit_status}:
+
+#{out}
+
+while trying to list devices.
+]
+      end
+
+      devices = json_to_hash(out)["devices"]
+
+      devices.each do |key, device_list|
+        version = device_key_to_version(key)
+        bucket = bucket_for_key(key)
+
+        device_list.each do |record|
+          if device_available?(record)
+            bucket << device_from_record(record, version)
+          end
+        end
+      end
+      {
+        :ios => ios_devices,
+        :tvos => tvos_devices,
+        :watchos => watchos_devices
+      }
+    end
+
+    # @!visibility private
+    def json_to_hash(json)
+      begin
+        JSON.parse(json)
+      rescue TypeError, JSON::ParserError => e
+        raise RuntimeError, %Q[Could not parse simctl JSON response:
+
+#{e}
+]
+      end
+    end
+
+    # @!visibility private
+    def device_key_is_ios?(key)
+      key[/iOS/, 0]
+    end
+
+    # @!visibility private
+    def device_key_is_tvos?(key)
+      key[/tvOS/, 0]
+    end
+
+    # @!visibility private
+    def device_key_is_watchos?(key)
+      key[/watchOS/, 0]
+    end
+
+    # @!visibility private
+    def device_key_to_version(key)
+      str = key.split(" ").last
+      RunLoop::Version.new(str)
+    end
+
+    # @!visibility private
+    def device_available?(record)
+      record["availability"] == "(available)"
+    end
+
+    # @!visibility private
+    def device_from_record(record, version)
+      RunLoop::Device.new(record["name"],
+                          version,
+                          record["udid"],
+                          record["state"])
+    end
+
+    # @!visibility private
+    def bucket_for_key(key)
+      if device_key_is_ios?(key)
+        bin = @ios_devices
+      elsif device_key_is_tvos?(key)
+        bin = @tvos_devices
+      elsif device_key_is_watchos?(key)
+        bin = @watchos_devices
+      else
+        raise RuntimeError, "Unexpected key while processing simctl output:
+
+key = #{key}
+
+is not an iOS, tvOS, or watchOS device"
+      end
+      bin
     end
 
     # @!visibility private
@@ -92,6 +226,13 @@ module RunLoop
     # @!visibility private
     def xcode
       @xcode ||= RunLoop::Xcode.new
+    end
+
+    # @!visibility private
+    # Support for Xcode < 7 when trying to collect simulators.  Xcode 7 allows
+    # a --json option which is much easier to parse.
+    def sim_control
+      @sim_control ||= RunLoop::SimControl.new
     end
   end
 end

@@ -28,7 +28,8 @@ $RBENV_EXEC bundle exec rspec \
   spec/integration/strings_spec.rb \
   spec/integration/app_spec.rb \
   spec/integration/codesign_spec.rb \
-  spec/integration/core_spec.rb
+  spec/integration/core_spec.rb \
+  spec/integration/simctl_spec.rb
 
 # CLI tests
 
