@@ -155,9 +155,30 @@ while trying to list devices.
     end
 
     # @!visibility private
+    #
+    # command_runner_ng combines stderr and stdout and starting in Xcode 7.3,
+    # simctl has started generating stderr output.  This must be filtered out
+    # so that we can parse the JSON response.
+    def filter_stderr(out)
+      out.split($-0).map do |line|
+        if stderr_line?(line)
+          nil
+        else
+          line
+        end
+      end.compact.join($-0)
+    end
+
+    # @!visibility private
+    def stderr_line?(line)
+      line[/CoreSimulatorService/, 0] || line[/simctl\[.+\]/, 0]
+    end
+
+    # @!visibility private
     def json_to_hash(json)
+      filtered = filter_stderr(json)
       begin
-        JSON.parse(json)
+        JSON.parse(filtered)
       rescue TypeError, JSON::ParserError => e
         raise RuntimeError, %Q[Could not parse simctl JSON response:
 

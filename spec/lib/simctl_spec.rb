@@ -177,6 +177,9 @@ describe RunLoop::Simctl do
   end
 
   describe "#json_to_hash" do
+    before do
+      expect(simctl).to receive(:filter_stderr).and_call_original
+    end
     it "symbolizes keys" do
       json = %Q[{ "key" : "value" }]
       expected = { "key" => "value" }
@@ -279,6 +282,33 @@ describe RunLoop::Simctl do
       expect do
         simctl.send(:bucket_for_key, "unknown key")
       end.to raise_error RuntimeError, /Unexpected key while processing simctl output/
+    end
+  end
+
+  describe "filtering stderr output from JSON" do
+    describe "#stderr_line?" do
+      it "CoreSimulatorService" do
+        line = "attempting to unload a stale CoreSimulatorService job"
+        expect(simctl.send(:stderr_line?, line)).to be_truthy
+      end
+
+      it "simctl[< pid info >]" do
+        line = "simctl[98400:32684208] blah blah"
+        expect(simctl.send(:stderr_line?, line)).to be_truthy
+      end
+    end
+
+    it "#filter_stderr" do
+      lines =
+%q[good line
+attempting to unload a stale CoreSimulatorService job
+simctl[98400:32684208] blah blah
+another good line]
+
+      expected = %q[good line
+another good line]
+
+      expect(simctl.send(:filter_stderr, lines)).to be == expected
     end
   end
 end
