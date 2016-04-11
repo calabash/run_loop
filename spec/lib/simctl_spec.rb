@@ -102,6 +102,10 @@ describe RunLoop::Simctl do
     end
 
     describe "Xcode >= 7" do
+      before do
+        expect(xcode).to receive(:version_gte_7?).and_return(true)
+      end
+
       it "non-zero exit status" do
         hash[:exit_status] = 1
         hash[:out] = "An error message"
