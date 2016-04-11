@@ -404,20 +404,14 @@ $ bundle exec run-loop simctl manage-processes
 
     RunLoop.log_debug("Trying #{tries} times to launch #{app.bundle_identifier} on #{device}")
 
-    tries.times do
-      hash = launch_app_with_simctl
+    tries.times do |try|
+      # Terminates CoreSimulatorService on failures.
+      hash = attempt_to_launch_app_with_simctl
+
       exit_status = hash[:exit_status]
       if exit_status != 0
-        out = hash[:out]
-        RunLoop.log_debug("Failed to launch app.")
-        out.split($-0).each do |line|
-          RunLoop.log_debug("    #{line}")
-        end
-        # Simulator is probably in a bad state, but this will be super disruptive.
-        # Let's try a softer approach first - sleep.
-        # self.terminate_core_simulator_processes
-        sleep(0.5)
-        last_error = out
+        # Last argument is how long to sleep after an error.
+        last_error = handle_failed_app_launch(hash, try, tries, 0.5)
       else
         last_error = nil
         break
@@ -432,14 +426,17 @@ $ bundle exec run-loop simctl manage-processes
 ]
     end
 
+    wait_for_app_launch
+  end
+
+  # @!visibility private
+  def wait_for_app_launch
     options = {
       :timeout => 10,
       :raise_on_timeout => true
     }
-
     RunLoop::ProcessWaiter.new(app.executable_name, options).wait_for_any
     device.simulator_wait_for_stable_state
-
     true
   end
 
@@ -621,6 +618,37 @@ Command had no output
     args = ['simctl', 'launch', device.udid, app.bundle_identifier]
     timeout = DEFAULT_OPTIONS[:launch_app_timeout]
     xcrun.exec(args, log_cmd: true, timeout: timeout)
+  end
+
+  # @!visibility private
+  def handle_failed_app_launch(hash, try, tries, wait_time)
+    out = hash[:out]
+    RunLoop.log_debug("Failed to launch app on try #{try + 1} of #{tries}.")
+    out.split($-0).each do |line|
+      RunLoop.log_debug("    #{line}")
+    end
+    # If we timed out on the launch, the CoreSimulator processes are quit
+    # (see above).  If at all possible, we want to avoid terminating
+    # CoreSimulatorService, because it takes a long time to launch.
+    sleep(wait_time) if wait_time > 0
+
+    out
+  end
+
+  # @!visibility private
+  def attempt_to_launch_app_with_simctl
+    begin
+      hash = launch_app_with_simctl
+    rescue RunLoop::Xcrun::TimeoutError => e
+      hash = {
+        :exit_status => 1,
+        :out => e.message
+      }
+      # Simulator is probably in a bad state.  Terminates the
+      # CoreSimulatorService.  Restarting this service is expensive!
+      RunLoop::CoreSimulator.terminate_core_simulator_processes
+    end
+    hash
   end
 
   # Required for support of iOS 7 CoreSimulators.  Can be removed when

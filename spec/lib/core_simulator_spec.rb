@@ -822,6 +822,106 @@ describe RunLoop::CoreSimulator do
       expect(core_sim.send(:launch_app_with_simctl)).to be == {}
     end
 
+    it "#handle_failed_app_launch" do
+      hash = {
+        :out => "The error output",
+        :exit_status => 1
+      }
+
+      actual = core_sim.send(:handle_failed_app_launch, hash, 2, 5, 0)
+      expect(actual).to be == hash[:out]
+    end
+
+    describe "#attempt_to_launch_with_simctl" do
+      let(:error) { RunLoop::Xcrun::TimeoutError.new("My timeout") }
+      let (:hash) do
+        {
+          :exit_status => 1,
+          :out => error.message
+        }
+      end
+
+      it "successful launch" do
+        hash[:exit_status] = 0
+        hash[:out] = nil
+        expect(core_sim).to receive(:launch_app_with_simctl).and_return(hash)
+
+        actual = core_sim.send(:attempt_to_launch_app_with_simctl)
+        expect(actual).to be == hash
+      end
+
+      it "timeout error" do
+        expect(core_sim).to receive(:launch_app_with_simctl).and_raise(error)
+        expect(RunLoop::CoreSimulator).to receive(:terminate_core_simulator_processes).and_return(true)
+
+        actual = core_sim.send(:attempt_to_launch_app_with_simctl)
+        expect(actual).to be == hash
+      end
+
+      it "any other error" do
+        expect(core_sim).to receive(:launch_app_with_simctl).and_raise(RuntimeError)
+
+        expect do
+          core_sim.send(:attempt_to_launch_app_with_simctl)
+        end.to raise_error RuntimeError
+      end
+    end
+
+    describe "#launch" do
+      let(:tries) { 3 }
+
+      before do
+        expect(core_sim).to receive(:install).and_return(true)
+        expect(core_sim).to receive(:launch_simulator).and_return(true)
+        expect(RunLoop::Environment).to receive(:ci?).and_return(false)
+      end
+
+      it "launches on the first try" do
+        hash = {
+          :out => nil,
+          :exit_status => 0
+        }
+        expect(core_sim).to receive(:attempt_to_launch_app_with_simctl).and_return(hash)
+        expect(core_sim).to receive(:wait_for_app_launch).and_return(:launched)
+
+        expect(core_sim.launch).to be == :launched
+      end
+
+      it "never launches" do
+        hash = {
+          :out => "My launch error",
+          :exit_status => 1
+        }
+
+        expect(core_sim).to receive(:attempt_to_launch_app_with_simctl).exactly(tries).times.and_return(hash)
+        expect(core_sim).to receive(:handle_failed_app_launch).exactly(tries).times.and_return(hash[:out])
+
+        expect do
+          core_sim.launch
+        end.to raise_error RuntimeError, /#{hash[:out]}/
+      end
+
+      it "launches after 2 tries" do
+        bad = {
+          :out => "My launch error",
+          :exit_status => 1
+        }
+
+        good = {
+          :out => nil,
+          :exit_status => 0
+        }
+
+        values = [bad, bad, good]
+
+        expect(core_sim).to receive(:attempt_to_launch_app_with_simctl).and_return(*values)
+        expect(core_sim).to receive(:handle_failed_app_launch).exactly(tries - 1).times.and_return(bad)
+        expect(core_sim).to receive(:wait_for_app_launch).and_return(:launched)
+
+        expect(core_sim.launch).to be == :launched
+      end
+    end
+
     describe '.wait_for_simulator_state' do
       before do
         stub_const("RunLoop::CoreSimulator::WAIT_FOR_SIMULATOR_STATE_INTERVAL", 0)
