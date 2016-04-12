@@ -853,6 +853,8 @@ describe RunLoop::CoreSimulator do
       it "timeout error" do
         expect(core_sim).to receive(:launch_app_with_simctl).and_raise(error)
         expect(RunLoop::CoreSimulator).to receive(:terminate_core_simulator_processes).and_return(true)
+        expect(core_sim).to receive(:launch_simulator).and_return(true)
+        expect(Kernel).to receive(:sleep).with(0.5).and_return(true)
 
         actual = core_sim.send(:attempt_to_launch_app_with_simctl)
         expect(actual).to be == hash
