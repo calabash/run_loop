@@ -2,6 +2,12 @@
 
 ### 2.1.1
 
+* Improve retry strategy for app launch on simulators #436
+* Fix instruments CLI rspec tests. #416
+* CoreSim#launch: improve retrying #434
+* Filter new Xcode 7.3 simctl stderr output from `simctl list devices`
+  #433
+* Simctl is responsible for collecting devices on Xcode > 6
 * CoreSim: patch retry on failed app launch 5300542
 * Restore UIALogger flushing and ensure variables are substituted
   properly. #430
