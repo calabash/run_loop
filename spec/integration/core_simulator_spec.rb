@@ -1,5 +1,5 @@
 describe RunLoop::CoreSimulator do
-  let(:simulator) { RunLoop::SimControl.new.simulators.sample }
+  let(:simulator) { Resources.shared.default_simulator }
   let(:app) { RunLoop::App.new(Resources.shared.cal_app_bundle_path) }
   let(:xcrun) { RunLoop::Xcrun.new }
 
@@ -90,6 +90,13 @@ describe RunLoop::CoreSimulator do
       running = core_sim.send(:running_simulator_pid)
       expect(pid).to be == running
     end
+  end
+
+  it "retries app launching" do
+    expect(core_sim).to receive(:launch_app_with_simctl).twice.and_raise(RunLoop::Xcrun::TimeoutError)
+    expect(core_sim).to receive(:launch_app_with_simctl).and_call_original
+
+    expect(core_sim.launch).to be == true
   end
 
   it 'install with simctl' do

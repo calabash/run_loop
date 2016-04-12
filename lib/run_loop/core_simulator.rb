@@ -647,6 +647,8 @@ Command had no output
       # Simulator is probably in a bad state.  Terminates the
       # CoreSimulatorService.  Restarting this service is expensive!
       RunLoop::CoreSimulator.terminate_core_simulator_processes
+      Kernel.sleep(0.5)
+      launch_simulator
     end
     hash
   end
