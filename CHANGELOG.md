@@ -2,6 +2,7 @@
 
 ### 2.1.1
 
+* Fixing syntax error in host script #438 @garyjohnson
 * Improve retry strategy for app launch on simulators #436
 * Fix instruments CLI rspec tests. #416
 * CoreSim#launch: improve retrying #434
