@@ -197,25 +197,24 @@ describe RunLoop::XCUITest do
       end
     end
 
-    describe ".log_file" do
+    describe ".xcodebuild_log_file" do
       before do
         FileUtils.mkdir_p(xcuitest_dir)
       end
 
-      let(:path) { File.join(xcuitest_dir, "xcuitest.log") }
+      let(:path) { File.join(xcuitest_dir, "xcodebuild.log") }
 
       it "creates a file" do
         FileUtils.rm_rf(path)
 
-        expect(RunLoop::XCUITest.log_file).to be == path
+        expect(RunLoop::XCUITest.xcodebuild_log_file).to be == path
         expect(File.exist?(path)).to be_truthy
       end
 
       it "returns existing file path" do
         FileUtils.touch(path)
-        expect(RunLoop::XCUITest.log_file).to be == path
+        expect(RunLoop::XCUITest.xcodebuild_log_file).to be == path
       end
     end
   end
 end
-

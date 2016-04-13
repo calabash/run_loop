@@ -44,12 +44,9 @@ module RunLoop
     end
 
     # @!visibility private
-    def self.log_file
-      path = File.join(XCUITest.dot_dir, "xcuitest.log")
-
-      if !File.exist?(path)
-        FileUtils.touch(path)
-      end
+    def self.xcodebuild_log_file
+      path = File.join(XCUITest.dot_dir, "xcodebuild.log")
+      FileUtils.touch(path) if !File.exist?(path)
       path
     end
 
@@ -314,7 +311,7 @@ module RunLoop
         "test"
       ]
 
-      log_file = XCUITest.log_file
+      log_file = XCUITest.xcodebuild_log_file
 
       options = {
         :out => log_file,
