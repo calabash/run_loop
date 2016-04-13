@@ -216,8 +216,5 @@ describe RunLoop::XCUITest do
         expect(RunLoop::XCUITest.xcodebuild_log_file).to be == path
       end
     end
-      end
-    end
   end
 end
-
