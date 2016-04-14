@@ -92,34 +92,6 @@ describe RunLoop::SimControl do
     end
   end
 
-  unless Resources.shared.travis_ci?
-    describe '#reset_sim_content_and_settings' do
-
-      before(:each) do
-        RunLoop::SimControl.terminate_all_sims
-      end
-
-      it "with Xcode #{Resources.shared.current_xcode_version}" do
-        sim_control.reset_sim_content_and_settings
-        actual = sim_control.send(:existing_sim_sdk_or_device_data_dirs)
-        expect(actual).to be_a Array
-        expect(actual.count).to be >= 1
-      end
-
-      if Resources.shared.core_simulator_env?
-        describe "with Xcode #{Resources.shared.current_xcode_version}" do
-          it "can reset the content and settings on a single simulator" do
-            udid = sim_control.send(:sim_details, :udid).keys.sample
-            options = {:sim_udid => udid}
-            sim_control.reset_sim_content_and_settings(options)
-            containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
-            expect(File.exist? containers_dir).to be == false
-          end
-        end
-      end
-    end
-  end
-
   describe '#enable_accessibility_on_sims' do
     before(:each) {
       RunLoop::SimControl.terminate_all_sims
@@ -127,47 +99,6 @@ describe RunLoop::SimControl do
 
     it "with Xcode #{Resources.shared.current_xcode_version}" do
       expect(sim_control.enable_accessibility_on_sims).to be == true
-    end
-  end
-
-  describe '#simctl_reset' do
-    before(:each) {
-      RunLoop::SimControl.terminate_all_sims
-    }
-
-    it 'raises an error if on Xcode < 6' do
-      local_sim_control = RunLoop::SimControl.new
-      expect(local_sim_control).to receive(:xcode_version_gte_6?).and_return(false)
-
-      expect do
-        local_sim_control.send(:simctl_reset)
-      end.to raise_error RuntimeError
-    end
-
-    if Resources.shared.core_simulator_env?
-      it 'resets the _all_ simulators when sim_udid is nil' do
-        expect(sim_control.send(:simctl_reset)).to be == true
-        sim_details = sim_control.send(:sim_details, :udid)
-        sim_details.each_key { |udid|
-          containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
-          expect(File.exist? containers_dir).to be == false
-        }
-      end
-
-      describe 'when sim_udid arg is not nil' do
-
-        it 'raises an error when the sim_udid is invalid' do
-          expect { sim_control.send(:simctl_reset, 'unknown udid') }.to raise_error RuntimeError
-        end
-
-        it 'resets the simulator with corresponding udid' do
-          sim_details = sim_control.send(:sim_details, :udid)
-          udid = sim_details.keys.sample
-          expect( sim_control.send(:simctl_reset, udid)).to be == true
-          containers_dir = Resources.shared.core_simulator_device_containers_dir(udid)
-          expect(File.exist? containers_dir).to be == false
-        end
-      end
     end
   end
 

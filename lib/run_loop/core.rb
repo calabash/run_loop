@@ -63,12 +63,12 @@ module RunLoop
       self.prepare(options)
 
       logger = options[:logger]
-      sim_control = options[:sim_control] || options[:simctl] || RunLoop::SimControl.new
+      simctl = options[:sim_control] || options[:simctl] || RunLoop::Simctl.new
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
 
       # Find the Device under test, the App under test, UIA strategy, and reset options
-      device = RunLoop::Device.detect_device(options, xcode, sim_control, instruments)
+      device = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
       app_details = RunLoop::DetectAUT.detect_app_under_test(options)
       uia_strategy = self.detect_uia_strategy(options, device, xcode)
       reset_options = self.detect_reset_options(options)
@@ -142,7 +142,7 @@ module RunLoop
       merged_options = options.merge(discovered_options)
 
       if device.simulator?
-        self.prepare_simulator(app_details[:app], device, xcode, sim_control, reset_options)
+        self.prepare_simulator(app_details[:app], device, xcode, simctl, reset_options)
       end
 
       self.log_run_loop_options(merged_options, xcode)
@@ -552,9 +552,9 @@ Logfile: #{log_file}
       return false if value[DEVICE_UDID_REGEX, 0] != nil
 
       # Check for named simulators and Xcode >= 7.0 simulators.
-      sim_control = run_options[:sim_control] || RunLoop::SimControl.new
-      xcode = sim_control.xcode
-      simulator = sim_control.simulators.find do |sim|
+      simctl = run_options[:sim_control] || run_options[:simctl] || RunLoop::Simctl.new
+      xcode = run_options[:xcode] || RunLoop::Xcode.new
+      simulator = simctl.simulators.find do |sim|
         [
           sim.instruments_identifier(xcode) == value,
           sim.udid == value,
@@ -568,9 +568,9 @@ Logfile: #{log_file}
     # @deprecated 2.1.0
     #
     # Do not call this method.
-    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
+    def self.udid_and_bundle_for_launcher(device_target, options, simctl=RunLoop::Simctl.new)
       RunLoop.deprecated("2.1.0", "No replacement")
-      xcode = sim_control.xcode
+      xcode = RunLoop::Xcode.new
 
       bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
 

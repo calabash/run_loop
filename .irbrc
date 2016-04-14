@@ -44,7 +44,7 @@ puts ''
 puts '#       =>  Useful Methods  <=          #'
 puts '> xcode       => Xcode instance'
 puts '> instruments => Instruments instance'
-puts '> simcontrol  => SimControl instance'
+puts '> simctl  => Simctl instance'
 puts '> default_sim => Default simulator'
 puts '> verbose     => turn on DEBUG logging'
 puts '> quiet       => turn off DEBUG logging'
@@ -58,14 +58,14 @@ def instruments
   @instruments ||= RunLoop::Instruments.new
 end
 
-def simcontrol
-  @simcontrol ||= RunLoop::SimControl.new
+def simctl
+  @simctl ||= RunLoop::Simctl.new
 end
 
 def default_sim
   @default_sim ||= lambda do
     name = RunLoop::Core.default_simulator(xcode)
-    simcontrol.simulators.find do |sim|
+    simctl.simulators.find do |sim|
       sim.instruments_identifier(xcode) == name
     end
   end.call
@@ -98,7 +98,7 @@ def create_simulator(n, options={})
 end
 
 def delete_simulator(name)
-  simcontrol.simulators.each do |simulator|
+  simctl.simulators.each do |simulator|
     if simulator.name == name
       puts "Deleting #{simulator}"
       system('xcrun', 'simctl', 'delete', simulator.udid)
@@ -121,17 +121,17 @@ end
 puts "XCUITest workspace = #{ENV["CBXWS"]}"
 
 def xcuitest(bundle_id="com.apple.Preferences")
-  device = RunLoop::Device.detect_device({}, xcode, simcontrol, instruments)
+  device = RunLoop::Device.detect_device({}, xcode, simctl, instruments)
   RunLoop::XCUITest.new(bundle_id, device)
 end
 
 def holmes(bundle_id="com.apple.Preferences")
-  device = RunLoop::Device.detect_device({}, xcode, simcontrol, instruments)
+  device = RunLoop::Device.detect_device({}, xcode, simctl, instruments)
   options = {
     :device => device.udid,
     :xcuitest => true,
     :xcode => xcode,
-    :simctl => simcontrol,
+    :simctl => simctl,
     :instruments => instruments,
     :app => bundle_id
   }

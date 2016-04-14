@@ -1,6 +1,6 @@
 describe RunLoop::Instruments do
 
-  let(:sim_control) { Resources.shared.sim_control }
+  let(:simctl) { Resources.shared.simctl }
   let(:instruments) { Resources.shared.instruments }
   let(:xcode) { Resources.shared.xcode }
 
@@ -15,7 +15,7 @@ describe RunLoop::Instruments do
       {
             :app => Resources.shared.cal_app_bundle_path,
             :device_target => 'simulator',
-            :sim_control => sim_control,
+            :simctl => simctl,
             :instruments => instruments,
             :xcode => xcode
       }
@@ -42,7 +42,7 @@ describe RunLoop::Instruments do
             it "#{developer_dir}" do
               Resources.shared.with_developer_dir(developer_dir) do
 
-                options[:sim_control] = RunLoop::SimControl.new
+                options[:simctl] = RunLoop::Simctl.new
                 options[:instruments] = RunLoop::Instruments.new
                 options[:xcode] = RunLoop::Xcode.new
 
@@ -78,12 +78,12 @@ describe RunLoop::Instruments do
 
   describe '#pids_from_ps_output' do
     it 'when instruments process is running return 1 process' do
-      sim_control = RunLoop::SimControl.new
+      simctl = Resources.shared.simctl
       options =
             {
                   :app => Resources.shared.cal_app_bundle_path,
                   :device_target => 'simulator',
-                  :sim_control => sim_control
+                  :simctl => simctl
             }
 
       Resources.shared.launch_with_options(options) do |hash|

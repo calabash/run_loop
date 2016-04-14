@@ -16,7 +16,7 @@ module RunLoop
     # @!visibility private
     def self.run(options={})
       # logger = options[:logger]
-      simctl = options[:sim_control] || options[:simctl] || RunLoop::SimControl.new
+      simctl = options[:sim_control] || options[:simctl] || RunLoop::Simctl.new
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
 

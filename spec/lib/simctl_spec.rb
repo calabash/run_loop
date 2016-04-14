@@ -26,6 +26,31 @@ describe RunLoop::Simctl do
     expect(simctl.instance_variable_get(:@watchos_devices)).to be == []
   end
 
+  describe "Compatibility with SimControl" do
+
+    before do
+      allow(simctl).to receive(:sim_control).and_return(sim_control)
+    end
+
+    it "#ensure_accessibility" do
+      expect(sim_control).to receive(:ensure_accessibility).with(device).and_return(:true)
+
+      expect(simctl.ensure_accessibility(device)).to be == :true
+    end
+
+    it "#ensure_software_keyboard" do
+      expect(sim_control).to receive(:ensure_software_keyboard).with(device).and_return(:true)
+
+      expect(simctl.ensure_software_keyboard(device)).to be == :true
+    end
+
+    it "#xcode is a public method" do
+      actual = simctl.xcode
+      expect(actual).to be_a_kind_of(RunLoop::Xcode)
+      expect(simctl.instance_variable_get(:@xcode)).to be == actual
+    end
+  end
+
   describe "#simulators" do
     it "ios_devices are empty" do
       devices = {
@@ -162,12 +187,6 @@ describe RunLoop::Simctl do
     actual = simctl.send(:xcrun)
     expect(actual).to be_a_kind_of(RunLoop::Xcrun)
     expect(simctl.instance_variable_get(:@xcrun)).to be == actual
-  end
-
-  it "#xcode" do
-    actual = simctl.send(:xcode)
-    expect(actual).to be_a_kind_of(RunLoop::Xcode)
-    expect(simctl.instance_variable_get(:@xcode)).to be == actual
   end
 
   it "#sim_control" do
