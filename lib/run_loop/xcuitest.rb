@@ -299,6 +299,10 @@ module RunLoop
 
     # @!visibility private
     def xcodebuild
+      env = {
+        "COMMAND_LINE_BUILD" => "1"
+      }
+
       args = [
         "xcrun",
         "xcodebuild",
@@ -318,10 +322,10 @@ module RunLoop
         :err => log_file
       }
 
-      command = args.join(" ")
+      command = "#{env.map.each { |k, v| "#{k}=#{v}" }.join(" ")} #{args.join(" ")}"
       RunLoop.log_unix_cmd("#{command} >& #{log_file}")
 
-      pid = Process.spawn(*args, options)
+      pid = Process.spawn(env, *args, options)
       Process.detach(pid)
       pid
     end
