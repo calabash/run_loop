@@ -6,7 +6,7 @@ module RunLoop
   module CLI
     class Simctl < Thor
 
-      attr_reader :sim_control
+      attr_reader :simctl
 
       desc 'tail', 'Tail the log file of the booted simulator'
       def tail
@@ -17,7 +17,7 @@ module RunLoop
         def tail_booted
           device = booted_device
           if device.nil?
-            version = Xcode.new.version
+            version = xcode.version
             puts "No simulator for active Xcode (version #{version}) is booted."
           else
             log_file = device.simulator_log_file_path
@@ -30,7 +30,7 @@ module RunLoop
       def booted
         device = booted_device
         if device.nil?
-          version = Xcode.new.version
+          version = xcode.version
           puts "No simulator for active Xcode (version #{version}) is booted."
         else
           puts device
@@ -73,7 +73,7 @@ module RunLoop
 
       no_commands do
         def erase_and_launch_each_simulator
-          sim_control.simulators.each do |simulator|
+          simctl.simulators.each do |simulator|
             RunLoop::CoreSimulator.erase(simulator)
             launch_simulator(simulator, xcode)
           end
@@ -81,7 +81,7 @@ module RunLoop
 
         def launch_simulator(simulator, xcode)
           core_sim = RunLoop::CoreSimulator.new(simulator, nil,
-                                                           {:xcode => xcode})
+                                                {:xcode => xcode})
           core_sim.launch_simulator
         end
       end
@@ -114,8 +114,8 @@ module RunLoop
       end
 
       no_commands do
-        def sim_control
-          @sim_control ||= RunLoop::SimControl.new
+        def simctl
+          @simctl ||= RunLoop::Simctl.new
         end
 
         def xcode
@@ -127,7 +127,7 @@ module RunLoop
         end
 
         def booted_device
-          sim_control.simulators.detect(nil) do |device|
+          simctl.simulators.detect(nil) do |device|
             device.state == 'Booted'
           end
         end
@@ -192,7 +192,7 @@ module RunLoop
       no_commands do
         def expect_device(options)
           device_from_options = options[:device]
-          simulators = sim_control.simulators
+          simulators = simctl.simulators
           if device_from_options.nil?
             default_name = RunLoop::Core.default_simulator
             device = simulators.find do |sim|

@@ -8,18 +8,18 @@ if Resources.shared.core_simulator_env?
     let(:device) {
       RunLoop::Device.new('name', '8.1', '134AECE8-0DDB-4A70-AA83-1CB3BC21ACD4', 'Booted')
     }
-    it '#sim_control' do
-      expect(simctl.sim_control).to be_an_instance_of RunLoop::SimControl
+    it '#simctl' do
+      expect(simctl.simctl).to be_an_instance_of RunLoop::Simctl
     end
 
     describe '#booted_device' do
       it 'returns nil if there are no booted devices' do
-        expect(simctl.sim_control).to receive(:simulators).and_return([])
+        expect(simctl.simctl).to receive(:simulators).and_return([])
         expect(simctl.booted_device).to be == nil
       end
 
       it 'returns the first booted device' do
-        expect(simctl.sim_control).to receive(:simulators).and_return([device])
+        expect(simctl.simctl).to receive(:simulators).and_return([device])
         expect(simctl.booted_device).to be == device
       end
     end
@@ -27,7 +27,7 @@ if Resources.shared.core_simulator_env?
     describe '#expect_device' do
       describe 'default simulator' do
         it 'raises error if device cannot be created from default simulator' do
-          expect(simctl.sim_control).to receive(:simulators).and_return([])
+          expect(simctl.simctl).to receive(:simulators).and_return([])
           expect {
             simctl.expect_device({})
           }.to raise_error RunLoop::CLI::ValidationError
@@ -35,8 +35,8 @@ if Resources.shared.core_simulator_env?
         end
 
         it 'can create a device from default simulator' do
-          expect(simctl.sim_control).to receive(:simulators).and_return([device])
-          identifier = device.instruments_identifier(simctl.sim_control.xcode)
+          expect(simctl.simctl).to receive(:simulators).and_return([device])
+          identifier = device.instruments_identifier(simctl.xcode)
           expect(RunLoop::Core).to receive(:default_simulator).and_return(identifier)
 
           expect(simctl.expect_device({})).to be_a_kind_of(RunLoop::Device)
@@ -45,20 +45,20 @@ if Resources.shared.core_simulator_env?
 
       describe 'when passed a UDID or instruments-ready simulator name' do
         it 'UUID' do
-          expect(simctl.sim_control).to receive(:simulators).and_return([device])
+          expect(simctl.simctl).to receive(:simulators).and_return([device])
           options = { :device => device.udid }
           expect(simctl.expect_device(options).udid).to be == device.udid
         end
 
         it 'name' do
-          expect(simctl.sim_control).to receive(:simulators).and_return([device])
-          identifier = device.instruments_identifier(simctl.sim_control.xcode)
+          expect(simctl.simctl).to receive(:simulators).and_return([device])
+          identifier = device.instruments_identifier(simctl.xcode)
           options = { :device => identifier }
           expect(simctl.expect_device(options).udid).to be == device.udid
         end
 
         it 'raises error error if no match can be found' do
-          expect(simctl.sim_control).to receive(:simulators).and_return([device])
+          expect(simctl.simctl).to receive(:simulators).and_return([device])
           options = { :device => 'foobar' }
           expect {
             simctl.expect_device(options).udid
