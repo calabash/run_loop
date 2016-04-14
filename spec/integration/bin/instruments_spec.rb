@@ -13,12 +13,12 @@ describe RunLoop::CLI::Instruments do
     end
 
     it 'can quit instruments' do
-      sim_control = RunLoop::SimControl.new
+      simctl = Resources.shared.simctl
       options =
             {
                   :app => Resources.shared.cal_app_bundle_path,
                   :device_target => 'simulator',
-                  :sim_control => sim_control
+                  :simctl => simctl
             }
 
       hash = Resources.shared.launch_with_options(options)

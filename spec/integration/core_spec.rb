@@ -27,8 +27,8 @@ describe RunLoop::Core do
 
         after(:each) do
           pid = fork do
-            local_sim_control = Resources.shared.sim_control
-            simulators = local_sim_control.simulators
+            local_simctl = Resources.shared.simctl
+            simulators = local_simctl.simulators
             simulators.each do |device|
               if device.name == 'rspec-test-device'
                 udid = device.udid
