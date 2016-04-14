@@ -82,36 +82,34 @@ module RunLoop
     #  are looking for.
     # @param [Hash] options Allows callers to pass runtime models that might
     #  optimize performance (via memoization).
-    # @option options [RunLoop::SimControl] :sim_control An instance of
-    #  SimControl.
+    # @option options [RunLoop::Simctl] :simctl An instance of
+    #  Simctl.
     # @option options [RunLoop::Instruments] :instruments An instance of
     #  Instruments.
+    # @option options [RunLoop::Xcode] :xcode An instance of Xcode
     #
     # @return [RunLoop::Device] A device that matches `udid_or_name`.
     # @raise [ArgumentError] If no matching device can be found.
     def self.device_with_identifier(udid_or_name, options={})
       if options.is_a?(RunLoop::SimControl)
-        RunLoop.deprecated('1.5.0', %q(
-The 'sim_control' argument has been deprecated.  It has been replaced by an
-options hash with two keys: :sim_control and :instruments.
-Please update your sources.))
-        merged_options = {
-              :sim_control => options,
-              :instruments => RunLoop::Instruments.new
-        }
-      else
-        default_options = {
-              :sim_control => RunLoop::SimControl.new,
-              :instruments => RunLoop::Instruments.new
-        }
-        merged_options = default_options.merge(options)
+        raise ArgumentError, %q[Support for the 'sim_control' argument has been
+removed (1.5.0).  It has been replaced by an options hash with two keys:
+:simctl and :instruments. Please update your sources.))]
       end
 
-      instruments = merged_options[:instruments]
-      sim_control = merged_options[:sim_control]
+      default_options = {
+        :simctl => RunLoop::Simctl.new,
+        :instruments => RunLoop::Instruments.new,
+        :xcode => RunLoop::Xcode.new
+      }
 
-      xcode = sim_control.xcode
-      simulator = sim_control.simulators.detect do |sim|
+      merged_options = default_options.merge(options)
+
+      instruments = merged_options[:instruments]
+      simctl = merged_options[:simctl]
+
+      xcode = RunLoop::Xcode.new
+      simulator = simctl.simulators.detect do |sim|
         sim.instruments_identifier(xcode) == udid_or_name ||
               sim.udid == udid_or_name
       end
@@ -135,13 +133,13 @@ Please update your sources.))
     #
     # @param [Hash] options The launch options passed to RunLoop::Core
     # @param [RunLoop::Xcode] xcode An Xcode instance
-    # @param [RunLoop::SimControl] simctl A SimControl instance
+    # @param [RunLoop::Simctl] simctl A SimControl instance
     # @param [RunLoop::Instruments] instruments An Instruments instance
     #
     # @raise [ArgumentError] If "device" is detected as the device target and
     #  there is no matching device.
     # @raise [ArgumentError] If DEVICE_TARGET or options specify an identifier
-    #  that does not match an iOS Simulator or phyiscal device.
+    #  that does not match an iOS Simulator or physical device.
     def self.detect_device(options, xcode, simctl, instruments)
       device = self.device_from_opts_or_env(options)
 
@@ -159,7 +157,8 @@ Please update your sources.))
       end
 
       # Raises ArgumentError if no matching device can be found.
-      self.device_with_identifier(identifier, sim_control: simctl,
+      self.device_with_identifier(identifier,
+                                  simctl: simctl,
                                   instruments: instruments)
     end
 
@@ -185,7 +184,7 @@ Please update your sources.))
     # @return [String] An instruments-ready device identifier.
     # @raise [RuntimeError] If trying to obtain a instruments-ready identifier
     #  for a simulator when Xcode < 6.
-    def instruments_identifier(xcode=SIM_CONTROL.xcode)
+    def instruments_identifier(xcode)
       if physical_device?
         udid
       else
@@ -206,6 +205,17 @@ Please update your sources.))
     # Is this a physical device?
     # @return [Boolean] Returns true if this is a device.
     def physical_device?
+      if udid.nil?
+        stack = Kernel.caller(0, 6)[0..-1].join("\n")
+        raise RuntimeError,
+          %Q[udid is nil
+
+#{stack}
+
+   name: #{name}
+version: #{version}
+]
+      end
       !udid[DEVICE_UDID_REGEX, 0].nil?
     end
 
@@ -602,9 +612,6 @@ Please update your sources.))
 
     # @!visibility private
     CORE_SIMULATOR_LOGS_DIR = File.expand_path('~/Library/Logs/CoreSimulator')
-
-    # TODO Is this a good idea?  It speeds up rspec tests by a factor of ~2x...
-    SIM_CONTROL = RunLoop::SimControl.new
 
     # @!visibility private
     def self.device_from_options(options)
