@@ -127,6 +127,10 @@ Please quit the Instruments.app and try again.)
         cloned_options[:sim_control] = options[:sim_control]
       end
 
+      if options[:simctl]
+        cloned_options[:simctl] = options[:simctl]
+      end
+
       Core.run_with_options(cloned_options)
     end
   end
