@@ -86,6 +86,27 @@ module RunLoop
       end
     end
 
+    # @!visibility private
+    #
+    # SimControl compatibility
+    def ensure_accessibility(device)
+      sim_control.ensure_accessibility(device)
+    end
+
+    # @!visibility private
+    #
+    # SimControl compatibility
+    def ensure_software_keyboard(device)
+      sim_control.ensure_software_keyboard(device)
+    end
+
+    # @!visibility private
+    #
+    # TODO Make this private again; exposed for SimControl compatibility.
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
+
     private
 
     # @!visibility private
@@ -242,11 +263,6 @@ is not an iOS, tvOS, or watchOS device"
     # @!visibility private
     def xcrun
       @xcrun ||= RunLoop::Xcrun.new
-    end
-
-    # @!visibility private
-    def xcode
-      @xcode ||= RunLoop::Xcode.new
     end
 
     # @!visibility private
