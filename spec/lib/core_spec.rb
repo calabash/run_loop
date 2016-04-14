@@ -2,8 +2,8 @@ require 'tmpdir'
 
 describe RunLoop::Core do
 
-  let(:sim_control) { RunLoop::SimControl.new }
-  let(:xcode) { sim_control.xcode }
+  let(:simctl) { RunLoop::Simctl.new }
+  let(:xcode) { Resources.shared.xcode }
   let(:instruments) { RunLoop::Instruments.new }
 
   it '.prepare' do
@@ -216,7 +216,7 @@ describe RunLoop::Core do
   describe '.log_run_loop_options' do
     let(:options) {
       {
-            :sim_control => RunLoop::SimControl.new,
+            :simctl => RunLoop::Simctl.new,
             :app => "/Users/deltron0/git/run-loop/spec/resources/chou-cal.app",
             :args => [],
             :bundle_dir_or_bundle_id => "/Users/deltron0/git/run-loop/spec/resources/chou-cal.app",
@@ -309,9 +309,7 @@ describe RunLoop::Core do
         let(:device) { RunLoop::Device.new('HATS', '8.4', options[:device_target]) }
 
         before do
-          expect(xcode).to receive(:version).at_least(:once).and_return xcode.v70
-          allow_any_instance_of(RunLoop::SimControl).to receive(:xcode).and_return xcode
-          allow_any_instance_of(RunLoop::SimControl).to receive(:simulators).and_return [device]
+          allow_any_instance_of(RunLoop::Simctl).to receive(:simulators).and_return [device]
         end
 
         it ':device_target => CoreSimulator UDID' do
