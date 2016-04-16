@@ -1,26 +1,26 @@
 var Log = (function () {
-    var forceFlush = [],
-        N = 16384,
-        i = N;
+    var forceFlush = [];
+    var N = "$FLUSH_LOGS" == "FLUSH_LOGS" ? 16384 : 0;
+    var i = N;
     while (i--) {
         forceFlush[i] = "*";
     }
     forceFlush = forceFlush.join('');
 
-    function log_json(object, flush)
+    function log_json(object)
     {
         UIALogger.logMessage("OUTPUT_JSON:\n"+JSON.stringify(object)+"\nEND_OUTPUT");
-        if (flush) {
+        if (forceFlush.length > 0) {
             UIALogger.logMessage(forceFlush);
         }
     }
 
     return {
-        result: function (status, data, flush) {
-            log_json({"status": status, "value": data, "index":_actualIndex}, flush)
+        result: function (status, data) {
+            log_json({"status": status, "value": data, "index":_actualIndex})
         },
-        output: function (msg, flush) {
-            log_json({"output": msg,"last_index":_actualIndex}, flush);
+        output: function (msg) {
+            log_json({"output": msg,"last_index":_actualIndex});
         }
     };
 })();

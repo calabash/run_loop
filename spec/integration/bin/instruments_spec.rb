@@ -13,12 +13,12 @@ describe RunLoop::CLI::Instruments do
     end
 
     it 'can quit instruments' do
-      sim_control = RunLoop::SimControl.new
+      simctl = Resources.shared.simctl
       options =
             {
                   :app => Resources.shared.cal_app_bundle_path,
                   :device_target => 'simulator',
-                  :sim_control => sim_control
+                  :simctl => simctl
             }
 
       hash = Resources.shared.launch_with_options(options)
@@ -69,7 +69,6 @@ describe RunLoop::CLI::Instruments do
         end
       end
 
-
       it '8.0 <= iOS < 9.0' do
 
         sampled = instruments.simulators.select do |device|
@@ -91,30 +90,6 @@ describe RunLoop::CLI::Instruments do
 
           expect(Luffa.unix_command(cmd,  {:exit_on_nonzero_status => false})).to be == 0
         end
-      end
-
-      it '7.1 <= iOS < 8.0' do
-        sampled = instruments.simulators.select do |device|
-          device.version == RunLoop::Version.new('7.1')
-        end.sample
-
-        if sampled.nil?
-          Luffa.log_warn("Skipping test: no 7.1 <= iOS Simulators < 8.0 found")
-        else
-          simulator = sampled.instruments_identifier(xcode)
-          cmd =
-                [
-                      'run-loop instruments launch',
-                      "--app #{Resources.shared.cal_app_bundle_path}",
-                      "--device \"#{simulator}\""
-                ].join(' ')
-
-          expect(Luffa.unix_command(cmd,  {:exit_on_nonzero_status => false})).to be == 0
-        end
-      end
-
-      it '7.0.3' do
-        Luffa.log_warn("Skipping iOS 7.0.3 Simulators because they are not supported on Yosemite")
       end
     end
   end

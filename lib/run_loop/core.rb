@@ -63,12 +63,12 @@ module RunLoop
       self.prepare(options)
 
       logger = options[:logger]
-      sim_control = options[:sim_control] || options[:simctl] || RunLoop::SimControl.new
+      simctl = options[:sim_control] || options[:simctl] || RunLoop::Simctl.new
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
 
       # Find the Device under test, the App under test, UIA strategy, and reset options
-      device = RunLoop::Device.detect_device(options, xcode, sim_control, instruments)
+      device = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
       app_details = RunLoop::DetectAUT.detect_app_under_test(options)
       uia_strategy = self.detect_uia_strategy(options, device, xcode)
       reset_options = self.detect_reset_options(options)
@@ -89,11 +89,20 @@ module RunLoop
 
       script = File.join(results_dir, '_run_loop.js')
 
-      code = UIAScriptTemplate.new(SCRIPTS_PATH, options[:script]).result
-      code = code.gsub(/\$PATH/, results_dir)
-      code = code.gsub(/\$READ_SCRIPT_PATH/, READ_SCRIPT_PATH)
-      code = code.gsub(/\$TIMEOUT_SCRIPT_PATH/, TIMEOUT_SCRIPT_PATH)
-      code = code.gsub(/\$MODE/, 'FLUSH') unless options[:no_flush]
+      javascript = UIAScriptTemplate.new(SCRIPTS_PATH, options[:script]).result
+      UIAScriptTemplate.sub_path_var!(javascript, results_dir)
+      UIAScriptTemplate.sub_read_script_path_var!(javascript, READ_SCRIPT_PATH)
+      UIAScriptTemplate.sub_timeout_script_path_var!(javascript, TIMEOUT_SCRIPT_PATH)
+
+      # Using a :no_* option is confusing.
+      # TODO Replace :no_flush with :flush_uia_logs; it should default to true
+      if RunLoop::Environment.xtc?
+        UIAScriptTemplate.sub_mode_var!(javascript, "FLUSH") unless options[:no_flush]
+      else
+        if self.detect_flush_uia_log_option(options)
+          UIAScriptTemplate.sub_flush_uia_logs_var!(javascript, "FLUSH_LOGS")
+        end
+      end
 
       repl_path = File.join(results_dir, 'repl-cmd.pipe')
       FileUtils.rm_f(repl_path)
@@ -111,7 +120,7 @@ module RunLoop
         if include_calabash_script?(options)
           file.puts IO.read(cal_script)
         end
-        file.puts code
+        file.puts javascript
       end
 
       args = options.fetch(:args, [])
@@ -133,7 +142,7 @@ module RunLoop
       merged_options = options.merge(discovered_options)
 
       if device.simulator?
-        self.prepare_simulator(app_details[:app], device, xcode, sim_control, reset_options)
+        self.prepare_simulator(app_details[:app], device, xcode, simctl, reset_options)
       end
 
       self.log_run_loop_options(merged_options, xcode)
@@ -543,9 +552,9 @@ Logfile: #{log_file}
       return false if value[DEVICE_UDID_REGEX, 0] != nil
 
       # Check for named simulators and Xcode >= 7.0 simulators.
-      sim_control = run_options[:sim_control] || RunLoop::SimControl.new
-      xcode = sim_control.xcode
-      simulator = sim_control.simulators.find do |sim|
+      simctl = run_options[:sim_control] || run_options[:simctl] || RunLoop::Simctl.new
+      xcode = run_options[:xcode] || RunLoop::Xcode.new
+      simulator = simctl.simulators.find do |sim|
         [
           sim.instruments_identifier(xcode) == value,
           sim.udid == value,
@@ -559,9 +568,9 @@ Logfile: #{log_file}
     # @deprecated 2.1.0
     #
     # Do not call this method.
-    def self.udid_and_bundle_for_launcher(device_target, options, sim_control=RunLoop::SimControl.new)
+    def self.udid_and_bundle_for_launcher(device_target, options, simctl=RunLoop::Simctl.new)
       RunLoop.deprecated("2.1.0", "No replacement")
-      xcode = sim_control.xcode
+      xcode = RunLoop::Xcode.new
 
       bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
 
@@ -659,6 +668,31 @@ Logfile: #{log_file}
               "Invalid strategy: expected '#{strategy}' to be :host, :preferences, or :shared_element"
       end
       strategy
+    end
+
+    # @!visibility private
+    #
+    # UIAutomation buffers log output in some very strange ways.  RunLoop
+    # attempts to work around this buffering by forcing characters onto the
+    # UIALogger buffer.  Once the buffer is full, UIAutomation will dump its
+    # contents.  It is essential that the communication between UIAutomation
+    # and RunLoop be synchronized.
+    #
+    # Casual users should never set the :flush_uia_logs key; they should use the
+    # defaults.
+    #
+    # :no_flush is supported (for now) as alternative key.
+    #
+    # @param [Hash] options The launch options passed to .run_with_options
+    def self.detect_flush_uia_log_option(options)
+      if options.has_key?(:no_flush)
+        # Confusing.
+        # :no_flush == false means, flush the logs.
+        # :no_flush == true means, don't flush the logs.
+        return !options[:no_flush]
+      end
+
+      return options.fetch(:flush_uia_logs, true)
     end
 
     # @!visibility private

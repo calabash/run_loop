@@ -39,7 +39,7 @@ module RunLoop
     # @!visibility private
     # @deprecated 2.1.0
     def xcode_version_gte_51?
-      RunLoop.deprecated("2.1.0", "No replacement.")
+      #RunLoop.deprecated("2.1.0", "No replacement.")
       xcode.version_gte_51?
     end
 
@@ -1146,7 +1146,10 @@ module RunLoop
           line[/Apple Watch/, 0],
           line[/watchOS/, 0],
           line[/Apple TV/, 0],
-          line[/tvOS/, 0]
+          line[/tvOS/, 0],
+          line[/Devices/, 0],
+          line[/CoreSimulatorService/, 0],
+          line[/simctl\[.+\]/, 0]
         ].any?
 
         if not_ios

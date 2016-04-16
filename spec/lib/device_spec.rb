@@ -61,18 +61,17 @@ describe RunLoop::Device do
   end
 
   describe '.device_with_identifier' do
-    let(:sim_control) { RunLoop::SimControl.new }
+    let(:simctl) { RunLoop::Simctl.new }
     let(:instruments) { RunLoop::Instruments.new }
-    let(:xcode) { sim_control.xcode }
     let(:options) do
       {
-            :sim_control => sim_control,
+            :simctl => simctl,
             :instruments => instruments
       }
     end
 
     it 'raises an error if no simulator or device with UDID or name is found' do
-      expect(sim_control).to receive(:simulators).and_return([])
+      expect(simctl).to receive(:simulators).and_return([])
       expect(instruments).to receive(:physical_devices).and_return([])
 
       expect do
@@ -87,7 +86,7 @@ describe RunLoop::Device do
 
 
       it 'find by name' do
-        expect(sim_control).to receive(:simulators).and_return([])
+        expect(simctl).to receive(:simulators).and_return([])
         expect(instruments).to receive(:physical_devices).and_return([device])
 
         actual = RunLoop::Device.device_with_identifier(device.name, options)
@@ -95,7 +94,7 @@ describe RunLoop::Device do
       end
 
       it 'find by udid' do
-        expect(sim_control).to receive(:simulators).and_return([])
+        expect(simctl).to receive(:simulators).and_return([])
         expect(instruments).to receive(:physical_devices).and_return([device])
 
         actual = RunLoop::Device.device_with_identifier(device.udid, options)
@@ -110,9 +109,10 @@ describe RunLoop::Device do
                             '8.3',
                             'CE5BA25E-9434-475A-8947-ECC3918E64E3')
       }
+      let(:xcode) { Resources.shared.xcode }
 
       it 'find by name' do
-        expect(sim_control).to receive(:simulators).and_return([device])
+        expect(simctl).to receive(:simulators).and_return([device])
         identifier = device.instruments_identifier(xcode)
 
         actual = RunLoop::Device.device_with_identifier(identifier, options)
@@ -120,7 +120,7 @@ describe RunLoop::Device do
       end
 
       it 'find by udid' do
-        expect(sim_control).to receive(:simulators).and_return([device])
+        expect(simctl).to receive(:simulators).and_return([device])
         actual = RunLoop::Device.device_with_identifier(device.udid, options)
         expect(actual).to be_a_kind_of RunLoop::Device
       end
@@ -490,11 +490,11 @@ describe RunLoop::Device do
       end
 
       let(:xcode) { Resources.shared.xcode }
-      let(:simctl) { Resources.shared.sim_control }
+      let(:simctl) { Resources.shared.simctl }
       let(:instruments) { Resources.shared.instruments }
       let(:args) do
         {
-          :sim_control => simctl,
+          :simctl => simctl,
           :instruments => instruments
         }
       end

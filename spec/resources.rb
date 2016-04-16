@@ -47,6 +47,10 @@ class Resources
     @sim_control ||= RunLoop::SimControl.new
   end
 
+  def simctl
+    @simctl ||= RunLoop::Simctl.new
+  end
+
   def with_debugging(&block)
     original_value = ENV['DEBUG']
     ENV['DEBUG'] = '1'
@@ -127,7 +131,7 @@ class Resources
 
   def default_simulator
     options = {
-     :sim_control => sim_control,
+     :simctl => simctl,
      :instruments => instruments
     }
     RunLoop::Device.device_with_identifier(RunLoop::Core.default_simulator, options)
@@ -253,7 +257,7 @@ class Resources
   end
 
   def random_simulator_device
-    sim_control.simulators.shuffle.detect do |device|
+    simctl.simulators.shuffle.detect do |device|
       device.name[/Resizable/,0] == nil
     end
   end
@@ -360,8 +364,8 @@ class Resources
     end
   end
 
-  def simulator_with_sdk_test(sdk_test, sim_control)
-    sim_control.simulators.shuffle.detect do |device|
+  def simulator_with_sdk_test(sdk_test, simctl)
+    simctl.simulators.shuffle.detect do |device|
       [
             device.state == 'Shutdown',
             device.name != 'rspec-test-device',

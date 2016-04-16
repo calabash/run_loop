@@ -41,6 +41,7 @@ UIATarget.onAlert = function (alert) {
 
     dismissPrivacyAlert(0);
     target.popTimeout();
+
     for (var i=0;i<_RUN_LOOP_MAX_RETRY_AFTER_HANDLER;i++) {
         req = app.preferencesValueForKey(__calabashRequest);
         rsp = app.preferencesValueForKey(__calabashResponse);
@@ -143,7 +144,7 @@ var target = null,
     };
 
 _resetCalabashPreferences();
-Log.result('success',true,true);
+Log.result('success', true);
 target = UIATarget.localTarget();
 while (true) {
     try {
@@ -175,7 +176,7 @@ while (true) {
         }
         catch(err) {
             failureMessage = "Failure: "+ err.toString() + "  " + (err.stack ? err.stack.toString() : "");
-            Log.output({"output":failureMessage}, true);
+            Log.output({"output":failureMessage});
             _failure(err, _actualIndex);
         }
     }

@@ -1,19 +1,18 @@
 describe RunLoop do
 
+  let(:simctl) { Resources.shared.simctl }
+  let(:simulator) { Resources.shared.default_simulator }
+
   before(:each) do
-    RunLoop::CoreSimulator.quit_simulator
+    RunLoop::CoreSimulator.erase(simulator)
   end
 
   describe 'run on simulator' do
     it "Xcode #{Resources.shared.current_xcode_version}" do
-      sim_control = RunLoop::SimControl.new
-      sim_control.reset_sim_content_and_settings
-
       options =
             {
                   :app => Resources.shared.cal_app_bundle_path,
-                  :device_target => 'simulator',
-                  :sim_control => sim_control
+                  :simctl => simctl
             }
 
       Resources.shared.launch_with_options(options) do |hash|
@@ -27,19 +26,15 @@ describe RunLoop do
         xcode_installs.each do |developer_dir|
           it "#{developer_dir}" do
             Resources.shared.with_developer_dir(developer_dir) do
-              sim_control = RunLoop::SimControl.new
-              sim_control.reset_sim_content_and_settings
               options =
                     {
                           :app => Resources.shared.cal_app_bundle_path,
-                          :device_target => 'simulator',
-                          :sim_control => sim_control
+                          :simctl => simctl
                     }
 
               Resources.shared.launch_with_options(options) do |hash|
                 expect(hash).not_to be nil
               end
-
             end
           end
         end

@@ -296,7 +296,7 @@ describe RunLoop::CoreSimulator do
     let(:device) { RunLoop::Device.new('iPhone 5s', '8.1',
                                        'A08334BE-77BD-4A2F-BA25-A0E8251A1A80') }
     let(:core_sim) { RunLoop::CoreSimulator.new(device, app) }
-    let(:simctl) { RunLoop::Simctl.new(device) }
+    let(:simctl) { RunLoop::Simctl.new }
     let(:xcode) { RunLoop::Xcode.new }
 
     describe '#uninstall_app_and_sandbox' do
@@ -438,6 +438,106 @@ describe RunLoop::CoreSimulator do
         end
       end
 
+      describe "#complete_app_install" do
+        let(:tmp) { Resources.shared.local_tmp_dir }
+        let(:working_dir) { File.join(tmp, "complete-app-install") }
+        let(:app_bundle) { File.join(working_dir, "My.app") }
+        let(:plist) { File.join(working_dir,  RunLoop::CoreSimulator::METADATA_PLIST) }
+
+        before do
+          [working_dir, app_bundle].each do |path|
+            FileUtils.rm_rf(path)
+            FileUtils.mkdir_p(path)
+          end
+
+          FileUtils.touch(plist)
+        end
+
+        it "true" do
+          expect(core_sim.send(:complete_app_install?, app_bundle)).to be_truthy
+        end
+
+        it "false" do
+          FileUtils.rm_rf(plist)
+          expect(core_sim.send(:complete_app_install?, app_bundle)).to be_falsey
+        end
+      end
+
+      describe "#ensure_complete_app_installation" do
+        let(:tmp) { Resources.shared.local_tmp_dir }
+        let(:working_dir) { File.join(tmp, "ensure-complete-app-install") }
+        let(:app_bundle) { File.join(working_dir, "My.app") }
+        let(:plist) { File.join(working_dir,  RunLoop::CoreSimulator::METADATA_PLIST) }
+
+        before do
+          [working_dir, app_bundle].each do |path|
+            FileUtils.rm_rf(path)
+            FileUtils.mkdir_p(path)
+          end
+
+          FileUtils.touch(plist)
+        end
+
+        it "bundle is nil" do
+          actual = core_sim.send(:ensure_complete_app_installation, nil)
+          expect(actual).to be == nil
+        end
+
+        it "complete" do
+          expect(core_sim).to receive(:complete_app_install?).with(app_bundle).and_return(true)
+
+          actual = core_sim.send(:ensure_complete_app_installation, app_bundle)
+          expect(actual).to be == app_bundle
+        end
+
+        it "incomplete" do
+          expect(core_sim).to receive(:complete_app_install?).with(app_bundle).and_return(false)
+          expect(core_sim).to receive(:remove_stale_data_containers).and_return(true)
+
+          actual = core_sim.send(:ensure_complete_app_installation, app_bundle)
+          expect(actual).to be == nil
+          expect(File.exist?(working_dir)).to be_falsey
+        end
+      end
+
+      describe "#remove_stale_data_containers" do
+        let(:tmp) { Resources.shared.local_tmp_dir }
+        let(:working_dir) { File.join(tmp, "remove-stale-data-containers") }
+        let(:container_a) { File.join(working_dir, "Containers", "Data", "Application", "A") }
+        let(:plist_a) { File.join(container_a,  RunLoop::CoreSimulator::METADATA_PLIST) }
+        let(:container_b) { File.join(working_dir, "Containers", "Data", "Application", "B") }
+        let(:plist_b) { File.join(container_b,  RunLoop::CoreSimulator::METADATA_PLIST) }
+        let(:container_c) { File.join(working_dir, "Containers", "Data", "Application", "C") }
+        let(:plist_c) { File.join(container_c,  RunLoop::CoreSimulator::METADATA_PLIST) }
+        let(:pbuddy) { RunLoop::PlistBuddy.new }
+        let(:bundle_id) { "com.example.MyApp" }
+
+        before do
+          [working_dir, container_a, container_b, container_c].each do |path|
+            FileUtils.rm_rf(path)
+            FileUtils.mkdir_p(path)
+          end
+
+          [plist_a, plist_b, plist_c].each do |path|
+            FileUtils.touch(path)
+          end
+
+          allow(core_sim).to receive(:pbuddy).and_return(pbuddy)
+          allow(core_sim.app).to receive(:bundle_identifier).and_return(bundle_id)
+          allow(core_sim).to receive(:device_data_dir).and_return(working_dir)
+          expect(pbuddy).to receive(:plist_read).with("MCMMetadataIdentifier", plist_a).and_return(bundle_id)
+          expect(pbuddy).to receive(:plist_read).with("MCMMetadataIdentifier", plist_b).and_return("com.does.not.match")
+          expect(pbuddy).to receive(:plist_read).with("MCMMetadataIdentifier", plist_c).and_return(bundle_id)
+        end
+
+        it "clears matching data containers" do
+          core_sim.send(:remove_stale_data_containers)
+          expect(File.exist?(container_a)).to be_falsey
+          expect(File.exist?(container_b)).to be_truthy
+          expect(File.exist?(container_c)).to be_falsey
+        end
+      end
+
       describe "#installed_app_bundle_dir" do
         let(:app_dir) do
           path = File.join(Resources.shared.local_tmp_dir, "Containers/Bundle/Application")
@@ -445,60 +545,14 @@ describe RunLoop::CoreSimulator do
           path
         end
 
-        let(:bundle_id) { app.bundle_identifier }
-
         before do
           expect(core_sim).to receive(:device_applications_dir).and_return(app_dir)
-          allow(core_sim).to receive(:xcode).and_return(xcode)
         end
 
         it "device applications dir does not exist" do
           expect(File).to receive(:exist?).with(app_dir).and_return(false)
 
           expect(core_sim.send(:installed_app_bundle_dir)).to be == nil
-        end
-
-        describe "Xcode >= 7" do
-
-          before do
-            expect(xcode).to receive(:version_gte_7?).and_return(true)
-          end
-
-          it "app installed" do
-            expect(RunLoop::Simctl).to receive(:new).with(device).and_return(simctl)
-            expect(simctl).to receive(:app_container).with(bundle_id).and_return(:path)
-
-            expect(core_sim.send(:installed_app_bundle_dir)).to be == :path
-          end
-
-          it "app not installed" do
-            expect(RunLoop::Simctl).to receive(:new).with(device).and_return(simctl)
-            expect(simctl).to receive(:app_container).with(bundle_id).and_return(nil)
-
-            expect(core_sim.send(:installed_app_bundle_dir)).to be == nil
-          end
-        end
-
-        describe "Xcode < 7" do
-          let(:glob) { "#{app_dir}/**/*.app" }
-
-          before do
-            expect(xcode).to receive(:version_gte_7?).and_return(false)
-          end
-
-          it "app not installed" do
-            expect(Dir).to receive(:glob).with(glob).and_return([])
-
-            expect(core_sim.send(:installed_app_bundle_dir)).to be == nil
-          end
-
-          it "app is installed" do
-            FileUtils.cp_r(app.path, app_dir)
-
-            actual = core_sim.send(:installed_app_bundle_dir)
-            expected = "#{app_dir}/#{File.basename(app.path)}"
-            expect(actual).to be == expected
-          end
         end
       end
 
@@ -766,6 +820,108 @@ describe RunLoop::CoreSimulator do
       expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return({})
 
       expect(core_sim.send(:launch_app_with_simctl)).to be == {}
+    end
+
+    it "#handle_failed_app_launch" do
+      hash = {
+        :out => "The error output",
+        :exit_status => 1
+      }
+
+      actual = core_sim.send(:handle_failed_app_launch, hash, 2, 5, 0)
+      expect(actual).to be == hash[:out]
+    end
+
+    describe "#attempt_to_launch_with_simctl" do
+      let(:error) { RunLoop::Xcrun::TimeoutError.new("My timeout") }
+      let (:hash) do
+        {
+          :exit_status => 1,
+          :out => error.message
+        }
+      end
+
+      it "successful launch" do
+        hash[:exit_status] = 0
+        hash[:out] = nil
+        expect(core_sim).to receive(:launch_app_with_simctl).and_return(hash)
+
+        actual = core_sim.send(:attempt_to_launch_app_with_simctl)
+        expect(actual).to be == hash
+      end
+
+      it "timeout error" do
+        expect(core_sim).to receive(:launch_app_with_simctl).and_raise(error)
+        expect(RunLoop::CoreSimulator).to receive(:terminate_core_simulator_processes).and_return(true)
+        expect(core_sim).to receive(:launch_simulator).and_return(true)
+        expect(Kernel).to receive(:sleep).with(0.5).and_return(true)
+
+        actual = core_sim.send(:attempt_to_launch_app_with_simctl)
+        expect(actual).to be == hash
+      end
+
+      it "any other error" do
+        expect(core_sim).to receive(:launch_app_with_simctl).and_raise(RuntimeError)
+
+        expect do
+          core_sim.send(:attempt_to_launch_app_with_simctl)
+        end.to raise_error RuntimeError
+      end
+    end
+
+    describe "#launch" do
+      let(:tries) { 3 }
+
+      before do
+        expect(core_sim).to receive(:install).and_return(true)
+        expect(core_sim).to receive(:launch_simulator).and_return(true)
+        expect(RunLoop::Environment).to receive(:ci?).and_return(false)
+      end
+
+      it "launches on the first try" do
+        hash = {
+          :out => nil,
+          :exit_status => 0
+        }
+        expect(core_sim).to receive(:attempt_to_launch_app_with_simctl).and_return(hash)
+        expect(core_sim).to receive(:wait_for_app_launch).and_return(:launched)
+
+        expect(core_sim.launch).to be == :launched
+      end
+
+      it "never launches" do
+        hash = {
+          :out => "My launch error",
+          :exit_status => 1
+        }
+
+        expect(core_sim).to receive(:attempt_to_launch_app_with_simctl).exactly(tries).times.and_return(hash)
+        expect(core_sim).to receive(:handle_failed_app_launch).exactly(tries).times.and_return(hash[:out])
+
+        expect do
+          core_sim.launch
+        end.to raise_error RuntimeError, /#{hash[:out]}/
+      end
+
+      it "launches after 2 tries" do
+        bad = {
+          :out => "My launch error",
+          :exit_status => 1
+        }
+
+        good = {
+          :out => nil,
+          :exit_status => 0
+        }
+
+        values = [bad, bad, good]
+
+        expect(core_sim).to receive(:attempt_to_launch_app_with_simctl).and_return(*values)
+        expect(core_sim).to receive(:handle_failed_app_launch).exactly(tries - 1).times.and_return(bad)
+        expect(core_sim).to receive(:wait_for_app_launch).and_return(:launched)
+
+        expect(core_sim.launch).to be == :launched
+      end
     end
 
     describe '.wait_for_simulator_state' do

@@ -8,6 +8,7 @@ script:
   - scripts/ci/travis/install-gem-ci.rb
   - scripts/ci/travis/rspec-ci.rb
   - bundle exec rspec spec/integration/detect_simulators_spec.rb
+  - bundle exec rspec spec/integration/simctl_spec.rb
 
 rvm:
   - 2.0.0

@@ -104,7 +104,7 @@ module RunLoop
           launch_options = {
                 :args => parse_app_launch_args(options),
                 :udid => detect_device_udid_from_options(options),
-                :bundle_dir_or_bundle_id => detect_bundle_id_or_bundle_path(options)
+                :app => detect_bundle_id_or_bundle_path(options)
           }
           run_loop = RunLoop.run(launch_options)
           puts JSON.generate(run_loop)

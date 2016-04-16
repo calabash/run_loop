@@ -27,7 +27,7 @@ unless Resources.shared.travis_ci?
                           :bundle_id => Resources.shared.bundle_id,
                           :udid => device.udid,
                           :device_target => device.udid,
-                          :sim_control => RunLoop::SimControl.new,
+                          :simctl => RunLoop::Simctl.new,
                           :app => Resources.shared.bundle_id
                     }
               expect { Resources.shared.ideviceinstaller(device.udid, :install) }.to_not raise_error
@@ -63,7 +63,7 @@ unless Resources.shared.travis_ci?
                               :bundle_id => Resources.shared.bundle_id,
                               :udid => device.udid,
                               :device_target => device.udid,
-                              :sim_control => RunLoop::SimControl.new,
+                              :simctl => RunLoop::Simctl.new,
                               :app => Resources.shared.bundle_id
 
                         }

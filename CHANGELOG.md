@@ -1,5 +1,23 @@
 ## Change Log
 
+### 2.1.1
+
+* Expose color methods as public API #443
+* Replace SimControl with Simctl #441
+* Fixing syntax error in host script #438 @garyjohnson
+* Improve retry strategy for app launch on simulators #436
+* Fix instruments CLI rspec tests. #416
+* CoreSim#launch: improve retrying #434
+* Filter new Xcode 7.3 simctl stderr output from `simctl list devices`
+  #433
+* Simctl is responsible for collecting devices on Xcode > 6
+* CoreSim: patch retry on failed app launch 5300542
+* Restore UIALogger flushing and ensure variables are substituted
+  properly. #430
+* DotDir: symlink to current result #429
+* Relax deprecation warnings @TeresaP, @jane-openreply, and others
+* RESET\_BETWEEN\_SCENARIOS has stopped working #426 @ankurgamit
+
 ### 2.1.0
 
 This release fixes a bug that might put the iOS Simulator into a bad state.
