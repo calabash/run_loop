@@ -3,7 +3,7 @@ describe RunLoop do
     it 'does nothing in win32 environments' do
       expect(RunLoop::Environment).to receive(:windows_env?).and_return true
 
-      actual = RunLoop.send(:colorize, 'string', 32)
+      actual = RunLoop::Color.send(:colorize, 'string', 32)
       expect(actual).to be == 'string'
     end
 
@@ -11,7 +11,7 @@ describe RunLoop do
       expect(RunLoop::Environment).to receive(:windows_env?).and_return false
       expect(RunLoop::Environment).to receive(:xtc?).and_return true
 
-      actual = RunLoop.send(:colorize, 'string', 32)
+      actual = RunLoop::Color.send(:colorize, 'string', 32)
       expect(actual).to be == 'string'
     end
 
@@ -19,7 +19,7 @@ describe RunLoop do
       expect(RunLoop::Environment).to receive(:windows_env?).and_return false
       expect(RunLoop::Environment).to receive(:xtc?).and_return false
 
-      actual = RunLoop.send(:colorize, 'string', 32)
+      actual = RunLoop::Color.send(:colorize, 'string', 32)
       expect(actual[/32/, 0]).not_to be == nil
     end
   end
