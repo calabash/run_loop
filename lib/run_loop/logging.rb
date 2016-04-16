@@ -43,73 +43,69 @@ module RunLoop
   # cyan
   def self.log_unix_cmd(msg)
     if RunLoop::Environment.debug?
-      puts self.cyan("EXEC: #{msg}") if msg
+      puts Color.cyan("EXEC: #{msg}") if msg
     end
   end
 
   # blue
   def self.log_warn(msg)
-    puts self.blue("WARN: #{msg}") if msg
+    puts Color.blue("WARN: #{msg}") if msg
   end
 
   # magenta
   def self.log_debug(msg)
     if RunLoop::Environment.debug?
-      puts self.magenta("DEBUG: #{msg}") if msg
+      puts Color.magenta("DEBUG: #{msg}") if msg
     end
   end
 
   # .log_info is already taken by the XTC logger. (>_O)
   # green
   def self.log_info2(msg)
-    puts self.green("INFO: #{msg}") if msg
+    puts Color.green("INFO: #{msg}") if msg
   end
 
   # red
   def self.log_error(msg)
-    puts self.red("ERROR: #{msg}") if msg
+    puts Color.red("ERROR: #{msg}") if msg
   end
 
-  private
+  module Color
+    # @!visibility private
+    def self.colorize(string, color)
+      if RunLoop::Environment.windows_env?
+        string
+      elsif RunLoop::Environment.xtc?
+        string
+      else
+        "\033[#{color}m#{string}\033[0m"
+      end
+    end
 
-  # @!visibility private
-  def self.windows_env?
-    RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/
-  end
+    # @!visibility private
+    def self.red(string)
+      colorize(string, 31)
+    end
 
-  # @!visibility private
-  def self.colorize(string, color)
-    if self.windows_env?
-      string
-    elsif RunLoop::Environment.xtc?
-      string
-    else
-      "\033[#{color}m#{string}\033[0m"
+    # @!visibility private
+    def self.blue(string)
+      colorize(string, 34)
+    end
+
+    # @!visibility private
+    def self.magenta(string)
+      colorize(string, 35)
+    end
+
+    # @!visibility private
+    def self.cyan(string)
+      colorize(string, 36)
+    end
+
+    # @!visibility private
+    def self.green(string)
+      colorize(string, 32)
     end
   end
-
-  # @!visibility private
-  def self.red(string)
-    colorize(string, 31)
-  end
-
-  # @!visibility private
-  def self.blue(string)
-    colorize(string, 34)
-  end
-
-  # @!visibility private
-  def self.magenta(string)
-    colorize(string, 35)
-  end
-
-  # @!visibility private
-  def self.cyan(string)
-    colorize(string, 36)
-  end
-
-  # @!visibility private
-  def self.green(string)
-    colorize(string, 32)
-  end
 end
+
