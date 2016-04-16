@@ -13,6 +13,11 @@ module RunLoop
       end
     end
 
+    # Returns true if Windows environment
+    def self.windows_env?
+      RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/
+    end
+
     # Returns true if debugging is enabled.
     def self.debug?
       ENV['DEBUG'] == '1'

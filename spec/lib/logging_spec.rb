@@ -1,15 +1,14 @@
 describe RunLoop do
-
   describe '.colorize' do
     it 'does nothing in win32 environments' do
-      expect(RunLoop).to receive(:windows_env?).and_return true
+      expect(RunLoop::Environment).to receive(:windows_env?).and_return true
 
       actual = RunLoop.send(:colorize, 'string', 32)
       expect(actual).to be == 'string'
     end
 
     it 'does nothing on the XTC' do
-      expect(RunLoop).to receive(:windows_env?).and_return false
+      expect(RunLoop::Environment).to receive(:windows_env?).and_return false
       expect(RunLoop::Environment).to receive(:xtc?).and_return true
 
       actual = RunLoop.send(:colorize, 'string', 32)
@@ -17,7 +16,7 @@ describe RunLoop do
     end
 
     it 'applies the color' do
-      expect(RunLoop).to receive(:windows_env?).and_return false
+      expect(RunLoop::Environment).to receive(:windows_env?).and_return false
       expect(RunLoop::Environment).to receive(:xtc?).and_return false
 
       actual = RunLoop.send(:colorize, 'string', 32)
