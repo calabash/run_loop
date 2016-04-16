@@ -126,7 +126,7 @@ module RunLoop
     # @!visibility private
     def query(mark)
       options = http_options
-      parameters = { :text => mark }
+      parameters = { :id => mark }
       request = request("query", parameters)
       client = client(options)
       response = client.post(request)
@@ -135,23 +135,19 @@ module RunLoop
 
     # @!visibility private
     def tap_mark(mark)
-      options = http_options
-      parameters = {
-        :gesture => "tap",
-        :text => mark
-      }
-      request = request("gesture", parameters)
-      client(options)
-      response = client.post(request)
-      expect_200_response(response)
+      body = query(mark)
+      tap_query_result(body)
     end
 
     # @!visibility private
     def tap_coordinate(x, y)
       options = http_options
       parameters = {
-        :gesture => "tap_coordinate",
-        :coordinate => {x: x, y: y}
+        :gesture => "touch",
+        :specifiers => {
+          :coordinate => {x: x, y: y}
+        },
+        :options => {}
       }
       request = request("gesture", parameters)
       client(options)
