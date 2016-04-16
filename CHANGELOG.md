@@ -2,6 +2,7 @@
 
 ### 2.1.1
 
+* Expose color methods as public API #443
 * Replace SimControl with Simctl #441
 * Fixing syntax error in host script #438 @garyjohnson
 * Improve retry strategy for app launch on simulators #436
