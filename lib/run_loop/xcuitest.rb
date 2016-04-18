@@ -361,7 +361,9 @@ module RunLoop
         RunLoop.log_debug("Launched #{bundle_id} on #{device}")
         RunLoop.log_debug("#{response.body}")
         if device.simulator?
-          device.simulator_wait_for_stable_state
+          # It is not clear yet whether we should do this.  There is a problem
+          # in the simulator_wait_for_stable_state; it waits too long.
+          # device.simulator_wait_for_stable_state
         end
         expect_200_response(response)
       rescue => e
