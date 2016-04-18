@@ -126,7 +126,7 @@ module RunLoop
     # @!visibility private
     def query(mark)
       options = http_options
-      parameters = { :text => mark }
+      parameters = { :id => mark }
       request = request("query", parameters)
       client = client(options)
       response = client.post(request)
@@ -135,23 +135,19 @@ module RunLoop
 
     # @!visibility private
     def tap_mark(mark)
-      options = http_options
-      parameters = {
-        :gesture => "tap",
-        :text => mark
-      }
-      request = request("gesture", parameters)
-      client(options)
-      response = client.post(request)
-      expect_200_response(response)
+      body = query(mark)
+      tap_query_result(body)
     end
 
     # @!visibility private
     def tap_coordinate(x, y)
       options = http_options
       parameters = {
-        :gesture => "tap_coordinate",
-        :coordinate => {x: x, y: y}
+        :gesture => "touch",
+        :specifiers => {
+          :coordinate => {x: x, y: y}
+        },
+        :options => {}
       }
       request = request("gesture", parameters)
       client(options)
@@ -299,6 +295,10 @@ module RunLoop
 
     # @!visibility private
     def xcodebuild
+      env = {
+        "COMMAND_LINE_BUILD" => "1"
+      }
+
       args = [
         "xcrun",
         "xcodebuild",
@@ -318,10 +318,10 @@ module RunLoop
         :err => log_file
       }
 
-      command = args.join(" ")
+      command = "#{env.map.each { |k, v| "#{k}=#{v}" }.join(" ")} #{args.join(" ")}"
       RunLoop.log_unix_cmd("#{command} >& #{log_file}")
 
-      pid = Process.spawn(*args, options)
+      pid = Process.spawn(env, *args, options)
       Process.detach(pid)
       pid
     end
@@ -361,7 +361,9 @@ module RunLoop
         RunLoop.log_debug("Launched #{bundle_id} on #{device}")
         RunLoop.log_debug("#{response.body}")
         if device.simulator?
-          device.simulator_wait_for_stable_state
+          # It is not clear yet whether we should do this.  There is a problem
+          # in the simulator_wait_for_stable_state; it waits too long.
+          # device.simulator_wait_for_stable_state
         end
         expect_200_response(response)
       rescue => e
