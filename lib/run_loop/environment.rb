@@ -15,7 +15,11 @@ module RunLoop
 
     # Returns true if Windows environment
     def self.windows_env?
-      RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/
+      if @@windows_env.nil?
+        @@windows_env = Environment.host_os_is_win?
+      end
+
+      @@windows_env
     end
 
     # Returns true if debugging is enabled.
@@ -255,6 +259,27 @@ Check your environment.]
         end
         path
       end
+    end
+
+    private
+
+    # @visibility private
+    WIN_PATTERNS = [
+      /bccwin/i,
+      /cygwin/i,
+      /djgpp/i,
+      /mingw/i,
+      /mswin/i,
+      /wince/i,
+    ]
+
+    # @!visibility private
+    @@windows_env = nil
+
+    # @!visibility private
+    def self.host_os_is_win?
+      ruby_platform = RbConfig::CONFIG["host_os"]
+      !!WIN_PATTERNS.find { |r| ruby_platform =~ r }
     end
   end
 end

@@ -16,6 +16,35 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".windows_env?" do
+    before do
+      RunLoop::Environment.class_variable_set(:@@windows_env, nil)
+    end
+
+    it "returns the value of @@windows_env if it is non-nil" do
+      RunLoop::Environment.class_variable_set(:@@windows_env, :windows)
+
+      expect(RunLoop::Environment.windows_env?).to be_truthy
+      expect(RunLoop::Environment.class_variable_get(:@@windows_env)).to be_truthy
+    end
+
+    describe "matches 'host_os' against known windows hosts" do
+      it "true" do
+        expect(RunLoop::Environment).to receive(:host_os_is_win?).and_return(true)
+
+        expect(RunLoop::Environment.windows_env?).to be_truthy
+        expect(RunLoop::Environment.class_variable_get(:@@windows_env)).to be == true
+      end
+
+      it "false" do
+        expect(RunLoop::Environment).to receive(:host_os_is_win?).and_return(false)
+
+        expect(RunLoop::Environment.windows_env?).to be_falsey
+        expect(RunLoop::Environment.class_variable_get(:@@windows_env)).to be == false
+      end
+    end
+  end
+
   describe '.debug?' do
     it "returns true when DEBUG == '1'" do
       stub_env('DEBUG', '1')
