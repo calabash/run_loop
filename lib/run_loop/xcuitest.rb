@@ -156,6 +156,22 @@ module RunLoop
     end
 
     # @!visibility private
+    def perform_coordinate_gesture(gesture, x, y, options={})
+      parameters = {
+        :gesture => gesture,
+        :specifiers => {
+          :coordinate => {x: x, y: y}
+        },
+        :options => options
+      }
+
+      request = request("gesture", parameters)
+      client(http_options)
+      response = client.post(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
     def tap_query_result(hash)
       rect = hash["rect"]
       h = rect["height"]
@@ -269,7 +285,7 @@ module RunLoop
         5.times do
           begin
             health
-            sleep(0.2)
+            sleep(1.0)
           rescue => _
             break
           end
