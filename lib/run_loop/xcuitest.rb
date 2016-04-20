@@ -364,6 +364,9 @@ module RunLoop
 
       shutdown
 
+      # Temp measure; we need to manage the xcodebuild pids.
+      system("pkill xcodebuild")
+
       if device.simulator?
         # quits the simulator
         sim = CoreSimulator.new(device, "")
