@@ -156,6 +156,20 @@ module RunLoop
     end
 
     # @!visibility private
+    def rotate_home_button_to(position, sleep_for=1.0)
+      orientation = orientation_for_position(position)
+      parameters = {
+        :orientation => orientation
+      }
+      request = request("rotate_home_button_to", parameters)
+      client(http_options)
+      response = client.post(request)
+      json = expect_200_response(response)
+      sleep(sleep_for)
+      json
+    end
+
+    # @!visibility private
     def perform_coordinate_gesture(gesture, x, y, options={})
       parameters = {
         :gesture => gesture,
@@ -426,6 +440,28 @@ Server replied with:
       end
 
       path
+    end
+
+    # @!visibility private
+    def orientation_for_position(position)
+      symbol = position.to_sym
+
+      case symbol
+        when :down, :bottom
+          return 1
+        when :up, :top
+          return 2
+        when :right
+          return 3
+        when :left
+          return 4
+        else
+          raise ArgumentError, %Q[
+Could not coerce '#{position}' into a valid orientation.
+
+Valid values are: :down, :up, :right, :left, :bottom, :top
+]
+      end
     end
   end
 end
