@@ -418,7 +418,7 @@ version: #{version}
         if is_stable
           if Time.now > quiet
             if first_launch
-              RunLoop.log_debug('First launch detected - allowing additional time to stabilize')
+              RunLoop.log_debug("First launch detected - allowing additional time to stabilize")
               first_launch = false
               sleep 1.2
               quiet = Time.now + quiet_time
