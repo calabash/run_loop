@@ -50,6 +50,8 @@ tools like instruments and simctl.}
   s.add_development_dependency('rake', '~> 10.3')
   s.add_development_dependency('guard-rspec', '~> 4.3')
   s.add_development_dependency('guard-bundler', '~> 2.0')
+  # Pin to 3.0.6; >= 3.1.0 requires ruby 2.2. This is guard dependency.
+  s.add_development_dependency("listen", "3.0.6")
   s.add_development_dependency('growl', '~> 1.0')
   s.add_development_dependency('stub_env', '>= 1.0.1', '< 2.0')
   s.add_development_dependency('pry')
