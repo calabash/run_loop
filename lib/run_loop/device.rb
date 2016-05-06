@@ -506,33 +506,6 @@ version: #{version}
     private
 
     # @!visibility private
-    # TODO write a unit test.
-    def last_line_from_simulator_log_file
-      file = simulator_log_file_path
-
-      return nil if !File.exist?(file)
-
-      debug = RunLoop::Environment.debug?
-
-      begin
-        io = File.open(file, 'r')
-        io.seek(-100, IO::SEEK_END)
-
-        line = io.readline
-      rescue StandardError => e
-        RunLoop.log_error("Caught #{e} while reading simulator log file") if debug
-      ensure
-        io.close if io && !io.closed?
-      end
-
-      if line
-        line.chomp
-      else
-        line
-      end
-    end
-
-    # @!visibility private
     def xcrun
       RunLoop::Xcrun.new
     end
