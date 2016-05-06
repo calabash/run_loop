@@ -42,7 +42,8 @@ module RunLoop
       def ignore_xcodeproj?(path)
         path[/CordovaLib/, 0] ||
           path[/Pods/, 0] ||
-          path[/Carthage/, 0]
+          path[/Carthage/, 0] ||
+          path[/Airship(Kit|Lib)/, 0]
       end
 
       # @!visibility private
