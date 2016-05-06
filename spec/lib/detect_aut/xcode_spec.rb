@@ -123,6 +123,11 @@ describe RunLoop::DetectAUT::Xcode do
       expect(obj.ignore_xcodeproj?(path)).to be_truthy
     end
 
+    it "ignores Google iOS SDK" do
+      path = "path/google-plus-ios-sdk-1.7.1/SampleCode/GooglePlusSample.xcodeproj"
+      expect(obj.ignore_xcodeproj?(path)).to be_truthy
+    end
+
     it "returns false" do
       path = "path/ProjectA.xcodeproj"
       expect(obj.ignore_xcodeproj?(path)).to be_falsey
