@@ -319,31 +319,6 @@ version: #{version}
     end
 
     # @!visibility private
-    # Is this the first launch of this Simulator?
-    #
-    # TODO Needs unit and integration tests.
-    def simulator_first_launch?
-      megabytes = simulator_data_dir_size
-
-      if version >= RunLoop::Version.new('9.0')
-        megabytes < 20
-      elsif version >= RunLoop::Version.new('8.0')
-        megabytes < 12
-      else
-        megabytes < 8
-      end
-    end
-
-    # @!visibility private
-    # The size of the simulator data/ directory.
-    #
-    # TODO needs unit tests.
-    def simulator_data_dir_size
-      path = File.join(simulator_root_dir, 'data')
-      RunLoop::Directory.size(path, :mb)
-    end
-
-    # @!visibility private
     #
     # Waits for three conditions:
     #
