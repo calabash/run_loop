@@ -282,6 +282,36 @@ describe RunLoop::Device do
       end
     end
 
+    it "#simulator_device_type" do
+      plist = "path/to/udid/data/device.plist"
+      expect(simulator).to receive(:simulator_device_plist).and_return(plist)
+      pbuddy = RunLoop::PlistBuddy.new
+      expect(simulator).to receive(:pbuddy).and_return(pbuddy)
+      expect(pbuddy).to receive(:plist_read).with("deviceType", plist).and_return(:type)
+
+      actual = simulator.send(:simulator_device_type)
+      expect(actual).to be == :type
+    end
+
+    describe "#simulator_is_ipad?" do
+      let(:ipad) { "com.apple.CoreSimulator.SimDeviceType.iPad-Retina" }
+      let(:iphone) { "com.apple.CoreSimulator.SimDeviceType.iPhone-4s" }
+
+      it "false" do
+       expect(simulator).to receive(:simulator_device_type).and_return(iphone)
+
+       actual = simulator.send(:simulator_is_ipad?)
+       expect(actual).to be_falsey
+      end
+
+      it "true" do
+       expect(simulator).to receive(:simulator_device_type).and_return(ipad)
+
+       actual = simulator.send(:simulator_is_ipad?)
+       expect(actual).to be_truthy
+      end
+    end
+
     describe "#simulator_global_preferences_path" do
       it "is nil if a physical device" do
         expect(physical.simulator_global_preferences_path).to be_falsey

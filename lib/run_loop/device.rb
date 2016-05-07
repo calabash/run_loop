@@ -319,6 +319,11 @@ version: #{version}
     end
 
     # @!visibility private
+    end
+
+    # @!visibility private
+    end
+
     #
     # Waits for three conditions:
     #
@@ -596,6 +601,18 @@ version: #{version}
         `killall udidetect &> /dev/null`
       end
       udid
+    end
+
+    # @!visibility private
+    # Value of <UDID>/.device.plist 'deviceType' key.
+    def simulator_device_type
+      plist = File.join(simulator_device_plist)
+      pbuddy.plist_read("deviceType", plist)
+    end
+
+    # @!visibility private
+    def simulator_is_ipad?
+      simulator_device_type[/iPad/, 0]
     end
 
     # @!visibility private
