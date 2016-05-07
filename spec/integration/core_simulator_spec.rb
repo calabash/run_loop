@@ -1,5 +1,8 @@
 describe RunLoop::CoreSimulator do
-  let(:simulator) { Resources.shared.default_simulator }
+  let(:simulator) do
+    Resources.shared.simctl.simulators.sample
+  end
+
   let(:app) { RunLoop::App.new(Resources.shared.cal_app_bundle_path) }
   let(:xcrun) { RunLoop::Xcrun.new }
 
@@ -39,7 +42,7 @@ describe RunLoop::CoreSimulator do
       expect(pid).to be == running
     end
 
-    it 'it does not relaunch if the simulator is already running' do
+    it 'does not relaunch if the simulator is already running' do
       core_sim.launch_simulator
 
       expect(Process).not_to receive(:spawn)
