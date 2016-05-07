@@ -345,19 +345,28 @@ version: #{version}
       # Shorter than this gives false positives.
       delay = 0.5
 
-      # How many times to wait for stable state
+      # How many times to wait for stable state.
       max_stable_count = 3
 
-      # How long to wait for iOS 9 boot screen
+      # How long to wait for iOS 9 boot screen.
       boot_screen_wait_options = {
         :max_boot_screen_wait => 10,
         :raise_on_timeout => false
       }
 
+      # How much additional time to wait for iOS 9+ iPads.
+      #
+      # Installing and launching on iPads is problematic.
+      # Sometimes the app is installed, but SpringBoard does
+      # not recognize that the app is installed even though
+      # simctl says that it is.
+      additional_ipad_delay = delay * 2
+
       # Adjust for CI environments
       if RunLoop::Environment.ci?
         max_stable_count = 5
         boot_screen_wait_options[:max_boot_screen_wait] = 20
+        additional_ipad_delay = delay * 4
       end
 
       # iOS 9 simulators have an additional boot screen.
@@ -396,6 +405,7 @@ version: #{version}
               stable_count = 0
             elsif is_gte_ios9 && is_ipad && !waited_for_ipad
               RunLoop.log_debug("Waiting additional time for iOS 9 iPad to stabilize")
+              sleep(additional_ipad_delay)
               waited_for_ipad = true
               stable_count = 0
             else
