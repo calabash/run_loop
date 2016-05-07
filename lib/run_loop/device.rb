@@ -1,6 +1,7 @@
 module RunLoop
   class Device
 
+    require 'securerandom'
     include RunLoop::Regex
 
     # Starting in Xcode 7, iOS 9 simulators have a new "booting" state.
@@ -605,8 +606,6 @@ version: #{version}
 
     # @!visibility private
     def simulator_data_directory_sha
-      require 'securerandom'
-
       path = File.join(simulator_root_dir, 'data')
       begin
         # Typically, this returns in < 0.3 seconds.
@@ -618,6 +617,23 @@ version: #{version}
       rescue => _
         SecureRandom.uuid
       end
+    end
+
+    # @!visibility private
+    def simulator_log_file_sha
+      file = simulator_log_file_path
+
+      return nil if !File.exist?(file)
+
+      sha = OpenSSL::Digest::SHA256.new
+
+      begin
+        sha << File.read(file)
+      rescue => _
+        sha = SecureRandom.uuid
+      end
+
+      sha
     end
 
     # @!visibility private

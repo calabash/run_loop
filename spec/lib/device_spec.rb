@@ -452,7 +452,40 @@ describe RunLoop::Device do
     end
 
     describe "#simulator_log_file_sha" do
+      let(:log) { "path/to/log/file" }
 
+      before do
+        expect(simulator).to receive(:simulator_log_file_path).and_return(log)
+      end
+
+      it "returns nil if log file does not exist" do
+        expect(File).to receive(:exist?).and_return(false)
+
+        actual = simulator.send(:simulator_log_file_sha)
+        expect(actual).to be == nil
+      end
+
+      describe "log exists" do
+        before do
+          expect(File).to receive(:exist?).with(log).and_return(true)
+        end
+
+        it "return random udid if File.read errors" do
+          error = RuntimeError.new("file read error")
+          expect(File).to receive(:read).with(log).and_raise(error)
+          expect(SecureRandom).to receive(:uuid).and_return(:random)
+
+          actual = simulator.send(:simulator_log_file_sha)
+          expect(actual).to be == :random
+        end
+
+        it "returns sha" do
+          expect(File).to receive(:read).with(log).and_return("sha!")
+
+          actual = simulator.send(:simulator_log_file_sha)
+          expect(actual.to_s).to be == "0c3115eb0d6c2d05a964415fada251e49f9bebe3cfa76a9c38d56648783c92d6"
+        end
+      end
     end
   end
 
