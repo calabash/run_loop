@@ -422,6 +422,40 @@ describe RunLoop::Device do
     end
   end
 
+  describe "simulator stable state" do
+
+    let(:simulator) { RunLoop::Device.new("denis", "9.0", "udid") }
+
+    describe "#simulator_data_directory_sha" do
+      let(:dir) { "path/to" }
+      let(:path) { "path/to/data" }
+      let(:options) { {:handle_errors_by => :ignoring} }
+
+      before do
+        expect(simulator).to receive(:simulator_root_dir).and_return(dir)
+      end
+      it "returns a sha" do
+        expect(RunLoop::Directory).to receive(:directory_digest).with(path, options).and_return(:sha)
+
+        actual = simulator.send(:simulator_data_directory_sha)
+        expect(actual).to be == :sha
+      end
+
+      it "returns a random udid" do
+        error = RuntimeError.new("sha error")
+        expect(RunLoop::Directory).to receive(:directory_digest).with(path, options).and_raise(error)
+        expect(SecureRandom).to receive(:uuid).and_return(:random)
+
+        actual = simulator.send(:simulator_data_directory_sha)
+        expect(actual).to be == :random
+      end
+    end
+
+    describe "#simulator_log_file_sha" do
+
+    end
+  end
+
   describe 'updating the device state' do
 
     before do

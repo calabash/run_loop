@@ -604,6 +604,23 @@ version: #{version}
     end
 
     # @!visibility private
+    def simulator_data_directory_sha
+      require 'securerandom'
+
+      path = File.join(simulator_root_dir, 'data')
+      begin
+        # Typically, this returns in < 0.3 seconds.
+        Timeout.timeout(10, TimeoutError) do
+          # Errors are ignorable and users are confused by the messages.
+          options = { :handle_errors_by => :ignoring }
+          RunLoop::Directory.directory_digest(path, options)
+        end
+      rescue => _
+        SecureRandom.uuid
+      end
+    end
+
+    # @!visibility private
     # Value of <UDID>/.device.plist 'deviceType' key.
     def simulator_device_type
       plist = File.join(simulator_device_plist)
