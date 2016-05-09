@@ -1,7 +1,8 @@
 require 'run_loop/regex'
 require 'run_loop/directory'
-require 'run_loop/environment'
 require "run_loop/encoding"
+require "run_loop/shell"
+require 'run_loop/environment'
 require 'run_loop/logging'
 require 'run_loop/dot_dir'
 require 'run_loop/xcrun'
