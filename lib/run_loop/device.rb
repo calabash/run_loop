@@ -1,6 +1,7 @@
 module RunLoop
   class Device
 
+    require 'securerandom'
     include RunLoop::Regex
 
     # Starting in Xcode 7, iOS 9 simulators have a new "booting" state.
@@ -319,129 +320,110 @@ version: #{version}
     end
 
     # @!visibility private
-    # Is this the first launch of this Simulator?
-    #
-    # TODO Needs unit and integration tests.
-    def simulator_first_launch?
-      megabytes = simulator_data_dir_size
-
-      if version >= RunLoop::Version.new('9.0')
-        megabytes < 20
-      elsif version >= RunLoop::Version.new('8.0')
-        megabytes < 12
-      else
-        megabytes < 8
-      end
-    end
-
-    # @!visibility private
-    # The size of the simulator data/ directory.
-    #
-    # TODO needs unit tests.
-    def simulator_data_dir_size
-      path = File.join(simulator_root_dir, 'data')
-      RunLoop::Directory.size(path, :mb)
-    end
-
-    # @!visibility private
     #
     # Waits for three conditions:
     #
     # 1. The SHA sum of the simulator data/ directory to be stable.
-    # 2. No more log messages are begin generated
-    # 3. 1 and 2 must hold for 1 seconds.
+    # 2. No more log messages are begin generated.
+    # 3. 1 and 2 must hold for 1.5 seconds.
     #
-    # When the simulator version is >= iOS 9 _and_ it is the first launch of
-    # the simulator after a reset or a new simulator install, a fourth condition
-    # is added:
+    # When the simulator version is >= iOS 9, two more conditions are added to
+    # get past the iOS 9+ boot screen.
     #
-    # 4. The first three conditions must be met a second time.
+    # 4. Wait for com.apple.audio.SystemSoundServer-iOS-Simulator process to
+    #    start.
+    # 5. 1 and 2 must hold for 1.5 seconds.
     #
-    # and the quiet time is increased to 2.0.
+    # When the simulator version is >= iOS 9 and the device is an iPad another
+    # condition is added because simctl fails to correctly install applications;
+    # the app and data container exists, but Springboard does not detect them.
+    #
+    # 6. 1 and 2 must hold for 1.5 seconds.
     def simulator_wait_for_stable_state
-      require 'securerandom'
 
       # How long to wait between stability checks.
+      # Shorter than this gives false positives.
       delay = 0.5
 
-      first_launch = false
+      # How many times to wait for stable state.
+      max_stable_count = 3
 
-      # At launch there is a brief moment when the SHA and
-      # the log file are are stable.  Then a bunch of activity
-      # occurs.  This is the quiet time.
+      # How long to wait for iOS 9 boot screen.
+      boot_screen_wait_options = {
+        :max_boot_screen_wait => 10,
+        :raise_on_timeout => false
+      }
+
+      # How much additional time to wait for iOS 9+ iPads.
       #
-      # Starting in iOS 9, simulators display at _booting_ screen
-      # at first launch.  At first launch, these simulators need
-      # a much longer quiet time.
-      if version >= RunLoop::Version.new('9.0')
-        first_launch = simulator_data_dir_size < 20
-        quiet_time = 2.0
-      else
-        quiet_time = 1.0
+      # Installing and launching on iPads is problematic.
+      # Sometimes the app is installed, but SpringBoard does
+      # not recognize that the app is installed even though
+      # simctl says that it is.
+      additional_ipad_delay = delay * 2
+
+      # Adjust for CI environments
+      if RunLoop::Environment.ci?
+        max_stable_count = 5
+        boot_screen_wait_options[:max_boot_screen_wait] = 20
+        additional_ipad_delay = delay * 4
       end
 
-      now = Time.now
+      # iOS 9 simulators have an additional boot screen.
+      is_gte_ios9 = version >= RunLoop::Version.new('9.0')
+
+      # iOS 9 iPad simulators need additional time to stabilize.
+      is_ipad = simulator_is_ipad?
+
       timeout = SIM_STABLE_STATE_OPTIONS[:timeout]
+      now = Time.now
       poll_until = now + timeout
-      quiet = now + quiet_time
 
+      RunLoop.log_debug("Waiting for simulator to stabilize with timeout: #{timeout} seconds")
+
+      current_dir_sha = simulator_data_directory_sha
+      current_log_sha = simulator_log_file_sha
       is_stable = false
-
-      path = File.join(simulator_root_dir, 'data')
-      current_sha = nil
-      sha_fn = lambda do |data_dir|
-        begin
-          # Typically, this returns in < 0.3 seconds.
-          Timeout.timeout(10, TimeoutError) do
-            # Errors are ignorable and users are confused by the messages.
-            options = { :handle_errors_by => :ignoring }
-            RunLoop::Directory.directory_digest(data_dir, options)
-          end
-        rescue => _
-          SecureRandom.uuid
-        end
-      end
-
-      RunLoop.log_debug("Waiting for simulator to stabilize with timeout: #{timeout}")
-      if first_launch
-        RunLoop.log_debug("Detected the first launch of an iOS >= 9.0 Simulator")
-      end
-
-      current_line = nil
+      waited_for_boot = false
+      waited_for_ipad = false
+      stable_count = 0
 
       while Time.now < poll_until do
-        latest_sha = sha_fn.call(path)
-        latest_line = last_line_from_simulator_log_file
+        latest_dir_sha = simulator_data_directory_sha
+        latest_log_sha = simulator_log_file_sha
 
-        is_stable = current_sha == latest_sha && current_line == latest_line
+        is_stable = [current_dir_sha == latest_dir_sha,
+                     current_log_sha == latest_log_sha].all?
 
         if is_stable
-          if Time.now > quiet
-            if first_launch
-              RunLoop.log_debug("First launch detected - allowing additional time to stabilize")
-              first_launch = false
-              sleep 1.2
-              quiet = Time.now + quiet_time
+          stable_count = stable_count + 1
+          if stable_count == max_stable_count
+            if is_gte_ios9 && !waited_for_boot
+              process_name = "com.apple.audio.SystemSoundServer-iOS-Simulator"
+              RunLoop::ProcessWaiter.new(process_name, boot_screen_wait_options).wait_for_any
+              waited_for_boot = true
+              stable_count = 0
+            elsif is_gte_ios9 && is_ipad && !waited_for_ipad
+              RunLoop.log_debug("Waiting additional time for iOS 9 iPad to stabilize")
+              sleep(additional_ipad_delay)
+              waited_for_ipad = true
+              stable_count = 0
             else
               break
             end
-          else
-            quiet = Time.now + quiet_time
           end
         end
 
-        current_sha = latest_sha
-        current_line = latest_line
-        sleep delay
+        current_dir_sha = latest_dir_sha
+        current_log_sha = latest_log_sha
+        sleep(delay)
       end
 
       if is_stable
         elapsed = Time.now - now
-        stabilized = elapsed - quiet_time
-        RunLoop.log_debug("Simulator stable after #{stabilized} seconds")
         RunLoop.log_debug("Waited a total of #{elapsed} seconds for simulator to stabilize")
       else
-        RunLoop.log_debug("Timed out: simulator not stable after #{timeout} seconds")
+        RunLoop.log_debug("Timed out after #{timeout} seconds waiting for simulator to stabilize")
       end
     end
 
@@ -529,33 +511,6 @@ version: #{version}
     end
 
     private
-
-    # @!visibility private
-    # TODO write a unit test.
-    def last_line_from_simulator_log_file
-      file = simulator_log_file_path
-
-      return nil if !File.exist?(file)
-
-      debug = RunLoop::Environment.debug?
-
-      begin
-        io = File.open(file, 'r')
-        io.seek(-100, IO::SEEK_END)
-
-        line = io.readline
-      rescue StandardError => e
-        RunLoop.log_error("Caught #{e} while reading simulator log file") if debug
-      ensure
-        io.close if io && !io.closed?
-      end
-
-      if line
-        line.chomp
-      else
-        line
-      end
-    end
 
     # @!visibility private
     def xcrun
@@ -648,6 +603,50 @@ version: #{version}
         `killall udidetect &> /dev/null`
       end
       udid
+    end
+
+    # @!visibility private
+    def simulator_data_directory_sha
+      path = File.join(simulator_root_dir, 'data')
+      begin
+        # Typically, this returns in < 0.3 seconds.
+        Timeout.timeout(10, TimeoutError) do
+          # Errors are ignorable and users are confused by the messages.
+          options = { :handle_errors_by => :ignoring }
+          RunLoop::Directory.directory_digest(path, options)
+        end
+      rescue => _
+        SecureRandom.uuid
+      end
+    end
+
+    # @!visibility private
+    def simulator_log_file_sha
+      file = simulator_log_file_path
+
+      return nil if !File.exist?(file)
+
+      sha = OpenSSL::Digest::SHA256.new
+
+      begin
+        sha << File.read(file)
+      rescue => _
+        sha = SecureRandom.uuid
+      end
+
+      sha
+    end
+
+    # @!visibility private
+    # Value of <UDID>/.device.plist 'deviceType' key.
+    def simulator_device_type
+      plist = File.join(simulator_device_plist)
+      pbuddy.plist_read("deviceType", plist)
+    end
+
+    # @!visibility private
+    def simulator_is_ipad?
+      simulator_device_type[/iPad/, 0]
     end
 
     # @!visibility private

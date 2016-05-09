@@ -1,5 +1,8 @@
 describe RunLoop::CoreSimulator do
-  let(:simulator) { Resources.shared.default_simulator }
+  let(:simulator) do
+    Resources.shared.simctl.simulators.sample
+  end
+
   let(:app) { RunLoop::App.new(Resources.shared.cal_app_bundle_path) }
   let(:xcrun) { RunLoop::Xcrun.new }
 
@@ -13,7 +16,7 @@ describe RunLoop::CoreSimulator do
 
   after do
     RunLoop::CoreSimulator.terminate_core_simulator_processes
-    sleep 2
+    sleep(2)
   end
 
   describe ".erase" do
@@ -39,7 +42,7 @@ describe RunLoop::CoreSimulator do
       expect(pid).to be == running
     end
 
-    it 'it does not relaunch if the simulator is already running' do
+    it 'does not relaunch if the simulator is already running' do
       core_sim.launch_simulator
 
       expect(Process).not_to receive(:spawn)
@@ -72,7 +75,6 @@ describe RunLoop::CoreSimulator do
     before do
       args = ['simctl', 'erase', simulator.udid]
       xcrun.exec(args, {:log_cmd => true })
-      simulator.simulator_wait_for_stable_state
     end
 
     it "launches the app" do
@@ -102,8 +104,6 @@ describe RunLoop::CoreSimulator do
   it 'install with simctl' do
     args = ['simctl', 'erase', simulator.udid]
     xcrun.exec(args, {:log_cmd => true })
-
-    simulator.simulator_wait_for_stable_state
 
     expect(core_sim.install)
     expect(core_sim.launch)
