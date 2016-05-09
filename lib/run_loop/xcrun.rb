@@ -2,6 +2,7 @@ module RunLoop
   class Xcrun
 
     require "command_runner"
+    require "run_loop/encoding"
     include RunLoop::Encoding
 
     # Controls the behavior of Xcrun#exec.
