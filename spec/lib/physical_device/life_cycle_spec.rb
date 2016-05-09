@@ -19,6 +19,11 @@ describe RunLoop::PhysicalDevice::LifeCycle do
       expect(lc.device).to be == device
       expect(lc.instance_variable_get(:@device)).to be == device
     end
+
+    it "responds to #exec" do
+      lc = RunLoop::PhysicalDevice::LifeCycle.new(device)
+      expect(lc.respond_to?(:exec)).to be_truthy
+    end
   end
 
   describe "abstract class methods" do

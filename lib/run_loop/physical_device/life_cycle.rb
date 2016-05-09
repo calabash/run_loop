@@ -8,10 +8,28 @@ module RunLoop
     # Raised when uninstall fails.
     class UninstallError < RuntimeError; end
 
+    # Controls the behavior of various life cycle commands.
+    #
+    # You can override these values if they do not work in your environment.
+    #
+    # For cucumber users, the best place to override would be in your
+    # features/support/env.rb.
+    #
+    # For example:
+    #
+    # RunLoop::PhysicalDevice::LifeCycle::DEFAULT_OPTIONS[:timeout] = 60
+    DEFAULT_OPTIONS = {
+      :install_timeout => RunLoop::Environment.ci? ? 120 : 30
+    }
+
     # @!visibility private
     class LifeCycle
 
+      require "run_loop/abstract"
       include RunLoop::Abstract
+
+      require "run_loop/shell"
+      include RunLoop::Shell
 
       attr_reader :device
 
@@ -74,6 +92,7 @@ must be a physical device.]
       #
       # * :nothing => app was not installed
       # * :uninstall => app was uninstalled
+      #
       # @raise [UninstallError] If the app cannot be uninstalled, usually
       #   because it is a system app.
       # @return [Symbol] A keyword that describes what action was performed.
