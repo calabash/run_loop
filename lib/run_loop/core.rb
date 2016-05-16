@@ -667,6 +667,45 @@ Logfile: #{log_file}
 
     # @!visibility private
     #
+    # There is an unnatural relationship between the :script and the
+    # :uia_strategy keys.
+    #
+    # @param [Hash] options The launch options passed to .run_with_options
+    # @param [RunLoop::Device] device The device under test.
+    # @param [RunLoop::Xcode] xcode The active Xcode.
+    #
+    # @return [Hash] with two keys: :script and :uia_strategy
+    def self.detect_instruments_script_and_strategy(options, device, xcode)
+      strategy = options[:uia_strategy]
+      script = options[:script]
+
+      if script
+        script = self.expect_instruments_script(script)
+        if !strategy
+          strategy = :host
+        end
+      else
+        if strategy
+          script = self.instruments_script_for_uia_strategy(strategy)
+        else
+          if options[:calabash_lite]
+            strategy = :host
+            script = self.instruments_script_for_uia_strategy(strategy)
+          else
+            strategy = self.detect_uia_strategy(options, device, xcode)
+            script = self.instruments_script_for_uia_strategy(strategy)
+          end
+        end
+      end
+
+      {
+        :script => script,
+        :strategy => strategy
+      }
+    end
+
+    # @!visibility private
+    #
     # UIAutomation buffers log output in some very strange ways.  RunLoop
     # attempts to work around this buffering by forcing characters onto the
     # UIALogger buffer.  Once the buffer is full, UIAutomation will dump its

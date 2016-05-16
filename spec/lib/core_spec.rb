@@ -41,7 +41,7 @@ describe RunLoop::Core do
     end
   end
 
-  describe "UIA strategy" do
+  describe "UIA strategy and instruments script" do
     let(:xcode) { Resources.shared.xcode }
     let(:device) { Resources.shared.device }
     let(:simulator) { Resources.shared.simulator }
@@ -105,6 +105,80 @@ describe RunLoop::Core do
         expect do
           RunLoop::Core.detect_uia_strategy(options, device, xcode)
         end.to raise_error ArgumentError, /Invalid strategy/
+      end
+    end
+
+    describe ".detect_instrument_script_and_strategy" do
+      let(:options) { { } }
+      let(:path) { "path/to/some/instruments_script.js" }
+
+      describe "user set :script" do
+
+        before do
+          options[:script] =path
+          expect(RunLoop::Core).to receive(:expect_instruments_script).with(path).and_return(path)
+        end
+
+        it "user did not pass a :uia_strategy" do
+          options[:uia_strategy] = nil
+
+          actual = RunLoop::Core.detect_instruments_script_and_strategy(options,
+                                                                        device,
+                                                                        xcode)
+          expect(actual[:script]).to be == path
+          expect(actual[:strategy]).to be == :host
+        end
+
+        it "user passed a :uia_strategy" do
+          options[:uia_strategy] = :preferences
+
+          actual = RunLoop::Core.detect_instruments_script_and_strategy(options,
+                                                                        device,
+                                                                        xcode)
+          expect(actual[:script]).to be == path
+          expect(actual[:strategy]).to be == options[:uia_strategy]
+        end
+      end
+
+      describe "user did not set :script" do
+
+        before do
+          options[:script] = nil
+        end
+
+        it "user set strategy" do
+          options[:uia_strategy] = :strategy
+          expect(RunLoop::Core).to receive(:instruments_script_for_uia_strategy).with(:strategy).and_return(path)
+
+          actual = RunLoop::Core.detect_instruments_script_and_strategy(options,
+                                                                        device,
+                                                                        xcode)
+          expect(actual[:script]).to be == path
+          expect(actual[:strategy]).to be == :strategy
+        end
+
+        describe "user did not set strategy" do
+          it "user set :calabash_lite" do
+            options[:uia_strategy] = nil
+            options[:calabash_lite] = true
+            expect(RunLoop::Core).to receive(:instruments_script_for_uia_strategy).with(:host).and_return(path)
+
+            actual = RunLoop::Core.detect_instruments_script_and_strategy(options, device, xcode)
+            expect(actual[:script]).to be == path
+            expect(actual[:strategy]).to be == :host
+          end
+
+          it "user did not set :calabash_lite" do
+            expect(RunLoop::Core).to receive(:detect_uia_strategy).and_return(:strategy)
+            expect(RunLoop::Core).to receive(:instruments_script_for_uia_strategy).with(:strategy).and_return(path)
+
+            actual = RunLoop::Core.detect_instruments_script_and_strategy(options,
+                                                                          device,
+                                                                          xcode)
+            expect(actual[:script]).to be == path
+            expect(actual[:strategy]).to be == :strategy
+          end
+        end
       end
     end
   end
