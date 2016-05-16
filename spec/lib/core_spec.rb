@@ -437,5 +437,54 @@ describe RunLoop::Core do
         expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
       end
     end
+
+    describe ".expect_instrument_script" do
+      describe "script is a string" do
+        let(:script) { "path/to/a/javascript.js" }
+
+        it "is valid if string is a path to a file" do
+          expect(File).to receive(:exist?).with(script).and_return(true)
+
+          actual = RunLoop::Core.send(:expect_instruments_script, script)
+          expect(actual).to be == script
+        end
+
+        it "raises an error if file does not exist" do
+          expect(File).to receive(:exist?).with(script).and_return(false)
+
+          expect do
+            RunLoop::Core.send(:expect_instruments_script, script)
+          end.to raise_error RuntimeError, /Expected instruments JavaScript file at path:/
+        end
+      end
+
+      describe "script is symbol" do
+        let(:script) { :some_key }
+        let(:path) { "path/to/lib/script" }
+
+        it "is valid if it indicates a known script" do
+          expect(RunLoop::Core).to receive(:script_for_key).with(script).and_return(path)
+
+          actual = RunLoop::Core.send(:expect_instruments_script, script)
+          expect(actual).to be == path
+        end
+
+        it "raises an error if there is no known script for symbol" do
+          expect(RunLoop::Core).to receive(:script_for_key).with(script).and_return(nil)
+
+          expect do
+            RunLoop::Core.send(:expect_instruments_script, script)
+          end.to raise_error RuntimeError, /Expected :some_key to be one of:/
+        end
+      end
+
+      it "raises an error if script is not a symbol or string" do
+        script = [1, 2, 3]
+        expect do
+          RunLoop::Core.send(:expect_instruments_script, script)
+        end.to raise_error RuntimeError, /Expected '\[1, 2, 3\]' to be a Symbol or a String/
+      end
+    end
   end
 end
+

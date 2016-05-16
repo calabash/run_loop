@@ -759,5 +759,34 @@ Logfile: #{log_file}
 
       RunLoop.log_debug("Simulator instruction set '#{device.instruction_set}' is compatible with '#{lipo.info}'")
     end
+
+    # @!visibility private
+    def self.expect_instruments_script(script)
+      if script.is_a?(String)
+        unless File.exist?(script)
+          raise %Q[Expected instruments JavaScript file at path:
+
+#{script}
+
+Check the :script key in your launch options.]
+        end
+        script
+      elsif script.is_a?(Symbol)
+        path = RunLoop::Core.script_for_key(script)
+        if !path
+          raise %Q[Expected :#{script} to be one of:
+
+#{Core::SCRIPTS.keys.map { |key| ":#{key}" }.join("\n")}
+
+Check the :script key in your launch options.]
+        end
+        path
+      else
+        raise %Q[Expected '#{script}' to be a Symbol or a String.
+
+Check the :script key in your launch options.]
+      end
+    end
   end
 end
+
