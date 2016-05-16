@@ -63,10 +63,21 @@ module RunLoop
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
 
-      # Find the Device under test, the App under test, UIA strategy, and reset options
+      # Device under test: DUT
       device = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+
+      # App under test: AUT
       app_details = RunLoop::DetectAUT.detect_app_under_test(options)
-      uia_strategy = self.detect_uia_strategy(options, device, xcode)
+
+      # Find the script to pass to instruments and the strategy to communicate
+      # with UIAutomation.
+      script_n_strategy = self.detect_instruments_script_and_strategy(options,
+                                                                      device,
+                                                                      xcode)
+      instruments_script = script_n_strategy[:script]
+      uia_strategy = script_n_strategy[:strategy]
+
+      # The app life cycle reset options.
       reset_options = self.detect_reset_options(options)
 
       instruments.kill_instruments(xcode)
@@ -85,7 +96,7 @@ module RunLoop
 
       script = File.join(results_dir, '_run_loop.js')
 
-      javascript = UIAScriptTemplate.new(SCRIPTS_PATH, options[:script]).result
+      javascript = UIAScriptTemplate.new(SCRIPTS_PATH, instruments_script).result
       UIAScriptTemplate.sub_path_var!(javascript, results_dir)
       UIAScriptTemplate.sub_read_script_path_var!(javascript, READ_SCRIPT_PATH)
       UIAScriptTemplate.sub_timeout_script_path_var!(javascript, TIMEOUT_SCRIPT_PATH)
@@ -133,7 +144,8 @@ module RunLoop
           :results_dir => results_dir,
           :script => script,
           :log_file => log_file,
-          :args => args
+          :args => args,
+          :uia_strategy => uia_strategy
         }
       merged_options = options.merge(discovered_options)
 
