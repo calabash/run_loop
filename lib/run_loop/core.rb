@@ -314,8 +314,7 @@ Logfile: #{log_file}
             begin
               FileUtils.rm_f(repl_path)
               return repl_path if system(%Q[mkfifo "#{repl_path}"])
-            rescue Errno::EINTR => e
-              #retry
+            rescue Errno::EINTR => _
               sleep(0.1)
             end
           end
