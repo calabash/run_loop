@@ -27,10 +27,6 @@ module RunLoop
     READ_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'read-cmd.sh')
     TIMEOUT_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'timeout3')
 
-    def self.scripts_path
-      SCRIPTS_PATH
-    end
-
     def self.log_run_loop_options(options, xcode)
       return unless RunLoop::Environment.debug?
       # Ignore :sim_control b/c it is a ruby object; printing is not useful.
@@ -82,7 +78,7 @@ module RunLoop
       FileUtils.mkdir_p(results_dir_trace)
 
       dependencies = options[:dependencies] || []
-      dependencies << File.join(scripts_path, 'calabash_script_uia.js')
+      dependencies << File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
       dependencies.each do |dep|
         FileUtils.cp(dep, results_dir)
       end
@@ -515,7 +511,7 @@ Logfile: #{log_file}
     def self.detect_connected_device
       begin
         Timeout::timeout(1, RunLoop::TimeoutError) do
-          return `#{File.join(scripts_path, 'udidetect')}`.chomp
+          return `#{File.join(SCRIPTS_PATH, 'udidetect')}`.chomp
         end
       rescue RunLoop::TimeoutError => _
         `killall udidetect &> /dev/null`
