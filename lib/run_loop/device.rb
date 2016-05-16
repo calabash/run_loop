@@ -134,7 +134,7 @@ removed (1.5.0).  It has been replaced by an options hash with two keys:
     #
     # @param [Hash] options The launch options passed to RunLoop::Core
     # @param [RunLoop::Xcode] xcode An Xcode instance
-    # @param [RunLoop::Simctl] simctl A SimControl instance
+    # @param [RunLoop::Simctl] simctl A Simctl instance
     # @param [RunLoop::Instruments] instruments An Instruments instance
     #
     # @raise [ArgumentError] If "device" is detected as the device target and
