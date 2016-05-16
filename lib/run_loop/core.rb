@@ -772,7 +772,7 @@ Check the :script key in your launch options.]
         end
         script
       elsif script.is_a?(Symbol)
-        path = RunLoop::Core.script_for_key(script)
+        path = self.script_for_key(script)
         if !path
           raise %Q[Expected :#{script} to be one of:
 
@@ -785,6 +785,20 @@ Check the :script key in your launch options.]
         raise %Q[Expected '#{script}' to be a Symbol or a String.
 
 Check the :script key in your launch options.]
+      end
+    end
+
+    # @!visibility private
+    def self.instruments_script_for_uia_strategy(uia_strategy)
+      case uia_strategy
+      when :preferences
+        self.script_for_key(:run_loop_fast_uia)
+      when :host
+        self.script_for_key(:run_loop_host)
+      when :shared_element
+        self.script_for_key(:run_loop_shared_element)
+      else
+        self.script_for_key(:run_loop_basic)
       end
     end
   end

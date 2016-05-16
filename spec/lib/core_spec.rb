@@ -485,6 +485,36 @@ describe RunLoop::Core do
         end.to raise_error RuntimeError, /Expected '\[1, 2, 3\]' to be a Symbol or a String/
       end
     end
+
+    describe ".instruments_script_for_uia_strategy" do
+      it ":preferences" do
+        expect(RunLoop::Core).to receive(:script_for_key).with(:run_loop_fast_uia).and_call_original
+
+        actual = RunLoop::Core.send(:instruments_script_for_uia_strategy, :preferences)
+        expect(actual[/run_loop_fast_uia/, 0]).to be_truthy
+      end
+
+      it ":host" do
+        expect(RunLoop::Core).to receive(:script_for_key).with(:run_loop_host).and_call_original
+
+        actual = RunLoop::Core.send(:instruments_script_for_uia_strategy, :host)
+        expect(actual[/run_loop_host/, 0]).to be_truthy
+      end
+
+      it ":shared_element" do
+        expect(RunLoop::Core).to receive(:script_for_key).with(:run_loop_shared_element).and_call_original
+
+        actual = RunLoop::Core.send(:instruments_script_for_uia_strategy, :shared_element)
+        expect(actual[/run_loop_shared_element/, 0]).to be_truthy
+      end
+
+      it "no strategy" do
+        expect(RunLoop::Core).to receive(:script_for_key).with(:run_loop_basic).and_call_original
+
+        actual = RunLoop::Core.send(:instruments_script_for_uia_strategy, :unknown)
+        expect(actual[/run_loop_basic/, 0]).to be_truthy
+      end
+    end
   end
 end
 
