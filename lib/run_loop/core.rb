@@ -27,10 +27,6 @@ module RunLoop
     READ_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'read-cmd.sh')
     TIMEOUT_SCRIPT_PATH = File.join(SCRIPTS_PATH, 'timeout3')
 
-    def self.scripts_path
-      SCRIPTS_PATH
-    end
-
     def self.log_run_loop_options(options, xcode)
       return unless RunLoop::Environment.debug?
       # Ignore :sim_control b/c it is a ruby object; printing is not useful.
@@ -67,10 +63,21 @@ module RunLoop
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
 
-      # Find the Device under test, the App under test, UIA strategy, and reset options
+      # Device under test: DUT
       device = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
+
+      # App under test: AUT
       app_details = RunLoop::DetectAUT.detect_app_under_test(options)
-      uia_strategy = self.detect_uia_strategy(options, device, xcode)
+
+      # Find the script to pass to instruments and the strategy to communicate
+      # with UIAutomation.
+      script_n_strategy = self.detect_instruments_script_and_strategy(options,
+                                                                      device,
+                                                                      xcode)
+      instruments_script = script_n_strategy[:script]
+      uia_strategy = script_n_strategy[:strategy]
+
+      # The app life cycle reset options.
       reset_options = self.detect_reset_options(options)
 
       instruments.kill_instruments(xcode)
@@ -82,14 +89,14 @@ module RunLoop
       FileUtils.mkdir_p(results_dir_trace)
 
       dependencies = options[:dependencies] || []
-      dependencies << File.join(scripts_path, 'calabash_script_uia.js')
+      dependencies << File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
       dependencies.each do |dep|
         FileUtils.cp(dep, results_dir)
       end
 
       script = File.join(results_dir, '_run_loop.js')
 
-      javascript = UIAScriptTemplate.new(SCRIPTS_PATH, options[:script]).result
+      javascript = UIAScriptTemplate.new(SCRIPTS_PATH, instruments_script).result
       UIAScriptTemplate.sub_path_var!(javascript, results_dir)
       UIAScriptTemplate.sub_read_script_path_var!(javascript, READ_SCRIPT_PATH)
       UIAScriptTemplate.sub_timeout_script_path_var!(javascript, TIMEOUT_SCRIPT_PATH)
@@ -137,7 +144,8 @@ module RunLoop
           :results_dir => results_dir,
           :script => script,
           :log_file => log_file,
-          :args => args
+          :args => args,
+          :uia_strategy => uia_strategy
         }
       merged_options = options.merge(discovered_options)
 
@@ -515,7 +523,7 @@ Logfile: #{log_file}
     def self.detect_connected_device
       begin
         Timeout::timeout(1, RunLoop::TimeoutError) do
-          return `#{File.join(scripts_path, 'udidetect')}`.chomp
+          return `#{File.join(SCRIPTS_PATH, 'udidetect')}`.chomp
         end
       rescue RunLoop::TimeoutError => _
         `killall udidetect &> /dev/null`
@@ -671,6 +679,45 @@ Logfile: #{log_file}
 
     # @!visibility private
     #
+    # There is an unnatural relationship between the :script and the
+    # :uia_strategy keys.
+    #
+    # @param [Hash] options The launch options passed to .run_with_options
+    # @param [RunLoop::Device] device The device under test.
+    # @param [RunLoop::Xcode] xcode The active Xcode.
+    #
+    # @return [Hash] with two keys: :script and :uia_strategy
+    def self.detect_instruments_script_and_strategy(options, device, xcode)
+      strategy = options[:uia_strategy]
+      script = options[:script]
+
+      if script
+        script = self.expect_instruments_script(script)
+        if !strategy
+          strategy = :host
+        end
+      else
+        if strategy
+          script = self.instruments_script_for_uia_strategy(strategy)
+        else
+          if options[:calabash_lite]
+            strategy = :host
+            script = self.instruments_script_for_uia_strategy(strategy)
+          else
+            strategy = self.detect_uia_strategy(options, device, xcode)
+            script = self.instruments_script_for_uia_strategy(strategy)
+          end
+        end
+      end
+
+      {
+        :script => script,
+        :strategy => strategy
+      }
+    end
+
+    # @!visibility private
+    #
     # UIAutomation buffers log output in some very strange ways.  RunLoop
     # attempts to work around this buffering by forcing characters onto the
     # UIALogger buffer.  Once the buffer is full, UIAutomation will dump its
@@ -759,5 +806,48 @@ Logfile: #{log_file}
 
       RunLoop.log_debug("Simulator instruction set '#{device.instruction_set}' is compatible with '#{lipo.info}'")
     end
+
+    # @!visibility private
+    def self.expect_instruments_script(script)
+      if script.is_a?(String)
+        unless File.exist?(script)
+          raise %Q[Expected instruments JavaScript file at path:
+
+#{script}
+
+Check the :script key in your launch options.]
+        end
+        script
+      elsif script.is_a?(Symbol)
+        path = self.script_for_key(script)
+        if !path
+          raise %Q[Expected :#{script} to be one of:
+
+#{Core::SCRIPTS.keys.map { |key| ":#{key}" }.join("\n")}
+
+Check the :script key in your launch options.]
+        end
+        path
+      else
+        raise %Q[Expected '#{script}' to be a Symbol or a String.
+
+Check the :script key in your launch options.]
+      end
+    end
+
+    # @!visibility private
+    def self.instruments_script_for_uia_strategy(uia_strategy)
+      case uia_strategy
+      when :preferences
+        self.script_for_key(:run_loop_fast_uia)
+      when :host
+        self.script_for_key(:run_loop_host)
+      when :shared_element
+        self.script_for_key(:run_loop_shared_element)
+      else
+        self.script_for_key(:run_loop_basic)
+      end
+    end
   end
 end
+

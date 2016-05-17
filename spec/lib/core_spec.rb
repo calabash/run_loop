@@ -41,7 +41,7 @@ describe RunLoop::Core do
     end
   end
 
-  describe "UIA strategy" do
+  describe "UIA strategy and instruments script" do
     let(:xcode) { Resources.shared.xcode }
     let(:device) { Resources.shared.device }
     let(:simulator) { Resources.shared.simulator }
@@ -105,6 +105,80 @@ describe RunLoop::Core do
         expect do
           RunLoop::Core.detect_uia_strategy(options, device, xcode)
         end.to raise_error ArgumentError, /Invalid strategy/
+      end
+    end
+
+    describe ".detect_instrument_script_and_strategy" do
+      let(:options) { { } }
+      let(:path) { "path/to/some/instruments_script.js" }
+
+      describe "user set :script" do
+
+        before do
+          options[:script] =path
+          expect(RunLoop::Core).to receive(:expect_instruments_script).with(path).and_return(path)
+        end
+
+        it "user did not pass a :uia_strategy" do
+          options[:uia_strategy] = nil
+
+          actual = RunLoop::Core.detect_instruments_script_and_strategy(options,
+                                                                        device,
+                                                                        xcode)
+          expect(actual[:script]).to be == path
+          expect(actual[:strategy]).to be == :host
+        end
+
+        it "user passed a :uia_strategy" do
+          options[:uia_strategy] = :preferences
+
+          actual = RunLoop::Core.detect_instruments_script_and_strategy(options,
+                                                                        device,
+                                                                        xcode)
+          expect(actual[:script]).to be == path
+          expect(actual[:strategy]).to be == options[:uia_strategy]
+        end
+      end
+
+      describe "user did not set :script" do
+
+        before do
+          options[:script] = nil
+        end
+
+        it "user set strategy" do
+          options[:uia_strategy] = :strategy
+          expect(RunLoop::Core).to receive(:instruments_script_for_uia_strategy).with(:strategy).and_return(path)
+
+          actual = RunLoop::Core.detect_instruments_script_and_strategy(options,
+                                                                        device,
+                                                                        xcode)
+          expect(actual[:script]).to be == path
+          expect(actual[:strategy]).to be == :strategy
+        end
+
+        describe "user did not set strategy" do
+          it "user set :calabash_lite" do
+            options[:uia_strategy] = nil
+            options[:calabash_lite] = true
+            expect(RunLoop::Core).to receive(:instruments_script_for_uia_strategy).with(:host).and_return(path)
+
+            actual = RunLoop::Core.detect_instruments_script_and_strategy(options, device, xcode)
+            expect(actual[:script]).to be == path
+            expect(actual[:strategy]).to be == :host
+          end
+
+          it "user did not set :calabash_lite" do
+            expect(RunLoop::Core).to receive(:detect_uia_strategy).and_return(:strategy)
+            expect(RunLoop::Core).to receive(:instruments_script_for_uia_strategy).with(:strategy).and_return(path)
+
+            actual = RunLoop::Core.detect_instruments_script_and_strategy(options,
+                                                                          device,
+                                                                          xcode)
+            expect(actual[:script]).to be == path
+            expect(actual[:strategy]).to be == :strategy
+          end
+        end
       end
     end
   end
@@ -437,5 +511,84 @@ describe RunLoop::Core do
         expect(RunLoop::Core.detect_reset_options(options)).to be_falsey
       end
     end
+
+    describe ".expect_instrument_script" do
+      describe "script is a string" do
+        let(:script) { "path/to/a/javascript.js" }
+
+        it "is valid if string is a path to a file" do
+          expect(File).to receive(:exist?).with(script).and_return(true)
+
+          actual = RunLoop::Core.send(:expect_instruments_script, script)
+          expect(actual).to be == script
+        end
+
+        it "raises an error if file does not exist" do
+          expect(File).to receive(:exist?).with(script).and_return(false)
+
+          expect do
+            RunLoop::Core.send(:expect_instruments_script, script)
+          end.to raise_error RuntimeError, /Expected instruments JavaScript file at path:/
+        end
+      end
+
+      describe "script is symbol" do
+        let(:script) { :some_key }
+        let(:path) { "path/to/lib/script" }
+
+        it "is valid if it indicates a known script" do
+          expect(RunLoop::Core).to receive(:script_for_key).with(script).and_return(path)
+
+          actual = RunLoop::Core.send(:expect_instruments_script, script)
+          expect(actual).to be == path
+        end
+
+        it "raises an error if there is no known script for symbol" do
+          expect(RunLoop::Core).to receive(:script_for_key).with(script).and_return(nil)
+
+          expect do
+            RunLoop::Core.send(:expect_instruments_script, script)
+          end.to raise_error RuntimeError, /Expected :some_key to be one of:/
+        end
+      end
+
+      it "raises an error if script is not a symbol or string" do
+        script = [1, 2, 3]
+        expect do
+          RunLoop::Core.send(:expect_instruments_script, script)
+        end.to raise_error RuntimeError, /Expected '\[1, 2, 3\]' to be a Symbol or a String/
+      end
+    end
+
+    describe ".instruments_script_for_uia_strategy" do
+      it ":preferences" do
+        expect(RunLoop::Core).to receive(:script_for_key).with(:run_loop_fast_uia).and_call_original
+
+        actual = RunLoop::Core.send(:instruments_script_for_uia_strategy, :preferences)
+        expect(actual[/run_loop_fast_uia/, 0]).to be_truthy
+      end
+
+      it ":host" do
+        expect(RunLoop::Core).to receive(:script_for_key).with(:run_loop_host).and_call_original
+
+        actual = RunLoop::Core.send(:instruments_script_for_uia_strategy, :host)
+        expect(actual[/run_loop_host/, 0]).to be_truthy
+      end
+
+      it ":shared_element" do
+        expect(RunLoop::Core).to receive(:script_for_key).with(:run_loop_shared_element).and_call_original
+
+        actual = RunLoop::Core.send(:instruments_script_for_uia_strategy, :shared_element)
+        expect(actual[/run_loop_shared_element/, 0]).to be_truthy
+      end
+
+      it "no strategy" do
+        expect(RunLoop::Core).to receive(:script_for_key).with(:run_loop_basic).and_call_original
+
+        actual = RunLoop::Core.send(:instruments_script_for_uia_strategy, :unknown)
+        expect(actual[/run_loop_basic/, 0]).to be_truthy
+      end
+    end
   end
 end
+
