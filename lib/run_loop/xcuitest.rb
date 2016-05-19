@@ -126,7 +126,7 @@ module RunLoop
     # @!visibility private
     def query(mark)
       options = http_options
-      parameters = { :text => mark }
+      parameters = { :id => mark }
       request = request("query", parameters)
       client = client(options)
       response = client.post(request)
@@ -135,10 +135,19 @@ module RunLoop
 
     # @!visibility private
     def tap_mark(mark)
+      body = query(mark)
+      tap_query_result(body)
+    end
+
+    # @!visibility private
+    def tap_coordinate(x, y)
       options = http_options
       parameters = {
-        :gesture => "tap",
-        :text => mark
+        :gesture => "touch",
+        :specifiers => {
+          :coordinate => {x: x, y: y}
+        },
+        :options => {}
       }
       request = request("gesture", parameters)
       client(options)
@@ -147,14 +156,31 @@ module RunLoop
     end
 
     # @!visibility private
-    def tap_coordinate(x, y)
-      options = http_options
+    def rotate_home_button_to(position, sleep_for=1.0)
+      orientation = orientation_for_position(position)
       parameters = {
-        :gesture => "tap_coordinate",
-        :coordinate => {x: x, y: y}
+        :orientation => orientation
       }
+      request = request("rotate_home_button_to", parameters)
+      client(http_options)
+      response = client.post(request)
+      json = expect_200_response(response)
+      sleep(sleep_for)
+      json
+    end
+
+    # @!visibility private
+    def perform_coordinate_gesture(gesture, x, y, options={})
+      parameters = {
+        :gesture => gesture,
+        :specifiers => {
+          :coordinate => {x: x, y: y}
+        },
+        :options => options
+      }
+
       request = request("gesture", parameters)
-      client(options)
+      client(http_options)
       response = client.post(request)
       expect_200_response(response)
     end
@@ -273,7 +299,7 @@ module RunLoop
         5.times do
           begin
             health
-            sleep(0.2)
+            sleep(1.0)
           rescue => _
             break
           end
@@ -299,6 +325,10 @@ module RunLoop
 
     # @!visibility private
     def xcodebuild
+      env = {
+        "COMMAND_LINE_BUILD" => "1"
+      }
+
       args = [
         "xcrun",
         "xcodebuild",
@@ -318,10 +348,10 @@ module RunLoop
         :err => log_file
       }
 
-      command = args.join(" ")
+      command = "#{env.map.each { |k, v| "#{k}=#{v}" }.join(" ")} #{args.join(" ")}"
       RunLoop.log_unix_cmd("#{command} >& #{log_file}")
 
-      pid = Process.spawn(*args, options)
+      pid = Process.spawn(env, *args, options)
       Process.detach(pid)
       pid
     end
@@ -333,6 +363,9 @@ module RunLoop
       workspace
 
       shutdown
+
+      # Temp measure; we need to manage the xcodebuild pids.
+      system("pkill xcodebuild")
 
       if device.simulator?
         # quits the simulator
@@ -361,7 +394,9 @@ module RunLoop
         RunLoop.log_debug("Launched #{bundle_id} on #{device}")
         RunLoop.log_debug("#{response.body}")
         if device.simulator?
-          device.simulator_wait_for_stable_state
+          # It is not clear yet whether we should do this.  There is a problem
+          # in the simulator_wait_for_stable_state; it waits too long.
+          # device.simulator_wait_for_stable_state
         end
         expect_200_response(response)
       rescue => e
@@ -408,6 +443,28 @@ Server replied with:
       end
 
       path
+    end
+
+    # @!visibility private
+    def orientation_for_position(position)
+      symbol = position.to_sym
+
+      case symbol
+        when :down, :bottom
+          return 1
+        when :up, :top
+          return 2
+        when :right
+          return 3
+        when :left
+          return 4
+        else
+          raise ArgumentError, %Q[
+Could not coerce '#{position}' into a valid orientation.
+
+Valid values are: :down, :up, :right, :left, :bottom, :top
+]
+      end
     end
   end
 end

@@ -23,7 +23,6 @@ describe RunLoop do
         :sim_control => sim_control,
         :simctl => simctl,
         :uia_strategy => :preferences,
-        :script => "run_loop_fast_uia.js"
       }
 
       expect(RunLoop::Core).to receive(:run_with_options).with(after).and_return({})

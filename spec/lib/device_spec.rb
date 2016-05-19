@@ -282,6 +282,36 @@ describe RunLoop::Device do
       end
     end
 
+    it "#simulator_device_type" do
+      plist = "path/to/udid/data/device.plist"
+      expect(simulator).to receive(:simulator_device_plist).and_return(plist)
+      pbuddy = RunLoop::PlistBuddy.new
+      expect(simulator).to receive(:pbuddy).and_return(pbuddy)
+      expect(pbuddy).to receive(:plist_read).with("deviceType", plist).and_return(:type)
+
+      actual = simulator.send(:simulator_device_type)
+      expect(actual).to be == :type
+    end
+
+    describe "#simulator_is_ipad?" do
+      let(:ipad) { "com.apple.CoreSimulator.SimDeviceType.iPad-Retina" }
+      let(:iphone) { "com.apple.CoreSimulator.SimDeviceType.iPhone-4s" }
+
+      it "false" do
+       expect(simulator).to receive(:simulator_device_type).and_return(iphone)
+
+       actual = simulator.send(:simulator_is_ipad?)
+       expect(actual).to be_falsey
+      end
+
+      it "true" do
+       expect(simulator).to receive(:simulator_device_type).and_return(ipad)
+
+       actual = simulator.send(:simulator_is_ipad?)
+       expect(actual).to be_truthy
+      end
+    end
+
     describe "#simulator_global_preferences_path" do
       it "is nil if a physical device" do
         expect(physical.simulator_global_preferences_path).to be_falsey
@@ -389,6 +419,73 @@ describe RunLoop::Device do
       locale = device.simulator_set_locale("en")
       expect(locale.code).to be == "en"
       expect(locale.name).to be == "English"
+    end
+  end
+
+  describe "simulator stable state" do
+
+    let(:simulator) { RunLoop::Device.new("denis", "9.0", "udid") }
+
+    describe "#simulator_data_directory_sha" do
+      let(:dir) { "path/to" }
+      let(:path) { "path/to/data" }
+      let(:options) { {:handle_errors_by => :ignoring} }
+
+      before do
+        expect(simulator).to receive(:simulator_root_dir).and_return(dir)
+      end
+      it "returns a sha" do
+        expect(RunLoop::Directory).to receive(:directory_digest).with(path, options).and_return(:sha)
+
+        actual = simulator.send(:simulator_data_directory_sha)
+        expect(actual).to be == :sha
+      end
+
+      it "returns a random udid" do
+        error = RuntimeError.new("sha error")
+        expect(RunLoop::Directory).to receive(:directory_digest).with(path, options).and_raise(error)
+        expect(SecureRandom).to receive(:uuid).and_return(:random)
+
+        actual = simulator.send(:simulator_data_directory_sha)
+        expect(actual).to be == :random
+      end
+    end
+
+    describe "#simulator_log_file_sha" do
+      let(:log) { "path/to/log/file" }
+
+      before do
+        expect(simulator).to receive(:simulator_log_file_path).and_return(log)
+      end
+
+      it "returns nil if log file does not exist" do
+        expect(File).to receive(:exist?).and_return(false)
+
+        actual = simulator.send(:simulator_log_file_sha)
+        expect(actual).to be == nil
+      end
+
+      describe "log exists" do
+        before do
+          expect(File).to receive(:exist?).with(log).and_return(true)
+        end
+
+        it "return random udid if File.read errors" do
+          error = RuntimeError.new("file read error")
+          expect(File).to receive(:read).with(log).and_raise(error)
+          expect(SecureRandom).to receive(:uuid).and_return(:random)
+
+          actual = simulator.send(:simulator_log_file_sha)
+          expect(actual).to be == :random
+        end
+
+        it "returns sha" do
+          expect(File).to receive(:read).with(log).and_return("sha!")
+
+          actual = simulator.send(:simulator_log_file_sha)
+          expect(actual.to_s).to be == "0c3115eb0d6c2d05a964415fada251e49f9bebe3cfa76a9c38d56648783c92d6"
+        end
+      end
     end
   end
 

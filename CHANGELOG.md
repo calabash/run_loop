@@ -1,5 +1,16 @@
 ## Change Log
 
+### 2.1.2
+
+* Fix :script and :uia\_strategy detection #460
+* Shell: a mixin for executing shell commands safely #457
+* Encoding: extract uft8 coercion method from Xcrun #456
+* SpringBoard cannot detect app installed by simctl on iPad #455
+* DetectAUT ignores UrbanAirship and Google iOS SDK .xcodeproj #453
+* Gem: pin listen to 3.0.9 #451
+* XCUITest can perform queries by id #446
+* Env: improved windows env detection #445
+
 ### 2.1.1
 
 * Expose color methods as public API #443

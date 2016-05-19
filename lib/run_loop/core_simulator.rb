@@ -847,7 +847,7 @@ Command had no output
       return true
     end
 
-    RunLoop.log_debug("The app you are are testing is not the same as the app that is installed.")
+    RunLoop.log_debug("The app you are testing is not the same as the app that is installed.")
     RunLoop.log_debug("  Installed app SHA: #{installed_sha}")
     RunLoop.log_debug("  App to launch SHA: #{app_sha}")
     RunLoop.log_debug("Will install #{app}")
