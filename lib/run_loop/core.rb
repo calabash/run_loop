@@ -145,7 +145,8 @@ module RunLoop
           :script => script,
           :log_file => log_file,
           :args => args,
-          :uia_strategy => uia_strategy
+          :uia_strategy => uia_strategy,
+          :base_script => instruments_script
         }
       merged_options = options.merge(discovered_options)
 
