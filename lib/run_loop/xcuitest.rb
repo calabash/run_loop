@@ -134,23 +134,50 @@ module RunLoop
     end
 
     # @!visibility private
-    def tap_mark(mark)
+    def query_for_coordinate(mark)
       body = query(mark)
-      tap_query_result(body)
+      coordinate_from_query_result(body)
+    end
+
+    # @!visibility private
+    def tap_mark(mark)
+      coordinate = query_for_coordinate(mark)
+      tap_coordinate(coordinate[:x], coordinate[:y])
     end
 
     # @!visibility private
     def tap_coordinate(x, y)
-      options = http_options
-      parameters = {
-        :gesture => "touch",
+      make_coordinate_gesture_request("touch", x, y)
+    end
+
+    # @!visibility private
+    def double_tap(x, y)
+      make_coordinate_gesture_request("double_tap", x, y)
+    end
+
+    # @!visibiity private
+    def coordinate_gesture_parameters(name, x, y, options={})
+      {
+        :gesture => name,
         :specifiers => {
-          :coordinate => {x: x, y: y}
+          :coordinate => [x, y]
         },
-        :options => {}
+        :options => options
       }
-      request = request("gesture", parameters)
-      client(options)
+    end
+
+    # @!visibility private
+    def coordinate_gesture_request(name, x, y, gesture_options={})
+      parameters = coordinate_gesture_parameters(name, x, y, gesture_options)
+      request("gesture", parameters)
+    end
+
+    # @!visibility private
+    def make_coordinate_gesture_request(name, x, y, options={})
+      gesture_options = options.fetch(:gesture_options, {})
+      http_options = options.fetch(:http_options, http_options())
+      request = coordinate_gesture_request(name, x, y, gesture_options)
+      client = client(http_options)
       response = client.post(request)
       expect_200_response(response)
     end
@@ -162,7 +189,7 @@ module RunLoop
         :orientation => orientation
       }
       request = request("rotate_home_button_to", parameters)
-      client(http_options)
+      client = client(http_options)
       response = client.post(request)
       json = expect_200_response(response)
       sleep(sleep_for)
@@ -180,22 +207,39 @@ module RunLoop
       }
 
       request = request("gesture", parameters)
-      client(http_options)
+      client = client(http_options)
       response = client.post(request)
       expect_200_response(response)
     end
 
     # @!visibility private
-    def tap_query_result(hash)
-      rect = hash["rect"]
+    def coordinate_from_query_result(hash)
+      matches = hash["result"]
+
+      if matches.nil? || matches.empty?
+        raise "Expected #{hash} to contain some results"
+      end
+
+      rect = matches.first["rect"]
       h = rect["height"]
       w = rect["width"]
       x = rect["x"]
       y = rect["y"]
 
-      touchx = x + (h/2)
-      touchy = y + (w/2)
-      tap_coordinate(touchx, touchy)
+      touchx = x + (w/2.0)
+      touchy = y + (h/2.0)
+
+      new_rect = rect.dup
+      new_rect[:center_x] = touchx
+      new_rect[:center_y] = touchy
+
+      RunLoop.log_debug(%Q[Rect from query:
+
+#{JSON.pretty_generate(new_rect)}
+
+])
+      {:x => touchx,
+       :y => touchy}
     end
 
     private
@@ -223,7 +267,7 @@ module RunLoop
               :undef             => :replace,  # Replace anything not defined in ASCII
               :replace           => ""         # Use a blank for those replacements
             }
-            encoded = device_name.encode(Encoding.find("ASCII"), encoding_options)
+            encoded = device_name.encode(::Encoding.find("ASCII"), encoding_options)
             "http://#{encoded}.local:27753/"
           end
         end
