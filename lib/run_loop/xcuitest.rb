@@ -124,6 +124,15 @@ module RunLoop
     end
 
     # @!visibility private
+    def runtime
+      options = http_options
+      request = request("device")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
     def query(mark)
       options = http_options
       parameters = { :id => mark }
