@@ -483,15 +483,28 @@ Something went wrong.
     # @!visibility private
     def expect_200_response(response)
       body = response_body_to_hash(response)
-      return body if response.status_code < 300
+      if response.status_code < 300 && !body["error"]
+        return body
+      end
 
-      raise RunLoop::XCUITest::HTTPError,
-        %Q[Expected status code < 200, found #{response.status_code}.
+      if response.status_code > 300
+        raise RunLoop::XCUITest::HTTPError,
+          %Q[Expected status code < 300, found #{response.status_code}.
 
 Server replied with:
 
 #{body}
+
 ]
+      else
+        raise RunLoop::XCUITest::HTTPError,
+						%Q[Expected JSON response with no error, but found
+
+#{body["error"]}
+
+]
+
+      end
     end
 
     # @!visibility private
