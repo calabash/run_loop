@@ -215,11 +215,29 @@ describe RunLoop::DetectAUT::Detect do
     end
 
     describe ".app_from_environment" do
-      it "APP or APP_BUNDLE_PATH" do
-        expect(RunLoop::Environment).to receive(:path_to_app_bundle).and_return(app_path)
+      describe "APP or APP_BUNDLE_PATH" do
+        it "is a path to a directory that exists" do
+          expect(RunLoop::Environment).to receive(:path_to_app_bundle).and_return(app_path)
 
-        actual = RunLoop::DetectAUT.send(:app_from_environment)
-        expect(actual).to be == app_path
+          actual = RunLoop::DetectAUT.send(:app_from_environment)
+          expect(actual).to be == app_path
+        end
+
+        it "is a bundle id" do
+          bundle_id = "com.example.MyApp"
+          expect(RunLoop::Environment).to receive(:path_to_app_bundle).and_return(bundle_id)
+
+          actual = RunLoop::DetectAUT.send(:app_from_environment)
+          expect(actual).to be == bundle_id
+        end
+
+        it "is a path to a bundle that does not exist" do
+          expect(RunLoop::Environment).to receive(:path_to_app_bundle).and_return(app_path)
+          expect(File).to receive(:exist?).with(app_path).and_return(false)
+
+          actual = RunLoop::DetectAUT.send(:app_from_environment)
+          expect(actual).to be == File.basename(app_path)
+        end
       end
 
       it "BUNDLE_ID" do
