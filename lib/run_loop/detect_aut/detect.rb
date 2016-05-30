@@ -131,8 +131,14 @@ module RunLoop
 
     # @!visibility private
     def self.app_from_environment
-      RunLoop::Environment.path_to_app_bundle ||
-        RunLoop::Environment.bundle_id
+      app_bundle_path = RunLoop::Environment.path_to_app_bundle
+
+      candidate = app_bundle_path
+      if app_bundle_path && !File.exist?(app_bundle_path)
+        candidate = File.basename(app_bundle_path)
+      end
+
+      candidate || RunLoop::Environment.bundle_id
     end
 
     # @!visibility private

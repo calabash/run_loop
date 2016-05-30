@@ -151,6 +151,34 @@ module RunLoop
       merged_options = options.merge(discovered_options)
 
       if device.simulator?
+        if !app_details[:app]
+          raise %Q[
+
+Invalid APP, APP_BUNDLE_PATH, or BUNDLE_ID detected.
+
+The following information was detected from the environment:
+
+             APP='#{ENV["APP"]}'
+ APP_BUNDLE_PATH='#{ENV["APP_BUNDLE_PATH"]}'
+       BUNDLE_ID='#{ENV["BUNDLE_ID"]}'
+
+
+It looks like you are trying to launch an app on a simulator using a bundle
+identifier or you have incorrectly set the APP variable to an app bundle that
+does not exist.
+
+If you are trying to launch a test against a physical device, set the DEVICE_TARGET
+variable to the UDID of your device an APP to a bundle identifier or a path to
+an .ipa.
+
+# com.example.MyApp must be installed on the target device
+$ APP=com.example.MyApp DEVICE_TARGET="John's iPhone" cucumber
+
+If you are trying to launch against a simulator and you encounter this error, it
+means that the APP variable is pointing to a .app that does not exist.
+
+]
+        end
         self.prepare_simulator(app_details[:app], device, xcode, simctl, reset_options)
       end
 
