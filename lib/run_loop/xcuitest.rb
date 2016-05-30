@@ -155,7 +155,7 @@ module RunLoop
     end
 
     # @!visibility private
-    def tap_coordinate(x, y)
+    def tap_coordinate(x, y, options)
       make_coordinate_gesture_request("touch", x, y)
     end
 
@@ -215,6 +215,12 @@ module RunLoop
         :options => options
       }
 
+      RunLoop.log_debug(%Q[
+Sending request to perform '#{gesture}' with:
+
+#{JSON.pretty_generate(parameters)}
+
+])
       request = request("gesture", parameters)
       client = client(http_options)
       response = client.post(request)
