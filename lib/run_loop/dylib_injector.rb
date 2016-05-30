@@ -11,10 +11,19 @@ module RunLoop
     #
     # Try 3 times for 10 seconds each try with a sleep of 2 seconds
     # between tries.
+    #
+    # You can override these values if they do not work in your environment.
+    #
+    # For cucumber users, the best place to override would be in your
+    # features/support/env.rb.
+    #
+    # For example:
+    #
+    # RunLoop::DylibInjector::RETRY_OPTIONS[:timeout] = 60
     RETRY_OPTIONS = {
       :tries => 3,
       :interval => 2,
-      :timeout => 10
+      :timeout => RunLoop::Environment.ci? ? 40 : 20
     }
 
     # @!attribute [r] process_name
