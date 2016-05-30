@@ -425,6 +425,7 @@ Sending request to perform '#{gesture}' with:
 
       # Temp measure; we need to manage the xcodebuild pids.
       system("pkill xcodebuild")
+      system("pkill testmanagerd")
 
       if device.simulator?
         # quits the simulator
