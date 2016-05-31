@@ -125,8 +125,6 @@ describe RunLoop::PhysicalDevice::LifeCycle do
       end.to raise_error(RunLoop::PhysicalDevice::NotImplementedError,
                          /The behavior of the remove_from_sandbox method has not been determined/)
     end
-
-    end
   end
 
   describe "concrete methods" do

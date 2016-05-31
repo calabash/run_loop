@@ -36,6 +36,10 @@ module RunLoop
 
       attr_reader :device
 
+      # Create a new instance.
+      #
+      # @param [RunLoop::Device] device A physical device.
+      # @raise [ArgumentError] If device is a simulator.
       def initialize(device)
         if !device.physical_device?
           raise ArgumentError, %Q[Device:
@@ -61,6 +65,7 @@ must be a physical device.]
 
       # Is the app installed?
       #
+      # @param [String] bundle_id The CFBundleIdentifier of an app.
       # @return [Boolean] true or false
       def app_installed?(bundle_id)
         abstract_method!
@@ -79,7 +84,12 @@ must be a physical device.]
       # * :reinstalled => app was installed, but app data was not preserved.
       # * :installed => app was not installed.
       #
+      # @param [RunLoop::Ipa, RunLoop::App] app_or_ipa The ipa to install.
+      #   The caller is responsible for validating the ipa for the device by
+      #   checking that the codesign and instruction set is correct.
+      #
       # @raise [InstallError] If app was not installed.
+      #
       # @return [Symbol] A keyword describing the action that was performed.
       def install_app(app_or_ipa)
         abstract_method!
@@ -96,8 +106,11 @@ must be a physical device.]
       # * :nothing => app was not installed
       # * :uninstall => app was uninstalled
       #
+      # @param [String] bundle_id The CFBundleIdentifier of an app.
+      #
       # @raise [UninstallError] If the app cannot be uninstalled, usually
       #   because it is a system app.
+      #
       # @return [Symbol] A keyword that describes what action was performed.
       def uninstall_app(bundle_id)
         abstract_method!
@@ -122,6 +135,10 @@ must be a physical device.]
       #                   but app data was not preserved.
       # * :installed => app was not installed.
       #
+      # @param [RunLoop::Ipa, RunLoop::App] app_or_ipa The ipa to install.
+      #   The caller is responsible for validating the ipa for the device by
+      #   checking that the codesign and instruction set is correct.
+      #
       # @raise [InstallError] If the app could not be installed.
       # @raise [UninstallError] If the app could not be uninstalled.
       #
@@ -136,8 +153,18 @@ must be a physical device.]
       # the CFBundleShortVersionString. If either are different, then this
       # method returns false.
       #
+      # @param [RunLoop::Ipa, RunLoop::App] app_or_ipa The ipa to install.
+      #   The caller is responsible for validating the ipa for the device by
+      #   checking that the codesign and instruction set is correct.
+      #
       # @raise [RuntimeError] If app is not already installed.
       def installed_app_same_as?(app_or_ipa)
+        abstract_method!
+      end
+
+      # Returns true if this tool can reset an app's sandbox without
+      # uninstalling the app.
+      def can_reset_app_sandbox?
         abstract_method!
       end
 
@@ -145,9 +172,14 @@ must be a physical device.]
       #
       # This method will never uninstall the app.  If the concrete
       # implementation cannot reset the app data, this method should raise
-      # an exception.
+      # a RunLoop::PhysicalDevice::NotImplementedError
       #
       # Does not clear Keychain.  Use the Calabash iOS Keychain API.
+      #
+      # @param [String] bundle_id The CFBundleIdentifier of an app.
+      #
+      # @raise [RunLoop::PhysicalDevice::NotImplementedError] If this tool
+      #   cannot reset the app sandbox without unintalling the app.
       def reset_app_sandbox(bundle_id)
         abstract_method!
       end
