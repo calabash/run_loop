@@ -200,6 +200,34 @@ module RunLoop
       end
     end
 
+    # Returns the value of CBXDEVICE
+    #
+    # Use this to specify a non-default CBX-Runner for physical devices.
+    #
+    # The default CBX-Runner is bundled with this gem.
+    def self.cbxdevice
+      value = ENV["CBXDEVICE"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
+    # Returns the value of CBXSIM
+    #
+    # Use this to specify a non-default CBX-Runner for simulators.
+    #
+    # The default CBX-Runner is bundled with this gem.
+    def self.cbxsim
+      value = ENV["CBXSIM"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
     # Returns true if running in Jenkins CI
     #
     # Checks the value of JENKINS_HOME

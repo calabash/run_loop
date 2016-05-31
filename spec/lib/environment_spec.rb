@@ -391,6 +391,48 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".cbxdevice" do
+    it "returns value" do
+      path = "/path/to/ipa/CBX-Runner.app"
+      stub_env({"CBXDEVICE" => path})
+
+      expect(RunLoop::Environment.cbxdevice).to be == path
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("CBXDEVICE", "")
+        expect(RunLoop::Environment.cbxdevice).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"CBXDEVICE" => nil})
+        expect(RunLoop::Environment.cbxdevice).to be == nil
+      end
+    end
+  end
+
+  describe ".cbxsim" do
+    it "returns value" do
+      path = "/path/to/app/CBX-Runner.app"
+      stub_env({"CBXSIM" => path})
+
+      expect(RunLoop::Environment.cbxsim).to be == path
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("CBXSIM", "")
+        expect(RunLoop::Environment.cbxsim).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"CBXSIM" => nil})
+        expect(RunLoop::Environment.cbxsim).to be == nil
+      end
+    end
+  end
+
   describe ".jenkins?" do
     it "returns true if JENKINS_HOME defined" do
       stub_env({"JENKINS_HOME" => "/Users/Shared/Jenkins"})
