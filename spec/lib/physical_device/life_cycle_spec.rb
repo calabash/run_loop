@@ -64,10 +64,10 @@ describe RunLoop::PhysicalDevice::LifeCycle do
       end.to raise_error RunLoop::Abstract::AbstractMethodError, /uninstall_app/
     end
 
-    it "#ensure_app_installed" do
+    it "#ensure_newest_installed" do
       expect do
-        lc.ensure_app_installed("app instance")
-      end.to raise_error RunLoop::Abstract::AbstractMethodError, /ensure_app_installed/
+        lc.ensure_newest_installed("app instance")
+      end.to raise_error RunLoop::Abstract::AbstractMethodError, /ensure_newest_installed/
     end
 
     it "#installed_app_same_as?" do

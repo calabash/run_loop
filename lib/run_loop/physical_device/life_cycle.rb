@@ -77,7 +77,7 @@ must be a physical device.]
       # no version check is performed.
       #
       # App data is never preserved.  If you want to preserve the app data,
-      # call `ensure_app_installed`.
+      # call `ensure_newest_installed`.
       #
       # Possible return values:
       #
@@ -99,7 +99,7 @@ must be a physical device.]
       #
       # App data is never preserved.  If you want to install a new version of
       # an app and preserve app data (upgrade testing), call
-      # `ensure_app_installed`.
+      # `ensure_newest_installed`.
       #
       # Possible return values:
       #
@@ -143,7 +143,7 @@ must be a physical device.]
       # @raise [UninstallError] If the app could not be uninstalled.
       #
       # @return [Symbol] A keyword that describes the action that was taken.
-      def ensure_app_installed(app_or_ipa)
+      def ensure_newest_installed(app_or_ipa)
         abstract_method!
       end
 
