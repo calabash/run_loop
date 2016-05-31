@@ -8,7 +8,6 @@ require 'run_loop/logging'
 require 'run_loop/dot_dir'
 require 'run_loop/xcrun'
 require 'run_loop/xcode'
-require "run_loop/device_agent/testctl"
 require 'run_loop/l10n'
 require 'run_loop/process_terminator'
 require 'run_loop/process_waiter'
@@ -21,6 +20,8 @@ require 'run_loop/plist_buddy'
 require "run_loop/codesign"
 require 'run_loop/app'
 require 'run_loop/ipa'
+require "run_loop/device_agent/testctl"
+require "run_loop/device_agent/cbxrunner"
 require "run_loop/detect_aut/errors"
 require "run_loop/detect_aut/xamarin_studio"
 require "run_loop/detect_aut/xcode"
