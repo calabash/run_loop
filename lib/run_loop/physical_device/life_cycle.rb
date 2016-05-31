@@ -8,6 +8,9 @@ module RunLoop
     # Raised when uninstall fails.
     class UninstallError < RuntimeError; end
 
+    # Raised when tool cannot perform task.
+    class NotImplementedError < StandardError; end
+
     # Controls the behavior of various life cycle commands.
     #
     # You can override these values if they do not work in your environment.
@@ -180,34 +183,13 @@ must be a physical device.]
       #
       # * sandbox/Documents
       # * sandbox/Library
-      # * sandbox/Preferences
+      # * sandbox/Library/Preferences
       # * sandbox/tmp
       #
-      # The data is a hash of arrays that define source/target file
-      # path pairs.
-      #
-      #  {
-      #    :documents => [
-      #      {
-      #        :source => "path/to/file/on/disk",
-      #        :target => "sub/dir/under/Documents"
-      #      },
-      #      {
-      #        :source => "path/to/other/file",
-      #        :target => "./"
-      #      }
-      #    ],
-      #
-      #    :library => [ < ditto >],
-      #    :preferences => [ < ditto > ],
-      #    :tmp => [ < ditto >]
-      #  }
-      #
-      # * If a file exists at a target path, it will be replaced.
-      # * Subdirectories will be created as necessary.
-      # * :source files must exist.
+      # Behavior TBD.
       def sideload(data)
-        abstract_method!
+        raise NotImplementedError,
+          "The behavior of the sideload method has not been determined"
       end
 
       # Removes a file or directory from the app sandbox.

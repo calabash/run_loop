@@ -115,7 +115,8 @@ describe RunLoop::PhysicalDevice::LifeCycle do
     it "#sideload" do
       expect do
         lc.sideload({})
-      end.to raise_error RunLoop::Abstract::AbstractMethodError, /sideload/
+      end.to raise_error(RunLoop::PhysicalDevice::NotImplementedError,
+                         /The behavior of the sideload method has not been determined/)
     end
 
     it "#remove_from_sandbox" do
