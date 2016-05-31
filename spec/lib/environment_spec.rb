@@ -349,6 +349,27 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".keychain" do
+    it "returns value" do
+      keychain = "/Users/maxmusterman/Library/Keychains/login.keychain"
+      stub_env({"KEYCHAIN" => keychain})
+
+      expect(RunLoop::Environment.keychain).to be == keychain
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("KEYCHAIN", "")
+        expect(RunLoop::Environment.keychain).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"KEYCHAIN" => nil})
+        expect(RunLoop::Environment.keychain).to be == nil
+      end
+    end
+  end
+
   describe ".jenkins?" do
     it "returns true if JENKINS_HOME defined" do
       stub_env({"JENKINS_HOME" => "/Users/Shared/Jenkins"})

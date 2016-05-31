@@ -172,6 +172,20 @@ module RunLoop
       end
     end
 
+    # Returns the value of KEYCHAIN
+    #
+    # Use this to specify a non-default KEYCHAIN for code signing.
+    #
+    # The default KEYCHAIN is login.keychain.
+    def self.keychain
+      value = ENV["KEYCHAIN"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
     # Returns true if running in Jenkins CI
     #
     # Checks the value of JENKINS_HOME
