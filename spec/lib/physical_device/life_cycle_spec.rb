@@ -122,7 +122,10 @@ describe RunLoop::PhysicalDevice::LifeCycle do
     it "#remove_from_sandbox" do
       expect do
         lc.remove_from_sandbox("relative/path")
-      end.to raise_error RunLoop::Abstract::AbstractMethodError, /remove_from_sandbox/
+      end.to raise_error(RunLoop::PhysicalDevice::NotImplementedError,
+                         /The behavior of the remove_from_sandbox method has not been determined/)
+    end
+
     end
   end
 

@@ -194,16 +194,10 @@ must be a physical device.]
 
       # Removes a file or directory from the app sandbox.
       #
-      # If the path does not exist, no error will be raised.
-      #
-      # Documents, Library, Preferences, and tmp directories will be
-      # deleted, but then recreated.  For example:
-      #
-      #  remove_file_from_sandbox("Preferences")
-      #
-      # The Preferences directory will be deleted and then recreated.
+      # Behavior TBD.
       def remove_from_sandbox(path)
-        abstract_method!
+        raise NotImplementedError,
+          "The behavior of the remove_from_sandbox method has not been determined"
       end
 
       # @!visibility private
