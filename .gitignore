@@ -15,6 +15,10 @@ test/tmp
 test/version_tmp
 tmp
 
+# The DeviceAgent binaries
+lib/run_loop/device_agent/app/CBX-Runner.app
+lib/run_loop/device_agent/ipa/CBX-Runner.app
+
 # RubyMine
 .idea
 
@@ -24,7 +28,7 @@ _yardoc
 doc/
 rdoc
 
-# for a library or gem, you might want to ignore these files since the code is
+# For a library or gem, you might want to ignore these files since the code is
 # intended to run in multiple environments; otherwise, check them in:
 Gemfile.lock
 .ruby-version
