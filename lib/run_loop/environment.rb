@@ -162,6 +162,16 @@ module RunLoop
       end
     end
 
+    # Returns the value of CODESIGN_IDENTITY
+    def self.codesign_identity
+      value = ENV["CODESIGN_IDENTITY"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
     # Returns true if running in Jenkins CI
     #
     # Checks the value of JENKINS_HOME

@@ -315,9 +315,37 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment.developer_dir).to be == '/some/xcode/path'
     end
 
-    it 'returns nil if value is the empty string' do
-      stub_env('DEVELOPER_DIR', '')
-      expect(RunLoop::Environment.developer_dir).to be == nil
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env('DEVELOPER_DIR', '')
+        expect(RunLoop::Environment.developer_dir).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"DEVELOPER_DIR" => nil})
+        expect(RunLoop::Environment.developer_dir).to be == nil
+      end
+    end
+  end
+
+  describe ".codesign_identity" do
+    it "returns value" do
+      identity = "iPhone Developer: Max Musterman (ABCDE12345)"
+      stub_env({"CODESIGN_IDENTITY" => identity})
+
+      expect(RunLoop::Environment.codesign_identity).to be == identity
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("CODESIGN_IDENTITY", "")
+        expect(RunLoop::Environment.codesign_identity).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"CODESIGN_IDENTITY" => nil})
+        expect(RunLoop::Environment.codesign_identity).to be == nil
+      end
     end
   end
 
