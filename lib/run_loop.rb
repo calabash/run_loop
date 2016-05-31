@@ -8,6 +8,7 @@ require 'run_loop/logging'
 require 'run_loop/dot_dir'
 require 'run_loop/xcrun'
 require 'run_loop/xcode'
+require "run_loop/device_agent/testctl"
 require 'run_loop/l10n'
 require 'run_loop/process_terminator'
 require 'run_loop/process_waiter'
