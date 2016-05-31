@@ -370,6 +370,27 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".testctl" do
+    it "returns value" do
+      testctl = "/usr/local/bin/test-control"
+      stub_env({"TESTCTL" => testctl})
+
+      expect(RunLoop::Environment.testctl).to be == testctl
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("TESTCTL", "")
+        expect(RunLoop::Environment.testctl).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"TESTCTL" => nil})
+        expect(RunLoop::Environment.testctl).to be == nil
+      end
+    end
+  end
+
   describe ".jenkins?" do
     it "returns true if JENKINS_HOME defined" do
       stub_env({"JENKINS_HOME" => "/Users/Shared/Jenkins"})
