@@ -37,5 +37,23 @@ but binary does not exist at that path.
       end.call
     end
 
+    # @!visibility private
+    attr_reader :device
+
+    # @!visibility private
+    # @param [RunLoop::Device] device where to launch the CBX-Runner
+    def initialize(device)
+      @device = device
+
+      if device.version < RunLoop::Version.new("9.0")
+        raise ArgumentError, %Q[
+Invalid device:
+
+#{device}
+XCUITest is only available for iOS >= 9.0
+]
+      end
+    end
+
   end
 end

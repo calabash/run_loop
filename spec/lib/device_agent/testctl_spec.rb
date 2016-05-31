@@ -1,6 +1,27 @@
 
 describe RunLoop::Testctl do
 
+  let(:device) { Resources.shared.device("9.0") }
+  let(:simulator) { Resources.shared.simulator("9.0") }
+
+  describe ".new" do
+    it "sets the @device variable" do
+      testctl = RunLoop::Testctl.new(device)
+      expect(testctl.device).to be == device
+      expect(testctl.instance_variable_get(:@device)).to be == device
+    end
+
+    it "raises an error if device version < 9.0" do
+      device = Resources.shared.device("8.3")
+
+      expect do
+        RunLoop::Testctl.new(device)
+      end.to raise_error(ArgumentError,
+                         /XCUITest is only available for iOS >= 9.0/)
+
+    end
+  end
+
   it ".device_agent_dir" do
     path = RunLoop::Testctl.device_agent_dir
     expect(RunLoop::Testctl.class_variable_get(:@@device_agent_dir)).to be == path
