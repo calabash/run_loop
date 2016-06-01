@@ -9,7 +9,8 @@ plists = Dir.glob('plists/**/*.plist')
 
 device_agent = ["lib/run_loop/device_agent/bin/testctl",
                 "lib/run_loop/device_agent/app/CBX-Runner.app.zip",
-                "lib/run_loop/device_agent/ipa/CBX-Runner.app.zip"]
+                "lib/run_loop/device_agent/ipa/CBX-Runner.app.zip",
+                "lib/run_loop/device_agent/frameworks/Frameworks.zip"]
 
 Gem::Specification.new do |s|
   s.name        = 'run_loop'
