@@ -25,7 +25,7 @@ module RunLoop
             raise RuntimeError, %Q[
 TESTCTL environment variable defined:
 
-            #{from_env}
+#{from_env}
 
 but binary does not exist at that path.
             ]
@@ -50,10 +50,45 @@ but binary does not exist at that path.
 Invalid device:
 
 #{device}
+
 XCUITest is only available for iOS >= 9.0
 ]
       end
+
     end
 
+    # @!visibility private
+    def runner
+      @runner ||= RunLoop::CBXRunner.new(device)
+    end
+
+    # @!visibility private
+    def launch
+      RunLoop::Frameworks.instance.install
+
+      cmd = RunLoop::Testctl.testctl
+
+      args = ["-r", runner.runner,
+              "-t", runner.tester,
+              "-d", device.udid]
+
+      if device.physical_device?
+        args << "-c"
+        args << RunLoop::Environment.codesign_identity
+      end
+
+      log_file = File.join(XCUITest.dot_dir, "testctl.log")
+      FileUtils.rm_rf(log_file)
+      FileUtils.touch(log_file)
+
+      options = {:out => log_file, :err => log_file}
+      RunLoop.log_unix_cmd("#{cmd} #{args.join(" ")} >& #{log_file}")
+
+      # Gotta keep the testctl process alive or the connection
+      # to testmanagerd will fail.
+      pid = Process.spawn(cmd, *args, options)
+      Process.detach(pid)
+      pid.to_i
+    end
   end
 end

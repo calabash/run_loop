@@ -5,7 +5,7 @@ describe RunLoop::Testctl do
   let(:simulator) { Resources.shared.simulator("9.0") }
 
   describe ".new" do
-    it "sets the @device variable" do
+    it "sets instance variables" do
       testctl = RunLoop::Testctl.new(device)
       expect(testctl.device).to be == device
       expect(testctl.instance_variable_get(:@device)).to be == device
