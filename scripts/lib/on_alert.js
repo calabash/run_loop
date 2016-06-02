@@ -68,38 +68,30 @@ function euSpanishLocalizations() {
   return [
     ["Permitir", /acceder a tu ubicación mientras utilizas la aplicación/],
     ["Permitir", /acceder a tu ubicación aunque no estés utilizando la aplicación/],
-    ["OK", /acceder a tu ubicación mientras utilizas la aplicación/],
-    ["OK", /acceder a tu ubicación aunque no estés utilizando la aplicación/],
     ["OK", /quiere acceder a tus contactos/],
     ["OK", /quiere acceder a tu calendario/],
     ["OK", /quiere acceder a tus recordatorios/],
     ["OK", /quiere acceder a tus fotos/],
     ["OK", /quiere obtener acceso a cuentas Twitter/],
+    ["OK", /quiere acceder al micrófono/],
     ["OK", /desea acceder a tu actividad física y deportiva/],
     ["OK", /quiere acceder a la cámara/],
     ["OK", /quiere enviarte notificaciones/]
-    // Possibly a typo.
-    ["OK", /enviarle notificaiones/]
   ];
 }
 
 function es419SpanishLocalizations() {
   return [
-    // Same as EU Spanish
-  ];
-}
-
-function usSpanishLocalizations() {
-  return [
-    // Same as EU Spanish
+    ["Permitir", /acceda a tu ubicación mientras la app está en uso/],
+    ["Permitir", /acceda a tu ubicación incluso cuando la app no está en uso/],
+    ["OK", /quiere acceder a tu condición y actividad física/]
   ];
 }
 
 function spanishLocalizations() {
   return [].concat(
     euSpanishLocalizations(),
-    es419SpanishLocalizations(),
-    usSpanishLocalizations()
+    es419SpanishLocalizations()
   );
 }
 
