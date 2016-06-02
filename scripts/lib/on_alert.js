@@ -178,6 +178,33 @@ function isPrivacyAlert(alert) {
 
   // When debugging or trying to capture the regexes for a new
   // localization, uncomment these lines and comment out the line above.
+  //
+  // Notes:
+  // * Microphone alerts only appear on physical devices.
+  // * You have to click through the Health alert; it is completely blocking -
+  //   tests will not proceed.
+  // * Generating bluetooth alerts is NYI.
+  // * In general, there will be a different alert on device for using location
+  //   in background mode.
+  // * Alerts vary by iOS.
+  // * To reset notifications on devices:
+  //   General > Settings > Reset > Reset Location + Privacy
+  //   - These are the last table rows
+  //   - APNS permissions are reset once a day.
+  // * On devices, set the device language in Settings.
+  //
+  // Use the Permission.app.
+  //
+  // * Alert text is printed at the end of every test.
+  // * Alert text is written to a file in Permissions/tmp.
+  //
+  // Examples:
+  //
+  // # Simulator running Mexican Spanish
+  // $ APP_LANG="es-MX" APP_LOCALE="es_MX" be cucumber -t @supported
+  //
+  // # Device running Dutch
+  // $ APP_LANG="nl" APP_LOCALE="nl" be cucumber -t @supported -p macmini
   // var buttonNames = findAlertButtonNames(alert);
   // Log.output({"output":"alert: " + title + "," + buttonNames}, true);
 
