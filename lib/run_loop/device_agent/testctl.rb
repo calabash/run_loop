@@ -3,7 +3,7 @@ module RunLoop
   # @!visibility private
   #
   # A wrapper around the test-control binary.
-  class Testctl
+  class Testctl < RunLoop::Launcher
 
     # @!visibility private
     @@testctl = nil
@@ -38,23 +38,13 @@ but binary does not exist at that path.
     end
 
     # @!visibility private
-    attr_reader :device
+    def to_s
+      "#<Testctl: #{Testctl.testctl}>"
+    end
 
     # @!visibility private
-    # @param [RunLoop::Device] device where to launch the CBX-Runner
-    def initialize(device)
-      @device = device
-
-      if device.version < RunLoop::Version.new("9.0")
-        raise ArgumentError, %Q[
-Invalid device:
-
-#{device}
-
-XCUITest is only available for iOS >= 9.0
-]
-      end
-
+    def inspect
+      to_s
     end
 
     # @!visibility private
@@ -63,7 +53,13 @@ XCUITest is only available for iOS >= 9.0
     end
 
     # @!visibility private
-    # Quits the simulator.
+    def self.log_file
+      path = File.join(Launcher.dot_dir, "testctl.log")
+      FileUtils.touch(path) if !File.exist?(path)
+      path
+    end
+
+    # @!visibility private
     def launch
       RunLoop::Frameworks.instance.install
 
@@ -78,7 +74,7 @@ XCUITest is only available for iOS >= 9.0
         args << RunLoop::Environment.codesign_identity
       end
 
-      log_file = File.join(XCUITest.dot_dir, "testctl.log")
+      log_file = Testctl.log_file
       FileUtils.rm_rf(log_file)
       FileUtils.touch(log_file)
 
@@ -93,3 +89,4 @@ XCUITest is only available for iOS >= 9.0
     end
   end
 end
+

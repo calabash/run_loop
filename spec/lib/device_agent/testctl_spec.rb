@@ -4,24 +4,6 @@ describe RunLoop::Testctl do
   let(:device) { Resources.shared.device("9.0") }
   let(:simulator) { Resources.shared.simulator("9.0") }
 
-  describe ".new" do
-    it "sets instance variables" do
-      testctl = RunLoop::Testctl.new(device)
-      expect(testctl.device).to be == device
-      expect(testctl.instance_variable_get(:@device)).to be == device
-    end
-
-    it "raises an error if device version < 9.0" do
-      device = Resources.shared.device("8.3")
-
-      expect do
-        RunLoop::Testctl.new(device)
-      end.to raise_error(ArgumentError,
-                         /XCUITest is only available for iOS >= 9.0/)
-
-    end
-  end
-
   it ".device_agent_dir" do
     path = RunLoop::Testctl.device_agent_dir
     expect(RunLoop::Testctl.class_variable_get(:@@device_agent_dir)).to be == path
@@ -66,4 +48,34 @@ describe RunLoop::Testctl do
     end
   end
 
+  describe "file system" do
+    let(:dot_dir) { File.expand_path(File.join("tmp", ".run-loop-xcuitest")) }
+    let(:xcuitest_dir) { File.join(dot_dir, "xcuitest") }
+
+    before do
+      FileUtils.mkdir_p(dot_dir)
+      allow(RunLoop::Launcher).to receive(:dot_dir).and_return(xcuitest_dir)
+    end
+
+    describe ".log_file" do
+      before do
+        FileUtils.mkdir_p(xcuitest_dir)
+      end
+
+      let(:path) { File.join(xcuitest_dir, "testctl.log") }
+
+      it "creates a file" do
+        FileUtils.rm_rf(path)
+
+        expect(RunLoop::Testctl.log_file).to be == path
+        expect(File.exist?(path)).to be_truthy
+      end
+
+      it "returns existing file path" do
+        FileUtils.touch(path)
+        expect(RunLoop::Testctl.log_file).to be == path
+      end
+    end
+  end
 end
+
