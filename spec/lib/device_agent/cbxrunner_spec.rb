@@ -1,16 +1,16 @@
 
-describe RunLoop::CBXRunner do
+describe RunLoop::DeviceAgent::CBXRunner do
   let(:device) { Resources.shared.device("9.0") }
   let(:simulator) { Resources.shared.simulator("9.0") }
 
   it ".new" do
-    cbxrunner = RunLoop::CBXRunner.new(device)
+    cbxrunner = RunLoop::DeviceAgent::CBXRunner.new(device)
     expect(cbxrunner.device).to be == device
     expect(cbxrunner.instance_variable_get(:@device)).to be == device
   end
 
   describe "instance methods" do
-    let(:cbxrunner) { RunLoop::CBXRunner.new(device) }
+    let(:cbxrunner) { RunLoop::DeviceAgent::CBXRunner.new(device) }
     let(:app) { "path/to/CBX-Runner.app" }
     let(:xctest) { File.join(app, "PlugIns", "CBX.xctest") }
     let(:plist) { File.join(xctest, "Info.plist") }
@@ -31,14 +31,14 @@ describe RunLoop::CBXRunner do
     describe "#runner" do
       it "physical device" do
         expect(device).to receive(:physical_device?).at_least(:once).and_return(true)
-        expect(RunLoop::CBXRunner).to receive(:detect_cbxdevice).and_return(app)
+        expect(RunLoop::DeviceAgent::CBXRunner).to receive(:detect_cbxdevice).and_return(app)
 
         expect(cbxrunner.runner).to be == app
       end
 
       it "simulator" do
         expect(device).to receive(:physical_device?).at_least(:once).and_return(false)
-        expect(RunLoop::CBXRunner).to receive(:detect_cbxsim).and_return(app)
+        expect(RunLoop::DeviceAgent::CBXRunner).to receive(:detect_cbxsim).and_return(app)
 
         expect(cbxrunner.runner).to be == app
       end
@@ -67,18 +67,18 @@ describe RunLoop::CBXRunner do
   end
 
   it ".device_agent_dir" do
-    path = RunLoop::CBXRunner.device_agent_dir
-    expect(RunLoop::CBXRunner.class_variable_get(:@@device_agent_dir)).to be == path
+    path = RunLoop::DeviceAgent::CBXRunner.device_agent_dir
+    expect(RunLoop::DeviceAgent::CBXRunner.class_variable_get(:@@device_agent_dir)).to be == path
 
     expect(File).not_to receive(:expand_path)
-    expect(RunLoop::CBXRunner.device_agent_dir).to be == path
+    expect(RunLoop::DeviceAgent::CBXRunner.device_agent_dir).to be == path
   end
 
   describe ".detect_cbxdevice" do
     let(:path) { "path/to/CBX-Runner.app" }
 
     before do
-      RunLoop::CBXRunner.class_variable_set(:@@cbxdevice, nil)
+      RunLoop::DeviceAgent::CBXRunner.class_variable_set(:@@cbxdevice, nil)
     end
 
     describe "CBXDEVICE" do
@@ -86,7 +86,7 @@ describe RunLoop::CBXRunner do
         expect(RunLoop::Environment).to receive(:cbxdevice).and_return(path)
         expect(File).to receive(:exist?).and_return(true)
 
-        expect(RunLoop::CBXRunner.detect_cbxdevice).to be == path
+        expect(RunLoop::DeviceAgent::CBXRunner.detect_cbxdevice).to be == path
       end
 
       it "does not exist" do
@@ -94,7 +94,7 @@ describe RunLoop::CBXRunner do
         expect(File).to receive(:exist?).and_return(false)
 
         expect do
-          RunLoop::CBXRunner.detect_cbxdevice
+          RunLoop::DeviceAgent::CBXRunner.detect_cbxdevice
         end.to raise_error(RuntimeError,
                            /CBXDEVICE environment variable defined:/)
       end
@@ -102,9 +102,9 @@ describe RunLoop::CBXRunner do
 
     it "default" do
       expect(RunLoop::Environment).to receive(:cbxdevice).and_return(nil)
-      expect(RunLoop::CBXRunner).to receive(:default_cbxdevice).and_return(path)
+      expect(RunLoop::DeviceAgent::CBXRunner).to receive(:default_cbxdevice).and_return(path)
 
-      expect(RunLoop::CBXRunner.detect_cbxdevice).to be == path
+      expect(RunLoop::DeviceAgent::CBXRunner.detect_cbxdevice).to be == path
     end
   end
 
@@ -112,7 +112,7 @@ describe RunLoop::CBXRunner do
     let(:path) { "path/to/CBX-Runner.app" }
 
     before do
-      RunLoop::CBXRunner.class_variable_set(:@@cbxsim, nil)
+      RunLoop::DeviceAgent::CBXRunner.class_variable_set(:@@cbxsim, nil)
     end
 
     describe "CBXSIM" do
@@ -120,7 +120,7 @@ describe RunLoop::CBXRunner do
         expect(RunLoop::Environment).to receive(:cbxsim).and_return(path)
         expect(File).to receive(:exist?).and_return(true)
 
-        expect(RunLoop::CBXRunner.detect_cbxsim).to be == path
+        expect(RunLoop::DeviceAgent::CBXRunner.detect_cbxsim).to be == path
       end
 
       it "does not exist" do
@@ -128,7 +128,7 @@ describe RunLoop::CBXRunner do
         expect(File).to receive(:exist?).and_return(false)
 
         expect do
-          RunLoop::CBXRunner.detect_cbxsim
+          RunLoop::DeviceAgent::CBXRunner.detect_cbxsim
         end.to raise_error(RuntimeError,
                            /CBXSIM environment variable defined:/)
       end
@@ -136,9 +136,9 @@ describe RunLoop::CBXRunner do
 
     it "default" do
       expect(RunLoop::Environment).to receive(:cbxsim).and_return(nil)
-      expect(RunLoop::CBXRunner).to receive(:default_cbxsim).and_return(path)
+      expect(RunLoop::DeviceAgent::CBXRunner).to receive(:default_cbxsim).and_return(path)
 
-      expect(RunLoop::CBXRunner.detect_cbxsim).to be == path
+      expect(RunLoop::DeviceAgent::CBXRunner.detect_cbxsim).to be == path
     end
   end
 
@@ -148,20 +148,20 @@ describe RunLoop::CBXRunner do
     let(:zip) { File.join(dir, "ipa", "CBX-Runner.app.zip") }
 
     before do
-      expect(RunLoop::CBXRunner).to receive(:device_agent_dir).and_return(dir)
+      expect(RunLoop::DeviceAgent::CBXRunner).to receive(:device_agent_dir).and_return(dir)
     end
 
     it "returns default if already expanded" do
       expect(File).to receive(:exist?).with(ipa).and_return(true)
 
-      expect(RunLoop::CBXRunner.default_cbxdevice).to be == ipa
+      expect(RunLoop::DeviceAgent::CBXRunner.default_cbxdevice).to be == ipa
     end
 
     it "expands the default" do
       expect(File).to receive(:exist?).with(ipa).and_return(false)
-      expect(RunLoop::CBXRunner).to receive(:expand_runner_archive).with(zip).and_return(ipa)
+      expect(RunLoop::DeviceAgent::CBXRunner).to receive(:expand_runner_archive).with(zip).and_return(ipa)
 
-      expect(RunLoop::CBXRunner.default_cbxdevice).to be == ipa
+      expect(RunLoop::DeviceAgent::CBXRunner.default_cbxdevice).to be == ipa
     end
   end
 
@@ -171,20 +171,20 @@ describe RunLoop::CBXRunner do
     let(:zip) { File.join(dir, "app", "CBX-Runner.app.zip") }
 
     before do
-      expect(RunLoop::CBXRunner).to receive(:device_agent_dir).and_return(dir)
+      expect(RunLoop::DeviceAgent::CBXRunner).to receive(:device_agent_dir).and_return(dir)
     end
 
     it "returns default if already expanded" do
       expect(File).to receive(:exist?).with(app).and_return(true)
 
-      expect(RunLoop::CBXRunner.default_cbxsim).to be == app
+      expect(RunLoop::DeviceAgent::CBXRunner.default_cbxsim).to be == app
     end
 
     it "expands the default" do
       expect(File).to receive(:exist?).with(app).and_return(false)
-      expect(RunLoop::CBXRunner).to receive(:expand_runner_archive).with(zip).and_return(app)
+      expect(RunLoop::DeviceAgent::CBXRunner).to receive(:expand_runner_archive).with(zip).and_return(app)
 
-      expect(RunLoop::CBXRunner.default_cbxsim).to be == app
+      expect(RunLoop::DeviceAgent::CBXRunner.default_cbxsim).to be == app
     end
   end
 end

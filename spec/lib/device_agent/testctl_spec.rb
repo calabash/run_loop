@@ -1,21 +1,21 @@
 
-describe RunLoop::Testctl do
+describe RunLoop::DeviceAgent::Testctl do
 
   let(:device) { Resources.shared.device("9.0") }
   let(:simulator) { Resources.shared.simulator("9.0") }
 
   it ".device_agent_dir" do
-    path = RunLoop::Testctl.device_agent_dir
-    expect(RunLoop::Testctl.class_variable_get(:@@device_agent_dir)).to be == path
+    path = RunLoop::DeviceAgent::Testctl.device_agent_dir
+    expect(RunLoop::DeviceAgent::Testctl.class_variable_get(:@@device_agent_dir)).to be == path
 
     expect(File).not_to receive(:expand_path)
-    expect(RunLoop::Testctl.device_agent_dir).to be == path
+    expect(RunLoop::DeviceAgent::Testctl.device_agent_dir).to be == path
   end
 
   describe ".testctl" do
 
     before do
-      RunLoop::Testctl.class_variable_set(:@@testctl, nil)
+      RunLoop::DeviceAgent::Testctl.class_variable_set(:@@testctl, nil)
     end
 
     describe "TESTCTL" do
@@ -25,7 +25,7 @@ describe RunLoop::Testctl do
         expect(RunLoop::Environment).to receive(:testctl).and_return(path)
         expect(File).to receive(:exist?).with(path).and_return(true)
 
-        expect(RunLoop::Testctl.testctl).to be == path
+        expect(RunLoop::DeviceAgent::Testctl.testctl).to be == path
       end
 
       it "raises error if path does not exist" do
@@ -33,7 +33,7 @@ describe RunLoop::Testctl do
         expect(File).to receive(:exist?).with(path).and_return(false)
 
         expect do
-          RunLoop::Testctl.testctl
+          RunLoop::DeviceAgent::Testctl.testctl
         end.to raise_error(RuntimeError,
                            /TESTCTL environment variable defined:/)
 
@@ -41,10 +41,10 @@ describe RunLoop::Testctl do
     end
 
     it "default location" do
-      expect(RunLoop::Testctl).to receive(:device_agent_dir).and_return("/tmp")
+      expect(RunLoop::DeviceAgent::Testctl).to receive(:device_agent_dir).and_return("/tmp")
       expect(RunLoop::Environment).to receive(:testctl).and_return(nil)
 
-      expect(RunLoop::Testctl.testctl).to be == "/tmp/bin/testctl"
+      expect(RunLoop::DeviceAgent::Testctl.testctl).to be == "/tmp/bin/testctl"
     end
   end
 
@@ -54,7 +54,7 @@ describe RunLoop::Testctl do
 
     before do
       FileUtils.mkdir_p(dot_dir)
-      allow(RunLoop::Launcher).to receive(:dot_dir).and_return(xcuitest_dir)
+      allow(RunLoop::DeviceAgent::Launcher).to receive(:dot_dir).and_return(xcuitest_dir)
     end
 
     describe ".log_file" do
@@ -67,13 +67,13 @@ describe RunLoop::Testctl do
       it "creates a file" do
         FileUtils.rm_rf(path)
 
-        expect(RunLoop::Testctl.log_file).to be == path
+        expect(RunLoop::DeviceAgent::Testctl.log_file).to be == path
         expect(File.exist?(path)).to be_truthy
       end
 
       it "returns existing file path" do
         FileUtils.touch(path)
-        expect(RunLoop::Testctl.log_file).to be == path
+        expect(RunLoop::DeviceAgent::Testctl.log_file).to be == path
       end
     end
   end

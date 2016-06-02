@@ -1,95 +1,101 @@
 
 module RunLoop
-  class Xcodebuild < RunLoop::Launcher
 
-    require "run_loop/shell"
-    include RunLoop::Shell
-
-    # @!visibility private
-    def self.log_file
-      path = File.join(Xcodebuild.dot_dir, "xcodebuild.log")
-      FileUtils.touch(path) if !File.exist?(path)
-      path
-    end
+  # @!visibility private
+  module DeviceAgent
 
     # @!visibility private
-    def to_s
-      "#<Xcodebuild #{workspace}>"
-    end
+    class Xcodebuild < RunLoop::DeviceAgent::Launcher
 
-    # @!visibility private
-    def inspect
-      to_s
-    end
+      require "run_loop/shell"
+      include RunLoop::Shell
 
-    # @!visibility private
-    def launch
-      workspace
-
-      shutdown
-
-      options = {:log_cmd => true}
-      self.shell(["pkill testmanagerd"], options)
-      self.shell(["pkill xcodebuild"], options)
-
-      if device.simulator?
-        # quits the simulator
-        sim = CoreSimulator.new(device, "")
-        sim.launch_simulator
-      else
-        # anything special about physical devices?
+      # @!visibility private
+      def self.log_file
+        path = File.join(Xcodebuild.dot_dir, "xcodebuild.log")
+        FileUtils.touch(path) if !File.exist?(path)
+        path
       end
 
-      start = Time.now
-      RunLoop.log_debug("Waiting for CBX-Runner to build...")
-      pid = xcodebuild
-      RunLoop.log_debug("Took #{Time.now - start} seconds to build and launch CBX-Runner")
-      pid
-    end
+      # @!visibility private
+      def to_s
+        "#<Xcodebuild #{workspace}>"
+      end
 
-    # @!visibility private
-    def workspace
-      @workspace ||= lambda do
-        path = RunLoop::Environment.send(:cbxws)
-        if path
-          path
+      # @!visibility private
+      def inspect
+        to_s
+      end
+
+      # @!visibility private
+      def launch
+        workspace
+
+        shutdown
+
+        options = {:log_cmd => true}
+        self.shell(["pkill testmanagerd"], options)
+        self.shell(["pkill xcodebuild"], options)
+
+        if device.simulator?
+          # quits the simulator
+          sim = CoreSimulator.new(device, "")
+          sim.launch_simulator
         else
-          raise "The CBXWS env var is undefined. Are you a maintainer?"
+          # anything special about physical devices?
         end
-      end.call
-    end
 
-    # @!visibility private
-    def xcodebuild
-      env = {
-        "COMMAND_LINE_BUILD" => "1"
-      }
+        start = Time.now
+        RunLoop.log_debug("Waiting for CBX-Runner to build...")
+        pid = xcodebuild
+        RunLoop.log_debug("Took #{Time.now - start} seconds to build and launch CBX-Runner")
+        pid
+      end
 
-      args = [
-        "xcrun",
-        "xcodebuild",
-        "-scheme", "CBXAppStub",
-        "-workspace", workspace,
-        "-config", "Debug",
-        "-destination",
-        "id=#{device.udid}",
-        "clean",
-        "test"
-      ]
+      # @!visibility private
+      def workspace
+        @workspace ||= lambda do
+          path = RunLoop::Environment.send(:cbxws)
+          if path
+            path
+          else
+            raise "The CBXWS env var is undefined. Are you a maintainer?"
+          end
+        end.call
+      end
 
-      log_file = Xcodebuild.xcodebuild_log_file
+      # @!visibility private
+      def xcodebuild
+        env = {
+          "COMMAND_LINE_BUILD" => "1"
+        }
 
-      options = {
-        :out => log_file,
-        :err => log_file
-      }
+        args = [
+          "xcrun",
+          "xcodebuild",
+          "-scheme", "CBXAppStub",
+          "-workspace", workspace,
+          "-config", "Debug",
+          "-destination",
+          "id=#{device.udid}",
+          "clean",
+          "test"
+        ]
 
-      command = "#{env.map.each { |k, v| "#{k}=#{v}" }.join(" ")} #{args.join(" ")}"
-      RunLoop.log_unix_cmd("#{command} >& #{log_file}")
+        log_file = Xcodebuild.xcodebuild_log_file
 
-      pid = Process.spawn(env, *args, options)
-      Process.detach(pid)
-      pid.to_i
+        options = {
+          :out => log_file,
+          :err => log_file
+        }
+
+        command = "#{env.map.each { |k, v| "#{k}=#{v}" }.join(" ")} #{args.join(" ")}"
+        RunLoop.log_unix_cmd("#{command} >& #{log_file}")
+
+        pid = Process.spawn(env, *args, options)
+        Process.detach(pid)
+        pid.to_i
+      end
     end
   end
 end

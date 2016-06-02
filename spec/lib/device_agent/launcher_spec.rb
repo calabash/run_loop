@@ -1,9 +1,9 @@
 
-describe RunLoop::Launcher do
+describe RunLoop::DeviceAgent::Launcher do
   describe ".new" do
     it "sets instance variables" do
       device = Resources.shared.device("9.0")
-      launcher = RunLoop::Launcher.new(device)
+      launcher = RunLoop::DeviceAgent::Launcher.new(device)
       expect(launcher.device).to be == device
       expect(launcher.instance_variable_get(:@device)).to be == device
     end
@@ -12,7 +12,7 @@ describe RunLoop::Launcher do
       device = Resources.shared.device("8.3")
 
       expect do
-        RunLoop::Launcher.new(device)
+        RunLoop::DeviceAgent::Launcher.new(device)
       end.to raise_error(ArgumentError,
                          /XCUITest is only available for iOS >= 9.0/)
 
@@ -22,7 +22,7 @@ describe RunLoop::Launcher do
   describe "abstract methods" do
     let(:launcher) do
       device = Resources.shared.device("9.0")
-      RunLoop::Launcher.new(device)
+      RunLoop::DeviceAgent::Launcher.new(device)
     end
 
     it "#launch" do
@@ -45,7 +45,7 @@ describe RunLoop::Launcher do
       it "creates a directory" do
         FileUtils.rm_rf(dot_dir)
 
-        actual = RunLoop::Xcodebuild.send(:dot_dir)
+        actual = RunLoop::DeviceAgent::Xcodebuild.send(:dot_dir)
         expect(actual).to be == xcuitest_dir
         expect(File.directory?(actual)).to be_truthy
       end
@@ -53,7 +53,7 @@ describe RunLoop::Launcher do
       it "returns a path" do
         FileUtils.mkdir_p(xcuitest_dir)
 
-        actual = RunLoop::Xcodebuild.send(:dot_dir)
+        actual = RunLoop::DeviceAgent::Xcodebuild.send(:dot_dir)
         expect(actual).to be == xcuitest_dir
       end
     end

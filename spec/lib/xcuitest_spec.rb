@@ -156,26 +156,26 @@ describe RunLoop::XCUITest do
 
   it ".default_cbx_launcher" do
     actual = RunLoop::XCUITest.default_cbx_launcher(device)
-    expect(actual).to be_kind_of(RunLoop::Testctl)
+    expect(actual).to be_kind_of(RunLoop::DeviceAgent::Testctl)
   end
 
   describe ".detect_cbx_launcher" do
     let(:options) { {} }
     it "default" do
       actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
-      expect(actual).to be_kind_of(RunLoop::Testctl)
+      expect(actual).to be_kind_of(RunLoop::DeviceAgent::Testctl)
     end
 
     it ":xcodebuild" do
       options[:cbx_launcher] = :xcodebuild
       actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
-      expect(actual).to be_kind_of(RunLoop::Xcodebuild)
+      expect(actual).to be_kind_of(RunLoop::DeviceAgent::Xcodebuild)
     end
 
     it ":xctestctl" do
       options[:cbx_launcher] = :xctestctl
       actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
-      expect(actual).to be_kind_of(RunLoop::Testctl)
+      expect(actual).to be_kind_of(RunLoop::DeviceAgent::Testctl)
     end
 
     it "unrecognized" do

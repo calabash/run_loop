@@ -1,7 +1,7 @@
 
-describe RunLoop::Xcodebuild do
+describe RunLoop::DeviceAgent::Xcodebuild do
   let(:device) { Resources.shared.default_simulator }
-  let(:xcodebuild) { RunLoop::Xcodebuild.new(device) }
+  let(:xcodebuild) { RunLoop::DeviceAgent::Xcodebuild.new(device) }
 
   describe "#workspace" do
 
@@ -41,13 +41,13 @@ describe RunLoop::Xcodebuild do
       it "creates a file" do
         FileUtils.rm_rf(path)
 
-        expect(RunLoop::Xcodebuild.log_file).to be == path
+        expect(RunLoop::DeviceAgent::Xcodebuild.log_file).to be == path
         expect(File.exist?(path)).to be_truthy
       end
 
       it "returns existing file path" do
         FileUtils.touch(path)
-        expect(RunLoop::Xcodebuild.log_file).to be == path
+        expect(RunLoop::DeviceAgent::Xcodebuild.log_file).to be == path
       end
     end
   end

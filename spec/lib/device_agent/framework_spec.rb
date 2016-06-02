@@ -1,7 +1,7 @@
 
-describe RunLoop::Frameworks do
+describe RunLoop::DeviceAgent::Frameworks do
 
-  let(:instance) { RunLoop::Frameworks.instance }
+  let(:instance) { RunLoop::DeviceAgent::Frameworks.instance }
 
   it "#rootdir" do
     actual = instance.send(:rootdir)
