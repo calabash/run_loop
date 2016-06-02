@@ -124,6 +124,15 @@ module RunLoop
     end
 
     # @!visibility private
+    def runtime
+      options = http_options
+      request = request("device")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
     def query(mark)
       options = http_options
       parameters = { :id => mark }
@@ -146,7 +155,7 @@ module RunLoop
     end
 
     # @!visibility private
-    def tap_coordinate(x, y)
+    def tap_coordinate(x, y, options)
       make_coordinate_gesture_request("touch", x, y)
     end
 
@@ -206,6 +215,12 @@ module RunLoop
         :options => options
       }
 
+      RunLoop.log_debug(%Q[
+Sending request to perform '#{gesture}' with:
+
+#{JSON.pretty_generate(parameters)}
+
+])
       request = request("gesture", parameters)
       client = client(http_options)
       response = client.post(request)
@@ -410,6 +425,7 @@ module RunLoop
 
       # Temp measure; we need to manage the xcodebuild pids.
       system("pkill xcodebuild")
+      system("pkill testmanagerd")
 
       if device.simulator?
         # quits the simulator
@@ -467,15 +483,28 @@ Something went wrong.
     # @!visibility private
     def expect_200_response(response)
       body = response_body_to_hash(response)
-      return body if response.status_code < 300
+      if response.status_code < 300 && !body["error"]
+        return body
+      end
 
-      raise RunLoop::XCUITest::HTTPError,
-        %Q[Expected status code < 200, found #{response.status_code}.
+      if response.status_code > 300
+        raise RunLoop::XCUITest::HTTPError,
+          %Q[Expected status code < 300, found #{response.status_code}.
 
 Server replied with:
 
 #{body}
+
 ]
+      else
+        raise RunLoop::XCUITest::HTTPError,
+						%Q[Expected JSON response with no error, but found
+
+#{body["error"]}
+
+]
+
+      end
     end
 
     # @!visibility private
