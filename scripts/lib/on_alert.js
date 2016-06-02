@@ -123,8 +123,19 @@ function germanLocalizations() {
 
 function dutchLocalizations() {
   return [
-    // APNS
-    ["OK", /wil u berichten stuern/]
+    ["Sta toe", /tot uw locatie toestaan terwijl u de app gebruikt/],
+    ["Sta toe", /toegang tot uw locatie toestaan terwijl u de app gebruikt/],
+    ["Sta toe", /ook toegang tot uw locatie toestaan, zelfs als u de app niet gebruikt/],
+    ["Sta toe", /toegang tot uw locatie toestaan, zelfs als u de app niet gebruikt/],
+    ["OK", /wil toegang tot uw contacten/],
+    ["OK", /wil toegang tot uw agenda/],
+    ["OK", /wil toegang tot uw herinneringen/],
+    ["OK", /wil toegang tot uw foto's/],
+    ["OK", /wil toegang tot Twitter-accounts/],
+    ["OK", /wil toegang tot de microfoon/],
+    ["OK", /wil toegang tot uw bewegings- en fitnessactiviteit/],
+    ["OK", /wil toegang tot de camera/],
+    ["OK", /wil u berichten sturen/]
   ];
 }
 
