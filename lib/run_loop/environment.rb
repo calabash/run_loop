@@ -186,13 +186,13 @@ module RunLoop
       end
     end
 
-    # Returns the value of TESTCTL
+    # Returns the value of XCTESTCTL
     #
-    # Use this to specify a non-default testctl binary.
+    # Use this to specify a non-default xctestctl binary.
     #
-    # The default testctl binary is bundled with this gem.
-    def self.testctl
-      value = ENV["TESTCTL"]
+    # The default xctestctl binary is bundled with this gem.
+    def self.xctestctl
+      value = ENV["XCTESTCTL"]
       if !value || value == ""
         nil
       else

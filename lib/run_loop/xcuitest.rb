@@ -47,7 +47,7 @@ module RunLoop
     #
     # @param [RunLoop::Device] device the device under test
     def self.default_cbx_launcher(device)
-      RunLoop::DeviceAgent::Testctl.new(device)
+      RunLoop::DeviceAgent::XCTestctl.new(device)
     end
 
     # @!visibility private
@@ -59,7 +59,7 @@ module RunLoop
         if value == :xcodebuild
           RunLoop::DeviceAgent::Xcodebuild.new(device)
         elsif value == :xctestctl
-          RunLoop::DeviceAgent::Testctl.new(device)
+          RunLoop::DeviceAgent::XCTestctl.new(device)
         else
           raise(ArgumentError,
                 "Expected :cbx_launcher => #{value} to be :xcodebuild or :xctestctl")
@@ -392,7 +392,7 @@ Sending request to perform '#{gesture}' with:
 
       shutdown
 
-      testctl = RunLoop::DeviceAgent::Testctl.new(device)
+      testctl = RunLoop::DeviceAgent::XCTestctl.new(device)
 
       if device.simulator?
         cbxapp = RunLoop::App.new(testctl.runner.runner)

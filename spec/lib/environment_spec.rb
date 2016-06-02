@@ -370,23 +370,23 @@ describe RunLoop::Environment do
     end
   end
 
-  describe ".testctl" do
+  describe ".xctestctl" do
     it "returns value" do
       testctl = "/usr/local/bin/test-control"
-      stub_env({"TESTCTL" => testctl})
+      stub_env({"XCTESTCTL" => testctl})
 
-      expect(RunLoop::Environment.testctl).to be == testctl
+      expect(RunLoop::Environment.xctestctl).to be == testctl
     end
 
     describe "returns nil" do
       it "if value is the empty string" do
-        stub_env("TESTCTL", "")
-        expect(RunLoop::Environment.testctl).to be == nil
+        stub_env("XCTESTCTL", "")
+        expect(RunLoop::Environment.xctestctl).to be == nil
       end
 
       it "if value is nil" do
-        stub_env({"TESTCTL" => nil})
-        expect(RunLoop::Environment.testctl).to be == nil
+        stub_env({"XCTESTCTL" => nil})
+        expect(RunLoop::Environment.xctestctl).to be == nil
       end
     end
   end

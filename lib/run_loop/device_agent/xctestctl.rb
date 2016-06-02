@@ -5,10 +5,10 @@ module RunLoop
     # @!visibility private
     #
     # A wrapper around the test-control binary.
-    class Testctl < RunLoop::DeviceAgent::Launcher
+    class XCTestctl < RunLoop::DeviceAgent::Launcher
 
       # @!visibility private
-      @@testctl = nil
+      @@xctestctl = nil
 
       # @!visibility private
       def self.device_agent_dir
@@ -16,16 +16,16 @@ module RunLoop
       end
 
       # @!visibility private
-      def self.testctl
-        @@testctl ||= lambda do
-          from_env = RunLoop::Environment.testctl
+      def self.xctestctl
+        @@xctestctl ||= lambda do
+          from_env = RunLoop::Environment.xctestctl
           if from_env
             if File.exist?(from_env)
-              RunLoop.log_debug("Using TESTCTL=#{from_env}")
+              RunLoop.log_debug("Using XCTESTCTL=#{from_env}")
               from_env
             else
               raise RuntimeError, %Q[
-TESTCTL environment variable defined:
+XCTESTCTL environment variable defined:
 
 #{from_env}
 
@@ -34,14 +34,14 @@ but binary does not exist at that path.
             end
 
           else
-            File.join(self.device_agent_dir, "bin", "testctl")
+            File.join(self.device_agent_dir, "bin", "xctestctl")
           end
         end.call
       end
 
       # @!visibility private
       def to_s
-        "#<Testctl: #{Testctl.testctl}>"
+        "#<Testctl: #{XCTestctl.xctestctl}>"
       end
 
       # @!visibility private
@@ -56,7 +56,7 @@ but binary does not exist at that path.
 
       # @!visibility private
       def self.log_file
-        path = File.join(Launcher.dot_dir, "testctl.log")
+        path = File.join(Launcher.dot_dir, "xctestctl.log")
         FileUtils.touch(path) if !File.exist?(path)
         path
       end
@@ -65,7 +65,7 @@ but binary does not exist at that path.
       def launch
         RunLoop::DeviceAgent::Frameworks.instance.install
 
-        cmd = RunLoop::DeviceAgent::Testctl.testctl
+        cmd = RunLoop::DeviceAgent::XCTestctl.xctestctl
 
         args = ["-r", runner.runner,
                 "-t", runner.tester,
@@ -76,14 +76,14 @@ but binary does not exist at that path.
           args << RunLoop::Environment.codesign_identity
         end
 
-        log_file = Testctl.log_file
+        log_file = XCTestctl.log_file
         FileUtils.rm_rf(log_file)
         FileUtils.touch(log_file)
 
         options = {:out => log_file, :err => log_file}
         RunLoop.log_unix_cmd("#{cmd} #{args.join(" ")} >& #{log_file}")
 
-        # Gotta keep the testctl process alive or the connection
+        # Gotta keep the xctestctl process alive or the connection
         # to testmanagerd will fail.
         pid = Process.spawn(cmd, *args, options)
         Process.detach(pid)
