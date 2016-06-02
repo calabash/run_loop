@@ -5,9 +5,9 @@ function findAlertTitle(alert) {
     var title = alert.name();
     var staticTexts;
 
-    if (title == null) {
+    if (title === null) {
         staticTexts = alert.staticTexts();
-        if (staticTexts != null && staticTexts.length > 0) {
+        if (staticTexts !== null && staticTexts.length > 0) {
 
             title = staticText[0].name();
         }
