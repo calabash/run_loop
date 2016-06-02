@@ -7,9 +7,6 @@ module RunLoop
     # @!visibility private
     class Xcodebuild < RunLoop::DeviceAgent::Launcher
 
-      require "run_loop/shell"
-      include RunLoop::Shell
-
       # @!visibility private
       def self.log_file
         path = File.join(Xcodebuild.dot_dir, "xcodebuild.log")
@@ -31,18 +28,10 @@ module RunLoop
       def launch
         workspace
 
-        shutdown
-
-        options = {:log_cmd => true}
-        self.shell(["pkill testmanagerd"], options)
-        self.shell(["pkill xcodebuild"], options)
-
         if device.simulator?
           # quits the simulator
           sim = CoreSimulator.new(device, "")
           sim.launch_simulator
-        else
-          # anything special about physical devices?
         end
 
         start = Time.now
@@ -82,7 +71,7 @@ module RunLoop
           "test"
         ]
 
-        log_file = Xcodebuild.xcodebuild_log_file
+        log_file = Xcodebuild.log_file
 
         options = {
           :out => log_file,

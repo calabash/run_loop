@@ -3,7 +3,8 @@ describe RunLoop::XCUITest do
 
   let(:bundle_id) { "com.apple.Preferences" }
   let(:device) { Resources.shared.default_simulator }
-  let(:xcuitest) { RunLoop::XCUITest.new(bundle_id, device) }
+  let(:cbx_launcher) { RunLoop::DeviceAgent::Launcher.new(device) }
+  let(:xcuitest) { RunLoop::XCUITest.new(bundle_id, device, cbx_launcher) }
 
   let(:response) do
     Class.new do
@@ -16,6 +17,7 @@ describe RunLoop::XCUITest do
   it ".new" do
     expect(xcuitest.instance_variable_get(:@bundle_id)).to be == bundle_id
     expect(xcuitest.instance_variable_get(:@device)).to be == device
+    expect(xcuitest.instance_variable_get(:@cbx_launcher)).to be == cbx_launcher
   end
 
   it "#launch" do

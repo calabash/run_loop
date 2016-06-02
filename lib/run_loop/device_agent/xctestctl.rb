@@ -65,6 +65,14 @@ but binary does not exist at that path.
       def launch
         RunLoop::DeviceAgent::Frameworks.instance.install
 
+        if device.simulator?
+          cbxapp = RunLoop::App.new(runner.runner)
+
+          # quits the simulator
+          sim = CoreSimulator.new(device, cbxapp)
+          sim.install
+        end
+
         cmd = RunLoop::DeviceAgent::XCTestctl.xctestctl
 
         args = ["-r", runner.runner,
@@ -87,6 +95,11 @@ but binary does not exist at that path.
         # to testmanagerd will fail.
         pid = Process.spawn(cmd, *args, options)
         Process.detach(pid)
+
+        if device.simulator?
+          device.simulator_wait_for_stable_state
+        end
+
         pid.to_i
       end
     end

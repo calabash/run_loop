@@ -3,6 +3,9 @@ module RunLoop
   # @!visibility private
   class XCUITest
 
+    require "run_loop/shell"
+    include RunLoop::Shell
+
     class HTTPError < RuntimeError; end
 
     # @!visibility private
@@ -38,7 +41,9 @@ module RunLoop
         core_sim.install
       end
 
-      xcuitest = RunLoop::XCUITest.new(bundle_id, device)
+      cbx_launcher = XCUITest.detect_cbx_launcher(options, device)
+
+      xcuitest = RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
       xcuitest.launch
       xcuitest
     end
@@ -69,7 +74,7 @@ module RunLoop
       end
     end
 
-    attr_reader :bundle_id, :device
+    attr_reader :bundle_id, :device, :cbx_launcher
 
     # @!visibility private
     #
@@ -77,14 +82,15 @@ module RunLoop
     #
     # @param [String] bundle_id The identifier of the app under test.
     # @param [RunLoop::Device] device The device device.
-    def initialize(bundle_id, device)
+    def initialize(bundle_id, device, cbx_launcher)
       @bundle_id = bundle_id
       @device = device
+      @cbx_launcher = cbx_launcher
     end
 
     # @!visibility private
     def to_s
-      "#<XCUITest #{url} : #{bundle_id} : #{device}>"
+      "#<XCUITest #{url} : #{bundle_id} : #{device} : #{cbx_launcher}>"
     end
 
     # @!visibility private
@@ -386,38 +392,20 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def launch_cbx_runner
-      # Fail fast if CBXWS is not defined.
-      # WIP - we will distribute the workspace somehow.
-      #workspace
-
       shutdown
 
-      testctl = RunLoop::DeviceAgent::XCTestctl.new(device)
-
-      if device.simulator?
-        cbxapp = RunLoop::App.new(testctl.runner.runner)
-
-        # quits the simulator
-        sim = CoreSimulator.new(device, cbxapp)
-        sim.install
-      else
-        # anything special about physical devices?
-      end
+      options = {:log_cmd => true}
+      exec(["pkill", "xctestctl"], options)
+      exec(["pkill", "testmanagerd"], options)
+      exec(["pkill", "xcodebuild"], options)
 
       start = Time.now
-
-      # Will launch the simulator
-      pid = testctl.launch
-
-      if device.simulator?
-        device.simulator_wait_for_stable_state
-      end
-
       RunLoop.log_debug("Waiting for CBX-Runner to launch...")
+      pid = cbx_launcher.launch
       health
+      RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
 
-      RunLoop.log_debug("Took #{Time.now - start} seconds to build and launch")
-      pid.to_i
+      pid
     end
 
     # @!visibility private
