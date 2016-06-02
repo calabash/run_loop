@@ -45,6 +45,34 @@ module RunLoop
 
     # @!visibility private
     #
+    # @param [RunLoop::Device] device the device under test
+    def self.default_cbx_launcher(device)
+      RunLoop::Testctl.new(device)
+    end
+
+    # @!visibility private
+    # @param [Hash] options the options passed by the user
+    # @param [RunLoop::Device] device the device under test
+    def self.detect_cbx_launcher(options, device)
+      value = options[:cbx_launcher]
+      if value
+        if value == :xcodebuild
+          RunLoop::Xcodebuild.new(device)
+        elsif value == :xctestctl
+          RunLoop::Testctl.new(device)
+        else
+          raise(ArgumentError,
+                "Expected :cbx_launcher => #{value} to be :xcodebuild or :xctestctl")
+        end
+      else
+        XCUITest.default_cbx_launcher(device)
+      end
+    end
+
+    attr_reader :bundle_id, :device
+
+    # @!visibility private
+    #
     # The app with `bundle_id` needs to be installed.
     #
     # @param [String] bundle_id The identifier of the app under test.
@@ -62,16 +90,6 @@ module RunLoop
     # @!visibility private
     def inspect
       to_s
-    end
-
-    # @!visibility private
-    def bundle_id
-      @bundle_id
-    end
-
-    # @!visibility private
-    def device
-      @device
     end
 
     # @!visibility private

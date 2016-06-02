@@ -137,7 +137,7 @@ describe RunLoop::XCUITest do
   #   end
   # end
 
-  describe "health" do
+  describe "#health" do
     let(:options) { xcuitest.send(:http_options) }
     let(:client) { xcuitest.send(:client, options) }
     let(:request) { xcuitest.send(:request, "health") }
@@ -151,6 +151,39 @@ describe RunLoop::XCUITest do
       expect(client).to receive(:get).with(request).and_return(response)
 
       expect(xcuitest.send(:health)).to be == response.body
+    end
+  end
+
+  it ".default_cbx_launcher" do
+    actual = RunLoop::XCUITest.default_cbx_launcher(device)
+    expect(actual).to be_kind_of(RunLoop::Testctl)
+  end
+
+  describe ".detect_cbx_launcher" do
+    let(:options) { {} }
+    it "default" do
+      actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
+      expect(actual).to be_kind_of(RunLoop::Testctl)
+    end
+
+    it ":xcodebuild" do
+      options[:cbx_launcher] = :xcodebuild
+      actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
+      expect(actual).to be_kind_of(RunLoop::Xcodebuild)
+    end
+
+    it ":xctestctl" do
+      options[:cbx_launcher] = :xctestctl
+      actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
+      expect(actual).to be_kind_of(RunLoop::Testctl)
+    end
+
+    it "unrecognized" do
+      options[:cbx_launcher] = :unknown
+      expect do
+        RunLoop::XCUITest.detect_cbx_launcher(options, device)
+      end.to raise_error(ArgumentError,
+                         /to be :xcodebuild or :xctestctl/)
     end
   end
 end
