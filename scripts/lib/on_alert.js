@@ -105,8 +105,19 @@ function spanishLocalizations() {
 
 function germanLocalizations() {
   return [
-    // Location
-    ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/]
+    ["Ja", /Darf (?:.)+ Ihren aktuellen Ort verwenden/],
+    ["Erlauben", /auf Ihren Standort zugreifen, wenn Sie die App benutzen/],
+    ["Erlauben", /auch auf Ihren Standort zugreifen, wenn Sie die App nicht benutzen/],
+    ["Erlauben", /auf Ihren Standort zugreifen, selbst wenn Sie die App nicht benutzen/],
+    ["Ja", /auf Ihre Kontakte zugreifen/],
+    ["Ja", /auf Ihren Kalender zugreifen/],
+    ["Ja", /auf Ihre Erinnerungen zugreifen/],
+    ["Ja", /auf Ihre Fotos zugreifen/],
+    ["Erlauben", /möchte auf Twitter-Accounts zugreifen/],
+    ["Ja", /auf das Mikrofon zugreifen/],
+    ["Ja", /möchte auf Ihre Bewegungs- und Fitnessdaten zugreifen/],
+    ["Ja", /auf Ihre Kamera zugreifen/],
+    ["OK", /Ihnen Mitteilungen senden/]
   ];
 }
 
