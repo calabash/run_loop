@@ -49,10 +49,18 @@ function englishLocalizations() {
 
 function danishLocalizations() {
   return [
-    // Location
     ["Tillad", /bruge din lokalitet, når du bruger appen/],
     ["Tillad", /også når du ikke bruger appen/],
-    ["OK", /vil bruge din aktuelle placering/]
+    ["OK", /vil bruge din aktuelle placering/],
+    ["OK", /vil bruge dine kontakter/],
+    ["OK", /vil bruge mikrofonen/],
+    ["OK", /vil bruge din kalender/],
+    ["OK", /vil bruge dine påmindelser/],
+    ["OK", /vil bruge dine fotos/],
+    ["OK", /ønsker adgang til Twitter-konti/],
+    ["OK", /vil bruge din fysiske aktivitet og din træningsaktivitet/],
+    ["OK", /vil bruge kameraet/],
+    ["OK", /vil gerne sende dig meddelelser/]
   ];
 }
 
