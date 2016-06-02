@@ -70,19 +70,28 @@ function euSpanishLocalizations() {
     ["OK", /desea acceder a tu actividad física y deportiva/],
     ["OK", /quiere acceder a la cámara/],
     ["OK", /quiere enviarte notificaciones/]
+    // Possibly a typo.
+    ["OK", /enviarle notificaiones/]
   ];
 }
 
-function northAmericanSpanishLocalizations() {
+function es419SpanishLocalizations() {
   return [
-    ["OK", /enviarle notificaiones/]
+    // Same as EU Spanish
+  ];
+}
+
+function usSpanishLocalizations() {
+  return [
+    // Same as EU Spanish
   ];
 }
 
 function spanishLocalizations() {
   return [].concat(
     euSpanishLocalizations(),
-    northAmericanSpanishLocalizations()
+    es419SpanishLocalizations(),
+    usSpanishLocalizations()
   );
 }
 
