@@ -56,11 +56,34 @@ function danishLocalizations() {
   ];
 }
 
-function spanishLocalizations() {
+function euSpanishLocalizations() {
   return [
-    // APNS
+    ["Permitir", /acceder a tu ubicación mientras utilizas la aplicación/],
+    ["Permitir", /acceder a tu ubicación aunque no estés utilizando la aplicación/],
+    ["OK", /acceder a tu ubicación mientras utilizas la aplicación/],
+    ["OK", /acceder a tu ubicación aunque no estés utilizando la aplicación/],
+    ["OK", /quiere acceder a tus contactos/],
+    ["OK", /quiere acceder a tu calendario/],
+    ["OK", /quiere acceder a tus recordatorios/],
+    ["OK", /quiere acceder a tus fotos/],
+    ["OK", /quiere obtener acceso a cuentas Twitter/],
+    ["OK", /desea acceder a tu actividad física y deportiva/],
+    ["OK", /quiere acceder a la cámara/],
+    ["OK", /quiere enviarte notificaciones/]
+  ];
+}
+
+function northAmericanSpanishLocalizations() {
+  return [
     ["OK", /enviarle notificaiones/]
   ];
+}
+
+function spanishLocalizations() {
+  return [].concat(
+    euSpanishLocalizations(),
+    northAmericanSpanishLocalizations()
+  );
 }
 
 function germanLocalizations() {
