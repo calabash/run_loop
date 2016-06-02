@@ -363,14 +363,6 @@ Sending request to perform '#{gesture}' with:
         response = client.post(request)
         body = response.body
         RunLoop.log_debug("CBX-Runner says, \"#{body}\"")
-        5.times do
-          begin
-            health
-            sleep(1.0)
-          rescue => _
-            break
-          end
-        end
         body
       rescue => e
         RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
