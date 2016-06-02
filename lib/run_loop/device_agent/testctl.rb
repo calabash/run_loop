@@ -63,6 +63,7 @@ XCUITest is only available for iOS >= 9.0
     end
 
     # @!visibility private
+    # Quits the simulator.
     def launch
       RunLoop::Frameworks.instance.install
 

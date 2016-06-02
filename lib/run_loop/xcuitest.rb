@@ -419,25 +419,32 @@ Sending request to perform '#{gesture}' with:
     def launch_cbx_runner
       # Fail fast if CBXWS is not defined.
       # WIP - we will distribute the workspace somehow.
-      workspace
+      #workspace
 
       shutdown
 
-      # Temp measure; we need to manage the xcodebuild pids.
-      system("pkill xcodebuild")
-      system("pkill testmanagerd")
+      testctl = RunLoop::Testctl.new(device)
 
       if device.simulator?
+        cbxapp = RunLoop::App.new(testctl.runner.runner)
+
         # quits the simulator
-        sim = CoreSimulator.new(device, "")
-        sim.launch_simulator
+        sim = CoreSimulator.new(device, cbxapp)
+        sim.install
       else
         # anything special about physical devices?
       end
 
       start = Time.now
-      pid = xcodebuild
-      RunLoop.log_debug("Waiting for CBX-Runner to build...")
+
+      # Will launch the simulator
+      pid = testctl.launch
+
+      if device.simulator?
+        device.simulator_wait_for_stable_state
+      end
+
+      RunLoop.log_debug("Waiting for CBX-Runner to launch...")
       health
 
       RunLoop.log_debug("Took #{Time.now - start} seconds to build and launch")
