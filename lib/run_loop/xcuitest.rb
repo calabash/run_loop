@@ -44,13 +44,6 @@ module RunLoop
     end
 
     # @!visibility private
-    def self.xcodebuild_log_file
-      path = File.join(XCUITest.dot_dir, "xcodebuild.log")
-      FileUtils.touch(path) if !File.exist?(path)
-      path
-    end
-
-    # @!visibility private
     #
     # The app with `bundle_id` needs to be installed.
     #
@@ -61,10 +54,12 @@ module RunLoop
       @device = device
     end
 
+    # @!visibility private
     def to_s
       "#<XCUITest #{url} : #{bundle_id} : #{device}>"
     end
 
+    # @!visibility private
     def inspect
       to_s
     end
@@ -80,17 +75,6 @@ module RunLoop
     end
 
     # @!visibility private
-    def workspace
-      @workspace ||= lambda do
-        path = RunLoop::Environment.send(:cbxws)
-        if path
-          path
-        else
-          raise "TODO: figure out how to distribute the CBX-Runner"
-        end
-      end.call
-    end
-
     def launch
       start = Time.now
       launch_cbx_runner
@@ -383,39 +367,6 @@ Sending request to perform '#{gesture}' with:
     end
 
     # @!visibility private
-    def xcodebuild
-      env = {
-        "COMMAND_LINE_BUILD" => "1"
-      }
-
-      args = [
-        "xcrun",
-        "xcodebuild",
-        "-scheme", "CBXAppStub",
-        "-workspace", workspace,
-        "-config", "Debug",
-        "-destination",
-        "id=#{device.udid}",
-        "clean",
-        "test"
-      ]
-
-      log_file = XCUITest.xcodebuild_log_file
-
-      options = {
-        :out => log_file,
-        :err => log_file
-      }
-
-      command = "#{env.map.each { |k, v| "#{k}=#{v}" }.join(" ")} #{args.join(" ")}"
-      RunLoop.log_unix_cmd("#{command} >& #{log_file}")
-
-      pid = Process.spawn(env, *args, options)
-      Process.detach(pid)
-      pid
-    end
-
-    # @!visibility private
     def launch_cbx_runner
       # Fail fast if CBXWS is not defined.
       # WIP - we will distribute the workspace somehow.
@@ -512,17 +463,6 @@ Server replied with:
 ]
 
       end
-    end
-
-    # @!visibility private
-    def self.dot_dir
-      path = File.join(RunLoop::DotDir.directory, "xcuitest")
-
-      if !File.exist?(path)
-        FileUtils.mkdir_p(path)
-      end
-
-      path
     end
 
     # @!visibility private
