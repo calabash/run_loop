@@ -294,7 +294,11 @@ module RunLoop
         end
       else
         possible = XCODE_5_SDKS.map do |sdk|
-          File.expand_path("~/Library/Application Support/iPhone Simulator/#{sdk}")
+          File.join(RunLoop::Environment.user_home_directory,
+                    "Library",
+                    "Application Support",
+                    "iPhone Simulator",
+                    sdk)
         end
 
         dirs = (possible + existing).uniq
@@ -646,10 +650,11 @@ module RunLoop
     # The absolute path to the iPhone Simulator Application Support directory.
     # @return [String] absolute path
     def sim_app_support_dir
+      home_dir = RunLoop::Environment.user_home_directory
       if xcode_version_gte_6?
-        File.expand_path('~/Library/Developer/CoreSimulator/Devices')
+        File.join(home_dir, "Library", "Developer", "CoreSimulator", "Devices")
       else
-        File.expand_path('~/Library/Application Support/iPhone Simulator')
+        File.join(home_dir, "Library", "Application Support", "iPhone Simulator")
       end
     end
 
