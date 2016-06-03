@@ -173,11 +173,11 @@ function isPrivacyAlert(alert) {
 
   var title = findAlertTitle(alert);
 
-  // Comment this out if you are capturing regexes.  See comment below.
-  Log.output({"output":"alert: " + title}, true);
+  // Comment this out when capturing new regexes. See the comment below.
+  Log.output({"alert":title});
 
   // When debugging or trying to capture the regexes for a new
-  // localization, uncomment these lines and comment out the line above.
+  // localization, uncomment the logging below.
   //
   // Notes:
   // * Microphone alerts only appear on physical devices.
@@ -205,8 +205,10 @@ function isPrivacyAlert(alert) {
   //
   // # Device running Dutch
   // $ APP_LANG="nl" APP_LOCALE="nl" be cucumber -t @supported -p macmini
-  // var buttonNames = findAlertButtonNames(alert);
-  // Log.output({"output":"alert: " + title + "," + buttonNames}, true);
+
+  // This is very slow, so only do this if you are trying to capture regexes.
+  //var buttonNames = findAlertButtonNames(alert);
+  //Log.output({"alert":{"title":title, "buttons":buttonNames, "capture":"YES"}});
 
   var answer;
   var expression;
