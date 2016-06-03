@@ -12,6 +12,8 @@ device_agent = ["lib/run_loop/device_agent/bin/xctestctl",
                 "lib/run_loop/device_agent/ipa/CBX-Runner.app.zip",
                 "lib/run_loop/device_agent/frameworks/Frameworks.zip"]
 
+vendor_licenses = Dir.glob("./vendor-licenses/*.*")
+
 Gem::Specification.new do |s|
   s.name        = 'run_loop'
 
@@ -35,7 +37,8 @@ into a valid version, e.g. 1.2.3 or 1.2.3.pre10
   s.homepage    = 'http://calaba.sh'
   s.summary     = %q{The bridge between Calabash iOS and Xcode command-line
 tools like instruments and simctl.}
-  s.files = ruby_files + java_scripts + bash_scripts + plists + ['LICENSE'] + device_agent
+  s.files = ruby_files + java_scripts + bash_scripts + plists + device_agent +
+  ["LICENSE"] + vendor_licenses
   s.require_paths = ['lib']
   s.licenses    = ['MIT']
   s.executables = 'run-loop'

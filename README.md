@@ -18,6 +18,8 @@ The most recent versions of Xcode and ruby are strongly recommended.
 
 Run Loop is available under the MIT license. See the LICENSE file for more info.
 
+Licenses for third-party software can be found in `./vendor-licenses`.
+
 ### Versioning
 
 Run Loop follows the spirit of Semantic Versioning. [1]  However, the semantic versioning spec is incompatible with RubyGem's patterns for pre-release gems. [2]
