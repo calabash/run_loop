@@ -22,12 +22,23 @@ Licenses for third-party software can be found in `./vendor-licenses`.
 
 ### Versioning
 
-Run Loop follows the spirit of Semantic Versioning. [1]  However, the semantic versioning spec is incompatible with RubyGem's patterns for pre-release gems. [2]
+Run Loop follows the spirit of Semantic Versioning. [1]  However, the semantic
+versioning spec is incompatible with RubyGem's patterns for pre-release gems.[2]
 
 _"But returning to the practical: No release version of SemVer is compatible with Rubygems."_ - David Kellum
 
+If a method, class, or constant is marked with:
+
+```
+# @!visibility private
+```
+
+it is not part of the public API and the behavior is subject to change
+at any time.
+
 - [1] http://semver.org/
 - [2] http://gravitext.com/2012/07/22/versioning.html
+
 
 ## For Run Loop Gem Developers
 
