@@ -17,7 +17,7 @@ var Log = (function () {
 
     return {
         result: function (status, data) {
-            log_json({"status": status, "value": data, "index":_actualIndex})
+            log_json({"status": status, "value": data, "index":_actualIndex});
         },
         output: function (msg) {
             log_json({"output": msg,"last_index":_actualIndex});
