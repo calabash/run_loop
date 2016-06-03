@@ -1,6 +1,6 @@
 
 describe RunLoop::DeviceAgent::Xcodebuild do
-  let(:device) { Resources.shared.default_simulator }
+  let(:device) { Resources.shared.device("9.0") }
   let(:xcodebuild) { RunLoop::DeviceAgent::Xcodebuild.new(device) }
 
   describe "#workspace" do
