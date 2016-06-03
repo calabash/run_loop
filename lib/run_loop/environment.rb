@@ -162,6 +162,72 @@ module RunLoop
       end
     end
 
+    # Returns the value of CODESIGN_IDENTITY
+    def self.codesign_identity
+      value = ENV["CODESIGN_IDENTITY"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
+    # Returns the value of KEYCHAIN
+    #
+    # Use this to specify a non-default KEYCHAIN for code signing.
+    #
+    # The default KEYCHAIN is login.keychain.
+    def self.keychain
+      value = ENV["KEYCHAIN"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
+    # Returns the value of XCTESTCTL
+    #
+    # Use this to specify a non-default xctestctl binary.
+    #
+    # The default xctestctl binary is bundled with this gem.
+    def self.xctestctl
+      value = ENV["XCTESTCTL"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
+    # Returns the value of CBXDEVICE
+    #
+    # Use this to specify a non-default CBX-Runner for physical devices.
+    #
+    # The default CBX-Runner is bundled with this gem.
+    def self.cbxdevice
+      value = ENV["CBXDEVICE"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
+    # Returns the value of CBXSIM
+    #
+    # Use this to specify a non-default CBX-Runner for simulators.
+    #
+    # The default CBX-Runner is bundled with this gem.
+    def self.cbxsim
+      value = ENV["CBXSIM"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
     # Returns true if running in Jenkins CI
     #
     # Checks the value of JENKINS_HOME

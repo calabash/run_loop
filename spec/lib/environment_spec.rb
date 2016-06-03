@@ -315,9 +315,121 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment.developer_dir).to be == '/some/xcode/path'
     end
 
-    it 'returns nil if value is the empty string' do
-      stub_env('DEVELOPER_DIR', '')
-      expect(RunLoop::Environment.developer_dir).to be == nil
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env('DEVELOPER_DIR', '')
+        expect(RunLoop::Environment.developer_dir).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"DEVELOPER_DIR" => nil})
+        expect(RunLoop::Environment.developer_dir).to be == nil
+      end
+    end
+  end
+
+  describe ".codesign_identity" do
+    it "returns value" do
+      identity = "iPhone Developer: Max Musterman (ABCDE12345)"
+      stub_env({"CODESIGN_IDENTITY" => identity})
+
+      expect(RunLoop::Environment.codesign_identity).to be == identity
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("CODESIGN_IDENTITY", "")
+        expect(RunLoop::Environment.codesign_identity).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"CODESIGN_IDENTITY" => nil})
+        expect(RunLoop::Environment.codesign_identity).to be == nil
+      end
+    end
+  end
+
+  describe ".keychain" do
+    it "returns value" do
+      keychain = "/Users/maxmusterman/Library/Keychains/login.keychain"
+      stub_env({"KEYCHAIN" => keychain})
+
+      expect(RunLoop::Environment.keychain).to be == keychain
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("KEYCHAIN", "")
+        expect(RunLoop::Environment.keychain).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"KEYCHAIN" => nil})
+        expect(RunLoop::Environment.keychain).to be == nil
+      end
+    end
+  end
+
+  describe ".xctestctl" do
+    it "returns value" do
+      testctl = "/usr/local/bin/test-control"
+      stub_env({"XCTESTCTL" => testctl})
+
+      expect(RunLoop::Environment.xctestctl).to be == testctl
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("XCTESTCTL", "")
+        expect(RunLoop::Environment.xctestctl).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"XCTESTCTL" => nil})
+        expect(RunLoop::Environment.xctestctl).to be == nil
+      end
+    end
+  end
+
+  describe ".cbxdevice" do
+    it "returns value" do
+      path = "/path/to/ipa/CBX-Runner.app"
+      stub_env({"CBXDEVICE" => path})
+
+      expect(RunLoop::Environment.cbxdevice).to be == path
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("CBXDEVICE", "")
+        expect(RunLoop::Environment.cbxdevice).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"CBXDEVICE" => nil})
+        expect(RunLoop::Environment.cbxdevice).to be == nil
+      end
+    end
+  end
+
+  describe ".cbxsim" do
+    it "returns value" do
+      path = "/path/to/app/CBX-Runner.app"
+      stub_env({"CBXSIM" => path})
+
+      expect(RunLoop::Environment.cbxsim).to be == path
+    end
+
+    describe "returns nil" do
+      it "if value is the empty string" do
+        stub_env("CBXSIM", "")
+        expect(RunLoop::Environment.cbxsim).to be == nil
+      end
+
+      it "if value is nil" do
+        stub_env({"CBXSIM" => nil})
+        expect(RunLoop::Environment.cbxsim).to be == nil
+      end
     end
   end
 

@@ -122,7 +122,8 @@ puts "XCUITest workspace = #{ENV["CBXWS"]}"
 
 def xcuitest(bundle_id="com.apple.Preferences")
   device = RunLoop::Device.detect_device({}, xcode, simctl, instruments)
-  RunLoop::XCUITest.new(bundle_id, device)
+  cbx_launcher = RunLoop::DeviceAgent::Xcodebuild.new(device)
+  RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
 end
 
 def holmes(bundle_id="com.apple.Preferences")
@@ -133,7 +134,8 @@ def holmes(bundle_id="com.apple.Preferences")
     :xcode => xcode,
     :simctl => simctl,
     :instruments => instruments,
-    :app => bundle_id
+    :app => bundle_id,
+    :cbx_launcher => :xcodebuild
   }
   RunLoop.run(options)
 end

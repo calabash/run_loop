@@ -2,8 +2,9 @@
 describe RunLoop::XCUITest do
 
   let(:bundle_id) { "com.apple.Preferences" }
-  let(:device) { Resources.shared.default_simulator }
-  let(:xcuitest) { RunLoop::XCUITest.new(bundle_id, device) }
+  let(:device) { Resources.shared.simulator("9.0") }
+  let(:cbx_launcher) { RunLoop::DeviceAgent::Launcher.new(device) }
+  let(:xcuitest) { RunLoop::XCUITest.new(bundle_id, device, cbx_launcher) }
 
   let(:response) do
     Class.new do
@@ -16,6 +17,7 @@ describe RunLoop::XCUITest do
   it ".new" do
     expect(xcuitest.instance_variable_get(:@bundle_id)).to be == bundle_id
     expect(xcuitest.instance_variable_get(:@device)).to be == device
+    expect(xcuitest.instance_variable_get(:@cbx_launcher)).to be == cbx_launcher
   end
 
   it "#launch" do
@@ -60,23 +62,6 @@ describe RunLoop::XCUITest do
     expect(xcuitest).to receive(:launch_aut).with(bundle_id).and_return(true)
 
     expect(xcuitest.launch_other_app(bundle_id)).to be_truthy
-  end
-
-  describe "#workspace" do
-    it "raises an error if CBXWS is not defined" do
-      expect(RunLoop::Environment).to receive(:cbxws).and_return(nil)
-
-      expect do
-        xcuitest.workspace
-      end.to raise_error RuntimeError, /TODO: figure out how to distribute the CBX-Runner/
-    end
-
-    it "returns the path to the CBXDriver.xcworkspace" do
-      path = "path/to/CBXDriver.xcworkspace"
-      expect(RunLoop::Environment).to receive(:cbxws).and_return(path)
-
-      expect(xcuitest.workspace).to be == path
-    end
   end
 
   describe "#url" do
@@ -154,7 +139,7 @@ describe RunLoop::XCUITest do
   #   end
   # end
 
-  describe "health" do
+  describe "#health" do
     let(:options) { xcuitest.send(:http_options) }
     let(:client) { xcuitest.send(:client, options) }
     let(:request) { xcuitest.send(:request, "health") }
@@ -171,50 +156,36 @@ describe RunLoop::XCUITest do
     end
   end
 
-  describe "file system" do
-    let(:dot_dir) { File.expand_path(File.join("tmp", ".run-loop-xcuitest")) }
-    let(:xcuitest_dir) { File.join(dot_dir, "xcuitest") }
+  it ".default_cbx_launcher" do
+    actual = RunLoop::XCUITest.default_cbx_launcher(device)
+    expect(actual).to be_kind_of(RunLoop::DeviceAgent::XCTestctl)
+  end
 
-    before do
-      FileUtils.mkdir_p(dot_dir)
-      allow(RunLoop::DotDir).to receive(:directory).and_return(dot_dir)
+  describe ".detect_cbx_launcher" do
+    let(:options) { {} }
+    it "default" do
+      actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
+      expect(actual).to be_kind_of(RunLoop::DeviceAgent::XCTestctl)
     end
 
-    describe ".dot_dir" do
-      it "creates a directory" do
-        FileUtils.rm_rf(dot_dir)
-
-        actual = RunLoop::XCUITest.send(:dot_dir)
-        expect(actual).to be == xcuitest_dir
-        expect(File.directory?(actual)).to be_truthy
-      end
-
-      it "returns a path" do
-        FileUtils.mkdir_p(xcuitest_dir)
-
-        actual = RunLoop::XCUITest.send(:dot_dir)
-        expect(actual).to be == xcuitest_dir
-      end
+    it ":xcodebuild" do
+      options[:cbx_launcher] = :xcodebuild
+      actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
+      expect(actual).to be_kind_of(RunLoop::DeviceAgent::Xcodebuild)
     end
 
-    describe ".xcodebuild_log_file" do
-      before do
-        FileUtils.mkdir_p(xcuitest_dir)
-      end
+    it ":xctestctl" do
+      options[:cbx_launcher] = :xctestctl
+      actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
+      expect(actual).to be_kind_of(RunLoop::DeviceAgent::XCTestctl)
+    end
 
-      let(:path) { File.join(xcuitest_dir, "xcodebuild.log") }
-
-      it "creates a file" do
-        FileUtils.rm_rf(path)
-
-        expect(RunLoop::XCUITest.xcodebuild_log_file).to be == path
-        expect(File.exist?(path)).to be_truthy
-      end
-
-      it "returns existing file path" do
-        FileUtils.touch(path)
-        expect(RunLoop::XCUITest.xcodebuild_log_file).to be == path
-      end
+    it "unrecognized" do
+      options[:cbx_launcher] = :unknown
+      expect do
+        RunLoop::XCUITest.detect_cbx_launcher(options, device)
+      end.to raise_error(ArgumentError,
+                         /to be :xcodebuild or :xctestctl/)
     end
   end
 end

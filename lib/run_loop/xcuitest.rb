@@ -3,6 +3,9 @@ module RunLoop
   # @!visibility private
   class XCUITest
 
+    require "run_loop/shell"
+    include RunLoop::Shell
+
     class HTTPError < RuntimeError; end
 
     # @!visibility private
@@ -38,17 +41,40 @@ module RunLoop
         core_sim.install
       end
 
-      xcuitest = RunLoop::XCUITest.new(bundle_id, device)
+      cbx_launcher = XCUITest.detect_cbx_launcher(options, device)
+
+      xcuitest = RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
       xcuitest.launch
       xcuitest
     end
 
     # @!visibility private
-    def self.xcodebuild_log_file
-      path = File.join(XCUITest.dot_dir, "xcodebuild.log")
-      FileUtils.touch(path) if !File.exist?(path)
-      path
+    #
+    # @param [RunLoop::Device] device the device under test
+    def self.default_cbx_launcher(device)
+      RunLoop::DeviceAgent::XCTestctl.new(device)
     end
+
+    # @!visibility private
+    # @param [Hash] options the options passed by the user
+    # @param [RunLoop::Device] device the device under test
+    def self.detect_cbx_launcher(options, device)
+      value = options[:cbx_launcher]
+      if value
+        if value == :xcodebuild
+          RunLoop::DeviceAgent::Xcodebuild.new(device)
+        elsif value == :xctestctl
+          RunLoop::DeviceAgent::XCTestctl.new(device)
+        else
+          raise(ArgumentError,
+                "Expected :cbx_launcher => #{value} to be :xcodebuild or :xctestctl")
+        end
+      else
+        XCUITest.default_cbx_launcher(device)
+      end
+    end
+
+    attr_reader :bundle_id, :device, :cbx_launcher
 
     # @!visibility private
     #
@@ -56,41 +82,23 @@ module RunLoop
     #
     # @param [String] bundle_id The identifier of the app under test.
     # @param [RunLoop::Device] device The device device.
-    def initialize(bundle_id, device)
+    def initialize(bundle_id, device, cbx_launcher)
       @bundle_id = bundle_id
       @device = device
+      @cbx_launcher = cbx_launcher
     end
 
+    # @!visibility private
     def to_s
-      "#<XCUITest #{url} : #{bundle_id} : #{device}>"
+      "#<XCUITest #{url} : #{bundle_id} : #{device} : #{cbx_launcher}>"
     end
 
+    # @!visibility private
     def inspect
       to_s
     end
 
     # @!visibility private
-    def bundle_id
-      @bundle_id
-    end
-
-    # @!visibility private
-    def device
-      @device
-    end
-
-    # @!visibility private
-    def workspace
-      @workspace ||= lambda do
-        path = RunLoop::Environment.send(:cbxws)
-        if path
-          path
-        else
-          raise "TODO: figure out how to distribute the CBX-Runner"
-        end
-      end.call
-    end
-
     def launch
       start = Time.now
       launch_cbx_runner
@@ -355,14 +363,6 @@ Sending request to perform '#{gesture}' with:
         response = client.post(request)
         body = response.body
         RunLoop.log_debug("CBX-Runner says, \"#{body}\"")
-        5.times do
-          begin
-            health
-            sleep(1.0)
-          rescue => _
-            break
-          end
-        end
         body
       rescue => e
         RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
@@ -383,65 +383,21 @@ Sending request to perform '#{gesture}' with:
     end
 
     # @!visibility private
-    def xcodebuild
-      env = {
-        "COMMAND_LINE_BUILD" => "1"
-      }
-
-      args = [
-        "xcrun",
-        "xcodebuild",
-        "-scheme", "CBXAppStub",
-        "-workspace", workspace,
-        "-config", "Debug",
-        "-destination",
-        "id=#{device.udid}",
-        "clean",
-        "test"
-      ]
-
-      log_file = XCUITest.xcodebuild_log_file
-
-      options = {
-        :out => log_file,
-        :err => log_file
-      }
-
-      command = "#{env.map.each { |k, v| "#{k}=#{v}" }.join(" ")} #{args.join(" ")}"
-      RunLoop.log_unix_cmd("#{command} >& #{log_file}")
-
-      pid = Process.spawn(env, *args, options)
-      Process.detach(pid)
-      pid
-    end
-
-    # @!visibility private
     def launch_cbx_runner
-      # Fail fast if CBXWS is not defined.
-      # WIP - we will distribute the workspace somehow.
-      workspace
-
       shutdown
 
-      # Temp measure; we need to manage the xcodebuild pids.
-      system("pkill xcodebuild")
-      system("pkill testmanagerd")
-
-      if device.simulator?
-        # quits the simulator
-        sim = CoreSimulator.new(device, "")
-        sim.launch_simulator
-      else
-        # anything special about physical devices?
-      end
+      options = {:log_cmd => true}
+      exec(["pkill", "xctestctl"], options)
+      exec(["pkill", "testmanagerd"], options)
+      exec(["pkill", "xcodebuild"], options)
 
       start = Time.now
-      pid = xcodebuild
-      RunLoop.log_debug("Waiting for CBX-Runner to build...")
+      RunLoop.log_debug("Waiting for CBX-Runner to launch...")
+      pid = cbx_launcher.launch
       health
+      RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
 
-      RunLoop.log_debug("Took #{Time.now - start} seconds to build and launch")
-      pid.to_i
+      pid
     end
 
     # @!visibility private
@@ -505,17 +461,6 @@ Server replied with:
 ]
 
       end
-    end
-
-    # @!visibility private
-    def self.dot_dir
-      path = File.join(RunLoop::DotDir.directory, "xcuitest")
-
-      if !File.exist?(path)
-        FileUtils.mkdir_p(path)
-      end
-
-      path
     end
 
     # @!visibility private
