@@ -48,7 +48,11 @@ class RunLoop::CoreSimulator
   METADATA_PLIST = '.com.apple.mobile_container_manager.metadata.plist'
 
   # @!visibility private
-  CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
+  CORE_SIMULATOR_DEVICE_DIR = File.join(RunLoop::Environment.user_home_directory,
+                                        "Library",
+                                        "Developer",
+                                        "CoreSimulator",
+                                        "Devices")
 
 
   # @!visibility private

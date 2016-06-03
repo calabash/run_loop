@@ -37,30 +37,34 @@ describe RunLoop::HostCache do
 
   describe '.default_directory' do
 
-    let(:run_loop_dir) { '~/.run-loop' }
     let(:tmp_dir) { Dir.mktmpdir }
+    let(:dot_run_loop) { File.join(tmp_dir, ".run-loop" ) }
 
     before do
-      expect(File).to receive(:expand_path).with(run_loop_dir).and_return(tmp_dir)
+      allow(RunLoop::Environment).to receive(:user_home_directory).and_return(tmp_dir)
     end
 
     it 'returns directory if it exists' do
-      expect(RunLoop::HostCache.default_directory).to be == tmp_dir
+      expect(RunLoop::HostCache.default_directory).to be == dot_run_loop
     end
 
     it 'creates a directory if it does not exist' do
       FileUtils.rm_rf(tmp_dir)
-      expect(FileUtils).to receive(:mkdir).with(tmp_dir).and_call_original
+      FileUtils.mkdir_p(tmp_dir)
+      expect(FileUtils).to receive(:mkdir).with(dot_run_loop).and_call_original
 
-      expect(RunLoop::HostCache.default_directory).to be == tmp_dir
+      expect(RunLoop::HostCache.default_directory).to be == dot_run_loop
     end
 
     it 'raises error if directory is actually a file' do
-      expect(File).to receive(:directory?).and_return false
+      FileUtils.rm_rf(tmp_dir)
+      FileUtils.mkdir_p(tmp_dir)
+      FileUtils.touch(dot_run_loop)
 
       expect do
         RunLoop::HostCache.default_directory
-      end.to raise_error RuntimeError
+      end.to raise_error(RuntimeError,
+                         /RunLoop requires this directory to cache files/)
     end
   end
 
