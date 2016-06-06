@@ -24,11 +24,16 @@ module RunLoop
     # @return [String] Expanded path to the default cache directory.
     # @raise [RuntimeError] When the ~/.run_loop exists, but is not a directory.
     def self.default_directory
-      run_loop_dir = File.expand_path('~/.run-loop')
+      run_loop_dir = File.join(RunLoop::Environment.user_home_directory, ".run-loop")
       if !File.exist?(run_loop_dir)
         FileUtils.mkdir(run_loop_dir)
       elsif !File.directory?(run_loop_dir)
-        raise "Expected '#{run_loop_dir}' to be a directory.\nRunLoop requires this directory to cache files."
+        raise %Q[
+Expected ~/.run_loop to be a directory.
+
+RunLoop requires this directory to cache files
+]
+
       end
       run_loop_dir
     end

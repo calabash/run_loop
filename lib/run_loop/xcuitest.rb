@@ -3,6 +3,9 @@ module RunLoop
   # @!visibility private
   class XCUITest
 
+    require "run_loop/shell"
+    include RunLoop::Shell
+
     class HTTPError < RuntimeError; end
 
     # @!visibility private
@@ -38,17 +41,40 @@ module RunLoop
         core_sim.install
       end
 
-      xcuitest = RunLoop::XCUITest.new(bundle_id, device)
+      cbx_launcher = XCUITest.detect_cbx_launcher(options, device)
+
+      xcuitest = RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
       xcuitest.launch
       xcuitest
     end
 
     # @!visibility private
-    def self.xcodebuild_log_file
-      path = File.join(XCUITest.dot_dir, "xcodebuild.log")
-      FileUtils.touch(path) if !File.exist?(path)
-      path
+    #
+    # @param [RunLoop::Device] device the device under test
+    def self.default_cbx_launcher(device)
+      RunLoop::DeviceAgent::XCTestctl.new(device)
     end
+
+    # @!visibility private
+    # @param [Hash] options the options passed by the user
+    # @param [RunLoop::Device] device the device under test
+    def self.detect_cbx_launcher(options, device)
+      value = options[:cbx_launcher]
+      if value
+        if value == :xcodebuild
+          RunLoop::DeviceAgent::Xcodebuild.new(device)
+        elsif value == :xctestctl
+          RunLoop::DeviceAgent::XCTestctl.new(device)
+        else
+          raise(ArgumentError,
+                "Expected :cbx_launcher => #{value} to be :xcodebuild or :xctestctl")
+        end
+      else
+        XCUITest.default_cbx_launcher(device)
+      end
+    end
+
+    attr_reader :bundle_id, :device, :cbx_launcher
 
     # @!visibility private
     #
@@ -56,41 +82,23 @@ module RunLoop
     #
     # @param [String] bundle_id The identifier of the app under test.
     # @param [RunLoop::Device] device The device device.
-    def initialize(bundle_id, device)
+    def initialize(bundle_id, device, cbx_launcher)
       @bundle_id = bundle_id
       @device = device
+      @cbx_launcher = cbx_launcher
     end
 
+    # @!visibility private
     def to_s
-      "#<XCUITest #{url} : #{bundle_id} : #{device}>"
+      "#<XCUITest #{url} : #{bundle_id} : #{device} : #{cbx_launcher}>"
     end
 
+    # @!visibility private
     def inspect
       to_s
     end
 
     # @!visibility private
-    def bundle_id
-      @bundle_id
-    end
-
-    # @!visibility private
-    def device
-      @device
-    end
-
-    # @!visibility private
-    def workspace
-      @workspace ||= lambda do
-        path = RunLoop::Environment.send(:cbxws)
-        if path
-          path
-        else
-          raise "TODO: figure out how to distribute the CBX-Runner"
-        end
-      end.call
-    end
-
     def launch
       start = Time.now
       launch_cbx_runner
@@ -124,6 +132,15 @@ module RunLoop
     end
 
     # @!visibility private
+    def runtime
+      options = http_options
+      request = request("device")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
     def query(mark)
       options = http_options
       parameters = { :id => mark }
@@ -134,23 +151,50 @@ module RunLoop
     end
 
     # @!visibility private
-    def tap_mark(mark)
+    def query_for_coordinate(mark)
       body = query(mark)
-      tap_query_result(body)
+      coordinate_from_query_result(body)
     end
 
     # @!visibility private
-    def tap_coordinate(x, y)
-      options = http_options
-      parameters = {
-        :gesture => "touch",
+    def tap_mark(mark)
+      coordinate = query_for_coordinate(mark)
+      tap_coordinate(coordinate[:x], coordinate[:y])
+    end
+
+    # @!visibility private
+    def tap_coordinate(x, y, options)
+      make_coordinate_gesture_request("touch", x, y)
+    end
+
+    # @!visibility private
+    def double_tap(x, y)
+      make_coordinate_gesture_request("double_tap", x, y)
+    end
+
+    # @!visibiity private
+    def coordinate_gesture_parameters(name, x, y, options={})
+      {
+        :gesture => name,
         :specifiers => {
-          :coordinate => {x: x, y: y}
+          :coordinate => [x, y]
         },
-        :options => {}
+        :options => options
       }
-      request = request("gesture", parameters)
-      client(options)
+    end
+
+    # @!visibility private
+    def coordinate_gesture_request(name, x, y, gesture_options={})
+      parameters = coordinate_gesture_parameters(name, x, y, gesture_options)
+      request("gesture", parameters)
+    end
+
+    # @!visibility private
+    def make_coordinate_gesture_request(name, x, y, options={})
+      gesture_options = options.fetch(:gesture_options, {})
+      http_options = options.fetch(:http_options, http_options())
+      request = coordinate_gesture_request(name, x, y, gesture_options)
+      client = client(http_options)
       response = client.post(request)
       expect_200_response(response)
     end
@@ -162,7 +206,7 @@ module RunLoop
         :orientation => orientation
       }
       request = request("rotate_home_button_to", parameters)
-      client(http_options)
+      client = client(http_options)
       response = client.post(request)
       json = expect_200_response(response)
       sleep(sleep_for)
@@ -179,23 +223,46 @@ module RunLoop
         :options => options
       }
 
+      RunLoop.log_debug(%Q[
+Sending request to perform '#{gesture}' with:
+
+#{JSON.pretty_generate(parameters)}
+
+])
       request = request("gesture", parameters)
-      client(http_options)
+      client = client(http_options)
       response = client.post(request)
       expect_200_response(response)
     end
 
     # @!visibility private
-    def tap_query_result(hash)
-      rect = hash["rect"]
+    def coordinate_from_query_result(hash)
+      matches = hash["result"]
+
+      if matches.nil? || matches.empty?
+        raise "Expected #{hash} to contain some results"
+      end
+
+      rect = matches.first["rect"]
       h = rect["height"]
       w = rect["width"]
       x = rect["x"]
       y = rect["y"]
 
-      touchx = x + (h/2)
-      touchy = y + (w/2)
-      tap_coordinate(touchx, touchy)
+      touchx = x + (w/2.0)
+      touchy = y + (h/2.0)
+
+      new_rect = rect.dup
+      new_rect[:center_x] = touchx
+      new_rect[:center_y] = touchy
+
+      RunLoop.log_debug(%Q[Rect from query:
+
+#{JSON.pretty_generate(new_rect)}
+
+])
+      {:x => touchx,
+       :y => touchy}
     end
 
     private
@@ -223,7 +290,7 @@ module RunLoop
               :undef             => :replace,  # Replace anything not defined in ASCII
               :replace           => ""         # Use a blank for those replacements
             }
-            encoded = device_name.encode(Encoding.find("ASCII"), encoding_options)
+            encoded = device_name.encode(::Encoding.find("ASCII"), encoding_options)
             "http://#{encoded}.local:27753/"
           end
         end
@@ -296,14 +363,6 @@ module RunLoop
         response = client.post(request)
         body = response.body
         RunLoop.log_debug("CBX-Runner says, \"#{body}\"")
-        5.times do
-          begin
-            health
-            sleep(1.0)
-          rescue => _
-            break
-          end
-        end
         body
       rescue => e
         RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
@@ -324,64 +383,21 @@ module RunLoop
     end
 
     # @!visibility private
-    def xcodebuild
-      env = {
-        "COMMAND_LINE_BUILD" => "1"
-      }
-
-      args = [
-        "xcrun",
-        "xcodebuild",
-        "-scheme", "CBXAppStub",
-        "-workspace", workspace,
-        "-config", "Debug",
-        "-destination",
-        "id=#{device.udid}",
-        "clean",
-        "test"
-      ]
-
-      log_file = XCUITest.xcodebuild_log_file
-
-      options = {
-        :out => log_file,
-        :err => log_file
-      }
-
-      command = "#{env.map.each { |k, v| "#{k}=#{v}" }.join(" ")} #{args.join(" ")}"
-      RunLoop.log_unix_cmd("#{command} >& #{log_file}")
-
-      pid = Process.spawn(env, *args, options)
-      Process.detach(pid)
-      pid
-    end
-
-    # @!visibility private
     def launch_cbx_runner
-      # Fail fast if CBXWS is not defined.
-      # WIP - we will distribute the workspace somehow.
-      workspace
-
       shutdown
 
-      # Temp measure; we need to manage the xcodebuild pids.
-      system("pkill xcodebuild")
-
-      if device.simulator?
-        # quits the simulator
-        sim = CoreSimulator.new(device, "")
-        sim.launch_simulator
-      else
-        # anything special about physical devices?
-      end
+      options = {:log_cmd => true}
+      exec(["pkill", "xctestctl"], options)
+      exec(["pkill", "testmanagerd"], options)
+      exec(["pkill", "xcodebuild"], options)
 
       start = Time.now
-      pid = xcodebuild
-      RunLoop.log_debug("Waiting for CBX-Runner to build...")
+      RunLoop.log_debug("Waiting for CBX-Runner to launch...")
+      pid = cbx_launcher.launch
       health
+      RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
 
-      RunLoop.log_debug("Took #{Time.now - start} seconds to build and launch")
-      pid.to_i
+      pid
     end
 
     # @!visibility private
@@ -423,26 +439,28 @@ Something went wrong.
     # @!visibility private
     def expect_200_response(response)
       body = response_body_to_hash(response)
-      return body if response.status_code < 300
+      if response.status_code < 300 && !body["error"]
+        return body
+      end
 
-      raise RunLoop::XCUITest::HTTPError,
-        %Q[Expected status code < 200, found #{response.status_code}.
+      if response.status_code > 300
+        raise RunLoop::XCUITest::HTTPError,
+          %Q[Expected status code < 300, found #{response.status_code}.
 
 Server replied with:
 
 #{body}
+
 ]
-    end
+      else
+        raise RunLoop::XCUITest::HTTPError,
+						%Q[Expected JSON response with no error, but found
 
-    # @!visibility private
-    def self.dot_dir
-      path = File.join(RunLoop::DotDir.directory, "xcuitest")
+#{body["error"]}
 
-      if !File.exist?(path)
-        FileUtils.mkdir_p(path)
+]
+
       end
-
-      path
     end
 
     # @!visibility private

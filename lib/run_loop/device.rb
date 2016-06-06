@@ -563,10 +563,17 @@ version: #{version}
     end
 
     # @!visibility private
-    CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
+    CORE_SIMULATOR_DEVICE_DIR = File.join(RunLoop::Environment.user_home_directory,
+                                          "Library",
+                                          "Developer",
+                                          "CoreSimulator",
+                                          "Devices")
 
     # @!visibility private
-    CORE_SIMULATOR_LOGS_DIR = File.expand_path('~/Library/Logs/CoreSimulator')
+    CORE_SIMULATOR_LOGS_DIR = File.join(RunLoop::Environment.user_home_directory,
+                                        "Library",
+                                        "Logs",
+                                        "CoreSimulator")
 
     # @!visibility private
     def self.device_from_options(options)

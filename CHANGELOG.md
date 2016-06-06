@@ -1,5 +1,14 @@
 ## Change Log
 
+### 2.1.3
+
+* Replace ~/ with Environment.user\_home\_directory #472
+* Add CBXRunner and xctestctl #471
+* Add more localizations for privacy alerts #469
+* Catch invalid APP and device target settings #467
+* XCUITest: progress on gesture API #466
+* Physical device app LifeCycle API #458
+
 ### 2.1.2
 
 * Fix :script and :uia\_strategy detection #460

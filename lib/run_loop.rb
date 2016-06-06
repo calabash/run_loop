@@ -1,3 +1,4 @@
+require "run_loop/abstract"
 require 'run_loop/regex'
 require 'run_loop/directory'
 require "run_loop/encoding"
@@ -19,6 +20,11 @@ require 'run_loop/plist_buddy'
 require "run_loop/codesign"
 require 'run_loop/app'
 require 'run_loop/ipa'
+require "run_loop/device_agent/cbxrunner"
+require "run_loop/device_agent/frameworks"
+require "run_loop/device_agent/launcher"
+require "run_loop/device_agent/xctestctl"
+require "run_loop/device_agent/xcodebuild"
 require "run_loop/detect_aut/errors"
 require "run_loop/detect_aut/xamarin_studio"
 require "run_loop/detect_aut/xcode"
@@ -42,6 +48,7 @@ require "run_loop/http/error"
 require "run_loop/http/server"
 require "run_loop/http/request"
 require "run_loop/http/retriable_client"
+require "run_loop/physical_device/life_cycle"
 
 module RunLoop
 

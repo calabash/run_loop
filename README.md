@@ -18,14 +18,27 @@ The most recent versions of Xcode and ruby are strongly recommended.
 
 Run Loop is available under the MIT license. See the LICENSE file for more info.
 
+Licenses for third-party software can be found in `./vendor-licenses`.
+
 ### Versioning
 
-Run Loop follows the spirit of Semantic Versioning. [1]  However, the semantic versioning spec is incompatible with RubyGem's patterns for pre-release gems. [2]
+Run Loop follows the spirit of Semantic Versioning. [1]  However, the semantic
+versioning spec is incompatible with RubyGem's patterns for pre-release gems.[2]
 
 _"But returning to the practical: No release version of SemVer is compatible with Rubygems."_ - David Kellum
 
+If a method, class, or constant is marked with:
+
+```
+# @!visibility private
+```
+
+it is not part of the public API and the behavior is subject to change
+at any time.
+
 - [1] http://semver.org/
 - [2] http://gravitext.com/2012/07/22/versioning.html
+
 
 ## For Run Loop Gem Developers
 
@@ -47,13 +60,7 @@ At this time, there is no reason to update.
 * https://travis-ci.org/calabash/calabash-ios
 * https://travis-ci.org/calabash/run\_loop
 * https://travis-ci.org/calabash/calabash-ios-server
-* Calabash iOS toolchain testing - http://ci.endoftheworl.de:8080/
-
-To simulate CI locally:
-
-```
-$ scripts/ci/travis/local-run-as-travis.rb
-```
+* http://calabash-ci.macminicolo.net:8080/
 
 #### Unit Tests
 
@@ -68,10 +75,6 @@ which hijacks your machine.  You have enough time to take some deep breaths
 and do some stretching.  You'll feel better afterward.
 
 For continuous TDD/BDD see the Guard section below.
-
-**TMUX USERS**
-
-Do not try to run the integration tests in a tmux session.  Trust me.
 
 ```
 $ be rake integration

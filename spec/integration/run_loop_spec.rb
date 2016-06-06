@@ -17,8 +17,7 @@ describe 'RunLoop' do
 
       run_options = {
         :app => Resources.shared.cal_app_bundle_path,
-        :uia_strategy => :preferences,
-        :script => "run_loop_fast_uia.js"
+        :uia_strategy => :preferences
       }
       expect(RunLoop::Core).to receive(:run_with_options).with(run_options).and_raise(ArgumentError)
       expect(RunLoop::Core).to receive(:run_with_options).with(run_options).and_call_original
