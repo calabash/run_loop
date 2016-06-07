@@ -141,6 +141,15 @@ module RunLoop
     end
 
     # @!visibility private
+    def tree
+      options = http_options
+      request = request("tree")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
     def query(mark)
       options = http_options
       parameters = { :id => mark }
