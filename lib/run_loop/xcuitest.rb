@@ -150,6 +150,36 @@ module RunLoop
     end
 
     # @!visibility private
+    def keyboard_visible?
+      options = http_options
+      parameters = { :type => "Keyboard" }
+      request = request("query", parameters)
+      client = client(options)
+      response = client.post(request)
+      hash = expect_200_response(response)
+      result = hash["result"]
+      result.count != 0
+    end
+
+    # @!visibility private
+    def enter_text(string)
+      if !keyboard_visible?
+        raise RuntimeError, "Keyboard must be visible"
+      end
+      options = http_options
+      parameters = {
+        :gesture => "enter_text",
+        :options => {
+          :string => string
+        }
+      }
+      request = request("gesture", parameters)
+      client = client(options)
+      response = client.post(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
     def query(mark)
       options = http_options
       parameters = { :id => mark }
