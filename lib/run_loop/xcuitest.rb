@@ -196,46 +196,29 @@ module RunLoop
     end
 
     # @!visibility private
-    def tap_mark(mark)
+    def touch(mark, options={})
       coordinate = query_for_coordinate(mark)
-      tap_coordinate(coordinate[:x], coordinate[:y])
+      perform_coordinate_gesture("touch",
+                                 coordinate[:x], coordinate[:y],
+                                 options)
+    end
+
+    alias_method :tap, :touch
+
+    # @!visibility private
+    def double_tap(mark, options={})
+      coordinate = query_for_coordinate(mark)
+      perform_coordinate_gesture("double_tap",
+                                 coordinate[:x], coordinate[:y],
+                                 options)
     end
 
     # @!visibility private
-    def tap_coordinate(x, y, options)
-      make_coordinate_gesture_request("touch", x, y)
-    end
-
-    # @!visibility private
-    def double_tap(x, y)
-      make_coordinate_gesture_request("double_tap", x, y)
-    end
-
-    # @!visibiity private
-    def coordinate_gesture_parameters(name, x, y, options={})
-      {
-        :gesture => name,
-        :specifiers => {
-          :coordinate => [x, y]
-        },
-        :options => options
-      }
-    end
-
-    # @!visibility private
-    def coordinate_gesture_request(name, x, y, gesture_options={})
-      parameters = coordinate_gesture_parameters(name, x, y, gesture_options)
-      request("gesture", parameters)
-    end
-
-    # @!visibility private
-    def make_coordinate_gesture_request(name, x, y, options={})
-      gesture_options = options.fetch(:gesture_options, {})
-      http_options = options.fetch(:http_options, http_options())
-      request = coordinate_gesture_request(name, x, y, gesture_options)
-      client = client(http_options)
-      response = client.post(request)
-      expect_200_response(response)
+    def two_finger_tap(mark, options={})
+      coordinate = query_for_coordinate(mark)
+      perform_coordinate_gesture("two_finger_tap",
+                                 coordinate[:x], coordinate[:y],
+                                 options)
     end
 
     # @!visibility private
