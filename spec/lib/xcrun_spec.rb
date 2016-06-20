@@ -17,16 +17,21 @@ describe RunLoop::Xcrun do
     }
   end
 
-  describe '#exec' do
+  describe '#run_command_in_context' do
+
+    it "is aliased to #exec" do
+      expect(xcrun.respond_to?(:exec)).to be_truthy
+    end
+
     it 'raises an error if arg is not an Array' do
       expect do
-        xcrun.exec('simctl list devices')
+        xcrun.run_command_in_context('simctl list devices')
       end.to raise_error ArgumentError, /Expected args/
     end
 
     it 'raises an error if any arg is not a string' do
       expect do
-        xcrun.exec(['sleep', 5])
+        xcrun.run_command_in_context(['sleep', 5])
       end.to raise_error ArgumentError,
       /Expected arg '5' to be a String, but found 'Fixnum'/
     end
@@ -36,7 +41,7 @@ describe RunLoop::Xcrun do
       expect(xcrun).to receive(:ensure_command_output_utf8).and_raise(error)
 
       expect do
-        xcrun.exec(["sleep", "0.5"])
+        xcrun.run_command_in_context(["sleep", "0.5"])
       end.to raise_error RunLoop::Encoding::UTF8Error, /complex message/
     end
 
@@ -44,7 +49,7 @@ describe RunLoop::Xcrun do
       expect(CommandRunner).to receive(:run).and_raise RuntimeError, 'Some error'
 
       expect do
-        xcrun.exec(['sleep', '0.5'])
+        xcrun.run_command_in_context(['sleep', '0.5'])
       end.to raise_error RunLoop::Xcrun::Error, /Some error/
     end
 
@@ -54,13 +59,13 @@ describe RunLoop::Xcrun do
         expect(CommandRunner).to receive(:run).and_return(command_output)
 
         expect do
-          xcrun.exec(['sleep', '0.5'])
+          xcrun.run_command_in_context(['sleep', '0.5'])
         end.to raise_error RunLoop::Xcrun::TimeoutError, /Xcrun timed out after/
       end
 
       it 'actual' do
         expect do
-          xcrun.exec(['sleep', '0.5'], timeout: 0.05)
+          xcrun.run_command_in_context(['sleep', '0.5'], timeout: 0.05)
         end.to raise_error RunLoop::Xcrun::TimeoutError, /Xcrun timed out after/
       end
     end
@@ -73,7 +78,7 @@ describe RunLoop::Xcrun do
         command_output[:out] = 'mocked'
         expect(CommandRunner).to receive(:run).and_return(command_output)
 
-        xcrun_hash = xcrun.exec(['sleep', '0.1'])
+        xcrun_hash = xcrun.run_command_in_context(['sleep', '0.1'])
 
         expect(xcrun_hash[:out]).to be == 'mocked'
         expect(xcrun_hash[:pid]).to be == 3030

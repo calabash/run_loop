@@ -257,14 +257,14 @@ describe RunLoop::Instruments do
     end
 
     it 'Xcode >= 6.0' do
-      # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
+      # TODO: Xcrun#run_command_in_context no longer returns a hash with :err; stderr and stdout are combined
       hash =
             {
                   :out => RunLoop::RSpec::Instruments::TEMPLATES_GTE_60[:output],
                   :err => RunLoop::RSpec::Instruments::SPAM_GTE_60
             }
 
-      expect(xcrun).to receive(:exec).with(args, options).and_return hash
+      expect(xcrun).to receive(:run_command_in_context).with(args, options).and_return hash
 
       expected = RunLoop::RSpec::Instruments::TEMPLATES_GTE_60[:expected]
       expect(instruments.templates).to be == expected
@@ -277,7 +277,7 @@ describe RunLoop::Instruments do
 
     let(:options) { {:log_cmd => true } }
 
-    # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
+    # TODO: Xcrun#run_command_in_context no longer returns a hash with :err; stderr and stdout are combined
     let(:xcode_511_output) do
       {
             :out => RunLoop::RSpec::Instruments::DEVICES_511,
@@ -285,7 +285,7 @@ describe RunLoop::Instruments do
       }
     end
 
-    # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
+    # TODO: Xcrun#run_command_in_context no longer returns a hash with :err; stderr and stdout are combined
     let(:xcode_6_output) do
       {
             :out => RunLoop::RSpec::Instruments::DEVICES_60,
@@ -293,7 +293,7 @@ describe RunLoop::Instruments do
       }
     end
 
-    # TODO: Xcrun#exec no longer returns a hash with :err; stderr and stdout are combined
+    # TODO: Xcrun#run_command_in_context no longer returns a hash with :err; stderr and stdout are combined
     let(:xcode_7_output) do
       {
             :out => RunLoop::RSpec::Instruments::DEVICES_GTE_70,
@@ -306,7 +306,7 @@ describe RunLoop::Instruments do
     it '#fetch_devices' do
       hash = { :a => :b }
       expect(instruments).to receive(:xcrun).and_return xcrun
-      expect(xcrun).to receive(:exec).with(args, options).and_return hash
+      expect(xcrun).to receive(:run_command_in_context).with(args, options).and_return hash
 
       actual = instruments.send(:fetch_devices)
       expect(actual).to be == hash

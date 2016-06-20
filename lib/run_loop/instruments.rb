@@ -193,7 +193,7 @@ module RunLoop
     def templates
       @instruments_templates ||= lambda do
         args = ['instruments', '-s', 'templates']
-        hash = xcrun.exec(args, log_cmd: true)
+        hash = xcrun.run_command_in_context(args, log_cmd: true)
         hash[:out].chomp.split("\n").map do |elm|
           stripped = elm.strip.tr('"', '')
           if stripped == '' || stripped == 'Known Templates:'
@@ -269,7 +269,7 @@ module RunLoop
     def fetch_devices
       @device_hash ||= lambda do
         args = ['instruments', '-s', 'devices']
-        xcrun.exec(args, log_cmd: true)
+        xcrun.run_command_in_context(args, log_cmd: true)
       end.call
     end
 

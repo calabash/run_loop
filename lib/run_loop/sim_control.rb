@@ -1137,7 +1137,7 @@ module RunLoop
     # @see #simctl_list
     def simctl_list_devices
       args = ['simctl', 'list', 'devices']
-      hash = xcrun.exec(args)
+      hash = xcrun.run_command_in_context(args)
 
       current_sdk = nil
       simulators = {}
@@ -1220,7 +1220,7 @@ module RunLoop
     # @see #simctl_list
     def simctl_list_runtimes
       args = ['simctl', 'list', 'runtimes']
-      hash = xcrun.exec(args)
+      hash = xcrun.run_command_in_context(args)
 
       # Ex.
       # == Runtimes ==

@@ -67,7 +67,7 @@ module RunLoop
       xcrun = RunLoop::Xcrun.new
       cmd = ["codesign"] + args
       options = {:log_cmd => true}
-      hash = xcrun.exec(cmd, options)
+      hash = xcrun.run_command_in_context(cmd, options)
 
       hash[:out]
     end

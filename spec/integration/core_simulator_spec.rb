@@ -74,7 +74,7 @@ describe RunLoop::CoreSimulator do
   describe "#launch" do
     before do
       args = ['simctl', 'erase', simulator.udid]
-      xcrun.exec(args, {:log_cmd => true })
+      xcrun.run_command_in_context(args, {:log_cmd => true })
     end
 
     it "launches the app" do
@@ -103,7 +103,7 @@ describe RunLoop::CoreSimulator do
 
   it 'install with simctl' do
     args = ['simctl', 'erase', simulator.udid]
-    xcrun.exec(args, {:log_cmd => true })
+    xcrun.run_command_in_context(args, {:log_cmd => true })
 
     expect(core_sim.install)
     expect(core_sim.launch)

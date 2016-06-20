@@ -207,7 +207,7 @@ class RunLoop::CoreSimulator
 
     if simulator.update_simulator_state != "Shutdown"
       args = ["simctl", "shutdown", simulator.udid]
-      xcrun.exec(args, xcrun_opts)
+      xcrun.run_command_in_context(args, xcrun_opts)
       begin
         self.wait_for_simulator_state(simulator, "Shutdown")
       rescue RuntimeError => _
@@ -226,7 +226,7 @@ $ bundle exec run-loop simctl manage-processes
     end
 
     args = ["simctl", "erase", simulator.udid]
-    hash = xcrun.exec(args, xcrun_opts)
+    hash = xcrun.run_command_in_context(args, xcrun_opts)
 
     if hash[:exit_status] != 0
       raise RuntimeError, %Q{
@@ -489,7 +489,7 @@ $ bundle exec run-loop simctl manage-processes
     args = ['simctl', 'uninstall', device.udid, app.bundle_identifier]
 
     timeout = DEFAULT_OPTIONS[:uninstall_app_timeout]
-    xcrun.exec(args, log_cmd: true, timeout: timeout)
+    xcrun.run_command_in_context(args, log_cmd: true, timeout: timeout)
 
     device.simulator_wait_for_stable_state
     true
@@ -570,7 +570,7 @@ $ bundle exec run-loop simctl manage-processes
     process_name = "MacOS/#{sim_name}"
 
     args = ["xcrun", "ps", "x", "-o", "pid,command"]
-    hash = xcrun.exec(args)
+    hash = xcrun.run_command_in_context(args)
 
     exit_status = hash[:exit_status]
     if exit_status != 0
@@ -611,7 +611,7 @@ Command had no output
 
     args = ['simctl', 'install', device.udid, app.path]
     timeout = DEFAULT_OPTIONS[:install_app_timeout]
-    xcrun.exec(args, log_cmd: true, timeout: timeout)
+    xcrun.run_command_in_context(args, log_cmd: true, timeout: timeout)
 
     device.simulator_wait_for_stable_state
     installed_app_bundle_dir
@@ -621,7 +621,7 @@ Command had no output
   def launch_app_with_simctl
     args = ['simctl', 'launch', device.udid, app.bundle_identifier]
     timeout = DEFAULT_OPTIONS[:launch_app_timeout]
-    xcrun.exec(args, log_cmd: true, timeout: timeout)
+    xcrun.run_command_in_context(args, log_cmd: true, timeout: timeout)
   end
 
   # @!visibility private
@@ -864,7 +864,7 @@ Command had no output
     target = File.join(directory, bundle_name)
 
     args = ['ditto', app.path, target]
-    xcrun.exec(args, log_cmd: true)
+    xcrun.run_command_in_context(args, log_cmd: true)
 
     RunLoop.log_debug("Installed #{app} on CoreSimulator #{device.udid}")
 

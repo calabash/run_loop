@@ -85,7 +85,7 @@ describe RunLoop::Otool do
     end
 
     it "returns arch information" do
-      expect(xcrun).to receive(:exec).and_return(hash)
+      expect(xcrun).to receive(:run_command_in_context).and_return(hash)
 
       expect(otool.send(:arch_info)).to be == hash[:out]
       expect(otool.instance_variable_get(:@arch_info)).to be == hash[:out]
@@ -93,7 +93,7 @@ describe RunLoop::Otool do
 
     it "raises error if there is a problem" do
       hash[:exit_status] = 1
-      expect(xcrun).to receive(:exec).and_return(hash)
+      expect(xcrun).to receive(:run_command_in_context).and_return(hash)
 
       expect do
         otool.send(:arch_info)
