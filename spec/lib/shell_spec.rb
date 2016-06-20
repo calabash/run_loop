@@ -20,16 +20,16 @@ describe RunLoop::Shell do
     }
   end
 
-  describe "#exec" do
+  describe "#run_shell_command" do
     it "raises an error if arg is not an Array" do
       expect do
-        object.exec("simctl list devices")
+        object.run_shell_command("simctl list devices")
       end.to raise_error ArgumentError, /Expected args/
     end
 
     it "raises an error if any arg is not a string" do
       expect do
-        object.exec(["sleep", 5])
+        object.run_shell_command(["sleep", 5])
       end.to raise_error ArgumentError,
       /Expected arg '5' to be a String, but found 'Fixnum'/
     end
@@ -39,7 +39,7 @@ describe RunLoop::Shell do
       expect(object).to receive(:ensure_command_output_utf8).and_raise(error)
 
       expect do
-        object.exec(["sleep", "0.5"])
+        object.run_shell_command(["sleep", "0.5"])
       end.to raise_error RunLoop::Encoding::UTF8Error, /complex message/
     end
 
@@ -47,7 +47,7 @@ describe RunLoop::Shell do
       expect(CommandRunner).to receive(:run).and_raise RuntimeError, "Some error"
 
       expect do
-        object.exec(["sleep", "0.5"])
+        object.run_shell_command(["sleep", "0.5"])
       end.to raise_error RunLoop::Shell::Error, /Some error/
     end
 
@@ -57,13 +57,13 @@ describe RunLoop::Shell do
         expect(CommandRunner).to receive(:run).and_return(command_output)
 
         expect do
-          object.exec(["sleep", "0.5"])
+          object.run_shell_command(["sleep", "0.5"])
         end.to raise_error RunLoop::Shell::TimeoutError, /Timed out after/
       end
 
       it "actual" do
         expect do
-          object.exec(["sleep", "0.5"], timeout: 0.05)
+          object.run_shell_command(["sleep", "0.5"], timeout: 0.05)
         end.to raise_error RunLoop::Shell::TimeoutError, /Timed out after/
       end
     end
@@ -75,7 +75,7 @@ describe RunLoop::Shell do
         command_output[:out] = "mocked"
         expect(CommandRunner).to receive(:run).and_return(command_output)
 
-        hash = object.exec(["sleep", "0.1"])
+        hash = object.run_shell_command(["sleep", "0.1"])
 
         expect(hash[:out]).to be == "mocked"
         expect(hash[:pid]).to be == 3030

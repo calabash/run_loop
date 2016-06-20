@@ -36,6 +36,6 @@ describe RunLoop::DeviceAgent::Frameworks do
 
   it "#shell" do
     shell = instance.send(:shell)
-    expect(shell.respond_to?(:exec)).to be_truthy
+    expect(shell.respond_to?(:run_shell_command)).to be_truthy
   end
 end

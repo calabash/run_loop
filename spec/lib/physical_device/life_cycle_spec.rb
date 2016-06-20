@@ -20,9 +20,9 @@ describe RunLoop::PhysicalDevice::LifeCycle do
       expect(lc.instance_variable_get(:@device)).to be == device
     end
 
-    it "responds to #exec" do
+    it "responds to #run_shell_command" do
       lc = RunLoop::PhysicalDevice::LifeCycle.new(device)
-      expect(lc.respond_to?(:exec)).to be_truthy
+      expect(lc.respond_to?(:run_shell_command)).to be_truthy
     end
   end
 
