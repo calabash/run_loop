@@ -22,7 +22,7 @@ describe RunLoop::App do
     let(:path) { "path/to/My.app" }
     let(:info) { File.join(path, "Info.plist") }
     let(:name) { "My" }
-    let(:exec) { File.join(path, "My") }
+    let(:executable) { File.join(path, "My") }
     let(:pbuddy) { RunLoop::PlistBuddy.new }
 
     before do
@@ -61,7 +61,7 @@ describe RunLoop::App do
         it "executable file does not exist" do
           expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(true)
           expect(pbuddy).to receive(:plist_read).with("CFBundleExecutable", info).and_return(name)
-          expect(File).to receive(:exist?).with(exec).and_return(false)
+          expect(File).to receive(:exist?).with(executable).and_return(false)
 
           expect(RunLoop::App.send(:executable_file_exist?, path)).to be_falsey
         end
@@ -70,7 +70,7 @@ describe RunLoop::App do
       it "true" do
         expect(RunLoop::App).to receive(:info_plist_exist?).with(path).and_return(true)
         expect(pbuddy).to receive(:plist_read).with("CFBundleExecutable", info).and_return(name)
-        expect(File).to receive(:exist?).with(exec).and_return(true)
+        expect(File).to receive(:exist?).with(executable).and_return(true)
 
         expect(RunLoop::App.send(:executable_file_exist?, path)).to be_truthy
       end
