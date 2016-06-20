@@ -228,6 +228,16 @@ module RunLoop
       end
     end
 
+    # Returns the value of DEVICE_ENDPOINT
+    def self.device_agent_url
+      value = ENV["DEVICE_AGENT_URL"]
+      if value.nil? || value == ""
+        nil
+      else
+        value
+      end
+    end
+
     # Returns true if running in Jenkins CI
     #
     # Checks the value of JENKINS_HOME

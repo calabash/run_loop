@@ -6,6 +6,20 @@ describe RunLoop::Encoding do
     end.new
   end
 
+  describe "#transliterate" do
+    it "returns a string with no diactric markers" do
+      string = "Max Münstermann"
+      expected = "Max Munstermann"
+      expect(object.transliterate(string)).to be == expected
+    end
+
+    it "replaces unknown characters with ?" do
+      string = "ITZVÓÃ ●℆❡♡"
+      expected = "ITZVOA ????"
+      expect(object.transliterate(string)).to be == expected
+    end
+  end
+
   describe "ensure_command_output_utf8" do
     let(:string) { "string" }
     let(:encoded) { "encoded" }

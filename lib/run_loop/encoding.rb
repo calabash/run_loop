@@ -2,6 +2,23 @@
 module RunLoop
   module Encoding
 
+    # Removes diacritic markers from string.
+    #
+    # The ruby Encoding tools cannot perform this action, they can only change
+    # convert one encodign to another by substituting characters.
+    #
+    # In ruby 1.9.3 we would have used Iconv, but that does not exist in 2.0.
+    #
+    # The Encoding::Convert in 2.0 does not work on string with UTF-16 characters.
+    def transliterate(string)
+			require "i18n"
+      locales = I18n.available_locales
+      if !locales.include?(:en)
+        I18n.available_locales = locales + [:en]
+      end
+      I18n.transliterate(string)
+    end
+
     # Raised when a string cannot be coerced to UTF8
     class UTF8Error < RuntimeError; end
 

@@ -6,6 +6,9 @@ module RunLoop
     require "run_loop/shell"
     include RunLoop::Shell
 
+    require "run_loop/encoding"
+    include RunLoop::Encoding
+
     class HTTPError < RuntimeError; end
 
     # @!visibility private
@@ -296,27 +299,63 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def url
-      @url ||= lambda do
-        if device.simulator?
-          "http://#{DEFAULTS[:simulator_ip]}:#{DEFAULTS[:port]}/"
-        else
-          # This block is untested.
-          calabash_endpoint = RunLoop::Environment.device_endpoint
-          if calabash_endpoint
-            base = calabash_endpoint.split(":")[0..1].join(":")
-            "http://#{base}:#{DEFAULTS[:port]}/"
-          else
-            device_name = device.name.gsub(/['\s]/, "")
-            encoding_options = {
-              :invalid           => :replace,  # Replace invalid byte sequences
-              :undef             => :replace,  # Replace anything not defined in ASCII
-              :replace           => ""         # Use a blank for those replacements
-            }
-            encoded = device_name.encode(::Encoding.find("ASCII"), encoding_options)
-            "http://#{encoded}.local:27753/"
-          end
-        end
-      end.call
+      @url ||= detect_device_agent_url
+    end
+
+    # @!visibility private
+    def detect_device_agent_url
+      url_from_environment ||
+        url_for_simulator ||
+        url_from_device_endpoint ||
+        url_from_device_name
+    end
+
+    # @!visibility private
+    def url_from_environment
+      url = RunLoop::Environment.device_agent_url
+      return if url.nil?
+
+      if url.end_with?("/")
+        url
+      else
+        "#{url}/"
+      end
+    end
+
+    # @!visibility private
+    def url_for_simulator
+      if device.simulator?
+        "http://#{DEFAULTS[:simulator_ip]}:#{DEFAULTS[:port]}/"
+      else
+        nil
+      end
+    end
+
+    # @!visibility private
+    def url_from_device_endpoint
+      calabash_endpoint = RunLoop::Environment.device_endpoint
+      if calabash_endpoint
+        base = calabash_endpoint.split(":")[0..1].join(":")
+        "#{base}:#{DEFAULTS[:port]}/"
+      else
+        nil
+      end
+    end
+
+    # @!visibility private
+    # TODO This block is not well tested
+    # TODO extract to a module; Calabash can use to detect device endpoint
+    def url_from_device_name
+      # Transforms the default "Joshua's iPhone" to a DNS name.
+      device_name = device.name.gsub(/[']/, "").gsub(/[\s]/, "-")
+
+      # Replace diacritic markers and unknown characters.
+      transliterated = transliterate(device_name).tr("?", "")
+
+      # Anything that cannot be transliterated is a ?
+      replaced = transliterated.tr("?", "")
+
+      "http://#{replaced}.local:#{DEFAULTS[:port]}/"
     end
 
     # @!visibility private

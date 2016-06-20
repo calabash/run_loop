@@ -52,6 +52,7 @@ tools like instruments and simctl.}
   s.add_dependency('command_runner_ng', '>= 0.0.2')
   s.add_dependency("httpclient", "~> 2.6")
   s.add_dependency("dnssd", "2.0")
+  s.add_dependency("i18n", ">= 0.7.0", "< 1.0")
 
   s.add_development_dependency("rspec_junit_formatter", "~> 0.2")
   s.add_development_dependency("luffa", "~> 2.0")

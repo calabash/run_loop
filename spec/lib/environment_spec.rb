@@ -120,6 +120,26 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".device_agent_url" do
+    it "returns DEVICE_AGENT_URL" do
+      url = "http://denis.local:27753"
+      stub_env({"DEVICE_AGENT_URL" => url})
+      expect(RunLoop::Environment.device_agent_url).to be == url
+    end
+
+    describe "returns nil" do
+      it "is undefined" do
+        stub_env({"DEVICE_AGENT_URL" => nil})
+        expect(RunLoop::Environment.device_agent_url).to be == nil
+      end
+
+      it "is the empty string" do
+        stub_env({"DEVICE_AGENT_URL" => ""})
+        expect(RunLoop::Environment.device_agent_url).to be == nil
+      end
+    end
+  end
+
   describe ".reset_between_scenarios?" do
     it "true" do
       stub_env({"RESET_BETWEEN_SCENARIOS" => "1"})
