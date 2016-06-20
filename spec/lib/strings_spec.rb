@@ -106,7 +106,7 @@ describe RunLoop::Strings do
     end
 
     it "returns arch information" do
-      expect(xcrun).to receive(:exec).and_return(hash)
+      expect(xcrun).to receive(:run_command_in_context).and_return(hash)
 
       expect(strings.send(:dump)).to be == hash[:out]
       expect(strings.instance_variable_get(:@dump)).to be == hash[:out]
@@ -114,7 +114,7 @@ describe RunLoop::Strings do
 
     it "raises error if there is a problem" do
       hash[:exit_status] = 1
-      expect(xcrun).to receive(:exec).and_return(hash)
+      expect(xcrun).to receive(:run_command_in_context).and_return(hash)
 
       expect do
         strings.send(:dump)

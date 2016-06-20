@@ -448,9 +448,9 @@ Sending request to perform '#{gesture}' with:
       shutdown
 
       options = {:log_cmd => true}
-      exec(["pkill", "xctestctl"], options)
-      exec(["pkill", "testmanagerd"], options)
-      exec(["pkill", "xcodebuild"], options)
+      run_shell_command(["pkill", "xctestctl"], options)
+      run_shell_command(["pkill", "testmanagerd"], options)
+      run_shell_command(["pkill", "xcodebuild"], options)
 
       start = Time.now
       RunLoop.log_debug("Waiting for CBX-Runner to launch...")

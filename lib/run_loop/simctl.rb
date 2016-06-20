@@ -115,7 +115,7 @@ module RunLoop
     # @!visibility private
     def execute(array, options)
       merged = DEFAULTS.merge(options)
-      xcrun.exec(array, merged)
+      xcrun.run_command_in_context(array, merged)
     end
 
     # @!visibility private

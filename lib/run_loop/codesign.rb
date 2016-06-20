@@ -18,7 +18,7 @@ module RunLoop
     # @!visibility private
     def self.info(path)
       self.expect_path_exists(path)
-      self.exec(["--display", "--verbose=4", path])
+      self.run_codesign_command(["--display", "--verbose=4", path])
     end
 
     # @!visibility private
@@ -59,7 +59,7 @@ module RunLoop
       end
     end
 
-    def self.exec(args)
+    def self.run_codesign_command(args)
       if !args.is_a?(Array)
         raise ArgumentError, "Expected args: '#{args}' to be an Array"
       end
@@ -67,7 +67,7 @@ module RunLoop
       xcrun = RunLoop::Xcrun.new
       cmd = ["codesign"] + args
       options = {:log_cmd => true}
-      hash = xcrun.exec(cmd, options)
+      hash = xcrun.run_command_in_context(cmd, options)
 
       hash[:out]
     end

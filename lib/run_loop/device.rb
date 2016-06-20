@@ -505,7 +505,7 @@ version: #{version}
       ]
 
       # RunLoop::PlistBuddy cannot add items to arrays.
-      xcrun.exec(cmd, {:log_cmd => true})
+      xcrun.run_command_in_context(cmd, {:log_cmd => true})
 
       simulator_languages
     end
@@ -547,7 +547,7 @@ version: #{version}
       end
 
       args = ['simctl', 'list', 'devices']
-      hash = xcrun.exec(args)
+      hash = xcrun.run_command_in_context(args)
       out = hash[:out]
 
       matched_line = out.split("\n").find do |line|
