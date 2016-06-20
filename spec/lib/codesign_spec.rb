@@ -14,7 +14,7 @@ describe RunLoop::Codesign do
 
     it ".info" do
       args = ["--display", "--verbose=4", path]
-      expect(RunLoop::Codesign).to receive(:exec).with(args).and_return("info")
+      expect(RunLoop::Codesign).to receive(:run_codesign_command).with(args).and_return("info")
 
       expect(RunLoop::Codesign.info(path)).to be == "info"
     end
@@ -107,19 +107,19 @@ describe RunLoop::Codesign do
     end
   end
 
-  describe ".exec" do
+  describe ".run_codesign_command" do
     it "expects an Array argument" do
       expect do
-        RunLoop::Codesign.send(:exec, "string")
+        RunLoop::Codesign.send(:run_codesign_command, "string")
       end.to raise_error ArgumentError, /to be an Array/
     end
 
-    it ".exec" do
+    it "calls out to codesign" do
       path = File.expand_path("./tmp/file.txt")
       FileUtils.mkdir_p("./tmp")
       FileUtils.touch(path)
       args = ["--display", "--verbose=4", path]
-      actual = RunLoop::Codesign.send(:exec, args)
+      actual = RunLoop::Codesign.send(:run_codesign_command, args)
       expected = "tmp/file.txt: code object is not signed at all"
       expect(actual[/#{expected}/, 0]).to be_truthy
     end
