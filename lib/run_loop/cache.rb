@@ -12,7 +12,7 @@ module RunLoop
   # Marshal is safe to use here because:
   # 1. This code is not executed on the XTC.
   # 2. Users who muck about with this cache can only hurt themselves.
-  class HostCache
+  class Cache
 
     # The path to the cache file.
     #
@@ -40,7 +40,7 @@ RunLoop requires this directory to cache files
 
     # The default cache.
     def self.default
-      RunLoop::HostCache.new(self.default_directory)
+      RunLoop::Cache.new(self.default_directory)
     end
 
     # Creates a new HostCache that is ready for IO.
@@ -50,7 +50,7 @@ RunLoop requires this directory to cache files
     # @options [Hash] options Options to control the state of the new object.
     # @option [String] filename (host_run_loop.hash) The cache filename.
     # @option [Boolean] clear (false) If true, the current cache will be cleared.
-    # @return [RunLoop::HostCache] A cache that is ready for IO.
+    # @return [RunLoop::Cache] A cache that is ready for IO.
     def initialize(directory, options = {})
       sha1 = Digest::SHA1.hexdigest 'host_run_loop.hash'
       default_opts = {:filename => sha1,
@@ -125,4 +125,9 @@ RunLoop requires this directory to cache files
       self.write({})
     end
   end
+
+  # @!visibility private
+  # Required for backward compatibility.
+  # The only legitimate caller is in Calabash iOS Launcher#attach.
+  class HostCache < RunLoop::Cache ; end
 end
