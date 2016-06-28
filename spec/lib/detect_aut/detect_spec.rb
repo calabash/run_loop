@@ -157,6 +157,8 @@ describe RunLoop::DetectAUT::Detect do
 
   describe "#globs_for_app_search" do
     it "array of globs that based on default search depth" do
+      defaults = {:search_depth => 5}
+      stub_const("RunLoop::DetectAUT::Detect::DEFAULTS", defaults)
       expected_count = RunLoop::DetectAUT::Detect::DEFAULTS[:search_depth]
       expected = [
         "./*.app",
