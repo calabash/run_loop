@@ -29,7 +29,7 @@ module RunLoop
 
       # @!visibility private
       DEFAULTS = {
-        :search_depth => 5
+        :search_depth => 10
       }
 
       # @!visibility private
