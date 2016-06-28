@@ -35,7 +35,6 @@ require 'run_loop/instruments'
 require 'run_loop/lipo'
 require "run_loop/otool"
 require "run_loop/strings"
-require 'run_loop/cache/cache'
 require 'run_loop/host_cache'
 require 'run_loop/patches/awesome_print'
 require 'run_loop/core_simulator'
