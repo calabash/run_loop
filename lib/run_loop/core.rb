@@ -220,7 +220,8 @@ means that the APP variable is pointing to a .app that does not exist.
         :app => app_details[:bundle_id],
         :repl_path => repl_path,
         :log_file => log_file,
-        :results_dir => results_dir
+        :results_dir => results_dir,
+        :gesture_performer => :instruments
       }
 
       uia_timeout = options[:uia_timeout] || RunLoop::Environment.uia_timeout || 10

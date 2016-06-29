@@ -55,7 +55,8 @@ module RunLoop
         cache = {
           :cbx_launcher => cbx_launcher.name,
           :udid => device.udid,
-          :app => bundle_id
+          :app => bundle_id,
+          :gesture_performer => :device_agent
         }
         RunLoop::Cache.default.write(cache)
       end
