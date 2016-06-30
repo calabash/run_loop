@@ -4,7 +4,6 @@ module RunLoop
   module DeviceAgent
     # @!visibility private
     class Frameworks
-      require "run_loop/shell"
       require "singleton"
       include Singleton
 
@@ -21,18 +20,20 @@ module RunLoop
 
         Dir.chdir(rootdir) do
           RunLoop.log_unix_cmd("cd #{rootdir}")
-          shell.exec(["unzip", File.basename(zip)], options)
+          shell.run_shell_command(["unzip", File.basename(zip)], options)
         end
 
-        shell.exec(["cp", "-r", "#{frameworks}/*.framework", target], options)
-        shell.exec(["cp", "#{frameworks}/*LICENSE", target], options)
+        shell.run_shell_command(["cp", "-r", "#{frameworks}/*.framework", target], options)
+        shell.run_shell_command(["cp", "#{frameworks}/*LICENSE", target], options)
         RunLoop.log_debug("Installed frameworks to #{target}")
       end
 
       private
 
       # @!visibility private
+      # TODO replace with include Shell
       def shell
+        require "run_loop/shell"
         Class.new do
           include RunLoop::Shell
           def to_s; "#<Frameworks Shell>"; end
