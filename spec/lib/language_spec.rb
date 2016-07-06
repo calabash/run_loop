@@ -50,6 +50,13 @@ describe RunLoop::Language do
       expect(langs90.count).to be == langs91.count
     end
 
+    it "supports iOS 10" do
+      expect(device).to receive(:version).and_return(v100)
+
+      langs = RunLoop::Language.codes_for_device(device)
+      expect(langs.count).to be == 732
+    end
+
     it "supports iOS 9" do
       expect(device).to receive(:version).and_return(v90)
 
@@ -66,10 +73,6 @@ describe RunLoop::Language do
 
     it "returns nil for any other iOS version" do
       allow(device).to receive(:version).and_return(v70)
-
-      expect(RunLoop::Language.codes_for_device(device)).to be_falsey
-
-      allow(device).to receive(:version).and_return(v100)
 
       expect(RunLoop::Language.codes_for_device(device)).to be_falsey
     end
