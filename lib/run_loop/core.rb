@@ -322,7 +322,9 @@ Logfile: #{log_file}
     #  version.
     def self.default_simulator(xcode=RunLoop::Xcode.new)
 
-      if xcode.version_gte_73?
+      if xcode.version_gte_8?
+        "iPhone 6s (10.0)"
+      elsif xcode.version_gte_73?
         "iPhone 6s (9.3)"
       elsif xcode.version_gte_72?
         "iPhone 6s (9.2)"
