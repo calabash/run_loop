@@ -569,7 +569,7 @@ $ bundle exec run-loop simctl manage-processes
   def running_simulator_pid
     process_name = "MacOS/#{sim_name}"
 
-    args = ["xcrun", "ps", "x", "-o", "pid,command"]
+    args = ["ps", "x", "-o", "pid,command"]
     hash = xcrun.run_command_in_context(args)
 
     exit_status = hash[:exit_status]
