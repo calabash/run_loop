@@ -53,6 +53,8 @@ module RunLoop
       SCRIPTS[key]
     end
 
+    # @!visibility private
+    # This is the entry point for UIAutomation.
     def self.run_with_options(options)
       before = Time.now
 
@@ -62,6 +64,22 @@ module RunLoop
       simctl = options[:sim_control] || options[:simctl] || RunLoop::Simctl.new
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
+
+      if xcode.version_gte_8?
+        raise %Q[
+UIAutomation is not available on Xcode >= 8.*.
+
+We are in the process of updating Calabash to use our new tool: DeviceAgent.
+
+We will track progress in this forum post:
+
+https://groups.google.com/forum/#!topic/calabash-ios/g34znf0LnE4
+
+For now, testing with Xcode 8 is not supported.
+
+Thank you for your patience.
+]
+      end
 
       # Device under test: DUT
       device = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
