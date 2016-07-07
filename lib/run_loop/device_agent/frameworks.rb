@@ -4,6 +4,7 @@ module RunLoop
   module DeviceAgent
     # @!visibility private
     class Frameworks
+
       require "singleton"
       include Singleton
 
@@ -14,7 +15,7 @@ module RunLoop
           return true
         end
 
-        RunLoop.log_debug("Installing Frameworks to #{target}")
+        RunLoop.log_debug("Installing Frameworks to #{rootdir}")
 
         options = { :log_cmd => true }
 
@@ -22,10 +23,7 @@ module RunLoop
           RunLoop.log_unix_cmd("cd #{rootdir}")
           shell.run_shell_command(["unzip", File.basename(zip)], options)
         end
-
-        shell.run_shell_command(["cp", "-r", "#{frameworks}/*.framework", target], options)
-        shell.run_shell_command(["cp", "#{frameworks}/*LICENSE", target], options)
-        RunLoop.log_debug("Installed frameworks to #{target}")
+        RunLoop.log_debug("Installed frameworks to #{rootdir}")
       end
 
       private
@@ -42,11 +40,6 @@ module RunLoop
       end
 
       # @!visibility private
-      def target
-        @target ||= File.join(RunLoop::DotDir.directory, "Frameworks")
-      end
-
-      # @!visibility private
       def frameworks
         @frameworks ||= File.join(rootdir, "Frameworks")
       end
@@ -58,7 +51,7 @@ module RunLoop
 
       # @!visibility private
       def rootdir
-        @rootdir ||= File.expand_path(File.join(File.dirname(__FILE__), "frameworks"))
+        @rootdir ||= File.expand_path(File.join(File.dirname(__FILE__)))
       end
     end
   end

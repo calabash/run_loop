@@ -5,11 +5,11 @@ describe RunLoop::DeviceAgent::Frameworks do
 
   it "#rootdir" do
     actual = instance.send(:rootdir)
-    expect(actual[/lib\/run_loop\/device_agent\/frameworks/, 0]).to be_truthy
+    expect(actual[/lib\/run_loop\/device_agent/, 0]).to be_truthy
   end
 
   describe "mocked rootdir" do
-    let(:rootdir) { "run_loop/device_agent/frameworks" }
+    let(:rootdir) { "run_loop/device_agent/" }
 
     before do
       allow(instance).to receive(:rootdir).and_return(rootdir)
@@ -17,20 +17,12 @@ describe RunLoop::DeviceAgent::Frameworks do
 
     it "#zip" do
       actual = instance.send(:zip)
-      expect(actual[/run_loop\/device_agent\/frameworks\/Frameworks\.zip/, 0]).to be_truthy
+      expect(actual[/run_loop\/device_agent\/Frameworks\.zip/, 0]).to be_truthy
     end
 
     it "#frameworks" do
       actual = instance.send(:frameworks)
-      expect(actual[/run_loop\/device_agent\/frameworks\/Frameworks/, 0]).to be_truthy
-    end
-
-    it "#target" do
-      dotdir = ".calabash"
-      allow(RunLoop::DotDir).to receive(:directory).and_return(dotdir)
-      actual = instance.send(:target)
-
-      expect(actual[/\.calabash\/Frameworks/, 0]).to be_truthy
+      expect(actual[/run_loop\/device_agent\/Frameworks/, 0]).to be_truthy
     end
   end
 

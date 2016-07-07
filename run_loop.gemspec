@@ -10,7 +10,7 @@ plists = Dir.glob('plists/**/*.plist')
 device_agent = ["lib/run_loop/device_agent/bin/iOSDeviceManager",
                 "lib/run_loop/device_agent/app/CBX-Runner.app.zip",
                 "lib/run_loop/device_agent/ipa/CBX-Runner.app.zip",
-                "lib/run_loop/device_agent/frameworks/Frameworks.zip"]
+                "lib/run_loop/device_agent/Frameworks.zip"]
 
 vendor_licenses = Dir.glob("./vendor-licenses/*.*")
 
@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
       raise %Q{
 Could not parse constant RunLoop::VERSION: '#{version}'
 into a valid version, e.g. 1.2.3 or 1.2.3.pre10
-      }
+}
     end
     version
   end.call
