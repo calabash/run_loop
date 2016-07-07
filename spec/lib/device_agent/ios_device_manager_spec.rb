@@ -18,8 +18,8 @@ describe RunLoop::DeviceAgent::IOSDeviceManager do
       RunLoop::DeviceAgent::IOSDeviceManager.class_variable_set(:@@ios_device_manager, nil)
     end
 
-    describe "XCTESTCTL" do
-      let(:path) { "/path/to/alternative/ios_device_manager" }
+    describe "IOS_DEVICE_MANAGER" do
+      let(:path) { "/path/to/alternative/iOSDeviceManager" }
 
       it "returns value" do
         expect(RunLoop::Environment).to receive(:ios_device_manager).and_return(path)
@@ -35,8 +35,7 @@ describe RunLoop::DeviceAgent::IOSDeviceManager do
         expect do
           RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
         end.to raise_error(RuntimeError,
-                           /XCTESTCTL environment variable defined:/)
-
+                           /IOS_DEVICE_MANAGER environment variable defined:/)
       end
     end
 
@@ -44,7 +43,7 @@ describe RunLoop::DeviceAgent::IOSDeviceManager do
       expect(RunLoop::DeviceAgent::IOSDeviceManager).to receive(:device_agent_dir).and_return("/tmp")
       expect(RunLoop::Environment).to receive(:ios_device_manager).and_return(nil)
 
-      expect(RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager).to be == "/tmp/bin/ios_device_manager"
+      expect(RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager).to be == "/tmp/bin/iOSDeviceManager"
     end
   end
 
@@ -62,7 +61,7 @@ describe RunLoop::DeviceAgent::IOSDeviceManager do
         FileUtils.mkdir_p(xcuitest_dir)
       end
 
-      let(:path) { File.join(xcuitest_dir, "ios_device_manager.log") }
+      let(:path) { File.join(xcuitest_dir, "ios-device-manager.log") }
 
       it "creates a file" do
         FileUtils.rm_rf(path)

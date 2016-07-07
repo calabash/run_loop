@@ -18,22 +18,22 @@ module RunLoop
       # @!visibility private
       def self.ios_device_manager
         @@ios_device_manager ||= begin
-          from_env = RunLoop::Environment.xctestctl
+          from_env = RunLoop::Environment.ios_device_manager
           if from_env
             if File.exist?(from_env)
-              RunLoop.log_debug("Using XCTESTCTL=#{from_env}")
+              RunLoop.log_debug("Using IOS_DEVICE_MANAGER=#{from_env}")
               from_env
             else
               raise RuntimeError, %Q[
-XCTESTCTL environment variable defined:
+IOS_DEVICE_MANAGER environment variable defined:
 
 #{from_env}
 
 but binary does not exist at that path.
-            ]
+]
             end
           else
-            File.join(self.device_agent_dir, "bin", "xctestctl")
+            File.join(self.device_agent_dir, "bin", "iOSDeviceManager")
           end
         end
       end
@@ -90,7 +90,7 @@ but binary does not exist at that path.
         options = {:out => log_file, :err => log_file}
         RunLoop.log_unix_cmd("#{cmd} #{args.join(" ")} >& #{log_file}")
 
-        # Gotta keep the xctestctl process alive or the connection
+        # Gotta keep the ios_device_manager process alive or the connection
         # to testmanagerd will fail.
         pid = Process.spawn(cmd, *args, options)
         Process.detach(pid)

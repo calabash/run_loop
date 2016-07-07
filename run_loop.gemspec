@@ -7,7 +7,7 @@ bash_scripts = ["scripts/udidetect",
                 "scripts/timeout3"]
 plists = Dir.glob('plists/**/*.plist')
 
-device_agent = ["lib/run_loop/device_agent/bin/xctestctl",
+device_agent = ["lib/run_loop/device_agent/bin/iOSDeviceManager",
                 "lib/run_loop/device_agent/app/CBX-Runner.app.zip",
                 "lib/run_loop/device_agent/ipa/CBX-Runner.app.zip",
                 "lib/run_loop/device_agent/frameworks/Frameworks.zip"]
