@@ -18,8 +18,8 @@ describe RunLoop::XCUITest do
       end.to raise_error(RuntimeError, /The CBXWS env var is undefined. Are you a maintainer/)
     end
 
-    it "xctestctl" do
-      cbx_launcher = RunLoop::DeviceAgent::XCTestctl.new(device)
+    it "ios_device_manager" do
+      cbx_launcher = RunLoop::DeviceAgent::IOSDeviceManager.new(device)
       xcuitest = RunLoop::XCUITest.new(bundle_identifier, device, cbx_launcher)
       xcuitest.launch
     end

@@ -55,7 +55,7 @@ module RunLoop
     #
     # @param [RunLoop::Device] device the device under test
     def self.default_cbx_launcher(device)
-      RunLoop::DeviceAgent::XCTestctl.new(device)
+      RunLoop::DeviceAgent::IOSDeviceManager.new(device)
     end
 
     # @!visibility private
@@ -66,11 +66,11 @@ module RunLoop
       if value
         if value == :xcodebuild
           RunLoop::DeviceAgent::Xcodebuild.new(device)
-        elsif value == :xctestctl
-          RunLoop::DeviceAgent::XCTestctl.new(device)
+        elsif value == :ios_device_manager
+          RunLoop::DeviceAgent::IOSDeviceManager.new(device)
         else
           raise(ArgumentError,
-                "Expected :cbx_launcher => #{value} to be :xcodebuild or :xctestctl")
+                "Expected :cbx_launcher => #{value} to be :xcodebuild or :ios_device_manager")
         end
       else
         XCUITest.default_cbx_launcher(device)
@@ -448,7 +448,7 @@ Sending request to perform '#{gesture}' with:
       shutdown
 
       options = {:log_cmd => true}
-      run_shell_command(["pkill", "xctestctl"], options)
+      run_shell_command(["pkill", "iOSDeviceManager"], options)
       run_shell_command(["pkill", "testmanagerd"], options)
       run_shell_command(["pkill", "xcodebuild"], options)
 
