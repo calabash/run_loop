@@ -5,10 +5,10 @@ module RunLoop
     # @!visibility private
     #
     # A wrapper around the test-control binary.
-    class XCTestctl < RunLoop::DeviceAgent::Launcher
+    class IOSDeviceManager < RunLoop::DeviceAgent::Launcher
 
       # @!visibility private
-      @@xctestctl = nil
+      @@ios_device_manager = nil
 
       # @!visibility private
       def self.device_agent_dir
@@ -16,8 +16,8 @@ module RunLoop
       end
 
       # @!visibility private
-      def self.xctestctl
-        @@xctestctl ||= lambda do
+      def self.ios_device_manager
+        @@ios_device_manager ||= begin
           from_env = RunLoop::Environment.xctestctl
           if from_env
             if File.exist?(from_env)
@@ -32,16 +32,15 @@ XCTESTCTL environment variable defined:
 but binary does not exist at that path.
             ]
             end
-
           else
             File.join(self.device_agent_dir, "bin", "xctestctl")
           end
-        end.call
+        end
       end
 
       # @!visibility private
       def to_s
-        "#<Testctl: #{XCTestctl.xctestctl}>"
+        "#<iOSDeviceManager: #{IOSDeviceManager.ios_device_manager}>"
       end
 
       # @!visibility private
@@ -56,7 +55,7 @@ but binary does not exist at that path.
 
       # @!visibility private
       def self.log_file
-        path = File.join(Launcher.dot_dir, "xctestctl.log")
+        path = File.join(Launcher.dot_dir, "ios-device-manager.log")
         FileUtils.touch(path) if !File.exist?(path)
         path
       end
@@ -65,15 +64,15 @@ but binary does not exist at that path.
       def launch
         RunLoop::DeviceAgent::Frameworks.instance.install
 
-        if device.simulator?
-          cbxapp = RunLoop::App.new(runner.runner)
+#        if device.simulator?
+#          cbxapp = RunLoop::App.new(runner.runner)
+#
+#          # quits the simulator
+#          sim = CoreSimulator.new(device, cbxapp)
+#          sim.install
+#        end
 
-          # quits the simulator
-          sim = CoreSimulator.new(device, cbxapp)
-          sim.install
-        end
-
-        cmd = RunLoop::DeviceAgent::XCTestctl.xctestctl
+        cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
         args = ["-r", runner.runner,
                 "-t", runner.tester,
@@ -84,7 +83,7 @@ but binary does not exist at that path.
           args << RunLoop::Environment.codesign_identity
         end
 
-        log_file = XCTestctl.log_file
+        log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
         FileUtils.touch(log_file)
 

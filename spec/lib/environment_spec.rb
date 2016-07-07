@@ -390,23 +390,23 @@ describe RunLoop::Environment do
     end
   end
 
-  describe ".xctestctl" do
+  describe ".ios_device_manager" do
     it "returns value" do
-      testctl = "/usr/local/bin/test-control"
-      stub_env({"XCTESTCTL" => testctl})
+      manager = "/usr/local/bin/iOSDeviceManager"
+      stub_env({"IOS_DEVICE_MANAGER" => manager})
 
-      expect(RunLoop::Environment.xctestctl).to be == testctl
+      expect(RunLoop::Environment.ios_device_manager).to be == manager
     end
 
     describe "returns nil" do
       it "if value is the empty string" do
-        stub_env("XCTESTCTL", "")
-        expect(RunLoop::Environment.xctestctl).to be == nil
+        stub_env("IOS_DEVICE_MANAGER", "")
+        expect(RunLoop::Environment.ios_device_manager).to be == nil
       end
 
       it "if value is nil" do
-        stub_env({"XCTESTCTL" => nil})
-        expect(RunLoop::Environment.xctestctl).to be == nil
+        stub_env("IOS_DEVICE_MANAGER", "")
+        expect(RunLoop::Environment.ios_device_manager).to be == nil
       end
     end
   end
