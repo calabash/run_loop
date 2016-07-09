@@ -99,7 +99,7 @@ but runner does not exist at that path.
         options = { :log_cmd => true }
         Dir.chdir(dir) do
           RunLoop.log_unix_cmd("cd #{dir}")
-          shell.run_unix_command(["unzip", File.basename(archive)], options)
+          shell.run_shell_command(["unzip", File.basename(archive)], options)
         end
         File.join(dir, "CBX-Runner.app")
       end
