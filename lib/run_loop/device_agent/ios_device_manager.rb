@@ -64,17 +64,19 @@ but binary does not exist at that path.
       def launch
         RunLoop::DeviceAgent::Frameworks.instance.install
 
-#        if device.simulator?
-#          cbxapp = RunLoop::App.new(runner.runner)
-#
-#          # quits the simulator
-#          sim = CoreSimulator.new(device, cbxapp)
-#          sim.install
-#        end
+       if device.simulator?
+         cbxapp = RunLoop::App.new(runner.runner)
+
+         # quits the simulator
+         sim = CoreSimulator.new(device, cbxapp)
+         sim.install
+         sim.launch_simulator
+       end
 
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
-        args = ["-r", runner.runner,
+        args = ["start_test",
+                "-r", runner.runner,
                 "-t", runner.tester,
                 "-d", device.udid]
 
