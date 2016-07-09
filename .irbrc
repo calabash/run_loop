@@ -108,18 +108,32 @@ def delete_simulator(name)
   true
 end
 
-if !ENV["CBXWS"]
-  moody = File.expand_path(File.join("~/", "git", "calabash", "xcuitest", "CBXDriver.xcworkspace"))
-  prometus = File.expand_path(File.join("~/", "calabash-xcuitest-server", "CBXDriver.xcworkspace"))
 
-  if File.directory?(moody)
-    ENV["CBXWS"] = moody
-  elsif File.directory?(prometus)
-    ENV["CBXWS"] = prometus
+def cbx_launcher
+  device_agent_ws = ENV["CBXWS"]
+
+  if device_agent_ws == nil || device_agent_ws == ""
+    return :ios_device_manager
   end
-end
 
-puts "XCUITest workspace = #{ENV["CBXWS"]}"
+  if device_agent_ws == "1"
+    path = File.expand_path(File.join("..", "DeviceAgent.iOS", "CBXDriver.xcworkspace"))
+    if File.exist?(path)
+      ENV["CBXWS"] = path
+    end
+  elsif device_agent_ws
+    if !File.exist?(device_agent_ws)
+      raise %Q[CBXWS defined as
+
+      #{device_agent_ws}
+
+but that directory does not exist.
+]
+    end
+  end
+  puts "XCUITest workspace = #{ENV["CBXWS"]}"
+  :xcodebuild
+end
 
 def xcuitest(bundle_id="com.apple.Preferences")
   device = RunLoop::Device.detect_device({}, xcode, simctl, instruments)
@@ -127,18 +141,21 @@ def xcuitest(bundle_id="com.apple.Preferences")
   RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
 end
 
-def holmes(bundle_id="com.apple.Preferences")
+def holmes(options={})
   device = RunLoop::Device.detect_device({}, xcode, simctl, instruments)
-  options = {
+
+  default_options = {
+    :app => "com.apple.Preferences",
     :device => device.udid,
     :xcuitest => true,
     :xcode => xcode,
     :simctl => simctl,
     :instruments => instruments,
-    :app => bundle_id,
-    :cbx_launcher => :xcodebuild
+    :cbx_launcher => cbx_launcher
   }
-  RunLoop.run(options)
+
+  merged_options = default_options.merge(options)
+  RunLoop.run(merged_options)
 end
 
 verbose
