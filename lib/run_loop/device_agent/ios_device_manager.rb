@@ -64,14 +64,22 @@ but binary does not exist at that path.
       def launch
         RunLoop::DeviceAgent::Frameworks.instance.install
 
-       if device.simulator?
-         cbxapp = RunLoop::App.new(runner.runner)
+        # WIP: it is unclear what the behavior should be.
+        if device.simulator?
+          # Simulator cannot be running for this version.
+          CoreSimulator.quit_simulator
 
-         # quits the simulator
-         sim = CoreSimulator.new(device, cbxapp)
-         sim.install
-         sim.launch_simulator
-       end
+          # TODO: run-loop is responsible for detecting an outdated CBX-Runner
+          # application and installing a new one.  However, iOSDeviceManager
+          # fails if simulator is already running.
+
+          # cbxapp = RunLoop::App.new(runner.runner)
+          #
+          # # quits the simulator
+          # sim = CoreSimulator.new(device, cbxapp)
+          # sim.install
+          # sim.launch_simulator
+        end
 
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
