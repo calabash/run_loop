@@ -12,7 +12,6 @@ describe RunLoop::XCUITest do
     it "xcodebuild" do
       workspace = File.expand_path(File.join("..", "DeviceAgent.iOS", "CBXDriver.xcworkspace"))
       if File.exist?(workspace)
-        binding.pry
         expect(RunLoop::Environment).to receive(:cbxws).and_return(workspace)
         cbx_launcher = RunLoop::DeviceAgent::Xcodebuild.new(device)
         xcuitest = RunLoop::XCUITest.new(bundle_identifier, device, cbx_launcher)
