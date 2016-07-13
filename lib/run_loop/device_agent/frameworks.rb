@@ -21,7 +21,7 @@ module RunLoop
 
         Dir.chdir(rootdir) do
           RunLoop.log_unix_cmd("cd #{rootdir}")
-          shell.run_shell_command(["unzip", File.basename(zip)], options)
+          shell.run_shell_command(["ditto", "-xk", File.basename(zip), "."], options)
         end
         RunLoop.log_debug("Installed frameworks to #{rootdir}")
       end
