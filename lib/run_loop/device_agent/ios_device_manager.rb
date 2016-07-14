@@ -114,5 +114,3 @@ but binary does not exist at that path.
     end
   end
 end
-
-
