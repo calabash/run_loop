@@ -11,7 +11,7 @@ module RunLoop
     #
     # The Encoding::Convert in 2.0 does not work on string with UTF-16 characters.
     def transliterate(string)
-			require "i18n"
+      require "i18n"
       locales = I18n.available_locales
       if !locales.include?(:en)
         I18n.available_locales = locales + [:en]
