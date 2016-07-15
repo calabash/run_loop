@@ -54,10 +54,10 @@ namespace :device_agent do
   end
 
   def device_agent_dir
-    @device_agent_dir ||= lambda do
+    @device_agent_dir ||= begin
       dir = File.join(".", "lib", "run_loop", "device_agent")
       File.expand_path(dir)
-    end.call
+    end
   end
 
   def frameworks_dir
