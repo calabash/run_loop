@@ -400,7 +400,7 @@ Sending request to perform '#{gesture}' with:
     # @!visibility private
     def session_delete
       options = ping_options
-      request = request("delete")
+      request = request("session")
       client = client(options)
       begin
         response = client.delete(request)
