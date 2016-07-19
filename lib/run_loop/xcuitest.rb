@@ -370,11 +370,7 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def versioned_route(route)
-      if ["health", "ping", "sessionIdentifier"].include?(route)
-        route
-      else
-        "#{DEFAULTS[:version]}/#{route}"
-      end
+      "#{DEFAULTS[:version]}/#{route}"
     end
 
     # @!visibility private

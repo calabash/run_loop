@@ -251,14 +251,8 @@ describe RunLoop::XCUITest do
     expect(xcuitest.send(:client, options)).to be_a_kind_of(RunLoop::HTTP::RetriableClient)
   end
 
-  describe "#versioned_route" do
-    it "exceptions" do
-      expect(xcuitest.send(:versioned_route, "health")).to be == "health"
-      expect(xcuitest.send(:versioned_route, "ping")).to be == "ping"
-      expect(xcuitest.send(:versioned_route, "sessionIdentifier")).to be == "sessionIdentifier"
-    end
-
-    it "any other route" do
+  context "#versioned_route" do
+    it "adds leading version to route" do
       stub_const("RunLoop::XCUITest::DEFAULTS", {:version => "0.1"})
       expect(xcuitest.send(:versioned_route, "route")).to be == "0.1/route"
     end
