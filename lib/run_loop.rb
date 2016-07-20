@@ -80,10 +80,20 @@ module RunLoop
     # We want to use the _exact_ objects that were passed.
     if options[:xcode]
       cloned_options[:xcode] = options[:xcode]
+    else
+      cloned_options[:xcode] = RunLoop::Xcode.new
     end
 
     if options[:simctl]
       cloned_options[:simctl] = options[:simctl]
+    else
+      cloned_options[:simctl] = RunLoop::Simctl.new
+    end
+
+    if options[:instruments]
+      cloned_options[:instruments] = options[:instruments]
+    else
+      cloned_options[:instruments] = RunLoop::Instruments.new
     end
 
     # Soon to be unsupported.
@@ -91,7 +101,13 @@ module RunLoop
       cloned_options[:sim_control] = options[:sim_control]
     end
 
-    if options[:xcuitest]
+    xcode = cloned_options[:xcode]
+    simctl = cloned_options[:simctl]
+    instruments = cloned_options[:instruments]
+
+    device = Device.detect_device(cloned_options, xcode, simctl, instruments)
+    cloned_options[:device] = device
+
       RunLoop::XCUITest.run(cloned_options)
     else
       if RunLoop::Instruments.new.instruments_app_running?
