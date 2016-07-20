@@ -101,7 +101,7 @@ module RunLoop
     # @!visibility private
     # The details of the process reported by `ps`.
     def ps_details
-      `xcrun ps -p #{pid} -o pid,comm | grep #{pid}`.strip
+      `ps -p #{pid} -o pid,comm | grep #{pid}`.strip
     end
 
     # @!visibility private
