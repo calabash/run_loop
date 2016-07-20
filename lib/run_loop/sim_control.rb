@@ -153,10 +153,10 @@ module RunLoop
       # @todo Maybe should try to send -TERM first and -KILL if TERM fails.
       # @todo Needs benchmarking.
       processes.each do |process_name|
-        descripts = `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split("\n")
+        descripts = `ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split("\n")
         descripts.each do |process_desc|
           pid = process_desc.split(' ').first
-          Open3.popen3("xcrun kill -9 #{pid} && xcrun wait #{pid}") do  |_, stdout,  stderr, _|
+          Open3.popen3("kill -9 #{pid} && xcrun wait #{pid}") do  |_, stdout,  stderr, _|
             if ENV['DEBUG_UNIX_CALLS'] == '1'
               out = stdout.read.strip
               err = stderr.read.strip
@@ -601,7 +601,7 @@ module RunLoop
     # @return [String, nil] The pid as a String or nil if no process is found.
     def sim_pid
       process_name = "MacOS/#{sim_name}"
-      `xcrun ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split(' ').first
+      `ps x -o pid,command | grep "#{process_name}" | grep -v grep`.strip.split(' ').first
     end
 
     # @!visibility private
