@@ -1,6 +1,9 @@
 # A class to manage interactions with CoreSimulators.
 class RunLoop::CoreSimulator
 
+  require "run_loop/shell"
+  include RunLoop::Shell
+
   # These options control various aspects of an app's life cycle on the iOS
   # Simulator.
   #
@@ -568,7 +571,7 @@ $ bundle exec run-loop simctl manage-processes
     process_name = "MacOS/#{sim_name}"
 
     args = ["ps", "x", "-o", "pid,command"]
-    hash = xcrun.run_command_in_context(args)
+    hash = run_shell_command(args)
 
     exit_status = hash[:exit_status]
     if exit_status != 0
