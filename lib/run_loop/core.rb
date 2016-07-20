@@ -138,7 +138,7 @@ Thank you for your patience.
         FileUtils.touch repl_path
       end
 
-      RunLoop::HostCache.default.clear unless RunLoop::Environment.xtc?
+      RunLoop::Cache.default.clear unless RunLoop::Environment.xtc?
 
       cal_script = File.join(SCRIPTS_PATH, 'calabash_script_uia.js')
       File.open(script, 'w') do |file|
@@ -220,7 +220,8 @@ means that the APP variable is pointing to a .app that does not exist.
         :app => app_details[:bundle_id],
         :repl_path => repl_path,
         :log_file => log_file,
-        :results_dir => results_dir
+        :results_dir => results_dir,
+        :gesture_performer => :instruments
       }
 
       uia_timeout = options[:uia_timeout] || RunLoop::Environment.uia_timeout || 10
@@ -407,7 +408,7 @@ Logfile: #{log_file}
         raise RunLoop::WriteFailedError.new("Trying write of command #{cmd_str} at index #{index}")
       end
       run_loop[:index] = index + 1
-      RunLoop::HostCache.default.write(run_loop) unless RunLoop::Environment.xtc?
+      RunLoop::Cache.default.write(run_loop) unless RunLoop::Environment.xtc?
       index
     end
 
@@ -523,7 +524,7 @@ Logfile: #{log_file}
       end
 
       run_loop[:initial_offset] = offset
-      RunLoop::HostCache.default.write(run_loop) unless RunLoop::Environment.xtc?
+      RunLoop::Cache.default.write(run_loop) unless RunLoop::Environment.xtc?
       result
     end
 

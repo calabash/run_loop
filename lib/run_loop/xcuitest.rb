@@ -9,6 +9,8 @@ module RunLoop
     require "run_loop/encoding"
     include RunLoop::Encoding
 
+    require "run_loop/cache"
+
     class HTTPError < RuntimeError; end
 
     # @!visibility private
@@ -48,6 +50,16 @@ module RunLoop
 
       xcuitest = RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
       xcuitest.launch
+
+      if !RunLoop::Environment.xtc?
+        cache = {
+          :cbx_launcher => cbx_launcher.name,
+          :udid => device.udid,
+          :app => bundle_id,
+          :gesture_performer => :device_agent
+        }
+        RunLoop::Cache.default.write(cache)
+      end
       xcuitest
     end
 
@@ -84,7 +96,9 @@ module RunLoop
     # The app with `bundle_id` needs to be installed.
     #
     # @param [String] bundle_id The identifier of the app under test.
-    # @param [RunLoop::Device] device The device device.
+    # @param [RunLoop::Device] device The device under test.
+    # @param [RunLoop::DeviceAgent::Launcher] cbx_launcher The entity that
+    #  launches the CBXRunner.
     def initialize(bundle_id, device, cbx_launcher)
       @bundle_id = bundle_id
       @device = device

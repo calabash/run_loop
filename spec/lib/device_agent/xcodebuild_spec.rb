@@ -3,6 +3,12 @@ describe RunLoop::DeviceAgent::Xcodebuild do
   let(:device) { Resources.shared.device("9.0") }
   let(:xcodebuild) { RunLoop::DeviceAgent::Xcodebuild.new(device) }
 
+  describe "#name" do
+    it "returns :xcodebuild" do
+      expect(xcodebuild.name).to be == :xcodebuild
+    end
+  end
+
   describe "#workspace" do
 
     it "raises an error if CBXWS is not defined" do

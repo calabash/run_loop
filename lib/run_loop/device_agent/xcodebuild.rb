@@ -25,6 +25,11 @@ module RunLoop
       end
 
       # @!visibility private
+      def name
+        :xcodebuild
+      end
+
+      # @!visibility private
       def launch
         workspace
 

@@ -30,6 +30,14 @@ XCUITest is only available for iOS >= 9.0
       end
 
       # @!visibility private
+      # The name of this launcher. Must be a symbol (keyword).  This value will
+      # be used for the key :cbx_launcher in the RunLoop::Cache so Calabash
+      # iOS can attach and reattach to an XCUITest instance.
+      def name
+        abstract_method!
+      end
+
+      # @!visibility private
       #
       # Does whatever it takes to launch the CBX-Runner on the device.
       def launch

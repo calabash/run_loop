@@ -30,6 +30,12 @@ describe RunLoop::DeviceAgent::Launcher do
         launcher.launch
       end.to raise_error RunLoop::Abstract::AbstractMethodError, /launch/
     end
+
+    it "#name" do
+      expect do
+        launcher.name
+      end.to raise_error RunLoop::Abstract::AbstractMethodError, /name/
+    end
   end
 
   describe "file system" do

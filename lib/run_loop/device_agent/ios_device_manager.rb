@@ -39,6 +39,11 @@ but binary does not exist at that path.
       end
 
       # @!visibility private
+      def name
+        :xctestctl
+      end
+
+      # @!visibility private
       def to_s
         "#<iOSDeviceManager: #{IOSDeviceManager.ios_device_manager}>"
       end
