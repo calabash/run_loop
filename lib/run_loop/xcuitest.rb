@@ -28,7 +28,7 @@ module RunLoop
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
 
-      # Find the Device under test, the App under test, UIA strategy, and reset options
+      # Find the Device under test, the App under test, and reset options.
       device = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
       app_details = RunLoop::DetectAUT.detect_app_under_test(options)
       reset_options = RunLoop::Core.send(:detect_reset_options, options)
