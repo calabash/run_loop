@@ -1,5 +1,21 @@
 ## Change Log
 
+### 2.1.4
+
+* RunLoop.run detects and respects gesture performer key #490
+* run-loop cache needs to provide DeviceAgent details #489
+* Don't call ps in the context of xcrun #488
+* DeviceAgent: update to iOS 10 and Xcode 8 compatible binaries #486
+* Travis uses macOS 10.11 and Xcode 7.3 #485
+* XCUITest can use iOSDeviceManager binary to launch CBX-Runner and AUT
+  #483
+* Detecting and handling Xcode 8 and iOS 10 #482
+* DetectAUT: increase search depth for AUT for Xamarin projects #481
+* Rename exec methods in various classes #479
+* XCUITest respects to DEVICE_AGENT_URL #477
+* XCUITest: simplify the common gestures API #476
+* XCUITest: support text entry #474
+
 ### 2.1.3
 
 * Replace ~/ with Environment.user\_home\_directory #472
