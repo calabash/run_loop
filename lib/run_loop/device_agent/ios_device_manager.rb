@@ -74,6 +74,8 @@ but binary does not exist at that path.
           # Simulator cannot be running for this version.
           CoreSimulator.quit_simulator
 
+          CoreSimulator.wait_for_simulator_state(device, "Shutdown")
+
           # TODO: run-loop is responsible for detecting an outdated CBX-Runner
           # application and installing a new one.  However, iOSDeviceManager
           # fails if simulator is already running.
