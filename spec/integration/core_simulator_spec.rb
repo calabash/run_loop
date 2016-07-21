@@ -74,7 +74,7 @@ describe RunLoop::CoreSimulator do
   describe "#launch" do
     before do
       args = ['simctl', 'erase', simulator.udid]
-      xcrun.exec(args, {:log_cmd => true })
+      xcrun.run_command_in_context(args, {:log_cmd => true })
     end
 
     it "launches the app" do
@@ -95,7 +95,7 @@ describe RunLoop::CoreSimulator do
   end
 
   it "retries app launching" do
-    expect(core_sim).to receive(:launch_app_with_simctl).twice.and_raise(RunLoop::Xcrun::TimeoutError)
+    expect(core_sim).to receive(:launch_app_with_simctl).exactly(3).times.and_raise(RunLoop::Xcrun::TimeoutError)
     expect(core_sim).to receive(:launch_app_with_simctl).and_call_original
 
     expect(core_sim.launch).to be == true
@@ -103,7 +103,7 @@ describe RunLoop::CoreSimulator do
 
   it 'install with simctl' do
     args = ['simctl', 'erase', simulator.udid]
-    xcrun.exec(args, {:log_cmd => true })
+    xcrun.run_command_in_context(args, {:log_cmd => true })
 
     expect(core_sim.install)
     expect(core_sim.launch)

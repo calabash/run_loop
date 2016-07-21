@@ -64,14 +64,172 @@ describe RunLoop::XCUITest do
     expect(xcuitest.launch_other_app(bundle_id)).to be_truthy
   end
 
-  describe "#url" do
-    it "uses 127.0.0.1 for simulator targets" do
+  it "#url" do
+    expected = "http://denis.local:27753/"
+    expect(xcuitest).to receive(:detect_device_agent_url).and_return(expected)
+
+    actual = xcuitest.send(:url)
+    expect(actual).to be == expected
+    expect(xcuitest.instance_variable_get(:@url)).to be == expected
+  end
+
+  describe "#detect_device_agent_url" do
+    it "DEVICE_AGENT_URL is defined" do
+      expect(xcuitest).to receive(:url_from_environment).and_return("from environment")
+
+      actual = xcuitest.send(:detect_device_agent_url)
+      expect(actual).to be == "from environment"
+    end
+
+    describe "DEVICE_AGENT_URL is not defined" do
+      before do
+        expect(xcuitest).to receive(:url_from_environment).and_return(nil)
+      end
+
+      it "returns 127.0.0.1 url for simulators" do
+        expect(xcuitest).to receive(:url_for_simulator).and_return("simulator")
+
+        actual = xcuitest.send(:detect_device_agent_url)
+        expect(actual).to be == "simulator"
+      end
+
+      it "returns the DEVICE_ENDPOINT url with correct port" do
+        expect(xcuitest).to receive(:url_for_simulator).and_return(nil)
+        expect(xcuitest).to receive(:url_from_device_endpoint).and_return("device endpoint")
+
+        actual = xcuitest.send(:detect_device_agent_url)
+        expect(actual).to be == "device endpoint"
+      end
+
+      it "returns the device name as a DNS hostname" do
+        expect(xcuitest).to receive(:url_for_simulator).and_return(nil)
+        expect(xcuitest).to receive(:url_from_device_endpoint).and_return(nil)
+        expect(xcuitest).to receive(:url_from_device_name).and_return("device name")
+
+        actual = xcuitest.send(:detect_device_agent_url)
+        expect(actual).to be == "device name"
+      end
+    end
+  end
+  describe "#url_from_environment" do
+    it "returns nil if DEVICE_AGENT_URL is not set" do
+      expect(RunLoop::Environment).to receive(:device_agent_url).and_return(nil)
+
+      actual = xcuitest.send(:url_from_environment)
+      expect(actual).to be == nil
+    end
+
+    context "DEVICE_AGENT_URL is set" do
+      let(:url) { "http://denis.local:27753" }
+
+      it "returns the url if it has a trailing /" do
+        with_trailing = "#{url}/"
+        expect(RunLoop::Environment).to receive(:device_agent_url).and_return(with_trailing)
+
+        actual = xcuitest.send(:url_from_environment)
+        expect(actual).to be == with_trailing
+      end
+
+      it "appends a trailing / if it does not have one" do
+        expect(RunLoop::Environment).to receive(:device_agent_url).and_return(url)
+
+        actual = xcuitest.send(:url_from_environment)
+        expect(actual).to be == "#{url}/"
+      end
+    end
+  end
+
+  describe "#url_for_simulator" do
+    let(:port) { RunLoop::XCUITest::DEFAULTS[:port] }
+
+    it "returns 127.0.0.1:22753 for simulators" do
       expect(device).to receive(:simulator?).at_least(:once).and_return(true)
 
-      actual = xcuitest.send(:url)
-      expected = "http://127.0.0.1:27753/"
+      actual = xcuitest.send(:url_for_simulator)
+      expected = "http://127.0.0.1:#{port}/"
       expect(actual).to be == expected
-      expect(xcuitest.instance_variable_get(:@url)).to be == expected
+    end
+
+    it "returns nil for physical devices" do
+      expect(device).to receive(:simulator?).at_least(:once).and_return(false)
+
+      actual = xcuitest.send(:url_for_simulator)
+      expect(actual).to be == nil
+    end
+  end
+
+  describe "#url_from_device_endpoint" do
+    let(:host_url) { "http://denis.local" }
+
+    it "returns nil if DEVICE_ENDPOINT is not set" do
+      expect(RunLoop::Environment).to receive(:device_endpoint).and_return(nil)
+
+      actual = xcuitest.send(:url_from_device_endpoint)
+      expect(actual).to be == nil
+    end
+
+    context "DEVICE_ENDPOINT is set" do
+      let(:port) { RunLoop::XCUITest::DEFAULTS[:port] }
+      let(:expected) { "#{host_url}:#{port}/" }
+
+      it "returns a url with the Calabash port replaced" do
+        url_with_port = "#{host_url}:37265"
+        expect(RunLoop::Environment).to receive(:device_endpoint).and_return(url_with_port)
+        actual = xcuitest.send(:url_from_device_endpoint)
+        expect(actual).to be == expected
+      end
+
+      it "returns a url with port appended" do
+        expect(RunLoop::Environment).to receive(:device_endpoint).and_return(host_url)
+
+        actual = xcuitest.send(:url_from_device_endpoint)
+        expect(actual).to be == expected
+      end
+    end
+  end
+
+  describe "#url_from_device_name" do
+    let(:port) { RunLoop::XCUITest::DEFAULTS[:port] }
+    it "returns a url based on the device name" do
+      expect(device).to receive(:name).and_return("denis")
+
+      expected = "http://denis.local:#{port}/"
+      actual = xcuitest.send(:url_from_device_name)
+      expect(actual).to be == expected
+    end
+
+    context "encodes the name as bonjour name" do
+      it "replaces ' with empty character" do
+        expect(device).to receive(:name).and_return("Joshua's")
+
+        expected = "http://Joshuas.local:#{port}/"
+        actual = xcuitest.send(:url_from_device_name)
+        expect(actual).to be == expected
+      end
+
+      it "replaces spaces with hyphens" do
+        expect(device).to receive(:name).and_return("denis the menance")
+
+        expected = "http://denis-the-menance.local:#{port}/"
+        actual = xcuitest.send(:url_from_device_name)
+        expect(actual).to be == expected
+      end
+
+      it "reformats default device name" do
+        expect(device).to receive(:name).and_return("Joshua's iPhone")
+
+        expected = "http://Joshuas-iPhone.local:#{port}/"
+        actual = xcuitest.send(:url_from_device_name)
+        expect(actual).to be == expected
+      end
+
+      it "encodes non ASCII characters" do
+        expect(device).to receive(:name).and_return("ITZVÓÃ ●℆❡♡")
+
+        expected = "http://ITZVOA-.local:27753/"
+        actual = xcuitest.send(:url_from_device_name)
+        expect(actual).to be == expected
+      end
     end
   end
 
@@ -93,14 +251,8 @@ describe RunLoop::XCUITest do
     expect(xcuitest.send(:client, options)).to be_a_kind_of(RunLoop::HTTP::RetriableClient)
   end
 
-  describe "#versioned_route" do
-    it "exceptions" do
-      expect(xcuitest.send(:versioned_route, "health")).to be == "health"
-      expect(xcuitest.send(:versioned_route, "ping")).to be == "ping"
-      expect(xcuitest.send(:versioned_route, "sessionIdentifier")).to be == "sessionIdentifier"
-    end
-
-    it "any other route" do
+  context "#versioned_route" do
+    it "adds leading version to route" do
       stub_const("RunLoop::XCUITest::DEFAULTS", {:version => "0.1"})
       expect(xcuitest.send(:versioned_route, "route")).to be == "0.1/route"
     end
@@ -158,14 +310,14 @@ describe RunLoop::XCUITest do
 
   it ".default_cbx_launcher" do
     actual = RunLoop::XCUITest.default_cbx_launcher(device)
-    expect(actual).to be_kind_of(RunLoop::DeviceAgent::XCTestctl)
+    expect(actual).to be_kind_of(RunLoop::DeviceAgent::IOSDeviceManager)
   end
 
   describe ".detect_cbx_launcher" do
     let(:options) { {} }
     it "default" do
       actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
-      expect(actual).to be_kind_of(RunLoop::DeviceAgent::XCTestctl)
+      expect(actual).to be_kind_of(RunLoop::DeviceAgent::IOSDeviceManager)
     end
 
     it ":xcodebuild" do
@@ -174,10 +326,10 @@ describe RunLoop::XCUITest do
       expect(actual).to be_kind_of(RunLoop::DeviceAgent::Xcodebuild)
     end
 
-    it ":xctestctl" do
-      options[:cbx_launcher] = :xctestctl
+    it ":ios_device_manager" do
+      options[:cbx_launcher] = :ios_device_manager
       actual = RunLoop::XCUITest.detect_cbx_launcher(options, device)
-      expect(actual).to be_kind_of(RunLoop::DeviceAgent::XCTestctl)
+      expect(actual).to be_kind_of(RunLoop::DeviceAgent::IOSDeviceManager)
     end
 
     it "unrecognized" do
@@ -185,7 +337,7 @@ describe RunLoop::XCUITest do
       expect do
         RunLoop::XCUITest.detect_cbx_launcher(options, device)
       end.to raise_error(ArgumentError,
-                         /to be :xcodebuild or :xctestctl/)
+                         /to be :xcodebuild or :ios_device_manager/)
     end
   end
 end

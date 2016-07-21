@@ -70,7 +70,7 @@ module RunLoop
       hash = nil
       success = false
       begin
-        hash = xcrun.exec(["lldb", "--no-lldbinit", "--source", script_path], options)
+        hash = xcrun.run_command_in_context(["lldb", "--no-lldbinit", "--source", script_path], options)
         pid = hash[:pid]
         exit_status = hash[:exit_status]
         success = exit_status == 0

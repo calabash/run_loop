@@ -85,23 +85,23 @@ describe RunLoop::CoreSimulator do
 
     it "calls erase if sim is shutdown" do
       expect(device).to receive(:update_simulator_state).and_return "Shutdown"
-      expect(xcrun).to receive(:exec).with(*erase_args).and_return(erase_hash)
+      expect(xcrun).to receive(:run_command_in_context).with(*erase_args).and_return(erase_hash)
 
       expect(RunLoop::CoreSimulator.erase(device, options)).to be_truthy
     end
 
     it "waits for sim to shutdown" do
       expect(device).to receive(:update_simulator_state).once.and_return("Unknown")
-      expect(xcrun).to receive(:exec).with(*shutdown_args).and_return true
+      expect(xcrun).to receive(:run_command_in_context).with(*shutdown_args).and_return true
       expect(RunLoop::CoreSimulator).to receive(:wait_for_simulator_state).and_return true
-      expect(xcrun).to receive(:exec).with(*erase_args).and_return(erase_hash)
+      expect(xcrun).to receive(:run_command_in_context).with(*erase_args).and_return(erase_hash)
 
       expect(RunLoop::CoreSimulator.erase(device, options)).to be_truthy
     end
 
     it "raises error if device cannot be shutdown" do
       expect(device).to receive(:update_simulator_state).once.and_return("Unknown")
-      expect(xcrun).to receive(:exec).with(*shutdown_args).and_return true
+      expect(xcrun).to receive(:run_command_in_context).with(*shutdown_args).and_return true
       expect(RunLoop::CoreSimulator).to receive(:wait_for_simulator_state).and_raise RuntimeError, "Not shutdown"
 
       expect do
@@ -112,7 +112,7 @@ describe RunLoop::CoreSimulator do
     it "raises error if device cannot be erased" do
       expect(device).to receive(:update_simulator_state).and_return "Shutdown"
       hash = {:exit_status => 1, :out => "Simulator domain error"}
-      expect(xcrun).to receive(:exec).with(*erase_args).and_return(hash)
+      expect(xcrun).to receive(:run_command_in_context).with(*erase_args).and_return(hash)
 
       expect do
         RunLoop::CoreSimulator.erase(device, options)
@@ -313,7 +313,7 @@ describe RunLoop::CoreSimulator do
 
         timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:uninstall_app_timeout]
         options = { log_cmd: true, timeout: timeout }
-        expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return true
+        expect(core_sim.xcrun).to receive(:run_command_in_context).with(args, options).and_return true
 
         expect(core_sim.device).to receive(:simulator_wait_for_stable_state).and_return true
 
@@ -322,7 +322,6 @@ describe RunLoop::CoreSimulator do
     end
 
     describe "#running_simulator_pid" do
-      let(:xcrun) { RunLoop::Xcrun.new }
       let(:hash) do
         {
           :exit_status => 0,
@@ -330,13 +329,9 @@ describe RunLoop::CoreSimulator do
         }
       end
 
-      before do
-        allow(core_sim).to receive(:xcrun).and_return xcrun
-      end
-
       it "xcrun exit status is non-zero" do
         hash[:exit_status] = 1
-        expect(xcrun).to receive(:exec).and_return(hash)
+        expect(core_sim).to receive(:run_shell_command).and_return hash
 
         expect do
           core_sim.send(:running_simulator_pid)
@@ -346,7 +341,7 @@ describe RunLoop::CoreSimulator do
       describe "xcrun returns no :out" do
         it "out is nil" do
           hash[:out] = nil
-          expect(xcrun).to receive(:exec).and_return(hash)
+          expect(core_sim).to receive(:run_shell_command).and_return hash
 
           expect do
             core_sim.send(:running_simulator_pid)
@@ -355,7 +350,7 @@ describe RunLoop::CoreSimulator do
 
         it "out is empty string" do
           hash[:out] = ""
-          expect(xcrun).to receive(:exec).and_return(hash)
+          expect(core_sim).to receive(:run_shell_command).and_return hash
 
           expect do
             core_sim.send(:running_simulator_pid)
@@ -364,15 +359,15 @@ describe RunLoop::CoreSimulator do
       end
 
       it "no matching process is found" do
-       hash[:out] =
-%Q{
+        hash[:out] =
+          %Q{
 27247 login -pf moody
 46238 tmate
 31098 less run_loop.out
 32976 vim lib/run_loop/xcrun.rb
 7656 /bin/ps x -o pid,command
 }
-        expect(xcrun).to receive(:exec).and_return(hash)
+        expect(core_sim).to receive(:run_shell_command).and_return hash
 
         expect(core_sim.send(:running_simulator_pid)).to be == nil
       end
@@ -387,7 +382,7 @@ describe RunLoop::CoreSimulator do
 7656 /MacOS/SillySim
 }
         expect(core_sim).to receive(:sim_name).and_return("SillySim")
-        expect(xcrun).to receive(:exec).and_return(hash)
+        expect(core_sim).to receive(:run_shell_command).and_return hash
 
         expect(core_sim.send(:running_simulator_pid)).to be == 7656
       end
@@ -804,7 +799,7 @@ describe RunLoop::CoreSimulator do
         timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:install_app_timeout]
         options = { :log_cmd => true, :timeout => timeout }
 
-        expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return({})
+        expect(core_sim.xcrun).to receive(:run_command_in_context).with(args, options).and_return({})
         expect(core_sim.device).to receive(:simulator_wait_for_stable_state).and_return true
 
         expect(core_sim).to receive(:installed_app_bundle_dir).and_return('/new/path')
@@ -817,7 +812,7 @@ describe RunLoop::CoreSimulator do
       args = ["simctl", "launch", device.udid, app.bundle_identifier]
       timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:launch_app_timeout]
       options = { :log_cmd => true, :timeout => timeout }
-      expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return({})
+      expect(core_sim.xcrun).to receive(:run_command_in_context).with(args, options).and_return({})
 
       expect(core_sim.send(:launch_app_with_simctl)).to be == {}
     end
@@ -1088,7 +1083,7 @@ describe RunLoop::CoreSimulator do
 
         args = ['ditto', app.path, '/some/CalSmoke-cal.app']
         options = {:log_cmd => true}
-        expect(core_sim.xcrun).to receive(:exec).with(args, options).and_return({})
+        expect(core_sim.xcrun).to receive(:run_command_in_context).with(args, options).and_return({})
 
         expect(core_sim).to receive(:clear_device_launch_csstore).and_return true
 

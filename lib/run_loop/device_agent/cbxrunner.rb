@@ -5,7 +5,6 @@ module RunLoop
     # @!visibility private
     class CBXRunner
 
-      require "run_loop/shell"
 
       # @!visibility private
       @@cbxdevice = nil
@@ -87,8 +86,10 @@ but runner does not exist at that path.
       end
 
       # @!visibility private
+      # TODO move this behavior to shell.rb - should be able to call Shell.run_unix_command
       def self.expand_runner_archive(archive)
         shell = Class.new do
+          require "run_loop/shell"
           include RunLoop::Shell
           def to_s; "#<CBXRunner Shell>"; end
           def inspect; to_s; end
@@ -98,7 +99,7 @@ but runner does not exist at that path.
         options = { :log_cmd => true }
         Dir.chdir(dir) do
           RunLoop.log_unix_cmd("cd #{dir}")
-          shell.exec(["unzip", File.basename(archive)], options)
+          shell.run_shell_command(["ditto", "-xk", File.basename(archive), "."], options)
         end
         File.join(dir, "CBX-Runner.app")
       end

@@ -5,7 +5,7 @@ module RunLoop
     require "run_loop/encoding"
     include RunLoop::Encoding
 
-    # Controls the behavior of Xcrun#exec.
+    # Controls the behavior of Xcrun#run_command_in_context.
     #
     # You can override these values if they do not work in your environment.
     #
@@ -26,8 +26,8 @@ module RunLoop
     # Raised when Xcrun times out.
     class TimeoutError < RuntimeError; end
 
-    def exec(args, options={})
-
+    # Aliased to #exec, which will be removed in 3.0
+    def run_command_in_context(args, options={})
       merged_options = DEFAULT_OPTIONS.merge(options)
 
       timeout = merged_options[:timeout]
@@ -98,6 +98,10 @@ with a timeout of #{timeout}
 
       hash
     end
+
+    # TODO Remove in 3.0
+    # https://github.com/calabash/run_loop/issues/478
+    alias_method :exec, :run_command_in_context
   end
 end
 

@@ -5,7 +5,7 @@ module RunLoop
     require "run_loop/encoding"
     include RunLoop::Encoding
 
-    # Controls the behavior of Shell#exec.
+    # Controls the behavior of Shell#run_shell_command.
     #
     # You can override these values if they do not work in your environment.
     #
@@ -26,7 +26,7 @@ module RunLoop
     # Raised when shell command times out.
     class TimeoutError < RuntimeError; end
 
-    def exec(args, options={})
+    def run_shell_command(args, options={})
 
       merged_options = DEFAULT_OPTIONS.merge(options)
 

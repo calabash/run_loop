@@ -6,6 +6,11 @@ module RunLoop
     require "run_loop/shell"
     include RunLoop::Shell
 
+    require "run_loop/encoding"
+    include RunLoop::Encoding
+
+    require "run_loop/cache"
+
     class HTTPError < RuntimeError; end
 
     # @!visibility private
@@ -23,7 +28,7 @@ module RunLoop
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
 
-      # Find the Device under test, the App under test, UIA strategy, and reset options
+      # Find the Device under test, the App under test, and reset options.
       device = RunLoop::Device.detect_device(options, xcode, simctl, instruments)
       app_details = RunLoop::DetectAUT.detect_app_under_test(options)
       reset_options = RunLoop::Core.send(:detect_reset_options, options)
@@ -45,6 +50,16 @@ module RunLoop
 
       xcuitest = RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
       xcuitest.launch
+
+      if !RunLoop::Environment.xtc?
+        cache = {
+          :cbx_launcher => cbx_launcher.name,
+          :udid => device.udid,
+          :app => bundle_id,
+          :gesture_performer => :device_agent
+        }
+        RunLoop::Cache.default.write(cache)
+      end
       xcuitest
     end
 
@@ -52,7 +67,7 @@ module RunLoop
     #
     # @param [RunLoop::Device] device the device under test
     def self.default_cbx_launcher(device)
-      RunLoop::DeviceAgent::XCTestctl.new(device)
+      RunLoop::DeviceAgent::IOSDeviceManager.new(device)
     end
 
     # @!visibility private
@@ -63,11 +78,11 @@ module RunLoop
       if value
         if value == :xcodebuild
           RunLoop::DeviceAgent::Xcodebuild.new(device)
-        elsif value == :xctestctl
-          RunLoop::DeviceAgent::XCTestctl.new(device)
+        elsif value == :ios_device_manager
+          RunLoop::DeviceAgent::IOSDeviceManager.new(device)
         else
           raise(ArgumentError,
-                "Expected :cbx_launcher => #{value} to be :xcodebuild or :xctestctl")
+                "Expected :cbx_launcher => #{value} to be :xcodebuild or :ios_device_manager")
         end
       else
         XCUITest.default_cbx_launcher(device)
@@ -81,7 +96,9 @@ module RunLoop
     # The app with `bundle_id` needs to be installed.
     #
     # @param [String] bundle_id The identifier of the app under test.
-    # @param [RunLoop::Device] device The device device.
+    # @param [RunLoop::Device] device The device under test.
+    # @param [RunLoop::DeviceAgent::Launcher] cbx_launcher The entity that
+    #  launches the CBXRunner.
     def initialize(bundle_id, device, cbx_launcher)
       @bundle_id = bundle_id
       @device = device
@@ -141,6 +158,45 @@ module RunLoop
     end
 
     # @!visibility private
+    def tree
+      options = http_options
+      request = request("tree")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def keyboard_visible?
+      options = http_options
+      parameters = { :type => "Keyboard" }
+      request = request("query", parameters)
+      client = client(options)
+      response = client.post(request)
+      hash = expect_200_response(response)
+      result = hash["result"]
+      result.count != 0
+    end
+
+    # @!visibility private
+    def enter_text(string)
+      if !keyboard_visible?
+        raise RuntimeError, "Keyboard must be visible"
+      end
+      options = http_options
+      parameters = {
+        :gesture => "enter_text",
+        :options => {
+          :string => string
+        }
+      }
+      request = request("gesture", parameters)
+      client = client(options)
+      response = client.post(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
     def query(mark)
       options = http_options
       parameters = { :id => mark }
@@ -157,46 +213,29 @@ module RunLoop
     end
 
     # @!visibility private
-    def tap_mark(mark)
+    def touch(mark, options={})
       coordinate = query_for_coordinate(mark)
-      tap_coordinate(coordinate[:x], coordinate[:y])
+      perform_coordinate_gesture("touch",
+                                 coordinate[:x], coordinate[:y],
+                                 options)
+    end
+
+    alias_method :tap, :touch
+
+    # @!visibility private
+    def double_tap(mark, options={})
+      coordinate = query_for_coordinate(mark)
+      perform_coordinate_gesture("double_tap",
+                                 coordinate[:x], coordinate[:y],
+                                 options)
     end
 
     # @!visibility private
-    def tap_coordinate(x, y, options)
-      make_coordinate_gesture_request("touch", x, y)
-    end
-
-    # @!visibility private
-    def double_tap(x, y)
-      make_coordinate_gesture_request("double_tap", x, y)
-    end
-
-    # @!visibiity private
-    def coordinate_gesture_parameters(name, x, y, options={})
-      {
-        :gesture => name,
-        :specifiers => {
-          :coordinate => [x, y]
-        },
-        :options => options
-      }
-    end
-
-    # @!visibility private
-    def coordinate_gesture_request(name, x, y, gesture_options={})
-      parameters = coordinate_gesture_parameters(name, x, y, gesture_options)
-      request("gesture", parameters)
-    end
-
-    # @!visibility private
-    def make_coordinate_gesture_request(name, x, y, options={})
-      gesture_options = options.fetch(:gesture_options, {})
-      http_options = options.fetch(:http_options, http_options())
-      request = coordinate_gesture_request(name, x, y, gesture_options)
-      client = client(http_options)
-      response = client.post(request)
-      expect_200_response(response)
+    def two_finger_tap(mark, options={})
+      coordinate = query_for_coordinate(mark)
+      perform_coordinate_gesture("two_finger_tap",
+                                 coordinate[:x], coordinate[:y],
+                                 options)
     end
 
     # @!visibility private
@@ -265,6 +304,22 @@ Sending request to perform '#{gesture}' with:
        :y => touchy}
     end
 
+
+    # @!visibility private
+    def change_volume(up_or_down)
+      string = up_or_down.to_s
+      parameters = {
+        :volume => string
+      }
+      request = request("volume", parameters)
+      client = client(http_options)
+      response = client.post(request)
+      json = expect_200_response(response)
+      # Set in the route
+      sleep(0.2)
+      json
+    end
+
     private
 
     # @!visibility private
@@ -274,27 +329,63 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def url
-      @url ||= lambda do
-        if device.simulator?
-          "http://#{DEFAULTS[:simulator_ip]}:#{DEFAULTS[:port]}/"
-        else
-          # This block is untested.
-          calabash_endpoint = RunLoop::Environment.device_endpoint
-          if calabash_endpoint
-            base = calabash_endpoint.split(":")[0..1].join(":")
-            "http://#{base}:#{DEFAULTS[:port]}/"
-          else
-            device_name = device.name.gsub(/['\s]/, "")
-            encoding_options = {
-              :invalid           => :replace,  # Replace invalid byte sequences
-              :undef             => :replace,  # Replace anything not defined in ASCII
-              :replace           => ""         # Use a blank for those replacements
-            }
-            encoded = device_name.encode(::Encoding.find("ASCII"), encoding_options)
-            "http://#{encoded}.local:27753/"
-          end
-        end
-      end.call
+      @url ||= detect_device_agent_url
+    end
+
+    # @!visibility private
+    def detect_device_agent_url
+      url_from_environment ||
+        url_for_simulator ||
+        url_from_device_endpoint ||
+        url_from_device_name
+    end
+
+    # @!visibility private
+    def url_from_environment
+      url = RunLoop::Environment.device_agent_url
+      return if url.nil?
+
+      if url.end_with?("/")
+        url
+      else
+        "#{url}/"
+      end
+    end
+
+    # @!visibility private
+    def url_for_simulator
+      if device.simulator?
+        "http://#{DEFAULTS[:simulator_ip]}:#{DEFAULTS[:port]}/"
+      else
+        nil
+      end
+    end
+
+    # @!visibility private
+    def url_from_device_endpoint
+      calabash_endpoint = RunLoop::Environment.device_endpoint
+      if calabash_endpoint
+        base = calabash_endpoint.split(":")[0..1].join(":")
+        "#{base}:#{DEFAULTS[:port]}/"
+      else
+        nil
+      end
+    end
+
+    # @!visibility private
+    # TODO This block is not well tested
+    # TODO extract to a module; Calabash can use to detect device endpoint
+    def url_from_device_name
+      # Transforms the default "Joshua's iPhone" to a DNS name.
+      device_name = device.name.gsub(/[']/, "").gsub(/[\s]/, "-")
+
+      # Replace diacritic markers and unknown characters.
+      transliterated = transliterate(device_name).tr("?", "")
+
+      # Anything that cannot be transliterated is a ?
+      replaced = transliterated.tr("?", "")
+
+      "http://#{replaced}.local:#{DEFAULTS[:port]}/"
     end
 
     # @!visibility private
@@ -309,11 +400,7 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def versioned_route(route)
-      if ["health", "ping", "sessionIdentifier"].include?(route)
-        route
-      else
-        "#{DEFAULTS[:version]}/#{route}"
-      end
+      "#{DEFAULTS[:version]}/#{route}"
     end
 
     # @!visibility private
@@ -339,7 +426,7 @@ Sending request to perform '#{gesture}' with:
     # @!visibility private
     def session_delete
       options = ping_options
-      request = request("delete")
+      request = request("session")
       client = client(options)
       begin
         response = client.delete(request)
@@ -387,9 +474,9 @@ Sending request to perform '#{gesture}' with:
       shutdown
 
       options = {:log_cmd => true}
-      exec(["pkill", "xctestctl"], options)
-      exec(["pkill", "testmanagerd"], options)
-      exec(["pkill", "xcodebuild"], options)
+      run_shell_command(["pkill", "iOSDeviceManager"], options)
+      run_shell_command(["pkill", "testmanagerd"], options)
+      run_shell_command(["pkill", "xcodebuild"], options)
 
       start = Time.now
       RunLoop.log_debug("Waiting for CBX-Runner to launch...")

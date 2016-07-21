@@ -44,7 +44,7 @@ must exist and not be a directory.
       args = ["otool", "-hv", "-arch", "all", path]
       opts = { :log_cmd => false }
 
-      hash = xcrun.exec(args, opts)
+      hash = xcrun.run_command_in_context(args, opts)
 
       if hash[:exit_status] != 0
         raise RuntimeError,

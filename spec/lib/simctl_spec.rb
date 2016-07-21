@@ -178,7 +178,7 @@ describe RunLoop::Simctl do
     merged = RunLoop::Simctl::DEFAULTS.merge(options)
     cmd = ["simctl", "subcommand"]
     expect(simctl).to receive(:xcrun).and_return(xcrun)
-    expect(xcrun).to receive(:exec).with(cmd, merged).and_return({})
+    expect(xcrun).to receive(:run_command_in_context).with(cmd, merged).and_return({})
 
     expect(simctl.send(:execute, cmd, options)).to be == {}
   end

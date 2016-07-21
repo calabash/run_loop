@@ -186,13 +186,13 @@ module RunLoop
       end
     end
 
-    # Returns the value of XCTESTCTL
+    # Returns the value of IOS_DEVICE_MANAGER
     #
-    # Use this to specify a non-default xctestctl binary.
+    # Use this to specify a non-default ios_device_manager binary.
     #
-    # The default xctestctl binary is bundled with this gem.
-    def self.xctestctl
-      value = ENV["XCTESTCTL"]
+    # The default ios_device_manager binary is bundled with this gem.
+    def self.ios_device_manager
+      value = ENV["IOS_DEVICE_MANAGER"]
       if !value || value == ""
         nil
       else
@@ -222,6 +222,16 @@ module RunLoop
     def self.cbxsim
       value = ENV["CBXSIM"]
       if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
+    # Returns the value of DEVICE_ENDPOINT
+    def self.device_agent_url
+      value = ENV["DEVICE_AGENT_URL"]
+      if value.nil? || value == ""
         nil
       else
         value

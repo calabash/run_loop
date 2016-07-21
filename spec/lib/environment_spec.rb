@@ -120,6 +120,26 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".device_agent_url" do
+    it "returns DEVICE_AGENT_URL" do
+      url = "http://denis.local:27753"
+      stub_env({"DEVICE_AGENT_URL" => url})
+      expect(RunLoop::Environment.device_agent_url).to be == url
+    end
+
+    describe "returns nil" do
+      it "is undefined" do
+        stub_env({"DEVICE_AGENT_URL" => nil})
+        expect(RunLoop::Environment.device_agent_url).to be == nil
+      end
+
+      it "is the empty string" do
+        stub_env({"DEVICE_AGENT_URL" => ""})
+        expect(RunLoop::Environment.device_agent_url).to be == nil
+      end
+    end
+  end
+
   describe ".reset_between_scenarios?" do
     it "true" do
       stub_env({"RESET_BETWEEN_SCENARIOS" => "1"})
@@ -370,23 +390,23 @@ describe RunLoop::Environment do
     end
   end
 
-  describe ".xctestctl" do
+  describe ".ios_device_manager" do
     it "returns value" do
-      testctl = "/usr/local/bin/test-control"
-      stub_env({"XCTESTCTL" => testctl})
+      manager = "/usr/local/bin/iOSDeviceManager"
+      stub_env({"IOS_DEVICE_MANAGER" => manager})
 
-      expect(RunLoop::Environment.xctestctl).to be == testctl
+      expect(RunLoop::Environment.ios_device_manager).to be == manager
     end
 
     describe "returns nil" do
       it "if value is the empty string" do
-        stub_env("XCTESTCTL", "")
-        expect(RunLoop::Environment.xctestctl).to be == nil
+        stub_env("IOS_DEVICE_MANAGER", "")
+        expect(RunLoop::Environment.ios_device_manager).to be == nil
       end
 
       it "if value is nil" do
-        stub_env({"XCTESTCTL" => nil})
-        expect(RunLoop::Environment.xctestctl).to be == nil
+        stub_env("IOS_DEVICE_MANAGER", "")
+        expect(RunLoop::Environment.ios_device_manager).to be == nil
       end
     end
   end

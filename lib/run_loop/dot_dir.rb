@@ -54,7 +54,7 @@ module RunLoop::DotDir
 
     RunLoop.log_debug("Deleted #{oldest_first.count} previous results in #{elapsed} seconds")
   rescue StandardError => e
-    RunLoop.log_error("While rotating previous results, encounterd: #{e}")
+    RunLoop.log_error("While rotating previous results, encountered: #{e}")
   end
 
   private

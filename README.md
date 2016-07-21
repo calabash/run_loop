@@ -9,7 +9,7 @@
 
 ### Requirements
 
-* Xcode 6 and 7.
+* Xcode 7.
 * ruby >= 2.0
 
 The most recent versions of Xcode and ruby are strongly recommended.
@@ -52,6 +52,13 @@ At this time, there is no reason to update.
 
 - [1] https://github.com/vaskas/udidetect/pull/3
 
+## Building Device Agent Resources
+
+It is your responsibility for checking the git branch.
+
+```
+$ rake device_agent:install
+```
 
 ### Tests
 
@@ -70,9 +77,9 @@ $ be rake unit
 
 #### Integration Tests
 
-Take a break because these test launch and quit the simulator multiple times
-which hijacks your machine.  You have enough time to take some deep breaths
-and do some stretching.  You'll feel better afterward.
+Take a break because these test launch and quit the simulator multiple
+times.  You have enough time to take some deep breaths and do some
+stretching.  You'll feel better afterward.
 
 For continuous TDD/BDD see the Guard section below.
 
