@@ -80,10 +80,20 @@ module RunLoop
     # We want to use the _exact_ objects that were passed.
     if options[:xcode]
       cloned_options[:xcode] = options[:xcode]
+    else
+      cloned_options[:xcode] = RunLoop::Xcode.new
     end
 
     if options[:simctl]
       cloned_options[:simctl] = options[:simctl]
+    else
+      cloned_options[:simctl] = RunLoop::Simctl.new
+    end
+
+    if options[:instruments]
+      cloned_options[:instruments] = options[:instruments]
+    else
+      cloned_options[:instruments] = RunLoop::Instruments.new
     end
 
     # Soon to be unsupported.
@@ -91,7 +101,15 @@ module RunLoop
       cloned_options[:sim_control] = options[:sim_control]
     end
 
-    if options[:xcuitest]
+    xcode = cloned_options[:xcode]
+    simctl = cloned_options[:simctl]
+    instruments = cloned_options[:instruments]
+
+    device = Device.detect_device(cloned_options, xcode, simctl, instruments)
+    cloned_options[:device] = device
+
+    gesture_performer = RunLoop.detect_gesture_performer(cloned_options, xcode, device)
+    if gesture_performer == :device_agent
       RunLoop::XCUITest.run(cloned_options)
     else
       if RunLoop::Instruments.new.instruments_app_running?
@@ -223,5 +241,102 @@ Please quit the Instruments.app and try again.)
 
   def self.log_info(*args)
     RunLoop::Logging.log_info(*args)
+  end
+
+  # @!visibility private
+  #
+  # @param [RunLoop::Xcode] xcode The active Xcode
+  # @param [RunLoop::Device] device The device under test.
+  def self.default_gesture_performer(xcode, device)
+    # TODO XTC support
+    return :instruments if RunLoop::Environment.xtc?
+
+    if xcode.version_gte_8?
+      if device.version >= RunLoop::Version.new("9.0")
+        :device_agent
+      else
+        raise RuntimeError, %Q[
+Invalid Xcode and iOS combination:
+
+Xcode version: #{xcode.version.to_s}
+  iOS version: #{device.version.to_s}
+
+Calabash cannot test iOS < 9.0 using Xcode 8 because XCUITest is not compatible
+with iOS < 9.0 and UIAutomation is not available in Xcode 8.
+
+You can rerun your test if you have Xcode 7 installed:
+
+$ DEVELOPER_DIR=/path/to/Xcode/7.3.1/Xcode.app/Contents/Developer cucumber
+
+]
+      end
+
+    else
+      :instruments
+    end
+  end
+
+  # @!visibility private
+  #
+  # First pass at choosing the correct code path.
+  #
+  # We don't know if we can test on iOS 8 with UIAutomation or XCUITest on
+  # Xcode 8.
+  #
+  # @param [Hash] options The options passed by the user
+  # @param [RunLoop::Xcode] xcode The active Xcode
+  # @param [RunLoop::Device] device The device under test
+  def self.detect_gesture_performer(options, xcode, device)
+    # TODO XTC support
+    return :instruments if RunLoop::Environment.xtc?
+
+    gesture_performer = options[:gesture_performer]
+
+    if gesture_performer
+      if xcode.version_gte_8?
+        if gesture_performer == :instruments
+          raise RuntimeError, %Q[
+Incompatible :gesture_performer option for active Xcode.
+
+Detected :gesture_performer => :instruments and Xcode #{xcode.version}.
+
+Don't set the :gesture_performer option unless you are gem maintainer.
+
+]
+        elsif device.version < RunLoop::Version.new("9.0")
+          raise RuntimeError, %Q[
+
+Invalid Xcode and iOS combination:
+
+Xcode version: #{xcode.version.to_s}
+  iOS version: #{device.version.to_s}
+
+Calabash cannot test iOS < 9.0 using Xcode 8 because XCUITest is not compatible
+with iOS < 9.0 and UIAutomation is not available in Xcode 8.
+
+You can rerun your test if you have Xcode 7 installed:
+
+$ DEVELOPER_DIR=/path/to/Xcode/7.3.1/Xcode.app/Contents/Developer cucumber
+
+Don't set the :gesture_performer option unless you are gem maintainer.
+
+]
+        end
+      end
+
+      if ![:device_agent, :instruments].include?(gesture_performer)
+        raise RuntimeError, %Q[
+Invalid :gesture_performer option: #{gesture_performer}
+
+Allowed performers: :device_agent or :instruments.
+
+Don't set the :gesture_performer option unless you are gem maintainer.
+
+]
+      end
+      gesture_performer
+    else
+      RunLoop.default_gesture_performer(xcode, device)
+    end
   end
 end

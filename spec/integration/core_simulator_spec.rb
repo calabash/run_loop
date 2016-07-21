@@ -95,7 +95,7 @@ describe RunLoop::CoreSimulator do
   end
 
   it "retries app launching" do
-    expect(core_sim).to receive(:launch_app_with_simctl).twice.and_raise(RunLoop::Xcrun::TimeoutError)
+    expect(core_sim).to receive(:launch_app_with_simctl).exactly(3).times.and_raise(RunLoop::Xcrun::TimeoutError)
     expect(core_sim).to receive(:launch_app_with_simctl).and_call_original
 
     expect(core_sim.launch).to be == true
