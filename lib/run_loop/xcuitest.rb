@@ -304,6 +304,22 @@ Sending request to perform '#{gesture}' with:
        :y => touchy}
     end
 
+
+    # @!visibility private
+    def change_volume(up_or_down)
+      string = up_or_down.to_s
+      parameters = {
+        :volume => string
+      }
+      request = request("volume", parameters)
+      client = client(http_options)
+      response = client.post(request)
+      json = expect_200_response(response)
+      # Set in the route
+      sleep(0.2)
+      json
+    end
+
     private
 
     # @!visibility private
