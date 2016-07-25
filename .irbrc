@@ -150,7 +150,7 @@ def holmes(options={})
     :xcuitest => true,
     :xcode => xcode,
     :simctl => simctl,
-    :instruments => instruments,
+    :gesture_performer => :device_agent,
     :cbx_launcher => cbx_launcher
   }
 
