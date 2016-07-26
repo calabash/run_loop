@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
 if [ -n "${JENKINS_HOME}" ]; then
-  rbenv local 2.3.0
+  # Legacy
+  rm -rf .ruby-version
   gem uninstall -Vax --force --no-abort-on-dependent run_loop
 fi
+
+rake device_agent:uninstall
 
 rm -rf spec/reports
 
