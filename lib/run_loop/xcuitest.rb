@@ -425,18 +425,23 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def session_delete
-      options = ping_options
-      request = request("session")
-      client = client(options)
-      begin
-        response = client.delete(request)
-        body = expect_200_response(response)
-        RunLoop.log_debug("CBX-Runner says, #{body}")
-        body
-      rescue => e
-        RunLoop.log_debug("CBX-Runner session delete error: #{e}")
-        nil
-      end
+      # https://xamarin.atlassian.net/browse/TCFW-255
+      # httpclient is unable to send a valid DELETE
+      args = ["curl", "-X", "DELETE", %Q[#{url}#{versioned_route("session")}]]
+      run_shell_command(args)
+
+      # options = ping_options
+      # request = request("session")
+      # client = client(options)
+      # begin
+      #   response = client.delete(request)
+      #   body = expect_200_response(response)
+      #   RunLoop.log_debug("CBX-Runner says, #{body}")
+      #   body
+      # rescue => e
+      #   RunLoop.log_debug("CBX-Runner session delete error: #{e}")
+      #   nil
+      # end
     end
 
     # @!visibility private
