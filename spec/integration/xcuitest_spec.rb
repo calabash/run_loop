@@ -35,26 +35,21 @@ describe RunLoop::XCUITest do
     end
 
     it "ios_device_manager" do
+      cbx_launcher = RunLoop::DeviceAgent::IOSDeviceManager.new(device)
+      xcuitest = RunLoop::XCUITest.new(bundle_identifier, device, cbx_launcher)
+      xcuitest.launch
+
+      options = { :raise_on_timeout => true, :timeout => 5 }
+      RunLoop::ProcessWaiter.new("Preferences", options).wait_for_any
+
       if RunLoop::Environment.ci?
-        pending("Passes locally, but fails in CI")
-        raise "Failing for now"
+        sleep(5)
       else
-        cbx_launcher = RunLoop::DeviceAgent::IOSDeviceManager.new(device)
-        xcuitest = RunLoop::XCUITest.new(bundle_identifier, device, cbx_launcher)
-        xcuitest.launch
-
-        options = { :raise_on_timeout => true, :timeout => 5 }
-        RunLoop::ProcessWaiter.new("Preferences", options).wait_for_any
-
-        if RunLoop::Environment.ci?
-          sleep(5)
-        else
-          sleep(1)
-        end
-
-        point = xcuitest.query_for_coordinate("General")
-        xcuitest.perform_coordinate_gesture("touch", point[:x], point[:y])
+        sleep(1)
       end
+
+      point = xcuitest.query_for_coordinate("General")
+      xcuitest.perform_coordinate_gesture("touch", point[:x], point[:y])
     end
   end
 end
