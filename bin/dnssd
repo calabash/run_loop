@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-require "dnssd"
 require "socket"
 require "ap"
 require "json"
@@ -9,6 +8,12 @@ Thread.abort_on_exception = true
 
 trap 'INT' do exit end
 trap 'TERM' do exit end
+
+if RUBY_PLATFORM[/darwin/]
+  require "dnssd"
+else
+  raise "dnssd gem is not available on #{RUBY_PLATFORM}"
+end
 
 services = []
 addresses = []

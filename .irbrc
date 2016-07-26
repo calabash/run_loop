@@ -3,7 +3,12 @@ require 'irb/ext/save-history'
 require 'benchmark'
 require 'run_loop'
 require 'command_runner'
-require "dnssd"
+
+if RUBY_PLATFORM[/darwin/]
+  require "dnssd"
+else
+  puts "Skipping dnssd on #{RUBY_PLATFORM}"
+end
 
 AwesomePrint.irb!
 
@@ -150,7 +155,7 @@ def holmes(options={})
     :xcuitest => true,
     :xcode => xcode,
     :simctl => simctl,
-    :instruments => instruments,
+    :gesture_performer => :device_agent,
     :cbx_launcher => cbx_launcher
   }
 
