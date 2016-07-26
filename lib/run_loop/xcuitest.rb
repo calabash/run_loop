@@ -546,7 +546,7 @@ Server replied with:
 ]
       else
         raise RunLoop::XCUITest::HTTPError,
-						%Q[Expected JSON response with no error, but found
+%Q[Expected JSON response with no error, but found
 
 #{body["error"]}
 
