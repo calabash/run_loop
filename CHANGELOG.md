@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.1.5
+
+* Gem: require dnssd only on macOS #493
+* iOSDeviceManager: wait for sim 'shutdown' state before launching #492
+
 ### 2.1.4
 
 * RunLoop.run detects and respects gesture performer key #490
