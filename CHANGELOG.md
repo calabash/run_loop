@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.1.6
+
+* Remove dnssd dependency #496
+* Core.default_tracetemplate raises on Xcode 8 #498
+
 ### 2.1.5
 
 * Gem: require dnssd only on macOS #493
