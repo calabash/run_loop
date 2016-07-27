@@ -25,6 +25,16 @@ describe RunLoop::Core do
   end
 
   describe '.default_tracetemplate' do
+
+    it "raises an error when Xcode >= 8.0" do
+      expect(xcode).to receive(:version_gte_8?).and_return(true)
+      allow(instruments).to receive(:xcode).and_return(xcode)
+
+      expect do
+        RunLoop::Core.default_tracetemplate(instruments)
+      end.to raise_error RuntimeError, /There is no Automation template for this/
+    end
+
     it 'raises an error when template cannot be found' do
       templates =
             [
@@ -37,7 +47,8 @@ describe RunLoop::Core do
 
       expect do
         RunLoop::Core.default_tracetemplate(instruments)
-      end.to raise_error(RuntimeError)
+      end.to raise_error RuntimeError,
+                         /Expected instruments to report an Automation tracetemplate/
     end
   end
 
