@@ -37,7 +37,7 @@ describe RunLoop::ProcessWaiter do
     end
 
     describe 'returns non-empty arry of Integers' do
-      let(:name) { 'ruby' }
+      let(:name) { "Finder" }
       it {
         is_expected.not_to be_empty
         expect(subject.first).to be_a Integer
@@ -53,7 +53,7 @@ describe RunLoop::ProcessWaiter do
     end
 
     describe 'returns non-empty arry of Integers' do
-      let(:name) { 'ruby' }
+      let(:name) { "Finder" }
       it { is_expected.to be_truthy }
     end
   end

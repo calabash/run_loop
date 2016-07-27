@@ -3,8 +3,16 @@ module RunLoop
   # @!visibility private
   # This class is a work in progress.
   #
-  # At the moment, it is only useful for debugging the bonjour
-  # server that is started by DeviceAgent.
+  # At the moment, it is only useful for debugging the bonjour server that is
+  # started by DeviceAgent.
+  #
+  # This class requires the dnssd gem, but dnssd cannot be a dependency of this
+  # gem because:
+  #
+  # 1. This gem must be useable on Linux and Windows.  dnssd is a macOS only
+  #    gem.
+  # 2. Adding a native extension works locally, but it requires whitelisting
+  #    the run_loop gem on the Xamarin Test Cloud which is not practical.
   class DNSSD
 
     # @!visibility private
@@ -134,6 +142,21 @@ module RunLoop
     end
 
     def self.browse(type, timeout)
+      begin
+        require "dnssd"
+      rescue LoadError => _
+        raise %Q[
+
+This class requires dnssd which cannot be a dependency of this gem.
+
+See the comments at the top of this file:
+
+#{File.expand_path(__FILE__)}
+
+#{e}
+
+]
+      end
       domain = nil
       flags = 0
       interface = ::DNSSD::InterfaceAny

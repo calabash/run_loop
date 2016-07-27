@@ -9,10 +9,23 @@ Thread.abort_on_exception = true
 trap 'INT' do exit end
 trap 'TERM' do exit end
 
-if RUBY_PLATFORM[/darwin/]
-  require "dnssd"
+if defined?(Bundler)
+  raise "This tool cannot be called in the context of bundle exec"
+elsif RUBY_PLATFORM[/darwin/]
+  begin
+    require "dnssd"
+  rescue LoadError => _
+    raise %Q[
+
+This tool requires the dnssd gem which is not installed.  Install it:
+
+gem install dnssd --version 2.0
+
+and try again.
+]
+  end
 else
-  raise "dnssd gem is not available on #{RUBY_PLATFORM}"
+  raise "This tool is not available on #{RUBY_PLATFORM}"
 end
 
 services = []
