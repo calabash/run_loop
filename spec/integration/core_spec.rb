@@ -77,11 +77,19 @@ describe RunLoop::Core do
 
       it "Xcode #{xcode.version}" do
         instruments = Resources.shared.instruments
-        default_template = RunLoop::Core.default_tracetemplate(instruments)
-        if xcode.beta?
-          expect(File.exist?(default_template)).to be true
+
+        if xcode.version_gte_8?
+          expect do
+            RunLoop::Core.default_tracetemplate(instruments)
+          end.to raise_error RuntimeError,
+                             /There is no Automation template for this/
         else
-          expect(default_template).to be == 'Automation'
+          default_template = RunLoop::Core.default_tracetemplate(instruments)
+          if xcode.beta?
+            expect(File.exist?(default_template)).to be true
+          else
+            expect(default_template).to be == 'Automation'
+          end
         end
       end
 
@@ -95,13 +103,22 @@ describe RunLoop::Core do
           xcode_installs.each do |xcode_details|
             it "#{xcode_details[:path]} - #{xcode_details[:version]}" do
               Resources.shared.with_developer_dir(xcode_details[:path]) {
+
                 instruments = RunLoop::Instruments.new
-                default_template = RunLoop::Core.default_tracetemplate(instruments)
-                internal_xcode = RunLoop::Xcode.new
-                if internal_xcode.beta?
-                  expect(File.exist?(default_template)).to be true
+
+                if instruments.xcode.version_gte_8?
+                  expect do
+                    RunLoop::Core.default_tracetemplate(instruments)
+                  end.to raise_error RuntimeError,
+                                     /There is no Automation template for this/
                 else
-                  expect(default_template).to be == 'Automation'
+                  default_template = RunLoop::Core.default_tracetemplate(instruments)
+                  internal_xcode = RunLoop::Xcode.new
+                  if internal_xcode.beta?
+                    expect(File.exist?(default_template)).to be true
+                  else
+                    expect(default_template).to be == 'Automation'
+                  end
                 end
               }
             end

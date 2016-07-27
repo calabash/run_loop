@@ -539,6 +539,14 @@ Logfile: #{log_file}
 
       templates = instruments.templates
 
+      if instruments.xcode.version_gte_8?
+        raise(RuntimeError, %Q[
+
+There is no Automation template for this #{instruments.xcode} version.
+
+])
+      end
+
       # xcrun instruments -s templates
       # Xcode >= 6 will return known, Apple defined tracetemplates as names
       #  e.g.  Automation, Zombies, Allocations
@@ -560,12 +568,16 @@ Logfile: #{log_file}
         return candidate.tr("\"", '').strip
       end
 
-      message = ['Expected instruments to report an Automation tracetemplate.',
-                 'Please report this as bug:  https://github.com/calabash/run_loop/issues',
-                 "In the bug report, include the output of:\n",
-                 '$ xcrun xcodebuild -version',
-                 "$ xcrun instruments -s templates\n"]
-      raise message.join("\n")
+      raise(RuntimeError, %Q[
+Expected instruments to report an Automation tracetemplate.
+
+Please report this as bug:  https://github.com/calabash/run_loop/issues
+
+In the bug report, include the output of:
+
+$ xcrun xcodebuild -version
+$ xcrun instruments -s templates
+])
     end
 
     # @deprecated 2.1.0
