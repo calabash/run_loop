@@ -48,6 +48,7 @@ require "run_loop/http/server"
 require "run_loop/http/request"
 require "run_loop/http/retriable_client"
 require "run_loop/physical_device/life_cycle"
+require "run_loop/physical_device/ios_device_manager"
 
 module RunLoop
 

@@ -97,7 +97,7 @@ but binary does not exist at that path.
 
         if device.physical_device?
           args << "-c"
-          args << RunLoop::Environment.codesign_identity
+          args << RunLoop::Environment.code_sign_identity
         end
 
         log_file = IOSDeviceManager.log_file

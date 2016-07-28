@@ -351,20 +351,20 @@ describe RunLoop::Environment do
   describe ".codesign_identity" do
     it "returns value" do
       identity = "iPhone Developer: Max Musterman (ABCDE12345)"
-      stub_env({"CODESIGN_IDENTITY" => identity})
+      stub_env({"CODE_SIGN_IDENTITY" => identity})
 
-      expect(RunLoop::Environment.codesign_identity).to be == identity
+      expect(RunLoop::Environment.code_sign_identity).to be == identity
     end
 
     describe "returns nil" do
       it "if value is the empty string" do
-        stub_env("CODESIGN_IDENTITY", "")
-        expect(RunLoop::Environment.codesign_identity).to be == nil
+        stub_env("CODE_SIGN_IDENTITY", "")
+        expect(RunLoop::Environment.code_sign_identity).to be == nil
       end
 
       it "if value is nil" do
-        stub_env({"CODESIGN_IDENTITY" => nil})
-        expect(RunLoop::Environment.codesign_identity).to be == nil
+        stub_env({"CODE_SIGN_IDENTITY" => nil})
+        expect(RunLoop::Environment.code_sign_identity).to be == nil
       end
     end
   end

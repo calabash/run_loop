@@ -163,8 +163,8 @@ module RunLoop
     end
 
     # Returns the value of CODESIGN_IDENTITY
-    def self.codesign_identity
-      value = ENV["CODESIGN_IDENTITY"]
+    def self.code_sign_identity
+      value = ENV["CODE_SIGN_IDENTITY"]
       if !value || value == ""
         nil
       else
