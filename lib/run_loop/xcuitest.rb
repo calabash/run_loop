@@ -416,11 +416,20 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def http_options
-      {
-        :timeout => DEFAULTS[:http_timeout],
-        :interval => 0.1,
-        :retries => (DEFAULTS[:http_timeout]/0.1).to_i
-      }
+      if cbx_launcher.name == :xcodebuild
+        timeout = DEFAULTS[:http_timeout] * 2
+        {
+          :timeout => timeout,
+          :interval => 0.1,
+          :retries => (timeout/0.1).to_i
+        }
+      else
+        {
+          :timeout => DEFAULTS[:http_timeout],
+          :interval => 0.1,
+          :retries => (DEFAULTS[:http_timeout]/0.1).to_i
+        }
+      end
     end
 
     # @!visibility private
@@ -483,10 +492,35 @@ Sending request to perform '#{gesture}' with:
       run_shell_command(["pkill", "testmanagerd"], options)
       run_shell_command(["pkill", "xcodebuild"], options)
 
+      if cbx_launcher.name == :xcodebuild
+        sleep(2.0)
+      end
+
       start = Time.now
       RunLoop.log_debug("Waiting for CBX-Runner to launch...")
       pid = cbx_launcher.launch
-      health
+
+      if cbx_launcher.name == :xcodebuild
+        sleep(2.0)
+      end
+
+      begin
+        health
+      rescue RunLoop::HTTP::Error => _
+        raise %Q[
+
+Could not connect to the DeviceAgent service.
+
+device: #{device}
+   url: #{url}
+
+To diagnose the problem tail the launcher log file:
+
+$ tail -1000 -F #{cbx_launcher.class.log_file}
+
+]
+      end
+
       RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
 
       pid

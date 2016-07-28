@@ -267,6 +267,13 @@ describe RunLoop::XCUITest do
     expect(xcuitest.send(:request, route, parameters)).to be_a_kind_of(RunLoop::HTTP::Request)
   end
 
+  describe "#shutdown" do
+    it "shuts down the CBX-Runner" do
+      pending("behavior is not defined yet")
+      raise "NYI"
+    end
+  end
+
   # describe "shutdown" do
   #   let(:options) { xcuitest.send(:ping_options) }
   #   let(:client) { xcuitest.send(:client, options) }
@@ -292,21 +299,28 @@ describe RunLoop::XCUITest do
   # end
 
   describe "#health" do
-    let(:options) { xcuitest.send(:http_options) }
-    let(:client) { xcuitest.send(:client, options) }
-    let(:request) { xcuitest.send(:request, "health") }
-
-    before do
-      expect(xcuitest).to receive(:client).with(options).and_return(client)
-      expect(xcuitest).to receive(:request).with("health").and_return(request)
-    end
-
-    it "succeeds" do
-      expect(client).to receive(:get).with(request).and_return(response)
-
-      expect(xcuitest.send(:health)).to be == response.body
+    it "reports the health of the CBX-Runner" do
+      pending("behavior is not defined yet")
+      raise "NYI"
     end
   end
+
+  # describe "#health" do
+  #   let(:options) { xcuitest.send(:http_options) }
+  #   let(:client) { xcuitest.send(:client, options) }
+  #   let(:request) { xcuitest.send(:request, "health") }
+  #
+  #   before do
+  #     expect(xcuitest).to receive(:client).with(options).and_return(client)
+  #     expect(xcuitest).to receive(:request).with("health").and_return(request)
+  #   end
+  #
+  #   it "succeeds" do
+  #     expect(client).to receive(:get).with(request).and_return(response)
+  #
+  #     expect(xcuitest.send(:health)).to be == response.body
+  #   end
+  # end
 
   it ".default_cbx_launcher" do
     actual = RunLoop::XCUITest.default_cbx_launcher(device)
