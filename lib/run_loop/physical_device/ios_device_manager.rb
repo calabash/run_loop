@@ -60,6 +60,23 @@ module RunLoop
           false
         end
       end
+
+      def uninstall_app(bundle_id)
+        return true if !app_installed?(bundle_id)
+
+        args = [
+          IOSDeviceManager.executable_path,
+          "uninstall",
+          "-d", device.udid,
+          "-b", bundle_id
+        ]
+
+        options = { :log_cmd => true }
+        hash = run_shell_command(args, options)
+
+        # TODO: error reporting
+        hash[:exit_status] == 0
+      end
     end
   end
 end
