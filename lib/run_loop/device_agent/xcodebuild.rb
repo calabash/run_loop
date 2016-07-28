@@ -72,7 +72,6 @@ module RunLoop
           "-config", "Debug",
           "-destination",
           "id=#{device.udid}",
-          "clean",
           "test"
         ]
 
