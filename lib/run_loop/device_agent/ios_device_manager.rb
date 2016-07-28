@@ -95,9 +95,14 @@ but binary does not exist at that path.
                 "-t", runner.tester,
                 "-d", device.udid]
 
+        code_sign_identity = RunLoop::Environment.code_sign_identity
+        if !code_sign_identity
+          code_sign_identity = "iPhone Developer"
+        end
+
         if device.physical_device?
           args << "-c"
-          args << RunLoop::Environment.code_sign_identity
+          args << code_sign_identity
         end
 
         log_file = IOSDeviceManager.log_file
