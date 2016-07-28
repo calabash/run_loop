@@ -5,7 +5,11 @@ require 'run_loop'
 require 'command_runner'
 
 if RUBY_PLATFORM[/darwin/]
-  require "dnssd"
+  begin
+    require "dnssd"
+  rescue LoadError => _
+    "Skipping dnssd; it is not installed"
+  end
 else
   puts "Skipping dnssd on #{RUBY_PLATFORM}"
 end
