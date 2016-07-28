@@ -487,12 +487,16 @@ Sending request to perform '#{gesture}' with:
     def launch_cbx_runner
       shutdown
 
-      options = {:log_cmd => true}
-      run_shell_command(["pkill", "iOSDeviceManager"], options)
-      run_shell_command(["pkill", "testmanagerd"], options)
-      run_shell_command(["pkill", "xcodebuild"], options)
-
       if cbx_launcher.name == :xcodebuild
+        term_options = { :timeout => 0.5 }
+        kill_options = { :timeout => 0.5 }
+        RunLoop::ProcessWaiter.new("xcodebuild").pids.each do |pid|
+          term = RunLoop::ProcessTerminator.new(pid, 'TERM', "xcodebuild", term_options)
+          killed = term.kill_process
+          unless killed
+            RunLoop::ProcessTerminator.new(pid, 'KILL', "xcodebuild", kill_options)
+          end
+        end
         sleep(2.0)
       end
 
