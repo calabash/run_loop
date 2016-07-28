@@ -240,7 +240,7 @@ module RunLoop
 
     # @!visibility private
     def rotate_home_button_to(position, sleep_for=1.0)
-      orientation = orientation_for_position(position)
+      orientation = normalize_orientation_position(position)
       parameters = {
         :orientation => orientation
       }
@@ -556,7 +556,21 @@ Server replied with:
     end
 
     # @!visibility private
-    def orientation_for_position(position)
+    def normalize_orientation_position(position)
+      if position.is_a?(Symbol)
+        orientation_for_position_symbol(position)
+      elsif position.is_a?(Fixnum)
+        position
+      else
+        raise ArgumentError, %Q[
+Expected #{position} to be a Symbol or Fixnum but found #{position.class}
+
+]
+      end
+    end
+
+    # @!visibility private
+    def orientation_for_position_symbol(position)
       symbol = position.to_sym
 
       case symbol
