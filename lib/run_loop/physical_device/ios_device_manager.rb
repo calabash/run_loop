@@ -15,6 +15,13 @@ module RunLoop
         RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
       end
 
+      def initialize(device)
+        super(device)
+
+        # Expands the Frameworks.zip if necessary.
+        RunLoop::DeviceAgent::Frameworks.instance.install
+      end
+
       def app_installed?(bundle_id)
         args = [
           IOSDeviceManager.executable_path,
