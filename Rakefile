@@ -21,7 +21,8 @@ end
 
 namespace :device_agent do
 
-  task :install => [:clean, :build]
+  desc "Install DeviceAgent binaries"
+  task :install => [:clean, :build, :expand]
 
   def colorize(string, color)
     "\033[#{color}m#{string}\033[0m"
@@ -162,6 +163,20 @@ target = #{target}
     end
   end
 
+  def ditto_unzip(source, target)
+    args = ["ditto", "-xk", source, target]
+
+    log_unix_cmd("xcrun #{args.join(" ")}")
+
+    result = system("xcrun", *args)
+    if !result
+      raise %Q[Could not unzip:
+source = #{source}
+target = #{target}
+      ]
+    end
+  end
+
   task :build do
     banner("Building")
 
@@ -191,6 +206,7 @@ target = #{target}
     end
   end
 
+  desc "Remove DeviceAgent binaries"
   task :clean do
     banner("Cleaning")
     rm_path(frameworks_dir)
@@ -202,11 +218,23 @@ target = #{target}
     rm_path(bin)
   end
 
+  desc "Remove DeviceAgent binaries, but leave the original .zip files"
   task :uninstall do
     banner("Uninstalling")
     rm_path(frameworks_dir)
     rm_path(app_dir)
     rm_path(ipa_dir)
+  end
+
+  desc "Expand the DeviceAgent .zip files"
+  task :expand do
+    banner("Expanding")
+
+    Dir.chdir(device_agent_dir) do
+      ditto_unzip(frameworks_zip, device_agent_dir)
+      ditto_unzip(app_zip, File.join(device_agent_dir, "app"))
+      ditto_unzip(ipa_zip, File.join(device_agent_dir, "ipa"))
+    end
   end
 end
 
