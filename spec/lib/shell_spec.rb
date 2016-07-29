@@ -51,21 +51,32 @@ describe RunLoop::Shell do
       end.to raise_error RunLoop::Shell::Error, /Some error/
     end
 
-    describe "raises timeout error if CommandRunner timed out" do
-      it "mocked" do
+    describe "raises TimeoutError error if CommandRunner timed out" do
+      it "does so for mocked calls" do
         expect(process_status).to receive(:exitstatus).and_return(nil)
         expect(CommandRunner).to receive(:run).and_return(command_output)
+        expect(object).to receive(:timeout_exceeded?).and_return(true)
 
         expect do
           object.run_shell_command(["sleep", "0.5"])
         end.to raise_error RunLoop::Shell::TimeoutError, /Timed out after/
       end
 
-      it "actual" do
+      it "does so for actual calls" do
         expect do
           object.run_shell_command(["sleep", "0.5"], timeout: 0.05)
         end.to raise_error RunLoop::Shell::TimeoutError, /Timed out after/
       end
+    end
+
+    it "raises error if :exit_status is nil" do
+      expect(process_status).to receive(:exitstatus).and_return(nil)
+      expect(CommandRunner).to receive(:run).and_return(command_output)
+      expect(object).to receive(:timeout_exceeded?).and_return(false)
+
+      expect do
+        object.run_shell_command(["sleep", "0.5"])
+      end.to raise_error RunLoop::Shell::Error, /There was an error executing/
     end
 
     describe "contents of returned hash" do
@@ -82,6 +93,30 @@ describe RunLoop::Shell do
         expect(hash[:exit_status]).to be == 256
       end
     end
+  end
+
+  context "#timeout_exceeded?" do
+    it "returns true when start_time + timeout exceeds Time.now" do
+      timeout = 5
+      start_time = Time.now - 10
+
+      expect(object.send(:timeout_exceeded?, start_time, timeout)).to be_truthy
+    end
+
+    it "returns false when start_time + timeout equals Time.now" do
+      expect(Time).to receive(:now).and_return(10)
+      timeout = 10
+      start_time = 10 + 10
+      expect(object.send(:timeout_exceeded?, start_time, timeout)).to be_falsey
+    end
+
+    it "returns false when start_time + timeout is less than Time.now" do
+      timeout = 5
+      start_time = Time.now - 2
+
+      expect(object.send(:timeout_exceeded?, start_time, timeout)).to be_falsey
+    end
+
   end
 end
 
