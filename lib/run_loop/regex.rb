@@ -13,7 +13,7 @@ module RunLoop
     DEVICE_UDID_REGEX = /[a-f0-9]{40}/.freeze
 
     # @!visibility private
-    VERSION_REGEX = /(\d\.\d(\.\d)?)/.freeze
+    VERSION_REGEX = /(\d+\.\d+(\.\d+)?)/.freeze
 
   end
 end
