@@ -232,20 +232,20 @@ describe RunLoop::App do
 
   describe "#build_version" do
     let(:pbuddy) { RunLoop::PlistBuddy.new }
-    let(:args) { ["CFBundleVersionString", app.info_plist_path] }
+    let(:args) { ["CFBundleVersion", app.info_plist_path] }
 
     before do
       allow(app).to receive(:plist_buddy).and_return(pbuddy)
     end
 
-    it "valid CFBundleVersionString" do
+    it "valid CFBundleVersion" do
       expect(pbuddy).to receive(:plist_read).with(*args).twice.and_return("8.0")
 
       expect(app.build_version).to be == RunLoop::Version.new("8.0")
       expect(app.bundle_version).to be == RunLoop::Version.new("8.0")
     end
 
-    it "invalid CFBundleShortVersionString" do
+    it "invalid CFBundleVersion" do
       expect(pbuddy).to receive(:plist_read).with(*args).and_return("a.b.c")
 
       expect(app.build_version).to be == nil

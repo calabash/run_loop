@@ -180,7 +180,7 @@ Bundle must:
     # See #marketing_version
     alias_method :short_bundle_version, :marketing_version
 
-    # Returns the CFBundleVersionString of the app as Version instance.
+    # Returns the CFBundleVersion of the app as Version instance.
     #
     # Apple docs:
     #
@@ -195,14 +195,14 @@ Bundle must:
     # @return [RunLoop::Version, nil] Returns a Version instance if the
     #  CFBundleVersion string is well formed and nil if not.
     def build_version
-      string = plist_buddy.plist_read("CFBundleVersionString", info_plist_path)
+      string = plist_buddy.plist_read("CFBundleVersion", info_plist_path)
       begin
         version = RunLoop::Version.new(string)
       rescue
         if string && string != ""
-          RunLoop.log_debug("CFBundleVersionString: '#{string}' is not a well formed version string")
+          RunLoop.log_debug("CFBundleVersion: '#{string}' is not a well formed version string")
         else
-          RunLoop.log_debug("CFBundleVersionString is not defined in Info.plist")
+          RunLoop.log_debug("CFBundleVersion is not defined in Info.plist")
         end
         version = nil
       end
