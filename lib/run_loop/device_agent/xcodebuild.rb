@@ -61,7 +61,8 @@ module RunLoop
       # @!visibility private
       def xcodebuild
         env = {
-          "COMMAND_LINE_BUILD" => "1"
+          "COMMAND_LINE_BUILD" => "1",
+          "CLOBBER" => "1"
         }
 
         args = [
