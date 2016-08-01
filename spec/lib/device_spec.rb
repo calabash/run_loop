@@ -366,6 +366,19 @@ describe RunLoop::Device do
           device.simulator_set_language("invalid code")
         end.to raise_error ArgumentError, /is not valid for this device/
       end
+
+      it "run_shell_command fails" do
+        hash = {
+          :exit_status => 1,
+          :out => "Some error",
+          :pid => 0
+        }
+        expect(device).to receive(:run_shell_command).and_return(hash)
+
+        expect do
+          device.simulator_set_language("en")
+        end.to raise_error RuntimeError, /Could not update the Simulator languages/
+      end
     end
 
     it "sets the language so it is _first_" do
