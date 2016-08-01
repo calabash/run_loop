@@ -4,6 +4,9 @@ module RunLoop
     require 'securerandom'
     include RunLoop::Regex
 
+    require "run_loop/shell"
+    include RunLoop::Shell
+
     # Starting in Xcode 7, iOS 9 simulators have a new "booting" state.
     #
     # The simulator must completely boot before run-loop tries to do things
@@ -498,14 +501,27 @@ version: #{version}
       global_plist = simulator_global_preferences_path
 
       cmd = [
-        "PlistBuddy",
+        "/usr/libexec/PlistBuddy",
         "-c",
         "Add :AppleLanguages:0 string '#{lang_code}'",
         global_plist
       ]
 
       # RunLoop::PlistBuddy cannot add items to arrays.
-      xcrun.run_command_in_context(cmd, {:log_cmd => true})
+      hash = run_shell_command(cmd, {:log_cmd => true})
+
+      if hash[:exit_status] != 0
+        raise RuntimeError, %Q[
+Could not update the Simulator languages because this command:
+
+#{cmd.join(" ")}
+
+failed with this output:
+
+#{hash[:out]}
+
+]
+      end
 
       simulator_languages
     end
