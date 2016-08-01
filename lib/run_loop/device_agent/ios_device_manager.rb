@@ -109,12 +109,16 @@ but binary does not exist at that path.
         FileUtils.rm_rf(log_file)
         FileUtils.touch(log_file)
 
+        env = {
+          "CLOBBER" => "1"
+        }
+
         options = {:out => log_file, :err => log_file}
         RunLoop.log_unix_cmd("#{cmd} #{args.join(" ")} >& #{log_file}")
 
         # Gotta keep the ios_device_manager process alive or the connection
         # to testmanagerd will fail.
-        pid = Process.spawn(cmd, *args, options)
+        pid = Process.spawn(env, cmd, *args, options)
         Process.detach(pid)
 
         if device.simulator?

@@ -158,10 +158,13 @@ module RunLoop
     # @todo Should this raise errors?
     # @todo Is this jruby compatible?
     def spawn(automation_template, options, log_file)
+      env = {
+        "CLOBBER" => "1"
+      }
       splat_args = spawn_arguments(automation_template, options)
       logger = options[:logger]
       RunLoop::Logging.log_debug(logger, "xcrun #{splat_args.join(' ')} >& #{log_file}")
-      pid = Process.spawn('xcrun', *splat_args, {:out => log_file, :err => log_file})
+      pid = Process.spawn(env, 'xcrun', *splat_args, {:out => log_file, :err => log_file})
       Process.detach(pid)
       pid.to_i
     end
