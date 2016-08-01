@@ -387,14 +387,7 @@ describe RunLoop::Device do
 
       actual = device.simulator_set_language("en")
 
-      # Travis is running Xcode 6.1 which is not behaving the same as it
-      # is locally.  This is passing locally for all Xcodes and on El Cap
-      # Xcode 7.2.  Is it a difference in the PlistBuddy implementation?
-      if Luffa::Environment.travis_ci?
-        expect(actual).to be == ["en-US"]
-      else
-        expect(actual).to be == ["en", "en-US"]
-      end
+      expect(actual).to be == ["en", "en-US"]
     end
   end
 
