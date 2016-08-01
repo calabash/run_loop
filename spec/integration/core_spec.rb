@@ -49,7 +49,13 @@ describe RunLoop::Core do
 
             device_type_id = 'iPhone 5s'
 
-            if xcode.version_gte_71?
+            if xcode.version_gte_8?
+              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-10-0'
+            elsif xcode.version_gte_73?
+              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-9-3'
+            elsif xcode.version_gte_72?
+              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-9-2'
+            elsif xcode.version_gte_71?
               runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-9-1'
             elsif xcode.version_gte_7?
               runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-9-0'
