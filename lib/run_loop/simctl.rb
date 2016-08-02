@@ -30,6 +30,28 @@ module RunLoop
     end
 
     # @!visibility private
+    def self.ensure_valid_core_simulator_service
+      require "run_loop/shell"
+      args = ["xcrun", "simctl", "help"]
+
+      max_tries = 3
+      3.times do |try|
+        hash = {}
+        begin
+          hash = Shell.run_shell_command(args)
+          if hash[:exit_status] != 0
+            RunLoop.log_debug("Invalid CoreSimulator service for active Xcode: try #{try + 1} of #{max_tries}")
+          else
+            return true
+          end
+        rescue RunLoop::Shell::Error => _
+          RunLoop.log_debug("Invalid CoreSimulator service for active Xcode, retrying #{try + 1} of #{max_tries}")
+        end
+      end
+      false
+    end
+
+    # @!visibility private
     attr_reader :device
 
     # @!visibility private
@@ -37,6 +59,7 @@ module RunLoop
       @ios_devices = []
       @tvos_devices = []
       @watchos_devices = []
+      Simctl.ensure_valid_core_simulator_service
     end
 
     # @!visibility private
