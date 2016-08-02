@@ -32,91 +32,15 @@ describe RunLoop::CoreSimulator do
   end
 
   describe ".erase" do
-      let(:xcrun) { RunLoop::Xcrun.new }
+    let(:simctl) { Resources.shared.simctl }
+    let(:options) { { :simctl => simctl, :timeout => 100 } }
+    let(:device) { RunLoop::Device.new("name", "8.1", "udid") }
+    let(:delay) { RunLoop::CoreSimulator::WAIT_FOR_SIMULATOR_STATE_INTERVAL }
 
-      let(:options) do
-        {
-          :xcrun => xcrun,
-          :timeout => 100
-        }
-      end
-
-      let(:device) { RunLoop::Device.new("name", "8.1", "udid") }
-
-      let(:erase_args) do
-        [
-          ["simctl", "erase", "udid"],
-          {
-            :log_cmd => true,
-            :timeout => 100
-          }
-        ]
-      end
-
-      let(:shutdown_args) do
-        [
-          ["simctl", "shutdown", "udid"],
-          {
-            :log_cmd => true,
-            :timeout => 100
-          }
-        ]
-      end
-
-      let(:erase_hash) do
-        {
-          :out => "",
-          :exit_status => 0
-        }
-      end
-
-    before do
-      allow(RunLoop::CoreSimulator).to receive(:quit_simulator).and_return true
-    end
-
-    it "raises an error if simulator argument is a physical device" do
-      # Device#to_s calls physical_device?
-      expect(device).to receive(:physical_device?).twice.and_return true
-
-      expect do
-        RunLoop::CoreSimulator.erase(device, options)
-      end.to raise_error(ArgumentError, /is a physical device/)
-    end
-
-    it "calls erase if sim is shutdown" do
-      expect(device).to receive(:update_simulator_state).and_return "Shutdown"
-      expect(xcrun).to receive(:run_command_in_context).with(*erase_args).and_return(erase_hash)
+    it "calls simctl erase with merged options" do
+      expect(simctl).to receive(:erase).with(device, 100, delay).and_return(true)
 
       expect(RunLoop::CoreSimulator.erase(device, options)).to be_truthy
-    end
-
-    it "waits for sim to shutdown" do
-      expect(device).to receive(:update_simulator_state).once.and_return("Unknown")
-      expect(xcrun).to receive(:run_command_in_context).with(*shutdown_args).and_return true
-      expect(RunLoop::CoreSimulator).to receive(:wait_for_simulator_state).and_return true
-      expect(xcrun).to receive(:run_command_in_context).with(*erase_args).and_return(erase_hash)
-
-      expect(RunLoop::CoreSimulator.erase(device, options)).to be_truthy
-    end
-
-    it "raises error if device cannot be shutdown" do
-      expect(device).to receive(:update_simulator_state).once.and_return("Unknown")
-      expect(xcrun).to receive(:run_command_in_context).with(*shutdown_args).and_return true
-      expect(RunLoop::CoreSimulator).to receive(:wait_for_simulator_state).and_raise RuntimeError, "Not shutdown"
-
-      expect do
-        RunLoop::CoreSimulator.erase(device, options)
-      end.to raise_error RuntimeError, /Could not erase simulator because it could not be Shutdown/
-    end
-
-    it "raises error if device cannot be erased" do
-      expect(device).to receive(:update_simulator_state).and_return "Shutdown"
-      hash = {:exit_status => 1, :out => "Simulator domain error"}
-      expect(xcrun).to receive(:run_command_in_context).with(*erase_args).and_return(hash)
-
-      expect do
-        RunLoop::CoreSimulator.erase(device, options)
-      end.to raise_error RuntimeError, /Simulator domain error/
     end
   end
 

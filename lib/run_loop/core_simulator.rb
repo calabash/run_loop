@@ -178,9 +178,8 @@ class RunLoop::CoreSimulator
   #
   # @param [RunLoop::Device] simulator The simulator to erase
   # @param [Hash] options Control the behavior of the method.
-  # @option options [Numeric] :timeout (180) How long tow wait for simctl to
-  #   shutdown and erase the simulator.  The timeout is apply separately to
-  #   each command.
+  # @option options [Numeric] :timeout How long to wait for simctl to
+  #   shutdown the simulator. This is necessary for the erase to succeed.
   #
   # @raise RuntimeError If the simulator cannot be shutdown
   # @raise RuntimeError If the simulator cannot be erased
@@ -191,61 +190,13 @@ class RunLoop::CoreSimulator
         "#{simulator} is a physical device.  This method is only for Simulators"
     end
 
-    default_options = {
-      :timeout => 60*3
-    }
+    merged_options = DEFAULT_OPTIONS.merge(options)
+    simctl = merged_options[:simctl] || RunLoop::Simctl.new
+    timeout = merged_options[:timeout] || merged_options[:wait_for_state_timeout]
 
-    merged_options = default_options.merge(options)
-
-    self.quit_simulator
-
-    xcrun = merged_options[:xcrun] || RunLoop::Xcrun.new
-    timeout = merged_options[:timeout]
-    xcrun_opts = {
-      :log_cmd => true,
-      :timeout => timeout
-    }
-
-    if simulator.update_simulator_state != "Shutdown"
-      args = ["simctl", "shutdown", simulator.udid]
-      xcrun.run_command_in_context(args, xcrun_opts)
-      begin
-        self.wait_for_simulator_state(simulator, "Shutdown")
-      rescue RuntimeError => _
-        raise RuntimeError, %Q{
-Could not erase simulator because it could not be Shutdown.
-
-This usually means your CoreSimulator processes need to be restarted.
-
-You can restart the CoreSimulator processes with this command:
-
-$ bundle exec run-loop simctl manage-processes
-
-}
-
-      end
-    end
-
-    args = ["simctl", "erase", simulator.udid]
-    hash = xcrun.run_command_in_context(args, xcrun_opts)
-
-    if hash[:exit_status] != 0
-      raise RuntimeError, %Q{
-Could not erase simulator because simctl returned this error:
-
-#{hash[:out]}
-
-This usually means your CoreSimulator processes need to be restarted.
-
-You can restart the CoreSimulator processes with this command:
-
-$ bundle exec run-loop simctl manage-processes
-
-}
-
-    end
-
-    hash
+    simctl.erase(simulator,
+                 timeout,
+                 WAIT_FOR_SIMULATOR_STATE_INTERVAL)
   end
 
   # @!visibility private
