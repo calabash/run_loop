@@ -20,6 +20,13 @@ module RunLoop
     }.call
 
     # @!visibility private
+    SIM_STATES = {
+      "Shutdown" => 1,
+      "Shutting Down" => 2,
+      "Booted" => 3,
+    }.freeze
+
+    # @!visibility private
     def self.uia_automation_plist
       File.join(SIMCTL_PLIST_DIR, 'com.apple.UIAutomation.plist')
     end
@@ -110,6 +117,69 @@ module RunLoop
     end
 
     # @!visibility private
+    def simulator_state(device)
+      plist = device.simulator_device_plist
+      pbuddy.plist_read("state", plist).to_i
+    end
+
+    # @!visibility private
+    def shutdown(device, options={})
+      if simulator_state(device) == SIM_STATES["Shutdown"]
+        RunLoop.log_debug("Simulator is already shutdown")
+        true
+      else
+        cmd = ["simctl", "shutdown", device.udid]
+        merged_options = DEFAULTS.merge(options)
+        hash = execute(cmd, merged_options)
+
+        exit_status = hash[:exit_status]
+        if exit_status != 0
+          raise RuntimeError,
+%Q[Could not shutdown the simulator:
+
+  command: xcrun #{cmd.join(" ")}
+simulator: #{device}
+
+#{hash[:out]}
+
+]
+        end
+        true
+      end
+    end
+
+    # @!visibility private
+    #
+    # Waiting for anything but 'Shutdown' is not advised.  The simulator reports
+    # that it is "Booted" long before it is ready to receive commands.
+    #
+    # Waiting for 'Shutdown' is required for erasing the simulator and launching
+    # launching the simulator with iOSDeviceManager.
+    def wait_for_shutdown(device, timeout, delay)
+      now = Time.now
+      poll_until = now + timeout
+      in_state = false
+
+      state = nil
+
+      while Time.now < poll_until
+        state = simulator_state(device)
+        in_state = state == SIM_STATES["Shutdown"]
+        break if in_state
+        sleep delay if delay != 0
+      end
+
+      elapsed = Time.now - now
+      RunLoop.log_debug("Waited for #{elapsed} seconds for device to have state: 'Shutdown'.")
+
+      unless in_state
+        string = string_for_sim_state(state)
+        raise "Expected 'Shutdown' state but found '#{string}' after waiting for #{elapsed} seconds."
+      end
+      in_state
+    end
+
+    # @!visibility private
     #
     # SimControl compatibility
     def ensure_accessibility(device)
@@ -133,7 +203,23 @@ module RunLoop
     private
 
     # @!visibility private
-    attr_reader :ios_devices, :tvos_devices, :watchos_devices
+    attr_reader :ios_devices, :tvos_devices, :watchos_devices, :pbuddy
+
+    # @!visibility private
+    def pbuddy
+      @pbuddy ||= RunLoop::PlistBuddy.new
+    end
+
+    # @!visibility private
+    def string_for_sim_state(integer)
+      SIM_STATES.each do |key, value|
+        if value == integer
+          return key
+        end
+      end
+
+      raise ArgumentError, "Could not find state for #{integer}"
+    end
 
     # @!visibility private
     def execute(array, options)

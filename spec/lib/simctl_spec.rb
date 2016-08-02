@@ -6,6 +6,10 @@ describe RunLoop::Simctl do
   let(:sim_control) { Resources.shared.sim_control }
   let(:defaults) { RunLoop::Simctl::DEFAULTS }
 
+  before do
+    allow(RunLoop::Environment).to receive(:debug?).and_return(true)
+  end
+
   it "has a constant that points to plist dir" do
     dir = RunLoop::Simctl::SIMCTL_PLIST_DIR
     expect(Dir.exist?(dir)).to be_truthy
@@ -169,6 +173,84 @@ describe RunLoop::Simctl do
         expect(xcode).to receive(:version_gte_7?).and_return(false)
 
         expect(simctl.app_container(device, bundle_id)).to be == nil
+      end
+    end
+
+    it "#pbuddy" do
+      pbuddy = simctl.send(:pbuddy)
+      expect(simctl.instance_variable_get(:@pbuddy)).to be == pbuddy
+    end
+
+    context "#string_for_sim_state" do
+      it "returns a string for valid states" do
+        expect(simctl.send(:string_for_sim_state, 1)).to be == "Shutdown"
+        expect(simctl.send(:string_for_sim_state, 2)).to be == "Shutting Down"
+        expect(simctl.send(:string_for_sim_state, 3)).to be == "Booted"
+      end
+
+      it "raises an error for invalid states" do
+        expect do
+          simctl.send(:string_for_sim_state, 0)
+        end.to raise_error ArgumentError, /Could not find state for/
+      end
+    end
+
+    context "#simulator_state" do
+      it "returns the numeric state of the simulator" do
+        pbuddy = RunLoop::PlistBuddy.new
+        expect(simctl).to receive(:pbuddy).and_return(pbuddy)
+        expect(pbuddy).to receive(:plist_read).and_return("10")
+
+        expect(simctl.simulator_state(device)).to be == 10
+      end
+    end
+
+    context "#shutdown" do
+      let(:hash) { { :exit_status => 0, :out => "Some output" } }
+
+      it "returns true if the simulator is already shutdown" do
+        expect(simctl).to receive(:simulator_state).and_return(1)
+        expect(simctl).not_to receive(:execute)
+
+        expect(simctl.shutdown(device)).to be_truthy
+      end
+      it "returns true after telling simctl to shutdown simulator" do
+        expect(simctl).to receive(:simulator_state).and_return(2)
+        expect(simctl).to receive(:execute).and_return(hash)
+
+        expect(simctl.shutdown(device)).to be_truthy
+      end
+
+      it "raises an error if simctl exits non-zero" do
+        expect(simctl).to receive(:simulator_state).and_return(2)
+        hash[:exit_status] = 1
+        expect(simctl).to receive(:execute).and_return(hash)
+
+        expect do
+          simctl.shutdown(device)
+        end.to raise_error RuntimeError, /Could not shutdown the simulator/
+      end
+    end
+
+    context "#wait_for_shutdown" do
+      it "returns true if state is 'Shutdown' before timeout" do
+        expect(simctl).to receive(:simulator_state).and_return(1)
+
+        expect(simctl.wait_for_shutdown(device, 1, 0)).to be_truthy
+      end
+
+      it "returns true after waiting for state to be 'Shutdown'" do
+        expect(simctl).to receive(:simulator_state).and_return(3, 3, 1)
+
+        expect(simctl.wait_for_shutdown(device, 1, 0)).to be_truthy
+      end
+
+      it "raises an error if state is not 'Shutdown' before timeout" do
+        expect(simctl).to receive(:simulator_state).at_least(:once).and_return(3)
+
+        expect do
+          simctl.wait_for_shutdown(device, 0.05, 0)
+        end.to raise_error RuntimeError, /Expected 'Shutdown' state but found/
       end
     end
 
