@@ -15,7 +15,7 @@ module RunLoop
     # @!visibility private
     SIMCTL_PLIST_DIR = lambda {
       dirname  = File.dirname(__FILE__)
-      joined = File.join(dirname, '..', '..', 'plists', 'simctl')
+      joined = File.join(dirname, "..", "..", "plists", "simctl")
       File.expand_path(joined)
     }.call
 

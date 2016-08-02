@@ -487,7 +487,7 @@ $ bundle exec run-loop simctl manage-processes
 
     launch_simulator
 
-    args = ['simctl', 'uninstall', device.udid, app.bundle_identifier]
+    args = ["simctl", 'uninstall', device.udid, app.bundle_identifier]
 
     timeout = DEFAULT_OPTIONS[:uninstall_app_timeout]
     xcrun.run_command_in_context(args, log_cmd: true, timeout: timeout)
@@ -610,7 +610,7 @@ Command had no output
   def install_app_with_simctl
     launch_simulator
 
-    args = ['simctl', 'install', device.udid, app.path]
+    args = ["simctl", 'install', device.udid, app.path]
     timeout = DEFAULT_OPTIONS[:install_app_timeout]
     xcrun.run_command_in_context(args, log_cmd: true, timeout: timeout)
 
@@ -620,7 +620,7 @@ Command had no output
 
   # @!visibility private
   def launch_app_with_simctl
-    args = ['simctl', 'launch', device.udid, app.bundle_identifier]
+    args = ["simctl", 'launch', device.udid, app.bundle_identifier]
     timeout = DEFAULT_OPTIONS[:launch_app_timeout]
     xcrun.run_command_in_context(args, log_cmd: true, timeout: timeout)
   end

@@ -335,7 +335,7 @@ describe RunLoop::SimControl do
       end
 
       it ':devices' do
-        args = ['simctl', 'list', 'devices']
+        args = ["simctl", 'list', 'devices']
         expect(xcrun).to receive(:run_command_in_context).with(args).and_return(devices_out)
 
         actual = sim_control.send(:simctl_list, :devices)
@@ -361,7 +361,7 @@ describe RunLoop::SimControl do
       end
 
       it ':runtimes' do
-        args = ['simctl', 'list', 'runtimes']
+        args = ["simctl", 'list', 'runtimes']
         expect(xcrun).to receive(:run_command_in_context).with(args).and_return(runtimes_out)
 
         actual = sim_control.send(:simctl_list, :runtimes)

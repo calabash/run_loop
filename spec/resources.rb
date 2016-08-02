@@ -183,7 +183,7 @@ class Resources
   end
 
   def self.shutdown_with_simctl(xcrun)
-    args = ['simctl', 'shutdown', 'booted']
+    args = ["simctl", 'shutdown', 'booted']
     hash = xcrun.exec(args, {:log_cmd => true })
     out = hash[:out]
     exit_status = hash[:exit_status]
@@ -245,11 +245,11 @@ class Resources
     case sdk
       when :sdk8
         @mock_core_simulator_data_dir_sdk8 ||= lambda {
-          File.expand_path(File.join(resources_dir, 'simctl', 'sdk8', 'data'))
+          File.expand_path(File.join(resources_dir, "simctl", 'sdk8', 'data'))
         }.call
       when :sdk7
         @mock_core_simulator_data_dir_sdk7 ||= lambda {
-          File.expand_path(File.join(resources_dir, 'simctl', 'sdk-less-than-8', 'data'))
+          File.expand_path(File.join(resources_dir, "simctl", 'sdk-less-than-8', 'data'))
         }.call
       else
         raise "Expected sdk '#{sdk}' to be on of #{[:sdk8, :sdk7]}"

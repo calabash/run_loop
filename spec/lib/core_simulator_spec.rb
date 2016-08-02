@@ -309,7 +309,7 @@ describe RunLoop::CoreSimulator do
       it 'launches the simulator and installs the app with simctl' do
         expect(core_sim).to receive(:app_is_installed?).and_return true
         expect(core_sim).to receive(:launch_simulator).and_return true
-        args = ['simctl', 'uninstall', device.udid, app.bundle_identifier]
+        args = ["simctl", 'uninstall', device.udid, app.bundle_identifier]
 
         timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:uninstall_app_timeout]
         options = { log_cmd: true, timeout: timeout }
@@ -795,7 +795,7 @@ describe RunLoop::CoreSimulator do
 
       it '#install_app_with_simctl' do
         expect(core_sim).to receive(:launch_simulator).and_return true
-        args = ['simctl', 'install', device.udid, app.path]
+        args = ["simctl", 'install', device.udid, app.path]
         timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:install_app_timeout]
         options = { :log_cmd => true, :timeout => timeout }
 

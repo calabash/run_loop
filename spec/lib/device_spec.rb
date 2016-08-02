@@ -545,7 +545,7 @@ describe RunLoop::Device do
 
       it 'raises an error if the udid matches no simulator' do
         xcrun = RunLoop::Xcrun.new
-        args = ['simctl', 'list', 'devices']
+        args = ["simctl", 'list', 'devices']
         expect(xcrun).to receive(:run_command_in_context).with(args).and_return({:out => ''})
         expect(simulator).to receive(:xcrun).and_return xcrun
 
@@ -558,7 +558,7 @@ describe RunLoop::Device do
         line = 'iPad Air 2 (CE5BA25E-9434-475A-8947-ECC3918E64E3) (Shutdown)'
         hash = {:out => line}
         xcrun = RunLoop::Xcrun.new
-        args = ['simctl', 'list', 'devices']
+        args = ["simctl", 'list', 'devices']
         expect(xcrun).to receive(:run_command_in_context).with(args).and_return(hash)
         expect(simulator).to receive(:xcrun).and_return xcrun
 

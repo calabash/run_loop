@@ -103,7 +103,7 @@ def create_simulator(n, options={})
   runtime = merged_options[:runtime]
 
   n.times do
-    system('xcrun', 'simctl', 'create', name, type, runtime)
+    system('xcrun', "simctl", 'create', name, type, runtime)
   end
 end
 
@@ -111,7 +111,7 @@ def delete_simulator(name)
   simctl.simulators.each do |simulator|
     if simulator.name == name
       puts "Deleting #{simulator}"
-      system('xcrun', 'simctl', 'delete', simulator.udid)
+      system('xcrun', "simctl", 'delete', simulator.udid)
     end
   end
   true

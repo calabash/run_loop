@@ -562,7 +562,8 @@ failed with this output:
         raise RuntimeError, 'This method is available only for simulators'
       end
 
-      args = ['simctl', 'list', 'devices']
+      # TODO Move!!!!
+      args = ["simctl", 'list', 'devices']
       hash = xcrun.run_command_in_context(args)
       out = hash[:out]
 
