@@ -27,4 +27,6 @@ describe RunLoop::Simctl do
     delay = RunLoop::CoreSimulator::WAIT_FOR_SIMULATOR_STATE_INTERVAL
     expect(simctl.erase(device, timeout, delay)).to be_truthy
   end
+
+  it "#launch"
 end

@@ -256,12 +256,14 @@ describe RunLoop::Simctl do
 
     context "#erase" do
       let(:hash) { { :exit_status => 0, :out => "Some output" } }
+      let(:cmd) { ["simctl", "erase", device.udid] }
+      let(:options) { RunLoop::Simctl::DEFAULTS.dup }
 
       before do
         expect(RunLoop::CoreSimulator).to receive(:quit_simulator).and_return(true)
         expect(simctl).to receive(:shutdown).with(device).and_return(true)
         expect(simctl).to receive(:wait_for_shutdown).and_return(true)
-        expect(simctl).to receive(:execute).and_return(hash)
+        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
       end
 
       it "returns true if the simulator is erased" do
@@ -273,6 +275,31 @@ describe RunLoop::Simctl do
         expect do
           simctl.erase(device, 10, 0.1)
         end.to raise_error RuntimeError, /Could not erase the simulator/
+      end
+    end
+
+    context "#launch" do
+      let(:hash) { { :exit_status => 0, :out => "Some output" } }
+      let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
+      let(:cmd) { ["simctl", "launch", device.udid, app.bundle_identifier] }
+      let(:options) do
+        options = RunLoop::Simctl::DEFAULTS.dup
+        options[:timeout] = 10
+        options
+      end
+
+      it "returns true after launching app on device" do
+        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+
+        expect(simctl.launch(device, app, 10))
+      end
+
+      it "raises error if there was a problem with the launch" do
+        hash[:exit_status] = 1
+        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+        expect do
+          expect(simctl.launch(device, app, 10))
+        end.to raise_error RuntimeError, /Could not launch app on simulator/
       end
     end
 
