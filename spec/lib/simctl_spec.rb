@@ -254,6 +254,28 @@ describe RunLoop::Simctl do
       end
     end
 
+    context "#erase" do
+      let(:hash) { { :exit_status => 0, :out => "Some output" } }
+
+      before do
+        expect(RunLoop::CoreSimulator).to receive(:quit_simulator).and_return(true)
+        expect(simctl).to receive(:shutdown).with(device).and_return(true)
+        expect(simctl).to receive(:wait_for_shutdown).and_return(true)
+        expect(simctl).to receive(:execute).and_return(hash)
+      end
+
+      it "returns true if the simulator is erased" do
+        expect(simctl.erase(device, 10, 0.1)).to be_truthy
+      end
+
+      it "raises an error if there is a problem erasing the simulator" do
+        hash[:exit_status] = 1
+        expect do
+          simctl.erase(device, 10, 0.1)
+        end.to raise_error RuntimeError, /Could not erase the simulator/
+      end
+    end
+
     describe "#fetch_devices!" do
       let(:cmd) { ["simctl", "list", "devices", "--json"]  }
       let(:hash) do

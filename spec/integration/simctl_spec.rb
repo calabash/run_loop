@@ -21,4 +21,10 @@ describe RunLoop::Simctl do
   it "#wait_for_shutdown" do
     expect(simctl.wait_for_shutdown(device, 0.1, 0)).to be_truthy
   end
+
+  it "#erase" do
+    timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:wait_for_state_timeout]
+    delay = RunLoop::CoreSimulator::WAIT_FOR_SIMULATOR_STATE_INTERVAL
+    expect(simctl.erase(device, timeout, delay)).to be_truthy
+  end
 end

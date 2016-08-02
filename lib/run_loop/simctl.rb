@@ -123,24 +123,29 @@ module RunLoop
     end
 
     # @!visibility private
-    def shutdown(device, options={})
+    def shutdown(device)
       if simulator_state(device) == SIM_STATES["Shutdown"]
         RunLoop.log_debug("Simulator is already shutdown")
         true
       else
         cmd = ["simctl", "shutdown", device.udid]
-        merged_options = DEFAULTS.merge(options)
-        hash = execute(cmd, merged_options)
+        hash = execute(cmd, DEFAULTS)
 
         exit_status = hash[:exit_status]
         if exit_status != 0
           raise RuntimeError,
-%Q[Could not shutdown the simulator:
+                %Q[Could not shutdown the simulator:
 
   command: xcrun #{cmd.join(" ")}
 simulator: #{device}
 
-#{hash[:out]}
+                #{hash[:out]}
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
 
 ]
         end
@@ -177,6 +182,46 @@ simulator: #{device}
         raise "Expected 'Shutdown' state but found '#{string}' after waiting for #{elapsed} seconds."
       end
       in_state
+    end
+
+    # @!visibility private
+    # Erases the simulator.
+    #
+    # @param [RunLoop::Device] device The simulator to erase.
+    # @param [Numeric] wait_timeout How long to wait for the simulator to have
+    #  state "Shutdown"; passed to #wait_for_shutdown.
+    # @param [Numeric] wait_delay How long to wait between calls to
+    #  #simulator_state while waiting for the simulator have to state "Shutdown";
+    #  passed to #wait_for_shutdown
+    def erase(device, wait_timeout, wait_delay)
+      require "run_loop/core_simulator"
+      CoreSimulator.quit_simulator
+
+      shutdown(device)
+      wait_for_shutdown(device, wait_timeout, wait_delay)
+
+      cmd = ["simctl", "erase", device.udid]
+      hash = execute(cmd, DEFAULTS)
+
+      exit_status = hash[:exit_status]
+      if exit_status != 0
+        raise RuntimeError,
+%Q[Could not erase the simulator:
+
+  command: xcrun #{cmd.join(" ")}
+simulator: #{device}
+
+#{hash[:out]}
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
+
+]
+      end
+      true
     end
 
     # @!visibility private
