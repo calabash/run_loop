@@ -103,11 +103,9 @@ describe RunLoop::CoreSimulator do
   end
 
   it 'install with simctl' do
-    args = ["simctl", 'erase', simulator.udid]
-    xcrun.run_command_in_context(args, {:log_cmd => true })
-
-    expect(core_sim.install)
-    expect(core_sim.launch)
+    RunLoop::CoreSimulator.erase(simulator)
+    expect(core_sim.install).to be_truthy
+    expect(core_sim.launch).to be_truthy
   end
 
   it 'uninstall app and sandbox with simctl' do

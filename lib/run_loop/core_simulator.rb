@@ -555,9 +555,8 @@ Command had no output
   def install_app_with_simctl
     launch_simulator
 
-    args = ["simctl", 'install', device.udid, app.path]
     timeout = DEFAULT_OPTIONS[:install_app_timeout]
-    xcrun.run_command_in_context(args, log_cmd: true, timeout: timeout)
+    simctl.install(device, app, timeout)
 
     device.simulator_wait_for_stable_state
     installed_app_bundle_dir
