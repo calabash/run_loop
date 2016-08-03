@@ -42,7 +42,6 @@ module RunLoop
     attr_reader :simulator_accessibility_plist_path
     attr_reader :simulator_preferences_plist_path
     attr_reader :simulator_log_file_path
-    attr_reader :pbuddy
 
     # Create a new device.
     #
@@ -271,7 +270,7 @@ version: #{version}
         raise RuntimeError, 'This method is available only for simulators'
       end
 
-      @state = fetch_simulator_state
+      @state = simctl.simulator_state_as_string(self)
     end
 
     # @!visibility private
@@ -528,6 +527,8 @@ failed with this output:
 
     private
 
+    attr_reader :pbuddy, :simctl, :xcrun
+
     # @!visibility private
     def xcrun
       RunLoop::Xcrun.new
@@ -539,44 +540,8 @@ failed with this output:
     end
 
     # @!visibility private
-    def detect_state_from_line(line)
-
-      if line[/unavailable/, 0]
-        RunLoop.log_debug("Simulator state is unavailable: #{line}")
-        return 'Unavailable'
-      end
-
-      state = line[/(Booted|Shutdown|Shutting Down)/,0]
-
-      if state.nil?
-        RunLoop.log_debug("Simulator state is unknown: #{line}")
-        'Unknown'
-      else
-        state
-      end
-    end
-
-    # @!visibility private
-    def fetch_simulator_state
-      if physical_device?
-        raise RuntimeError, 'This method is available only for simulators'
-      end
-
-      # TODO Move!!!!
-      args = ["simctl", 'list', 'devices']
-      hash = xcrun.run_command_in_context(args)
-      out = hash[:out]
-
-      matched_line = out.split("\n").find do |line|
-        line.include?(udid)
-      end
-
-      if matched_line.nil?
-        raise RuntimeError,
-              "Expected a simulator with udid '#{udid}', but found none"
-      end
-
-      detect_state_from_line(matched_line)
+    def simctl
+      @simctl ||= RunLoop::Simctl.new
     end
 
     # @!visibility private

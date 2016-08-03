@@ -42,7 +42,17 @@ describe RunLoop::Device do
         end
       end
     end
+
+    context "#simctl" do
+      it "is a memoized attr reader" do
+        simctl = device.send(:simctl)
+        expect(device.send(:simctl)).to be == simctl
+        expect(device.instance_variable_get(:@simctl)).to be == simctl
+        expect(simctl).to be_a_kind_of(RunLoop::Simctl)
+      end
+    end
   end
+
 
   describe '#to_s' do
     it 'physical device' do
@@ -507,65 +517,6 @@ describe RunLoop::Device do
                           'CE5BA25E-9434-475A-8947-ECC3918E64E3')
     end
 
-    describe '#discern_state_from_line' do
-
-      it 'unavailable' do
-        line = 'iPhone 5 (AC1509A2-9DE3-4BDD-9820-258BB7D5B41F) (Shutdown) (unavailable, runtime profile not found)'
-
-        expect(simulator.send(:detect_state_from_line, line)).to be == 'Unavailable'
-      end
-
-      it 'unknown state' do
-        line = 'some line'
-
-        expect(simulator.send(:detect_state_from_line, line)).to be == 'Unknown'
-      end
-
-      it 'booted' do
-        line = 'iPad Air 2 (43A6049E-AFD6-4D9D-8510-E129FBB3FE0F) (Booted)'
-
-        expect(simulator.send(:detect_state_from_line, line)).to be == 'Booted'
-      end
-
-      it 'shutdown' do
-        line = 'iPad Air 2 (43A6049E-AFD6-4D9D-8510-E129FBB3FE0F) (Shutdown)'
-
-        expect(simulator.send(:detect_state_from_line, line)).to be == 'Shutdown'
-      end
-    end
-
-    describe '#fetch_simulator_state' do
-      it 'raises an error if the device is not a simulator' do
-        expect(simulator).to receive(:physical_device?).and_return true
-
-        expect do
-          simulator.send(:fetch_simulator_state)
-        end.to raise_error RuntimeError, /This method is available only for simulators/
-      end
-
-      it 'raises an error if the udid matches no simulator' do
-        xcrun = RunLoop::Xcrun.new
-        args = ["simctl", 'list', 'devices']
-        expect(xcrun).to receive(:run_command_in_context).with(args).and_return({:out => ''})
-        expect(simulator).to receive(:xcrun).and_return xcrun
-
-        expect do
-          simulator.send(:fetch_simulator_state)
-        end.to raise_error RuntimeError, /Expected a simulator with udid/
-      end
-
-      it 'returns the state of the device' do
-        line = 'iPad Air 2 (CE5BA25E-9434-475A-8947-ECC3918E64E3) (Shutdown)'
-        hash = {:out => line}
-        xcrun = RunLoop::Xcrun.new
-        args = ["simctl", 'list', 'devices']
-        expect(xcrun).to receive(:run_command_in_context).with(args).and_return(hash)
-        expect(simulator).to receive(:xcrun).and_return xcrun
-
-        expect(simulator.send(:fetch_simulator_state)).to be == 'Shutdown'
-      end
-    end
-
     describe '#update_simulator_state' do
       it 'raises error if called on a physical device' do
         expect(simulator).to receive(:physical_device?).and_return true
@@ -576,7 +527,8 @@ describe RunLoop::Device do
       end
 
       it 'sets the simulator state' do
-        expect(simulator).to receive(:fetch_simulator_state).and_return 'State'
+        simctl = simulator.send(:simctl)
+        expect(simctl).to receive(:simulator_state_as_string).and_return 'State'
 
         expect(simulator.update_simulator_state).to be == 'State'
         expect(simulator.instance_variable_get(:@state)).to be == 'State'
