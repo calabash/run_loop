@@ -434,10 +434,8 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
 
     launch_simulator
 
-    args = ["simctl", 'uninstall', device.udid, app.bundle_identifier]
-
     timeout = DEFAULT_OPTIONS[:uninstall_app_timeout]
-    xcrun.run_command_in_context(args, log_cmd: true, timeout: timeout)
+    simctl.uninstall(device, app, timeout)
 
     device.simulator_wait_for_stable_state
     true
