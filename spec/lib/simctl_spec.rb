@@ -278,53 +278,69 @@ describe RunLoop::Simctl do
       end
     end
 
-    context "#launch" do
+    context "app lifecycle" do
       let(:hash) { { :exit_status => 0, :out => "Some output" } }
       let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
-      let(:cmd) { ["simctl", "launch", device.udid, app.bundle_identifier] }
       let(:options) do
         options = RunLoop::Simctl::DEFAULTS.dup
         options[:timeout] = 10
         options
       end
 
-      it "returns true if calling simctl launch completes with exit status 0" do
-        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+      context "#launch" do
+        let(:cmd) { ["simctl", "launch", device.udid, app.bundle_identifier] }
 
-        expect(simctl.launch(device, app, 10))
-      end
+        it "returns true if calling simctl launch completes with exit status 0" do
+          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
 
-      it "raises error if simctl launch completes with non-zero exit status" do
-        hash[:exit_status] = 1
-        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
-        expect do
           expect(simctl.launch(device, app, 10))
-        end.to raise_error RuntimeError, /Could not launch app on simulator/
-      end
-    end
+        end
 
-    context "#uninstall" do
-      let(:hash) { { :exit_status => 0, :out => "Some output" } }
-      let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
-      let(:cmd) { ["simctl", "uninstall", device.udid, app.bundle_identifier] }
-      let(:options) do
-        options = RunLoop::Simctl::DEFAULTS.dup
-        options[:timeout] = 10
-        options
+        it "raises error if simctl launch completes with non-zero exit status" do
+          hash[:exit_status] = 1
+          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect do
+            expect(simctl.launch(device, app, 10))
+          end.to raise_error RuntimeError, /Could not launch app on simulator/
+        end
       end
-      it "returns true if simctl uninstall completes with exit status 0" do
-        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
 
-        expect(simctl.uninstall(device, app, 10))
-      end
-      it "raises error if simctl uninstall completes with non-zero exit status" do
-        hash[:exit_status] = 1
-        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
-        expect do
+      context "#uninstall" do
+        let(:cmd) { ["simctl", "uninstall", device.udid, app.bundle_identifier] }
+
+        it "returns true if simctl uninstall completes with exit status 0" do
+          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+
           expect(simctl.uninstall(device, app, 10))
-        end.to raise_error RuntimeError, /Could not uninstall app from simulator/
+        end
+        it "raises error if simctl uninstall completes with non-zero exit status" do
+          hash[:exit_status] = 1
+          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect do
+            expect(simctl.uninstall(device, app, 10))
+          end.to raise_error RuntimeError, /Could not uninstall app from simulator/
+        end
+      end
+
+      context "#install" do
+        let(:cmd) { ["simctl", "install", device.udid, app.path] }
+
+        it "returns true if simctl install completes with exit status 0" do
+          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+
+          expect(simctl.install(device, app, 10))
+        end
+
+        it "raises error if simctl install completes with non-zero exit status" do
+          hash[:exit_status] = 1
+          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect do
+            expect(simctl.install(device, app, 10))
+          end.to raise_error RuntimeError, /Could not install app on simulator/
+        end
       end
     end
+
 
     describe "#fetch_devices!" do
       let(:cmd) { ["simctl", "list", "devices", "--json"]  }
