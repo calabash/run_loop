@@ -73,8 +73,7 @@ describe RunLoop::CoreSimulator do
 
   describe "#launch" do
     before do
-      args = ["simctl", 'erase', simulator.udid]
-      xcrun.run_command_in_context(args, {:log_cmd => true })
+      Resources.shared.simctl.erase(simulator)
     end
 
     it "launches the app" do
@@ -95,7 +94,9 @@ describe RunLoop::CoreSimulator do
   end
 
   it "retries app launching" do
-    expect(core_sim).to receive(:launch_app_with_simctl).exactly(3).times.and_raise(RunLoop::Xcrun::TimeoutError)
+    tries = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:app_launch_retries] - 1
+    error = RunLoop::Xcrun::TimeoutError.new("Xcrun timed out")
+    expect(core_sim).to receive(:launch_app_with_simctl).exactly(tries).times.and_raise(error)
     expect(core_sim).to receive(:launch_app_with_simctl).and_call_original
 
     expect(core_sim.launch).to be == true

@@ -22,7 +22,8 @@ class RunLoop::CoreSimulator
     :install_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
     :uninstall_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
     :launch_app_timeout => RunLoop::Environment.ci? ? 120 : 30,
-    :wait_for_state_timeout => RunLoop::Environment.ci? ? 120 : 30
+    :wait_for_state_timeout => RunLoop::Environment.ci? ? 120 : 30,
+    :app_launch_retries => RunLoop::Environment.ci? ? 5 : 3
   }
 
   # @!visibility private
@@ -302,6 +303,11 @@ class RunLoop::CoreSimulator
     @xcrun ||= RunLoop::Xcrun.new
   end
 
+  # @!visibility private
+  def simctl
+    @simctl ||= RunLoop::Simctl.new
+  end
+
   # Launch the simulator indicated by device.
   def launch_simulator
 
@@ -355,29 +361,19 @@ class RunLoop::CoreSimulator
     # relaunch it.
     launch_simulator
 
-    tries = RunLoop::Environment.ci? ? 5 : 3
-    last_error = nil
+    tries = app_launch_retries
 
     RunLoop.log_debug("Trying #{tries} times to launch #{app.bundle_identifier} on #{device}")
 
-    tries.times do |try|
-      # Terminates CoreSimulatorService on failures.
-      hash = attempt_to_launch_app_with_simctl
-
-      exit_status = hash[:exit_status]
-      if exit_status != 0
-        # Last argument is how long to sleep after an error.
-        last_error = handle_failed_app_launch(hash, try, tries, 0.5)
-      else
-        last_error = nil
-        break
-      end
-    end
+    last_error = try_to_launch_app_n_times(tries)
 
     if last_error
-      raise RuntimeError, %Q[Could not launch #{app.bundle_identifier} on #{device}
+      raise RuntimeError, %Q[
+Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} times:
 
-#{last_error}
+#{last_error}:
+
+#{last_error.message}
 
 ]
     end
@@ -571,42 +567,48 @@ Command had no output
 
   # @!visibility private
   def launch_app_with_simctl
-    args = ["simctl", 'launch', device.udid, app.bundle_identifier]
     timeout = DEFAULT_OPTIONS[:launch_app_timeout]
-    xcrun.run_command_in_context(args, log_cmd: true, timeout: timeout)
+    simctl.launch(device, app, timeout)
   end
 
   # @!visibility private
-  def handle_failed_app_launch(hash, try, tries, wait_time)
-    out = hash[:out]
-    RunLoop.log_debug("Failed to launch app on try #{try + 1} of #{tries}.")
-    out.split($-0).each do |line|
-      RunLoop.log_debug("    #{line}")
-    end
-    # If we timed out on the launch, the CoreSimulator processes are quit
-    # (see above).  If at all possible, we want to avoid terminating
-    # CoreSimulatorService, because it takes a long time to launch.
-    sleep(wait_time) if wait_time > 0
-
-    out
-  end
-
-  # @!visibility private
-  def attempt_to_launch_app_with_simctl
+  #
+  # Returns nil if launch_app_with_simctl succeeds and the error if it fails.
+  def try_to_launch_app
     begin
-      hash = launch_app_with_simctl
-    rescue RunLoop::Xcrun::TimeoutError => e
-      hash = {
-        :exit_status => 1,
-        :out => e.message
-      }
-      # Simulator is probably in a bad state.  Terminates the
-      # CoreSimulatorService.  Restarting this service is expensive!
+      launch_app_with_simctl
+      nil
+    rescue RuntimeError, RunLoop::Xcrun::TimeoutError  => error
+      # Simulator is probably in a bad state.  Restart the service.
       RunLoop::CoreSimulator.terminate_core_simulator_processes
       Kernel.sleep(0.5)
       launch_simulator
+      error
     end
-    hash
+  end
+
+  # @!visibility private
+  def app_launch_retries
+    DEFAULT_OPTIONS[:app_launch_retries]
+  end
+
+  # @!visibility private
+  #
+  # Returns nil if launch_app_with_simctl succeeds and the error if it fails.
+  def try_to_launch_app_n_times(tries)
+    last_error = nil
+
+    tries.times do |try|
+      # Terminates CoreSimulatorService on failures and launches the simulator again.
+      # Returns nil if app launched.
+      # Returns rescued Runtime or Timeout errors.
+      last_error = try_to_launch_app
+
+      break if last_error.nil?
+      RunLoop.log_debug("Failed to launch app on try #{try + 1} of #{tries}.")
+    end
+
+    last_error
   end
 
   # Required for support of iOS 7 CoreSimulators.  Can be removed when
