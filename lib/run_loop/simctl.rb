@@ -231,7 +231,7 @@ $ bundle exec run-loop simctl manage-processes
     # Caller is responsible for the following:
     #
     # 1. Launching the simulator.
-    # 2. Installing the application,
+    # 2. Installing the application.
     #
     # No checks are made.
     #
@@ -249,6 +249,50 @@ $ bundle exec run-loop simctl manage-processes
       if exit_status != 0
         raise RuntimeError,
 %Q[Could not launch app on simulator:
+
+  command: xcrun #{cmd.join(" ")}
+simulator: #{device}
+      app: #{app}
+
+#{hash[:out]}
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
+
+]
+      end
+      true
+    end
+
+    # @!visibility private
+    #
+    # Launches the app on on the device.
+    #
+    # Caller is responsible for the following:
+    #
+    # 1. Launching the simulator.
+    # 2. That the application is installed; simctl uninstall will fail if app
+    #    is installed.
+    #
+    # No checks are made.
+    #
+    # @param [RunLoop::Device] device The simulator to launch on.
+    # @param [RunLoop::App] app The app to launch.
+    # @param [Numeric] timeout How long to wait for simctl to complete.
+    def uninstall(device, app, timeout)
+      cmd = ["simctl", "uninstall", device.udid, app.bundle_identifier]
+      options = DEFAULTS.dup
+      options[:timeout] = timeout
+
+      hash = execute(cmd, options)
+
+      exit_status = hash[:exit_status]
+      if exit_status != 0
+        raise RuntimeError,
+%Q[Could not uninstall app from simulator:
 
   command: xcrun #{cmd.join(" ")}
 simulator: #{device}

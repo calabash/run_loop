@@ -214,14 +214,14 @@ describe RunLoop::Simctl do
 
         expect(simctl.shutdown(device)).to be_truthy
       end
-      it "returns true after telling simctl to shutdown simulator" do
+      it "returns true if simctl shutdown completes with 0 exit status" do
         expect(simctl).to receive(:simulator_state).and_return(2)
         expect(simctl).to receive(:execute).and_return(hash)
 
         expect(simctl.shutdown(device)).to be_truthy
       end
 
-      it "raises an error if simctl exits non-zero" do
+      it "raises an error if simctl shutdown completes with non-zero exit status" do
         expect(simctl).to receive(:simulator_state).and_return(2)
         hash[:exit_status] = 1
         expect(simctl).to receive(:execute).and_return(hash)
@@ -266,11 +266,11 @@ describe RunLoop::Simctl do
         expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
       end
 
-      it "returns true if the simulator is erased" do
+      it "returns true if simctl erase completes with 0 exit status" do
         expect(simctl.erase(device, 10, 0.1)).to be_truthy
       end
 
-      it "raises an error if there is a problem erasing the simulator" do
+      it "raises an error if simctl erase completes with non-zero exit status" do
         hash[:exit_status] = 1
         expect do
           simctl.erase(device, 10, 0.1)
@@ -288,18 +288,41 @@ describe RunLoop::Simctl do
         options
       end
 
-      it "returns true after launching app on device" do
+      it "returns true if calling simctl launch completes with exit status 0" do
         expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
 
         expect(simctl.launch(device, app, 10))
       end
 
-      it "raises error if there was a problem with the launch" do
+      it "raises error if simctl launch completes with non-zero exit status" do
         hash[:exit_status] = 1
         expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
         expect do
           expect(simctl.launch(device, app, 10))
         end.to raise_error RuntimeError, /Could not launch app on simulator/
+      end
+    end
+
+    context "#uninstall" do
+      let(:hash) { { :exit_status => 0, :out => "Some output" } }
+      let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
+      let(:cmd) { ["simctl", "uninstall", device.udid, app.bundle_identifier] }
+      let(:options) do
+        options = RunLoop::Simctl::DEFAULTS.dup
+        options[:timeout] = 10
+        options
+      end
+      it "returns true if simctl uninstall completes with exit status 0" do
+        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+
+        expect(simctl.uninstall(device, app, 10))
+      end
+      it "raises error if simctl uninstall completes with non-zero exit status" do
+        hash[:exit_status] = 1
+        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+        expect do
+          expect(simctl.uninstall(device, app, 10))
+        end.to raise_error RuntimeError, /Could not uninstall app from simulator/
       end
     end
 
