@@ -117,14 +117,19 @@ module RunLoop
     end
 
     # @!visibility private
-    def simulator_state(device)
+    def simulator_state_as_int(device)
       plist = device.simulator_device_plist
       pbuddy.plist_read("state", plist).to_i
     end
 
     # @!visibility private
+    def simulator_state_as_string(device)
+      string_for_sim_state(simulator_state_as_int(device))
+    end
+
+    # @!visibility private
     def shutdown(device)
-      if simulator_state(device) == SIM_STATES["Shutdown"]
+      if simulator_state_as_int(device) == SIM_STATES["Shutdown"]
         RunLoop.log_debug("Simulator is already shutdown")
         true
       else
@@ -168,7 +173,7 @@ $ bundle exec run-loop simctl manage-processes
       state = nil
 
       while Time.now < poll_until
-        state = simulator_state(device)
+        state = simulator_state_as_int(device)
         in_state = state == SIM_STATES["Shutdown"]
         break if in_state
         sleep delay if delay != 0
@@ -191,7 +196,7 @@ $ bundle exec run-loop simctl manage-processes
     # @param [Numeric] wait_timeout How long to wait for the simulator to have
     #  state "Shutdown"; passed to #wait_for_shutdown.
     # @param [Numeric] wait_delay How long to wait between calls to
-    #  #simulator_state while waiting for the simulator have to state "Shutdown";
+    #  #simulator_state_as_int while waiting for the simulator have to state "Shutdown";
     #  passed to #wait_for_shutdown
     def erase(device, wait_timeout, wait_delay)
       require "run_loop/core_simulator"

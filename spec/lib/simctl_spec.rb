@@ -195,13 +195,22 @@ describe RunLoop::Simctl do
       end
     end
 
-    context "#simulator_state" do
+    context "#simulator_state_as_int" do
       it "returns the numeric state of the simulator" do
         pbuddy = RunLoop::PlistBuddy.new
         expect(simctl).to receive(:pbuddy).and_return(pbuddy)
         expect(pbuddy).to receive(:plist_read).and_return("10")
 
-        expect(simctl.simulator_state(device)).to be == 10
+        expect(simctl.simulator_state_as_int(device)).to be == 10
+      end
+    end
+
+    context "#simulator_state_as_string" do
+      it "returns the state of the simulator as a string" do
+        expect(simctl).to receive(:simulator_state_as_int).and_return(10)
+        expect(simctl).to receive(:string_for_sim_state).and_return("State")
+
+        expect(simctl.simulator_state_as_string(device)).to be == "State"
       end
     end
 
@@ -209,20 +218,20 @@ describe RunLoop::Simctl do
       let(:hash) { { :exit_status => 0, :out => "Some output" } }
 
       it "returns true if the simulator is already shutdown" do
-        expect(simctl).to receive(:simulator_state).and_return(1)
+        expect(simctl).to receive(:simulator_state_as_int).and_return(1)
         expect(simctl).not_to receive(:execute)
 
         expect(simctl.shutdown(device)).to be_truthy
       end
       it "returns true if simctl shutdown completes with 0 exit status" do
-        expect(simctl).to receive(:simulator_state).and_return(2)
+        expect(simctl).to receive(:simulator_state_as_int).and_return(2)
         expect(simctl).to receive(:execute).and_return(hash)
 
         expect(simctl.shutdown(device)).to be_truthy
       end
 
       it "raises an error if simctl shutdown completes with non-zero exit status" do
-        expect(simctl).to receive(:simulator_state).and_return(2)
+        expect(simctl).to receive(:simulator_state_as_int).and_return(2)
         hash[:exit_status] = 1
         expect(simctl).to receive(:execute).and_return(hash)
 
@@ -234,19 +243,19 @@ describe RunLoop::Simctl do
 
     context "#wait_for_shutdown" do
       it "returns true if state is 'Shutdown' before timeout" do
-        expect(simctl).to receive(:simulator_state).and_return(1)
+        expect(simctl).to receive(:simulator_state_as_int).and_return(1)
 
         expect(simctl.wait_for_shutdown(device, 1, 0)).to be_truthy
       end
 
       it "returns true after waiting for state to be 'Shutdown'" do
-        expect(simctl).to receive(:simulator_state).and_return(3, 3, 1)
+        expect(simctl).to receive(:simulator_state_as_int).and_return(3, 3, 1)
 
         expect(simctl.wait_for_shutdown(device, 1, 0)).to be_truthy
       end
 
       it "raises an error if state is not 'Shutdown' before timeout" do
-        expect(simctl).to receive(:simulator_state).at_least(:once).and_return(3)
+        expect(simctl).to receive(:simulator_state_as_int).at_least(:once).and_return(3)
 
         expect do
           simctl.wait_for_shutdown(device, 0.05, 0)
