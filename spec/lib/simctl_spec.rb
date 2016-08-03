@@ -157,14 +157,14 @@ describe RunLoop::Simctl do
         end
 
         it "app is installed" do
-          expect(simctl).to receive(:execute).with(cmd, defaults).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, defaults).and_return(hash)
 
           expect(simctl.app_container(device, bundle_id)).to be == hash[:out].strip
         end
 
         it "app is not installed" do
           hash[:exit_status] = 1
-          expect(simctl).to receive(:execute).with(cmd, defaults).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, defaults).and_return(hash)
           expect(simctl.app_container(device, bundle_id)).to be == nil
         end
       end
@@ -219,13 +219,13 @@ describe RunLoop::Simctl do
 
       it "returns true if the simulator is already shutdown" do
         expect(simctl).to receive(:simulator_state_as_int).and_return(1)
-        expect(simctl).not_to receive(:execute)
+        expect(simctl).not_to receive(:shell_out_with_xcrun)
 
         expect(simctl.shutdown(device)).to be_truthy
       end
       it "returns true if simctl shutdown completes with 0 exit status" do
         expect(simctl).to receive(:simulator_state_as_int).and_return(2)
-        expect(simctl).to receive(:execute).and_return(hash)
+        expect(simctl).to receive(:shell_out_with_xcrun).and_return(hash)
 
         expect(simctl.shutdown(device)).to be_truthy
       end
@@ -233,7 +233,7 @@ describe RunLoop::Simctl do
       it "raises an error if simctl shutdown completes with non-zero exit status" do
         expect(simctl).to receive(:simulator_state_as_int).and_return(2)
         hash[:exit_status] = 1
-        expect(simctl).to receive(:execute).and_return(hash)
+        expect(simctl).to receive(:shell_out_with_xcrun).and_return(hash)
 
         expect do
           simctl.shutdown(device)
@@ -272,7 +272,7 @@ describe RunLoop::Simctl do
         expect(RunLoop::CoreSimulator).to receive(:quit_simulator).and_return(true)
         expect(simctl).to receive(:shutdown).with(device).and_return(true)
         expect(simctl).to receive(:wait_for_shutdown).and_return(true)
-        expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+        expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
       end
 
       it "returns true if simctl erase completes with 0 exit status" do
@@ -300,14 +300,14 @@ describe RunLoop::Simctl do
         let(:cmd) { ["simctl", "launch", device.udid, app.bundle_identifier] }
 
         it "returns true if calling simctl launch completes with exit status 0" do
-          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
 
           expect(simctl.launch(device, app, 10))
         end
 
         it "raises error if simctl launch completes with non-zero exit status" do
           hash[:exit_status] = 1
-          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
           expect do
             expect(simctl.launch(device, app, 10))
           end.to raise_error RuntimeError, /Could not launch app on simulator/
@@ -318,13 +318,13 @@ describe RunLoop::Simctl do
         let(:cmd) { ["simctl", "uninstall", device.udid, app.bundle_identifier] }
 
         it "returns true if simctl uninstall completes with exit status 0" do
-          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
 
           expect(simctl.uninstall(device, app, 10))
         end
         it "raises error if simctl uninstall completes with non-zero exit status" do
           hash[:exit_status] = 1
-          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
           expect do
             expect(simctl.uninstall(device, app, 10))
           end.to raise_error RuntimeError, /Could not uninstall app from simulator/
@@ -335,14 +335,14 @@ describe RunLoop::Simctl do
         let(:cmd) { ["simctl", "install", device.udid, app.path] }
 
         it "returns true if simctl install completes with exit status 0" do
-          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
 
           expect(simctl.install(device, app, 10))
         end
 
         it "raises error if simctl install completes with non-zero exit status" do
           hash[:exit_status] = 1
-          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
           expect do
             expect(simctl.install(device, app, 10))
           end.to raise_error RuntimeError, /Could not install app on simulator/
@@ -374,7 +374,7 @@ describe RunLoop::Simctl do
         it "non-zero exit status" do
           hash[:exit_status] = 1
           hash[:out] = "An error message"
-          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
 
           expect do
             simctl.send(:fetch_devices!)
@@ -388,7 +388,7 @@ describe RunLoop::Simctl do
           simctl.instance_variable_set(:@watchos_devices, [:watchos])
 
           hash[:out] = RunLoop::RSpec::Simctl::SIMCTL_DEVICE_JSON_XCODE7
-          expect(simctl).to receive(:execute).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
 
           actual = simctl.send(:fetch_devices!)
           expect(actual[:ios].include?(:ios)).to be_falsey
@@ -420,7 +420,7 @@ describe RunLoop::Simctl do
       expect(simctl).to receive(:xcrun).and_return(xcrun)
       expect(xcrun).to receive(:run_command_in_context).with(cmd, merged).and_return({})
 
-      expect(simctl.send(:execute, cmd, options)).to be == {}
+      expect(simctl.send(:shell_out_with_xcrun, cmd, options)).to be == {}
     end
 
     it "#xcrun" do

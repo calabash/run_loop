@@ -106,7 +106,7 @@ module RunLoop
     def app_container(device, bundle_id)
       return nil if !xcode.version_gte_7?
       cmd = ["simctl", "get_app_container", device.udid, bundle_id]
-      hash = execute(cmd, DEFAULTS)
+      hash = shell_out_with_xcrun(cmd, DEFAULTS)
 
       exit_status = hash[:exit_status]
       if exit_status != 0
@@ -134,7 +134,7 @@ module RunLoop
         true
       else
         cmd = ["simctl", "shutdown", device.udid]
-        hash = execute(cmd, DEFAULTS)
+        hash = shell_out_with_xcrun(cmd, DEFAULTS)
 
         exit_status = hash[:exit_status]
         if exit_status != 0
@@ -206,7 +206,7 @@ $ bundle exec run-loop simctl manage-processes
       wait_for_shutdown(device, wait_timeout, wait_delay)
 
       cmd = ["simctl", "erase", device.udid]
-      hash = execute(cmd, DEFAULTS)
+      hash = shell_out_with_xcrun(cmd, DEFAULTS)
 
       exit_status = hash[:exit_status]
       if exit_status != 0
@@ -248,7 +248,7 @@ $ bundle exec run-loop simctl manage-processes
       options = DEFAULTS.dup
       options[:timeout] = timeout
 
-      hash = execute(cmd, options)
+      hash = shell_out_with_xcrun(cmd, options)
 
       exit_status = hash[:exit_status]
       if exit_status != 0
@@ -292,7 +292,7 @@ $ bundle exec run-loop simctl manage-processes
       options = DEFAULTS.dup
       options[:timeout] = timeout
 
-      hash = execute(cmd, options)
+      hash = shell_out_with_xcrun(cmd, options)
 
       exit_status = hash[:exit_status]
       if exit_status != 0
@@ -334,7 +334,7 @@ $ bundle exec run-loop simctl manage-processes
       options = DEFAULTS.dup
       options[:timeout] = timeout
 
-      hash = execute(cmd, options)
+      hash = shell_out_with_xcrun(cmd, options)
 
       exit_status = hash[:exit_status]
       if exit_status != 0
@@ -401,7 +401,7 @@ $ bundle exec run-loop simctl manage-processes
     end
 
     # @!visibility private
-    def execute(array, options)
+    def shell_out_with_xcrun(array, options)
       merged = DEFAULTS.merge(options)
       xcrun.run_command_in_context(array, merged)
     end
@@ -431,7 +431,7 @@ $ bundle exec run-loop simctl manage-processes
       @watchos_devices = []
 
       cmd = ["simctl", "list", "devices", "--json"]
-      hash = execute(cmd, DEFAULTS)
+      hash = shell_out_with_xcrun(cmd, DEFAULTS)
 
       out = hash[:out]
       exit_status = hash[:exit_status]
