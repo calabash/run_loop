@@ -24,12 +24,15 @@ describe RunLoop::CoreSimulator do
       core_sim.launch_simulator
 
       expect(RunLoop::CoreSimulator.erase(simulator)).to be_truthy
+      plist = simulator.simulator_device_plist
+      expect(File.exist?(plist)).to be_truthy
     end
 
     it "can shutdown and erase a simulator" do
       expect(RunLoop::CoreSimulator.erase(simulator)).to be_truthy
+      plist = simulator.simulator_device_plist
+      expect(File.exist?(plist)).to be_truthy
     end
-
   end
 
   describe '#launch_simulator' do
