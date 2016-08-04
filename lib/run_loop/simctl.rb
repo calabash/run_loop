@@ -138,13 +138,17 @@ module RunLoop
 
         exit_status = hash[:exit_status]
         if exit_status != 0
-          raise RuntimeError,
-                %Q[Could not shutdown the simulator:
+
+          if simulator_state_as_int(device) == SIM_STATES["Shutdown"]
+            RunLoop.log_debug("simctl shutdown called when state is 'Shutdown'; ignoring error")
+          else
+            raise RuntimeError,
+                  %Q[Could not shutdown the simulator:
 
   command: xcrun #{cmd.join(" ")}
 simulator: #{device}
 
-                #{hash[:out]}
+                  #{hash[:out]}
 
 This usually means your CoreSimulator processes need to be restarted.
 
@@ -153,6 +157,7 @@ You can restart the CoreSimulator processes with this command:
 $ bundle exec run-loop simctl manage-processes
 
 ]
+          end
         end
         true
       end

@@ -223,6 +223,7 @@ describe RunLoop::Simctl do
 
         expect(simctl.shutdown(device)).to be_truthy
       end
+
       it "returns true if simctl shutdown completes with 0 exit status" do
         expect(simctl).to receive(:simulator_state_as_int).and_return(2)
         expect(simctl).to receive(:shell_out_with_xcrun).and_return(hash)
@@ -230,14 +231,24 @@ describe RunLoop::Simctl do
         expect(simctl.shutdown(device)).to be_truthy
       end
 
-      it "raises an error if simctl shutdown completes with non-zero exit status" do
-        expect(simctl).to receive(:simulator_state_as_int).and_return(2)
-        hash[:exit_status] = 1
-        expect(simctl).to receive(:shell_out_with_xcrun).and_return(hash)
+      context "completes with non-zero exit status" do
+        it "returns true if simulator is shutdown (changed state during call)" do
+          expect(simctl).to receive(:simulator_state_as_int).and_return(2, 1)
+          hash[:exit_status] = 1
+          expect(simctl).to receive(:shell_out_with_xcrun).and_return(hash)
 
-        expect do
-          simctl.shutdown(device)
-        end.to raise_error RuntimeError, /Could not shutdown the simulator/
+          expect(simctl.shutdown(device)).to be == true
+        end
+
+        it "raises an error if simctl shutdown completes with non-zero exit status" do
+          expect(simctl).to receive(:simulator_state_as_int).and_return(2, 2)
+          hash[:exit_status] = 1
+          expect(simctl).to receive(:shell_out_with_xcrun).and_return(hash)
+
+          expect do
+            simctl.shutdown(device)
+          end.to raise_error RuntimeError, /Could not shutdown the simulator/
+        end
       end
     end
 
