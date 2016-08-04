@@ -73,7 +73,8 @@ describe RunLoop::CoreSimulator do
 
   describe "#launch" do
     before do
-      Resources.shared.simctl.erase(simulator)
+      opts = RunLoop::CoreSimulator::DEFAULT_OPTIONS
+      Resources.shared.simctl.erase(simulator, opts[:launch_app_timeout], opts[:wait_for_state_timeout])
     end
 
     it "launches the app" do
