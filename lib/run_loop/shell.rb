@@ -26,6 +26,16 @@ module RunLoop
     # Raised when shell command times out.
     class TimeoutError < RuntimeError; end
 
+    def self.run_shell_command(args, options={})
+      shell = Class.new do
+        include RunLoop::Shell
+        def to_s; "#<Anonymous Shell>"; end
+        def inspect; to_s; end
+      end.new
+
+      shell.run_shell_command(args, options)
+    end
+
     def run_shell_command(args, options={})
 
       merged_options = DEFAULT_OPTIONS.merge(options)

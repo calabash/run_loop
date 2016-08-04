@@ -20,6 +20,15 @@ describe RunLoop::Shell do
     }
   end
 
+  context ".run_shell_command" do
+    it "creates an anonymous Shell instance and returns run_shell_command" do
+      args = ["echo", "Hello"]
+      actual = RunLoop::Shell.run_shell_command(args)
+      expect(actual[:exit_status]).to be == 0
+      expect(actual[:out]).to be == "Hello"
+    end
+  end
+
   describe "#run_shell_command" do
     it "raises an error if arg is not an Array" do
       expect do

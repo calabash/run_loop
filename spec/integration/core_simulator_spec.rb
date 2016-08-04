@@ -24,12 +24,15 @@ describe RunLoop::CoreSimulator do
       core_sim.launch_simulator
 
       expect(RunLoop::CoreSimulator.erase(simulator)).to be_truthy
+      plist = simulator.simulator_device_plist
+      expect(File.exist?(plist)).to be_truthy
     end
 
     it "can shutdown and erase a simulator" do
       expect(RunLoop::CoreSimulator.erase(simulator)).to be_truthy
+      plist = simulator.simulator_device_plist
+      expect(File.exist?(plist)).to be_truthy
     end
-
   end
 
   describe '#launch_simulator' do
@@ -73,8 +76,8 @@ describe RunLoop::CoreSimulator do
 
   describe "#launch" do
     before do
-      args = ['simctl', 'erase', simulator.udid]
-      xcrun.run_command_in_context(args, {:log_cmd => true })
+      opts = RunLoop::CoreSimulator::DEFAULT_OPTIONS
+      Resources.shared.simctl.erase(simulator, opts[:launch_app_timeout], opts[:wait_for_state_timeout])
     end
 
     it "launches the app" do
@@ -95,18 +98,18 @@ describe RunLoop::CoreSimulator do
   end
 
   it "retries app launching" do
-    expect(core_sim).to receive(:launch_app_with_simctl).exactly(3).times.and_raise(RunLoop::Xcrun::TimeoutError)
+    tries = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:app_launch_retries] - 1
+    error = RunLoop::Xcrun::TimeoutError.new("Xcrun timed out")
+    expect(core_sim).to receive(:launch_app_with_simctl).exactly(tries).times.and_raise(error)
     expect(core_sim).to receive(:launch_app_with_simctl).and_call_original
 
     expect(core_sim.launch).to be == true
   end
 
   it 'install with simctl' do
-    args = ['simctl', 'erase', simulator.udid]
-    xcrun.run_command_in_context(args, {:log_cmd => true })
-
-    expect(core_sim.install)
-    expect(core_sim.launch)
+    RunLoop::CoreSimulator.erase(simulator)
+    expect(core_sim.install).to be_truthy
+    expect(core_sim.launch).to be_truthy
   end
 
   it 'uninstall app and sandbox with simctl' do
