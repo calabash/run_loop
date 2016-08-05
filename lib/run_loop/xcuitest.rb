@@ -160,6 +160,10 @@ module RunLoop
       expect_200_response(response)
     end
 
+    # TODO Legacy API; remove once this branch is merged:
+    # https://github.com/calabash/DeviceAgent.iOS/pull/133
+    alias_method :runtime, :device_info
+
     # @!visibility private
     def server_pid
       options = http_options
