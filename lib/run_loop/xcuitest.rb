@@ -158,6 +158,15 @@ module RunLoop
     end
 
     # @!visibility private
+    def server_pid
+      options = http_options
+      request = request("pid")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
     def tree
       options = http_options
       request = request("tree")
