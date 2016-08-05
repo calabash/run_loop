@@ -149,7 +149,7 @@ module RunLoop
     end
 
     # @!visibility private
-    def runtime
+    def device_info
       options = http_options
       request = request("device")
       client = client(options)
