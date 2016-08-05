@@ -467,7 +467,7 @@ Sending request to perform '#{gesture}' with:
       # https://xamarin.atlassian.net/browse/TCFW-255
       # httpclient is unable to send a valid DELETE
       args = ["curl", "-X", "DELETE", %Q[#{url}#{versioned_route("session")}]]
-      run_shell_command(args)
+      run_shell_command(args, {:log_cmd => true})
 
       # options = ping_options
       # request = request("session")
