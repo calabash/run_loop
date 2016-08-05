@@ -537,6 +537,10 @@ Sending request to perform '#{gesture}' with:
       if merged_options[:shutdown_device_agent_before_launch]
         RunLoop.log_debug("Launch options insist that the DeviceAgent be shutdown")
         shutdown
+
+        if cbx_launcher.name == :xcodebuild
+          sleep(5.0)
+        end
       end
 
       if running?
