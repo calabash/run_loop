@@ -176,6 +176,15 @@ module RunLoop
     end
 
     # @!visibility private
+    def session_identifier
+      options = http_options
+      request = request("sessionIdentifier")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
     def tree
       options = http_options
       request = request("tree")
