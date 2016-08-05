@@ -14,11 +14,13 @@ module RunLoop
     class HTTPError < RuntimeError; end
 
     # @!visibility private
+    #
+    # These defaults may change at any time.
     DEFAULTS = {
       :port => 27753,
       :simulator_ip => "127.0.0.1",
       :http_timeout => RunLoop::Environment.ci? ? 120 : 60,
-      :version => "1.0"
+      :route_version => "1.0",
     }
 
     # @!visibility private
@@ -427,7 +429,7 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def versioned_route(route)
-      "#{DEFAULTS[:version]}/#{route}"
+      "#{DEFAULTS[:route_version]}/#{route}"
     end
 
     # @!visibility private

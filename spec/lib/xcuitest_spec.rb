@@ -253,7 +253,7 @@ describe RunLoop::XCUITest do
 
   context "#versioned_route" do
     it "adds leading version to route" do
-      stub_const("RunLoop::XCUITest::DEFAULTS", {:version => "0.1"})
+      stub_const("RunLoop::XCUITest::DEFAULTS", {:route_version => "0.1"})
       expect(xcuitest.send(:versioned_route, "route")).to be == "0.1/route"
     end
   end
