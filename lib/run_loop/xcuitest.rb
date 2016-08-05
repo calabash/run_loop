@@ -14,11 +14,14 @@ module RunLoop
     class HTTPError < RuntimeError; end
 
     # @!visibility private
+    #
+    # These defaults may change at any time.
     DEFAULTS = {
       :port => 27753,
       :simulator_ip => "127.0.0.1",
       :http_timeout => RunLoop::Environment.ci? ? 120 : 60,
-      :version => "1.0"
+      :route_version => "1.0",
+      :shutdown_device_agent_before_launch => false
     }
 
     # @!visibility private
@@ -49,7 +52,7 @@ module RunLoop
       cbx_launcher = XCUITest.detect_cbx_launcher(options, device)
 
       xcuitest = RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
-      xcuitest.launch
+      xcuitest.launch(options)
 
       if !RunLoop::Environment.xtc?
         cache = {
@@ -116,9 +119,9 @@ module RunLoop
     end
 
     # @!visibility private
-    def launch
+    def launch(options={})
       start = Time.now
-      launch_cbx_runner
+      launch_cbx_runner(options)
       launch_aut
       elapsed = Time.now - start
       RunLoop.log_debug("Took #{elapsed} seconds to launch #{bundle_id} on #{device}")
@@ -149,9 +152,36 @@ module RunLoop
     end
 
     # @!visibility private
-    def runtime
+    def device_info
       options = http_options
       request = request("device")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def server_pid
+      options = http_options
+      request = request("pid")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def server_version
+      options = http_options
+      request = request("version")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def session_identifier
+      options = http_options
+      request = request("sessionIdentifier")
       client = client(options)
       response = client.get(request)
       expect_200_response(response)
@@ -400,7 +430,7 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def versioned_route(route)
-      "#{DEFAULTS[:version]}/#{route}"
+      "#{DEFAULTS[:route_version]}/#{route}"
     end
 
     # @!visibility private
@@ -437,7 +467,7 @@ Sending request to perform '#{gesture}' with:
       # https://xamarin.atlassian.net/browse/TCFW-255
       # httpclient is unable to send a valid DELETE
       args = ["curl", "-X", "DELETE", %Q[#{url}#{versioned_route("session")}]]
-      run_shell_command(args)
+      run_shell_command(args, {:log_cmd => true})
 
       # options = ping_options
       # request = request("session")
@@ -483,11 +513,40 @@ Sending request to perform '#{gesture}' with:
       body
     end
 
+
+    def cbx_runner_stale?
+      if cbx_launcher.name == :xcodebuild
+        return false
+      end
+
+      version_info = server_version
+      running_bundle_version = RunLoop::Version.new(version_info[:bundle_version])
+      bundle_version = RunLoop::App.new(cbx_launcher.runner.runner).bundle_version
+
+      running_bundle_version < bundle_version
+    end
+
     # @!visibility private
-    def launch_cbx_runner
-      shutdown
+    def launch_cbx_runner(options={})
+      merged_options = DEFAULTS.merge(options)
+
+      if merged_options[:shutdown_device_agent_before_launch]
+        RunLoop.log_debug("Launch options insist that the DeviceAgent be shutdown")
+        shutdown
+      end
+
+      if running?
+       RunLoop.log_debug("DeviceAgent is already running")
+        if cbx_runner_stale?
+          shutdown
+        else
+          # TODO: is it necessary to return the pid?  Or can we return true?
+          return server_pid
+        end
+      end
 
       if cbx_launcher.name == :xcodebuild
+        RunLoop.log_debug("xcodebuild is the launcher - terminating existing xcodebuild processes")
         term_options = { :timeout => 0.5 }
         kill_options = { :timeout => 0.5 }
         RunLoop::ProcessWaiter.new("xcodebuild").pids.each do |pid|
@@ -527,6 +586,7 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
 
       RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
 
+      # TODO: is it necessary to return the pid?  Or can we return true?
       pid
     end
 
