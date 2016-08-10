@@ -5,26 +5,14 @@ module RunLoop
   class Otool
 
     # @!visibility private
-    attr_reader :path
-
-    # @!visibility private
-    def initialize(path)
-      @path = path
-
-      if !Otool.valid_path?(path)
-        raise ArgumentError,
-%Q{File:
-
-#{path}
-
-must exist and not be a directory.
-}
-      end
+    # @param [RunLoop::Xcode] xcode An instance of Xcode
+    def initialize(xcode)
+      @xcode = xcode
     end
 
     # @!visibility private
     def to_s
-      "#<OTOOL: #{path}>"
+      "#<OTOOL: Xcode #{xcode.version.to_s}>"
     end
 
     # @!visibility private
@@ -33,15 +21,19 @@ must exist and not be a directory.
     end
 
     # @!visibility private
-    def executable?
-      !arch_info[/is not an object file/, 0]
+    def executable?(path)
+      expect_valid_path!(path)
+      !arch_info(path)[/is not an object file/, 0]
     end
 
     private
 
     # @!visibility private
-    def arch_info
-      args = ["otool", "-hv", "-arch", "all", path]
+    attr_reader :xcode, :command_name
+
+    # @!visibility private
+    def arch_info(path)
+      args = [command_name, "-hv", "-arch", "all", path]
       opts = { :log_cmd => false }
 
       hash = xcrun.run_command_in_context(args, opts)
@@ -60,17 +52,41 @@ exited #{hash[:exit_status]} with the following output:
 }
       end
 
-      @arch_info = hash[:out]
+      hash[:out]
     end
 
     # @!visibility private
-    def self.valid_path?(path)
-      File.exist?(path) && !File.directory?(path)
+    def expect_valid_path!(path)
+      return true if File.exist?(path) && !File.directory?(path)
+      raise ArgumentError, %Q[
+File:
+
+#{path}
+
+must exist and not be a directory.
+
+]
     end
 
     # @!visibility private
     def xcrun
-      RunLoop::Xcrun.new
+      @xcrun ||= RunLoop::Xcrun.new
+    end
+
+    # @!visibility private
+    def xcode
+      @xcode
+    end
+
+    # @!visibility private
+    def command_name
+      @command_name ||= begin
+        if xcode.version_gte_8?
+          "otool-classic"
+        else
+          "otool"
+        end
+      end
     end
   end
 end

@@ -366,8 +366,8 @@ describe RunLoop::App do
     end
 
     it "returns an empty list if no executables are found" do
-      file = __FILE__
-      otool = RunLoop::Otool.new(file)
+      xcode = RunLoop::Xcode.new
+      otool = RunLoop::Otool.new(xcode)
       expect(app).to receive(:otool).at_least(:once).and_return(otool)
       expect(otool).to receive(:executable?).at_least(:once).and_return(false)
 
@@ -496,6 +496,24 @@ describe RunLoop::App do
     actual = app.send(:lipo)
     expect(actual).to be_a_kind_of(RunLoop::Lipo)
     expect(app.instance_variable_get(:@lipo)).to be == actual
+  end
+
+  context "#otool" do
+    it "returns a memoized RunLoop::Otool instance" do
+      otool = app.send(:otool)
+      expect(app.send(:otool)).to be == otool
+      expect(app.instance_variable_get(:@otool)).to be == otool
+      expect(otool).to be_a_kind_of(RunLoop::Otool)
+    end
+  end
+
+  context "#xcode" do
+    it "returns a memoized RunLoop::Xcode instance" do
+      xcode = app.send(:xcode)
+      expect(app.send(:xcode)).to be == xcode
+      expect(app.instance_variable_get(:@xcode)).to be == xcode
+      expect(xcode).to be_a_kind_of(RunLoop::Xcode)
+    end
   end
 end
 
