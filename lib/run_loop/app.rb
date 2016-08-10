@@ -272,8 +272,6 @@ Bundle must:
     end
 
     # @!visibility private
-
-    # @!visibility private
     # A strings factory
     def strings(file)
       RunLoop::Strings.new(file)

@@ -44,12 +44,12 @@ module RunLoop
 
 #{path}
 
-              #{args.join(" ")}
+#{args.join(" ")}
 
 exited #{hash[:exit_status]} with the following output:
 
 #{hash[:out]}
-              }
+}
       end
 
       hash[:out]
