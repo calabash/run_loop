@@ -218,7 +218,7 @@ Bundle must:
       executables = []
       Dir.glob("#{path}/**/*") do |file|
         next if skip_executable_check?(file)
-        if otool(file).executable?
+        if otool.executable?(file)
           executables << file
         end
       end
@@ -262,10 +262,16 @@ Bundle must:
     end
 
     # @!visibility private
-    # An otool factory.
-    def otool(file)
-      RunLoop::Otool.new(file)
+    def otool
+      @otool ||= RunLoop::Otool.new(xcode)
     end
+
+    # @!visibility private
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
+
+    # @!visibility private
 
     # @!visibility private
     # A strings factory
