@@ -73,6 +73,11 @@ module RunLoop
           "-config", "Debug",
           "-destination",
           "id=#{device.udid}",
+          "CLANG_ENABLE_CODE_COVERAGE=YES",
+          "GCC_GENERATE_TEST_COVERAGE_FILES=NO",
+          "GCC_INSTRUMENT_PROGRAM_FLOW_ARCS=NO",
+          # Scheme setting.
+          "-enableCodeCoverage", "YES",
           "test"
         ]
 
