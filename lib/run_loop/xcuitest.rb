@@ -287,6 +287,26 @@ module RunLoop
     end
 
     # @!visibility private
+    def pan_between_coordinates(start_point, end_point, options={})
+      default_options = {
+        :num_fingers => 1,
+        :duration => 0.5
+      }
+
+      merged_options = default_options.merge(options)
+
+      parameters = {
+        :gesture => "drag",
+        :specifiers => {
+          :coordinates => [start_point, end_point]
+        },
+        :options => merged_options
+      }
+
+      make_gesture_request(parameters)
+    end
+
+    # @!visibility private
     def perform_coordinate_gesture(gesture, x, y, options={})
       parameters = {
         :gesture => gesture,
@@ -296,8 +316,14 @@ module RunLoop
         :options => options
       }
 
+      make_gesture_request(parameters)
+    end
+
+    # @!visibility private
+    def make_gesture_request(parameters)
+
       RunLoop.log_debug(%Q[
-Sending request to perform '#{gesture}' with:
+Sending request to perform '#{parameters[:gesture]}' with:
 
 #{JSON.pretty_generate(parameters)}
 
