@@ -21,56 +21,6 @@ describe RunLoop::Core do
     end
   end
 
-  describe '.simulator_target?' do
-    if Resources.shared.core_simulator_env?
-      describe "named simulator" do
-
-        after(:each) do
-          pid = fork do
-            local_simctl = Resources.shared.simctl
-            simulators = local_simctl.simulators
-            simulators.each do |device|
-              if device.name == 'rspec-test-device'
-                udid = device.udid
-                `xcrun simctl delete #{udid}`
-                exit!
-              end
-            end
-          end
-          sleep(1)
-          Process.kill('QUIT', pid)
-        end
-
-        it ":device_target => 'rspec-test-device'" do
-          xcode = Resources.shared.xcode
-          if xcode.version < xcode.v64
-            Luffa.log_warn("Skipping test: Xcode < 6.4 detected (#{version.to_s}")
-          else
-
-            device_type_id = 'iPhone 5s'
-
-            if xcode.version_gte_71?
-              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-9-1'
-            elsif xcode.version_gte_7?
-              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-9-0'
-            else
-              runtime_id = 'com.apple.CoreSimulator.SimRuntime.iOS-8-4'
-            end
-          end
-
-          cmd = "xcrun simctl create rspec-test-device \"#{device_type_id}\" \"#{runtime_id}\""
-          udid = `#{cmd}`.strip
-          sleep 2
-          exit_code = $?.exitstatus
-          expect(udid).to_not be == nil
-          expect(exit_code).to be == 0
-          options = { :device_target => 'rspec-test-device' }
-          expect(RunLoop::Core.simulator_target?(options)).to be == true
-        end
-      end
-    end
-  end
-
   describe '.default_tracetemplate' do
     describe 'returns a template for' do
       xcode = Resources.shared.xcode

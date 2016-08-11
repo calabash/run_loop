@@ -4,6 +4,7 @@ describe 'monkey patching' do
   it "awesome-print '=='" do
     Open3.popen3('sh') do |stdin, stdout, stderr, _|
       stdin.puts 'bundle exec irb <<EOF'
+      stdin.puts "require 'run_loop'"
       stdin.puts "foo = RunLoop::Version.new('9.9.9')"
       stdin.puts 'EOF'
       stdin.close

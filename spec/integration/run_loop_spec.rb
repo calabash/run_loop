@@ -19,8 +19,8 @@ describe 'RunLoop' do
         :app => Resources.shared.cal_app_bundle_path,
         :uia_strategy => :preferences
       }
-      expect(RunLoop::Core).to receive(:run_with_options).with(run_options).and_raise(ArgumentError)
-      expect(RunLoop::Core).to receive(:run_with_options).with(run_options).and_call_original
+      expect(RunLoop::Core).to receive(:run_with_options).and_raise(ArgumentError)
+      expect(RunLoop::Core).to receive(:run_with_options).and_call_original
 
       begin
          RunLoop.run(options)

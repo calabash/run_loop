@@ -14,11 +14,14 @@ module RunLoop
     class HTTPError < RuntimeError; end
 
     # @!visibility private
+    #
+    # These defaults may change at any time.
     DEFAULTS = {
       :port => 27753,
       :simulator_ip => "127.0.0.1",
       :http_timeout => RunLoop::Environment.ci? ? 120 : 60,
-      :version => "1.0"
+      :route_version => "1.0",
+      :shutdown_device_agent_before_launch => false
     }
 
     # @!visibility private
@@ -49,7 +52,7 @@ module RunLoop
       cbx_launcher = XCUITest.detect_cbx_launcher(options, device)
 
       xcuitest = RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
-      xcuitest.launch
+      xcuitest.launch(options)
 
       if !RunLoop::Environment.xtc?
         cache = {
@@ -116,9 +119,9 @@ module RunLoop
     end
 
     # @!visibility private
-    def launch
+    def launch(options={})
       start = Time.now
-      launch_cbx_runner
+      launch_cbx_runner(options)
       launch_aut
       elapsed = Time.now - start
       RunLoop.log_debug("Took #{elapsed} seconds to launch #{bundle_id} on #{device}")
@@ -149,9 +152,40 @@ module RunLoop
     end
 
     # @!visibility private
-    def runtime
+    def device_info
       options = http_options
       request = request("device")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # TODO Legacy API; remove once this branch is merged:
+    # https://github.com/calabash/DeviceAgent.iOS/pull/133
+    alias_method :runtime, :device_info
+
+    # @!visibility private
+    def server_pid
+      options = http_options
+      request = request("pid")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def server_version
+      options = http_options
+      request = request("version")
+      client = client(options)
+      response = client.get(request)
+      expect_200_response(response)
+    end
+
+    # @!visibility private
+    def session_identifier
+      options = http_options
+      request = request("sessionIdentifier")
       client = client(options)
       response = client.get(request)
       expect_200_response(response)
@@ -240,7 +274,7 @@ module RunLoop
 
     # @!visibility private
     def rotate_home_button_to(position, sleep_for=1.0)
-      orientation = orientation_for_position(position)
+      orientation = normalize_orientation_position(position)
       parameters = {
         :orientation => orientation
       }
@@ -253,6 +287,26 @@ module RunLoop
     end
 
     # @!visibility private
+    def pan_between_coordinates(start_point, end_point, options={})
+      default_options = {
+        :num_fingers => 1,
+        :duration => 0.5
+      }
+
+      merged_options = default_options.merge(options)
+
+      parameters = {
+        :gesture => "drag",
+        :specifiers => {
+          :coordinates => [start_point, end_point]
+        },
+        :options => merged_options
+      }
+
+      make_gesture_request(parameters)
+    end
+
+    # @!visibility private
     def perform_coordinate_gesture(gesture, x, y, options={})
       parameters = {
         :gesture => gesture,
@@ -262,8 +316,14 @@ module RunLoop
         :options => options
       }
 
+      make_gesture_request(parameters)
+    end
+
+    # @!visibility private
+    def make_gesture_request(parameters)
+
       RunLoop.log_debug(%Q[
-Sending request to perform '#{gesture}' with:
+Sending request to perform '#{parameters[:gesture]}' with:
 
 #{JSON.pretty_generate(parameters)}
 
@@ -400,7 +460,7 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def versioned_route(route)
-      "#{DEFAULTS[:version]}/#{route}"
+      "#{DEFAULTS[:route_version]}/#{route}"
     end
 
     # @!visibility private
@@ -416,11 +476,20 @@ Sending request to perform '#{gesture}' with:
 
     # @!visibility private
     def http_options
-      {
-        :timeout => DEFAULTS[:http_timeout],
-        :interval => 0.1,
-        :retries => (DEFAULTS[:http_timeout]/0.1).to_i
-      }
+      if cbx_launcher.name == :xcodebuild
+        timeout = DEFAULTS[:http_timeout] * 2
+        {
+          :timeout => timeout,
+          :interval => 0.1,
+          :retries => (timeout/0.1).to_i
+        }
+      else
+        {
+          :timeout => DEFAULTS[:http_timeout],
+          :interval => 0.1,
+          :retries => (DEFAULTS[:http_timeout]/0.1).to_i
+        }
+      end
     end
 
     # @!visibility private
@@ -428,7 +497,7 @@ Sending request to perform '#{gesture}' with:
       # https://xamarin.atlassian.net/browse/TCFW-255
       # httpclient is unable to send a valid DELETE
       args = ["curl", "-X", "DELETE", %Q[#{url}#{versioned_route("session")}]]
-      run_shell_command(args)
+      run_shell_command(args, {:log_cmd => true})
 
       # options = ping_options
       # request = request("session")
@@ -474,21 +543,84 @@ Sending request to perform '#{gesture}' with:
       body
     end
 
-    # @!visibility private
-    def launch_cbx_runner
-      shutdown
 
-      options = {:log_cmd => true}
-      run_shell_command(["pkill", "iOSDeviceManager"], options)
-      run_shell_command(["pkill", "testmanagerd"], options)
-      run_shell_command(["pkill", "xcodebuild"], options)
+    def cbx_runner_stale?
+      if cbx_launcher.name == :xcodebuild
+        return false
+      end
+
+      version_info = server_version
+      running_bundle_version = RunLoop::Version.new(version_info[:bundle_version])
+      bundle_version = RunLoop::App.new(cbx_launcher.runner.runner).bundle_version
+
+      running_bundle_version < bundle_version
+    end
+
+    # @!visibility private
+    def launch_cbx_runner(options={})
+      merged_options = DEFAULTS.merge(options)
+
+      if merged_options[:shutdown_device_agent_before_launch]
+        RunLoop.log_debug("Launch options insist that the DeviceAgent be shutdown")
+        shutdown
+
+        if cbx_launcher.name == :xcodebuild
+          sleep(5.0)
+        end
+      end
+
+      if running?
+       RunLoop.log_debug("DeviceAgent is already running")
+        if cbx_runner_stale?
+          shutdown
+        else
+          # TODO: is it necessary to return the pid?  Or can we return true?
+          return server_pid
+        end
+      end
+
+      if cbx_launcher.name == :xcodebuild
+        RunLoop.log_debug("xcodebuild is the launcher - terminating existing xcodebuild processes")
+        term_options = { :timeout => 0.5 }
+        kill_options = { :timeout => 0.5 }
+        RunLoop::ProcessWaiter.new("xcodebuild").pids.each do |pid|
+          term = RunLoop::ProcessTerminator.new(pid, 'TERM', "xcodebuild", term_options)
+          killed = term.kill_process
+          unless killed
+            RunLoop::ProcessTerminator.new(pid, 'KILL', "xcodebuild", kill_options)
+          end
+        end
+        sleep(2.0)
+      end
 
       start = Time.now
       RunLoop.log_debug("Waiting for CBX-Runner to launch...")
       pid = cbx_launcher.launch
-      health
+
+      if cbx_launcher.name == :xcodebuild
+        sleep(2.0)
+      end
+
+      begin
+        health
+      rescue RunLoop::HTTP::Error => _
+        raise %Q[
+
+Could not connect to the DeviceAgent service.
+
+device: #{device}
+   url: #{url}
+
+To diagnose the problem tail the launcher log file:
+
+$ tail -1000 -F #{cbx_launcher.class.log_file}
+
+]
+      end
+
       RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
 
+      # TODO: is it necessary to return the pid?  Or can we return true?
       pid
     end
 
@@ -556,7 +688,21 @@ Server replied with:
     end
 
     # @!visibility private
-    def orientation_for_position(position)
+    def normalize_orientation_position(position)
+      if position.is_a?(Symbol)
+        orientation_for_position_symbol(position)
+      elsif position.is_a?(Fixnum)
+        position
+      else
+        raise ArgumentError, %Q[
+Expected #{position} to be a Symbol or Fixnum but found #{position.class}
+
+]
+      end
+    end
+
+    # @!visibility private
+    def orientation_for_position_symbol(position)
       symbol = position.to_sym
 
       case symbol

@@ -146,62 +146,6 @@ class Resources
     target
   end
 
-  def self.shutdown_all_booted(options = {})
-    xcrun = RunLoop::Xcrun.new
-    return true if self.shutdown_with_simctl(xcrun) == :none
-
-    defaults = {
-          :timeout => 10,
-          :delay => 1
-    }
-
-    merged = defaults.merge(options)
-
-    timeout = merged[:timeout]
-    delay = merged[:delay]
-
-    now = Time.now
-    poll_until = now + timeout
-    counter = 1
-
-    done = false
-    while Time.now < poll_until
-      done = self.shutdown_with_simctl(xcrun) == :none
-      counter += 1
-      break if done
-      sleep delay
-    end
-
-    elapsed = Time.now - now
-    if done
-      RunLoop.log_debug("Shutdown #{counter} booted simulators in '#{elapsed}'")
-    else
-      RunLoop.log_debug("Timed out shutting down booted simulators; shutdown #{counter} in #{elapsed} seconds")
-    end
-
-    done
-  end
-
-  def self.shutdown_with_simctl(xcrun)
-    args = ['simctl', 'shutdown', 'booted']
-    hash = xcrun.exec(args, {:log_cmd => true })
-    out = hash[:out]
-    exit_status = hash[:exit_status]
-
-    if [# Typical output for Xcode >= 6
-          out == 'No devices are booted.',
-
-          # Xcode 6
-          exit_status == 145,
-
-          # Xcode 7
-          exit_status == 158].any?
-      :none
-    else
-      :shutdown
-    end
-  end
-
   def launch_with_options(options, tries=self.launch_retries, &block)
     hash = nil
 
@@ -245,11 +189,11 @@ class Resources
     case sdk
       when :sdk8
         @mock_core_simulator_data_dir_sdk8 ||= lambda {
-          File.expand_path(File.join(resources_dir, 'simctl', 'sdk8', 'data'))
+          File.expand_path(File.join(resources_dir, "simctl", 'sdk8', 'data'))
         }.call
       when :sdk7
         @mock_core_simulator_data_dir_sdk7 ||= lambda {
-          File.expand_path(File.join(resources_dir, 'simctl', 'sdk-less-than-8', 'data'))
+          File.expand_path(File.join(resources_dir, "simctl", 'sdk-less-than-8', 'data'))
         }.call
       else
         raise "Expected sdk '#{sdk}' to be on of #{[:sdk8, :sdk7]}"

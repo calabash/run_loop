@@ -232,20 +232,20 @@ describe RunLoop::App do
 
   describe "#build_version" do
     let(:pbuddy) { RunLoop::PlistBuddy.new }
-    let(:args) { ["CFBundleVersionString", app.info_plist_path] }
+    let(:args) { ["CFBundleVersion", app.info_plist_path] }
 
     before do
       allow(app).to receive(:plist_buddy).and_return(pbuddy)
     end
 
-    it "valid CFBundleVersionString" do
+    it "valid CFBundleVersion" do
       expect(pbuddy).to receive(:plist_read).with(*args).twice.and_return("8.0")
 
       expect(app.build_version).to be == RunLoop::Version.new("8.0")
       expect(app.bundle_version).to be == RunLoop::Version.new("8.0")
     end
 
-    it "invalid CFBundleShortVersionString" do
+    it "invalid CFBundleVersion" do
       expect(pbuddy).to receive(:plist_read).with(*args).and_return("a.b.c")
 
       expect(app.build_version).to be == nil
@@ -366,8 +366,8 @@ describe RunLoop::App do
     end
 
     it "returns an empty list if no executables are found" do
-      file = __FILE__
-      otool = RunLoop::Otool.new(file)
+      xcode = RunLoop::Xcode.new
+      otool = RunLoop::Otool.new(xcode)
       expect(app).to receive(:otool).at_least(:once).and_return(otool)
       expect(otool).to receive(:executable?).at_least(:once).and_return(false)
 
@@ -496,6 +496,24 @@ describe RunLoop::App do
     actual = app.send(:lipo)
     expect(actual).to be_a_kind_of(RunLoop::Lipo)
     expect(app.instance_variable_get(:@lipo)).to be == actual
+  end
+
+  context "#otool" do
+    it "returns a memoized RunLoop::Otool instance" do
+      otool = app.send(:otool)
+      expect(app.send(:otool)).to be == otool
+      expect(app.instance_variable_get(:@otool)).to be == otool
+      expect(otool).to be_a_kind_of(RunLoop::Otool)
+    end
+  end
+
+  context "#xcode" do
+    it "returns a memoized RunLoop::Xcode instance" do
+      xcode = app.send(:xcode)
+      expect(app.send(:xcode)).to be == xcode
+      expect(app.instance_variable_get(:@xcode)).to be == xcode
+      expect(xcode).to be_a_kind_of(RunLoop::Xcode)
+    end
   end
 end
 

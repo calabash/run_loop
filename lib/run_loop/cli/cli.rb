@@ -30,8 +30,8 @@ module RunLoop
       desc 'instruments', "Interact with Xcode's command-line instruments"
       subcommand 'instruments', RunLoop::CLI::Instruments
 
-      desc 'simctl', "Interact with Xcode's command-line simctl"
-      subcommand 'simctl', RunLoop::CLI::Simctl
+      desc "simctl", "Interact with Xcode's command-line simctl"
+      subcommand "simctl", RunLoop::CLI::Simctl
 
       desc "locale", "Tools for interacting with locales"
       subcommand "locale", RunLoop::CLI::Locale

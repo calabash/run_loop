@@ -95,21 +95,30 @@ but binary does not exist at that path.
                 "-t", runner.tester,
                 "-d", device.udid]
 
+        code_sign_identity = RunLoop::Environment.code_sign_identity
+        if !code_sign_identity
+          code_sign_identity = "iPhone Developer"
+        end
+
         if device.physical_device?
           args << "-c"
-          args << RunLoop::Environment.codesign_identity
+          args << code_sign_identity
         end
 
         log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
         FileUtils.touch(log_file)
 
+        env = {
+          "CLOBBER" => "1"
+        }
+
         options = {:out => log_file, :err => log_file}
         RunLoop.log_unix_cmd("#{cmd} #{args.join(" ")} >& #{log_file}")
 
         # Gotta keep the ios_device_manager process alive or the connection
         # to testmanagerd will fail.
-        pid = Process.spawn(cmd, *args, options)
+        pid = Process.spawn(env, cmd, *args, options)
         Process.detach(pid)
 
         if device.simulator?

@@ -46,11 +46,15 @@ describe RunLoop::Instruments do
                 options[:instruments] = RunLoop::Instruments.new
                 options[:xcode] = RunLoop::Xcode.new
 
-                Resources.shared.launch_with_options(options) do |hash|
-                  expect(hash).not_to be nil
-                  expect(instruments.instruments_running?).to be == true
-                  instruments.kill_instruments
-                  expect(instruments.instruments_running?).to be == false
+                if xcode.version_gte_8?
+                  RunLoop.log_debug("Skipping Xcode 8 instruments tests")
+                else
+                  Resources.shared.launch_with_options(options) do |hash|
+                    expect(hash).not_to be nil
+                    expect(instruments.instruments_running?).to be == true
+                    instruments.kill_instruments
+                    expect(instruments.instruments_running?).to be == false
+                  end
                 end
               end
             end

@@ -1,9 +1,24 @@
 ## Change Log
 
+### 2.1.7
+
+* XCUITest: add #pan\_between\_coordinates #511
+* Respond to Xcode 8 otool changes #509
+* Only launch CBX-Runner when necessary #508
+* All simctl commands are performed through Simctl instance #507
+* Device: assume PlistBuddy is not in PATH when setting the simulator
+  language #506
+* LifeCycle: IOSDeviceManager expands the Frameworks.zip if necessary
+  #504
+* Shell: raise the correct error when command fails #503
+* Regex: expand VERSION\_REGEX to support iOS 10.0 #502
+* Rake: add task for expanding device agent .zips #501
+* Start PhysicalDevice::LifeCycle::IOSDeviceManager implementation #500
+
 ### 2.1.6
 
 * Remove dnssd dependency #496
-* Core.default_tracetemplate raises on Xcode 8 #498
+* Core.default\_tracetemplate raises on Xcode 8 #498
 
 ### 2.1.5
 
@@ -22,7 +37,7 @@
 * Detecting and handling Xcode 8 and iOS 10 #482
 * DetectAUT: increase search depth for AUT for Xamarin projects #481
 * Rename exec methods in various classes #479
-* XCUITest respects to DEVICE_AGENT_URL #477
+* XCUITest respects to DEVICE\_AGENT\_URL #477
 * XCUITest: simplify the common gestures API #476
 * XCUITest: support text entry #474
 

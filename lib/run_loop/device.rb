@@ -4,6 +4,9 @@ module RunLoop
     require 'securerandom'
     include RunLoop::Regex
 
+    require "run_loop/shell"
+    include RunLoop::Shell
+
     # Starting in Xcode 7, iOS 9 simulators have a new "booting" state.
     #
     # The simulator must completely boot before run-loop tries to do things
@@ -39,7 +42,6 @@ module RunLoop
     attr_reader :simulator_accessibility_plist_path
     attr_reader :simulator_preferences_plist_path
     attr_reader :simulator_log_file_path
-    attr_reader :pbuddy
 
     # Create a new device.
     #
@@ -268,7 +270,7 @@ version: #{version}
         raise RuntimeError, 'This method is available only for simulators'
       end
 
-      @state = fetch_simulator_state
+      @state = simctl.simulator_state_as_string(self)
     end
 
     # @!visibility private
@@ -498,19 +500,34 @@ version: #{version}
       global_plist = simulator_global_preferences_path
 
       cmd = [
-        "PlistBuddy",
+        "/usr/libexec/PlistBuddy",
         "-c",
         "Add :AppleLanguages:0 string '#{lang_code}'",
         global_plist
       ]
 
       # RunLoop::PlistBuddy cannot add items to arrays.
-      xcrun.run_command_in_context(cmd, {:log_cmd => true})
+      hash = run_shell_command(cmd, {:log_cmd => true})
+
+      if hash[:exit_status] != 0
+        raise RuntimeError, %Q[
+Could not update the Simulator languages because this command:
+
+#{cmd.join(" ")}
+
+failed with this output:
+
+#{hash[:out]}
+
+]
+      end
 
       simulator_languages
     end
 
     private
+
+    attr_reader :pbuddy, :simctl, :xcrun
 
     # @!visibility private
     def xcrun
@@ -523,43 +540,8 @@ version: #{version}
     end
 
     # @!visibility private
-    def detect_state_from_line(line)
-
-      if line[/unavailable/, 0]
-        RunLoop.log_debug("Simulator state is unavailable: #{line}")
-        return 'Unavailable'
-      end
-
-      state = line[/(Booted|Shutdown|Shutting Down)/,0]
-
-      if state.nil?
-        RunLoop.log_debug("Simulator state is unknown: #{line}")
-        'Unknown'
-      else
-        state
-      end
-    end
-
-    # @!visibility private
-    def fetch_simulator_state
-      if physical_device?
-        raise RuntimeError, 'This method is available only for simulators'
-      end
-
-      args = ['simctl', 'list', 'devices']
-      hash = xcrun.run_command_in_context(args)
-      out = hash[:out]
-
-      matched_line = out.split("\n").find do |line|
-        line.include?(udid)
-      end
-
-      if matched_line.nil?
-        raise RuntimeError,
-              "Expected a simulator with udid '#{udid}', but found none"
-      end
-
-      detect_state_from_line(matched_line)
+    def simctl
+      @simctl ||= RunLoop::Simctl.new
     end
 
     # @!visibility private

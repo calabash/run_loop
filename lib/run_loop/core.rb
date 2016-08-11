@@ -65,7 +65,8 @@ module RunLoop
       xcode = options[:xcode] || RunLoop::Xcode.new
       instruments = options[:instruments] || RunLoop::Instruments.new
 
-      if xcode.version_gte_8?
+      # Guard against Xcode version check on the XTC.
+      if !RunLoop::Environment.xtc? && xcode.version_gte_8?
         raise %Q[
 UIAutomation is not available on Xcode >= 8.*.
 

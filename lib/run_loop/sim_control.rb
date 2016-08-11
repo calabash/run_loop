@@ -1136,7 +1136,9 @@ module RunLoop
     #  base sdk version.
     # @see #simctl_list
     def simctl_list_devices
-      args = ['simctl', 'list', 'devices']
+      # Ensure correct CoreSimulator service is installed.
+      RunLoop::Simctl.new
+      args = ["simctl", 'list', 'devices']
       hash = xcrun.run_command_in_context(args)
 
       current_sdk = nil
@@ -1219,7 +1221,9 @@ module RunLoop
     #
     # @see #simctl_list
     def simctl_list_runtimes
-      args = ['simctl', 'list', 'runtimes']
+      # Ensure correct CoreSimulator service is installed.
+      RunLoop::Simctl.new
+      args = ["simctl", 'list', 'runtimes']
       hash = xcrun.run_command_in_context(args)
 
       # Ex.

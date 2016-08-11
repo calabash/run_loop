@@ -61,7 +61,8 @@ module RunLoop
       # @!visibility private
       def xcodebuild
         env = {
-          "COMMAND_LINE_BUILD" => "1"
+          "COMMAND_LINE_BUILD" => "1",
+          "CLOBBER" => "1"
         }
 
         args = [
@@ -72,7 +73,11 @@ module RunLoop
           "-config", "Debug",
           "-destination",
           "id=#{device.udid}",
-          "clean",
+          "CLANG_ENABLE_CODE_COVERAGE=YES",
+          "GCC_GENERATE_TEST_COVERAGE_FILES=NO",
+          "GCC_INSTRUMENT_PROGRAM_FLOW_ARCS=NO",
+          # Scheme setting.
+          "-enableCodeCoverage", "YES",
           "test"
         ]
 

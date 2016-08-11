@@ -26,6 +26,16 @@ module RunLoop
     # Raised when shell command times out.
     class TimeoutError < RuntimeError; end
 
+    def self.run_shell_command(args, options={})
+      shell = Class.new do
+        include RunLoop::Shell
+        def to_s; "#<Anonymous Shell>"; end
+        def inspect; to_s; end
+      end.new
+
+      shell.run_shell_command(args, options)
+    end
+
     def run_shell_command(args, options={})
 
       merged_options = DEFAULT_OPTIONS.merge(options)
@@ -85,18 +95,42 @@ executing this command:
 }
       end
 
+      now = Time.now
+
       if hash[:exit_status].nil?
-        elapsed = "%0.2f" % (Time.now - start_time)
-        raise TimeoutError,
-%Q{Timed out after #{elapsed} seconds executing
+        elapsed = "%0.2f" % (now - start_time)
+
+        if timeout_exceeded?(start_time, timeout)
+          raise TimeoutError,
+%Q[
+Timed out after #{elapsed} seconds executing
 
 #{cmd}
 
 with a timeout of #{timeout}
-}
+]
+        else
+          raise Error,
+                %Q[
+There was an error executing:
+
+#{cmd}
+
+The command generated this output:
+
+#{hash[:out]}
+]
+
+        end
       end
 
       hash
+    end
+
+    private
+
+    def timeout_exceeded?(start_time, timeout)
+      Time.now > start_time + timeout
     end
   end
 end
