@@ -251,6 +251,14 @@ module RunLoop
       end
     end
 
+    # @!visibility private
+    def alert_visible?
+      parameters = { :type => "Alert" }
+      request = request("query", parameters)
+      client = client(http_options)
+      response = client.post(request)
+      hash = expect_200_response(response)
+      !hash["result"].empty?
     end
 
     # @!visibility private
