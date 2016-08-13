@@ -231,19 +231,32 @@ module RunLoop
     end
 
     # @!visibility private
-    def query(mark)
-      options = http_options
+    def query(mark, options={})
+      default_options = { all: false }
+      merged_options = default_options.merge(options)
+
       parameters = { :id => mark }
       request = request("query", parameters)
-      client = client(options)
+      client = client(http_options)
       response = client.post(request)
-      expect_200_response(response)
+      hash = expect_200_response(response)
+      elements = hash["result"]
+
+      if merged_options[:all]
+        elements
+      else
+        elements.select do |element|
+          element["hitable"]
+        end
+      end
+    end
+
     end
 
     # @!visibility private
     def query_for_coordinate(mark)
-      body = query(mark)
-      coordinate_from_query_result(body)
+      elements = query(mark)
+      coordinate_from_query_result(elements)
     end
 
     # @!visibility private
@@ -335,8 +348,7 @@ Sending request to perform '#{parameters[:gesture]}' with:
     end
 
     # @!visibility private
-    def coordinate_from_query_result(hash)
-      matches = hash["result"]
+    def coordinate_from_query_result(matches)
 
       if matches.nil? || matches.empty?
         raise "Expected #{hash} to contain some results"
