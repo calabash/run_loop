@@ -232,10 +232,13 @@ module RunLoop
 
     # @!visibility private
     def query(mark, options={})
-      default_options = { all: false }
+      default_options = {
+        all: false,
+        specifier: :id
+      }
       merged_options = default_options.merge(options)
 
-      parameters = { :id => mark }
+      parameters = { merged_options[:specifier] => mark }
       request = request("query", parameters)
       client = client(http_options)
       response = client.post(request)
