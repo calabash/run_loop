@@ -570,16 +570,20 @@ Sending request to perform '#{parameters[:gesture]}' with:
       end
 
 
+      # TODO cbx_runner_stale? returns false always
       def cbx_runner_stale?
-        if cbx_launcher.name == :xcodebuild
-          return false
-        end
+        false
+        # The RunLoop::Version class needs to be updated to handle timestamps.
+        #
+        # if cbx_launcher.name == :xcodebuild
+        #   return false
+        # end
 
-        version_info = server_version
-        running_bundle_version = RunLoop::Version.new(version_info[:bundle_version])
-        bundle_version = RunLoop::App.new(cbx_launcher.runner.runner).bundle_version
-
-        running_bundle_version < bundle_version
+        # version_info = server_version
+        # running_bundle_version = RunLoop::Version.new(version_info[:bundle_version])
+        # bundle_version = RunLoop::App.new(cbx_launcher.runner.runner).bundle_version
+        #
+        # running_bundle_version < bundle_version
       end
 
       # @!visibility private
