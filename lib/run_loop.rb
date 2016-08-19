@@ -20,7 +20,7 @@ require 'run_loop/plist_buddy'
 require "run_loop/codesign"
 require 'run_loop/app'
 require 'run_loop/ipa'
-require "run_loop/device_agent/cbxrunner"
+require "run_loop/device_agent/runner"
 require "run_loop/device_agent/frameworks"
 require "run_loop/device_agent/launcher"
 require "run_loop/device_agent/ios_device_manager"

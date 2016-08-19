@@ -3,8 +3,7 @@ module RunLoop
   # @!visibility private
   module DeviceAgent
     # @!visibility private
-    class CBXRunner
-
+    class Runner
 
       # @!visibility private
       @@cbxdevice = nil
@@ -19,7 +18,7 @@ module RunLoop
 
       # @!visibility private
       def self.detect_cbxsim
-        @@cbxsim ||= lambda do
+        @@cbxsim ||= begin
           from_env = RunLoop::Environment.cbxsim
 
           if from_env
@@ -37,12 +36,12 @@ but runner does not exist at that path.
           else
             self.default_cbxsim
           end
-        end.call
+        end
       end
 
       # @!visibility private
       def self.detect_cbxdevice
-        @@cbxdevice ||= lambda do
+        @@cbxdevice ||= begin
           from_env = RunLoop::Environment.cbxdevice
 
           if from_env
@@ -60,12 +59,12 @@ but runner does not exist at that path.
           else
             self.default_cbxdevice
           end
-        end.call
+        end
       end
 
       # @!visibility private
       def self.default_cbxdevice
-        cbx = File.join(self.device_agent_dir, "ipa", "CBX-Runner.app")
+        cbx = File.join(self.device_agent_dir, "ipa", "DeviceAgent-Runner.app")
 
         if !File.exist?(cbx)
           self.expand_runner_archive("#{cbx}.zip")
@@ -76,7 +75,7 @@ but runner does not exist at that path.
 
       # @!visibility private
       def self.default_cbxsim
-        cbx = File.join(self.device_agent_dir, "app", "CBX-Runner.app")
+        cbx = File.join(self.device_agent_dir, "app", "DeviceAgent-Runner.app")
 
         if !File.exist?(cbx)
           self.expand_runner_archive("#{cbx}.zip")
@@ -101,7 +100,7 @@ but runner does not exist at that path.
           RunLoop.log_unix_cmd("cd #{dir}")
           shell.run_shell_command(["ditto", "-xk", File.basename(archive), "."], options)
         end
-        File.join(dir, "CBX-Runner.app")
+        File.join(dir, "DeviceAgent-Runner.app")
       end
 
       # @!visibility private
@@ -115,18 +114,18 @@ but runner does not exist at that path.
 
       # @!visibility private
       def runner
-        @runner ||= lambda do
+        @runner ||= begin
           if device.physical_device?
-            RunLoop::DeviceAgent::CBXRunner.detect_cbxdevice
+            RunLoop::DeviceAgent::Runner.detect_cbxdevice
           else
-            RunLoop::DeviceAgent::CBXRunner.detect_cbxsim
+            RunLoop::DeviceAgent::Runner.detect_cbxsim
           end
-        end.call
+        end
       end
 
       # @!visibility private
       def tester
-        @tester ||= File.join(runner, "PlugIns", "CBX.xctest")
+        @tester ||= File.join(runner, "PlugIns", "DeviceAgent.xctest")
       end
 
       # @!visibility private
@@ -143,7 +142,7 @@ but runner does not exist at that path.
 
       # @!visibility private
       def info_plist
-        @info_plist ||= File.join(runner, "PlugIns", "CBX.xctest", "Info.plist")
+        @info_plist ||= File.join(runner, "Info.plist")
       end
 
       # @!visibility private
