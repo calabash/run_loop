@@ -100,7 +100,7 @@ module RunLoop
     #
     # @param [String] bundle_id The identifier of the app under test.
     # @param [RunLoop::Device] device The device under test.
-    # @param [RunLoop::DeviceAgent::Launcher] cbx_launcher The entity that
+    # @param [RunLoop::DeviceAgent::LauncherStrategy] cbx_launcher The entity that
     #  launches the CBXRunner.
     def initialize(bundle_id, device, cbx_launcher)
       @bundle_id = bundle_id

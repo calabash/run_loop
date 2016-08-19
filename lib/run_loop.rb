@@ -22,7 +22,7 @@ require 'run_loop/app'
 require 'run_loop/ipa'
 require "run_loop/device_agent/runner"
 require "run_loop/device_agent/frameworks"
-require "run_loop/device_agent/launcher"
+require "run_loop/device_agent/launcher_strategy"
 require "run_loop/device_agent/ios_device_manager"
 require "run_loop/device_agent/xcodebuild"
 require "run_loop/detect_aut/errors"

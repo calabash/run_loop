@@ -5,7 +5,7 @@ module RunLoop
   module DeviceAgent
 
     # @!visibility private
-    class Xcodebuild < RunLoop::DeviceAgent::Launcher
+    class Xcodebuild < RunLoop::DeviceAgent::LauncherStrategy
 
       # @!visibility private
       def self.log_file

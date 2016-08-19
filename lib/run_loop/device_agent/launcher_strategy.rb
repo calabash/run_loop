@@ -4,9 +4,9 @@ module RunLoop
   module DeviceAgent
     # @!visibility private
     #
-    # An abstract base class for something that can launch the CBXRunner on a
-    # device.  The CBXRunner is AKA the DeviceAgent.
-    class Launcher
+    # A base class for something that can launch the DeviceAgent-Runner on a
+    # device.
+    class LauncherStrategy
       require "run_loop/abstract"
       include RunLoop::Abstract
 
@@ -14,7 +14,7 @@ module RunLoop
       attr_reader :device
 
       # @!visibility private
-      # @param [RunLoop::Device] device where to launch the CBX-Runner
+      # @param [RunLoop::Device] device where to launch the DeviceAgent-Runner
       def initialize(device)
         @device = device
 
@@ -24,7 +24,7 @@ Invalid device:
 
 #{device}
 
-XCUITest is only available for iOS >= 9.0
+DeviceAgent is only available for iOS >= 9.0
 ]
         end
       end
@@ -32,14 +32,14 @@ XCUITest is only available for iOS >= 9.0
       # @!visibility private
       # The name of this launcher. Must be a symbol (keyword).  This value will
       # be used for the key :cbx_launcher in the RunLoop::Cache so Calabash
-      # iOS can attach and reattach to an XCUITest instance.
+      # iOS can attach and reattach to a DeviceAgent instance.
       def name
         abstract_method!
       end
 
       # @!visibility private
       #
-      # Does whatever it takes to launch the CBX-Runner on the device.
+      # Does whatever it takes to launch the DeviceAgent-Runner on the device.
       def launch
         abstract_method!
       end

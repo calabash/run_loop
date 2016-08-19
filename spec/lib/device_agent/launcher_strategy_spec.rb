@@ -1,9 +1,9 @@
 
-describe RunLoop::DeviceAgent::Launcher do
+describe RunLoop::DeviceAgent::LauncherStrategy do
   describe ".new" do
     it "sets instance variables" do
       device = Resources.shared.device("9.0")
-      launcher = RunLoop::DeviceAgent::Launcher.new(device)
+      launcher = RunLoop::DeviceAgent::LauncherStrategy.new(device)
       expect(launcher.device).to be == device
       expect(launcher.instance_variable_get(:@device)).to be == device
     end
@@ -12,9 +12,9 @@ describe RunLoop::DeviceAgent::Launcher do
       device = Resources.shared.device("8.3")
 
       expect do
-        RunLoop::DeviceAgent::Launcher.new(device)
+        RunLoop::DeviceAgent::LauncherStrategy.new(device)
       end.to raise_error(ArgumentError,
-                         /XCUITest is only available for iOS >= 9.0/)
+                         /DeviceAgent is only available for iOS >= 9.0/)
 
     end
   end
@@ -22,7 +22,7 @@ describe RunLoop::DeviceAgent::Launcher do
   describe "abstract methods" do
     let(:launcher) do
       device = Resources.shared.device("9.0")
-      RunLoop::DeviceAgent::Launcher.new(device)
+      RunLoop::DeviceAgent::LauncherStrategy.new(device)
     end
 
     it "#launch" do

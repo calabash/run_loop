@@ -53,7 +53,7 @@ describe RunLoop::DeviceAgent::IOSDeviceManager do
 
     before do
       FileUtils.mkdir_p(dot_dir)
-      allow(RunLoop::DeviceAgent::Launcher).to receive(:dot_dir).and_return(xcuitest_dir)
+      allow(RunLoop::DeviceAgent::LauncherStrategy).to receive(:dot_dir).and_return(xcuitest_dir)
     end
 
     describe ".log_file" do

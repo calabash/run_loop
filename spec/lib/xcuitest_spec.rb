@@ -3,7 +3,7 @@ describe RunLoop::XCUITest do
 
   let(:bundle_id) { "com.apple.Preferences" }
   let(:device) { Resources.shared.simulator("9.0") }
-  let(:cbx_launcher) { RunLoop::DeviceAgent::Launcher.new(device) }
+  let(:cbx_launcher) { RunLoop::DeviceAgent::LauncherStrategy.new(device) }
   let(:xcuitest) { RunLoop::XCUITest.new(bundle_id, device, cbx_launcher) }
 
   let(:response) do
