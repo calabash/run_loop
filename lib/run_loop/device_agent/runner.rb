@@ -85,20 +85,11 @@ but runner does not exist at that path.
       end
 
       # @!visibility private
-      # TODO move this behavior to shell.rb - should be able to call Shell.run_unix_command
       def self.expand_runner_archive(archive)
-        shell = Class.new do
-          require "run_loop/shell"
-          include RunLoop::Shell
-          def to_s; "#<CBXRunner Shell>"; end
-          def inspect; to_s; end
-        end.new
-
         dir = File.dirname(archive)
         options = { :log_cmd => true }
         Dir.chdir(dir) do
-          RunLoop.log_unix_cmd("cd #{dir}")
-          shell.run_shell_command(["ditto", "-xk", File.basename(archive), "."], options)
+          Shell.run_shell_command(["ditto", "-xk", File.basename(archive), "."], options)
         end
         File.join(dir, "DeviceAgent-Runner.app")
       end
