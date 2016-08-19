@@ -79,7 +79,7 @@ Use the CBXWS environment variable to override the default.
         args = [
           "xcrun",
           "xcodebuild",
-          "-scheme", "CBXAppStub",
+          "-scheme", "AppStub",
           "-workspace", workspace,
           "-config", "Debug",
           "-destination",
