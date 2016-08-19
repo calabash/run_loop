@@ -8,8 +8,8 @@ bash_scripts = ["scripts/udidetect",
 plists = Dir.glob('plists/**/*.plist')
 
 device_agent = ["lib/run_loop/device_agent/bin/iOSDeviceManager",
-                "lib/run_loop/device_agent/app/CBX-Runner.app.zip",
-                "lib/run_loop/device_agent/ipa/CBX-Runner.app.zip",
+                "lib/run_loop/device_agent/app/DeviceAgent-Runner.app.zip",
+                "lib/run_loop/device_agent/ipa/DeviceAgent-Runner.app.zip",
                 "lib/run_loop/device_agent/Frameworks.zip"]
 
 vendor_licenses = Dir.glob("./vendor-licenses/*.*")
@@ -32,8 +32,8 @@ into a valid version, e.g. 1.2.3 or 1.2.3.pre10
   end.call
 
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ['Karl Krukow']
-  s.email       = ['karl.krukow@xamarin.com']
+  s.authors     = ["Karl Krukow", "Joshua Moody"]
+  s.email       = ["karl.krukow@xamarin.com", "josmoo@microsoft.com"]
   s.homepage    = 'http://calaba.sh'
   s.summary     = %q{The bridge between Calabash iOS and Xcode command-line
 tools like instruments and simctl.}

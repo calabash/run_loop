@@ -5,7 +5,7 @@ module RunLoop
   module DeviceAgent
 
     # @!visibility private
-    class Xcodebuild < RunLoop::DeviceAgent::Launcher
+    class Xcodebuild < RunLoop::DeviceAgent::LauncherStrategy
 
       # @!visibility private
       def self.log_file
@@ -48,14 +48,25 @@ module RunLoop
 
       # @!visibility private
       def workspace
-        @workspace ||= lambda do
-          path = RunLoop::Environment.send(:cbxws)
-          if path
+        @workspace ||= begin
+          path = RunLoop::Environment.send(:cbxws) || default_workspace
+
+          if File.exist?(path)
             path
           else
-            raise "The CBXWS env var is undefined. Are you a maintainer?"
+            raise(RuntimeError, %Q[
+Cannot find the DeviceAgent.xcworkspace.
+
+Expected it here:
+
+  #{path}
+
+Use the CBXWS environment variable to override the default.
+
+])
+
           end
-        end.call
+        end
       end
 
       # @!visibility private
@@ -68,7 +79,7 @@ module RunLoop
         args = [
           "xcrun",
           "xcodebuild",
-          "-scheme", "CBXAppStub",
+          "-scheme", "AppStub",
           "-workspace", workspace,
           "-config", "Debug",
           "-destination",
@@ -94,6 +105,12 @@ module RunLoop
         pid = Process.spawn(env, *args, options)
         Process.detach(pid)
         pid.to_i
+      end
+
+      def default_workspace
+        this_dir = File.expand_path(File.dirname(__FILE__))
+        relative = File.expand_path(File.join(this_dir, "..", "..", "..", ".."))
+        File.join(relative, "DeviceAgent.iOS/DeviceAgent.xcworkspace")
       end
     end
   end

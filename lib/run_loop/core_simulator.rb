@@ -100,7 +100,7 @@ class RunLoop::CoreSimulator
               # launchd_sim process.
               ['launchd_sim', false],
 
-              # Required for XCUITest termination; the simulator hangs otherwise.
+              # Required for DeviceAgent termination; the simulator hangs otherwise.
               ["xpcproxy", false],
 
               # Causes crash reports on Xcode < 7.0

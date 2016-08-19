@@ -7,12 +7,17 @@ module RunLoop
   # However, the semantic versioning spec is incompatible with RubyGem's patterns
   # for pre-release gems.
   #
-  # > "But returning to the practical: No release version of SemVer is compatible with Rubygems." - _David Kellum_
+  # > "But returning to the practical: No release version of SemVer is compatible
+  # > with Rubygems." - _David Kellum_
   #
   # Calabash and RunLoop version numbers will be in the form `<major>.<minor>.<patch>[.pre<N>]`.
   #
   # @see http://semver.org/
   # @see http://gravitext.com/2012/07/22/versioning.html
+  #
+  # TODO Expand to handle versions with more than 1 "." and no "."
+  # ^ Needs to handle arbitrary versions from Info.plists.  In particular it
+  #   needs to handle a unix timestamp - found the DeviceAgent-Runner.app.
   class Version
 
     # @!attribute [rw] major

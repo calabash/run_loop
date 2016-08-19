@@ -5,7 +5,7 @@ module RunLoop
     # @!visibility private
     #
     # A wrapper around the test-control binary.
-    class IOSDeviceManager < RunLoop::DeviceAgent::Launcher
+    class IOSDeviceManager < RunLoop::DeviceAgent::LauncherStrategy
 
       # @!visibility private
       @@ios_device_manager = nil
@@ -55,12 +55,12 @@ but binary does not exist at that path.
 
       # @!visibility private
       def runner
-        @runner ||= RunLoop::DeviceAgent::CBXRunner.new(device)
+        @runner ||= RunLoop::DeviceAgent::Runner.new(device)
       end
 
       # @!visibility private
       def self.log_file
-        path = File.join(Launcher.dot_dir, "ios-device-manager.log")
+        path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
         FileUtils.touch(path) if !File.exist?(path)
         path
       end
