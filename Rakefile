@@ -70,7 +70,7 @@ namespace :device_agent do
   end
 
   def app_dir
-    @app_dir ||= File.join(device_agent_dir, "app", "CBX-Runner.app")
+    @app_dir ||= File.join(device_agent_dir, "app", "DeviceAgent-Runner.app")
   end
 
   def app_zip
@@ -78,7 +78,7 @@ namespace :device_agent do
   end
 
   def ipa_dir
-    @ipa_dir ||= File.join(device_agent_dir, "ipa", "CBX-Runner.app")
+    @ipa_dir ||= File.join(device_agent_dir, "ipa", "DeviceAgent-Runner.app")
   end
 
   def ipa_zip
@@ -198,9 +198,9 @@ target = #{target}
         log_info("Installed #{bin}")
         ditto_zip("Frameworks", frameworks_zip)
         log_info("Installed #{frameworks_zip}")
-        ditto_zip(File.join("app", "CBX-Runner.app"), app_zip)
+        ditto_zip(File.join("app", "DeviceAgent-Runner.app"), app_zip)
         log_info("Installed #{app_zip}")
-        ditto_zip(File.join("ipa", "CBX-Runner.app"), ipa_zip)
+        ditto_zip(File.join("ipa", "DeviceAgent-Runner.app"), ipa_zip)
         log_info("Installed #{ipa_zip}")
       end
     end
@@ -226,9 +226,14 @@ target = #{target}
     rm_path(ipa_dir)
   end
 
-  desc "Expand the DeviceAgent .zip files"
+  desc "Remove existing files and the DeviceAgent .zip files"
   task :expand do
     banner("Expanding")
+
+    banner("Uninstalling")
+    rm_path(frameworks_dir)
+    rm_path(app_dir)
+    rm_path(ipa_dir)
 
     Dir.chdir(device_agent_dir) do
       ditto_unzip(frameworks_zip, device_agent_dir)
