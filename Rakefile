@@ -89,6 +89,17 @@ namespace :device_agent do
     @bin ||= File.join(device_agent_dir, "bin", "iOSDeviceManager")
   end
 
+  def cbx_paths
+    @cbx_paths ||= begin
+      [
+        File.expand_path(File.join(app_dir, "..", "CBX-Runner.app")),
+        File.expand_path(File.join(app_dir, "..", "CBX-Runner.app.zip")),
+        File.expand_path(File.join(ipa_dir, "..", "CBX-Runner.app")),
+        File.expand_path(File.join(ipa_dir, "..", "CBX-Runner.app.zip")),
+      ]
+    end
+  end
+
   def rm_path(path)
     log_info("Deleting #{path}")
     FileUtils.rm_rf(path)
@@ -209,6 +220,10 @@ target = #{target}
   desc "Remove DeviceAgent binaries"
   task :clean do
     banner("Cleaning")
+
+    log_info("Removing legacy artifacts")
+    cbx_paths.each { |path| FileUtils.rm_rf(path) }
+
     rm_path(frameworks_dir)
     rm_path(app_dir)
     rm_path(ipa_dir)
