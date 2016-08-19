@@ -20,6 +20,11 @@ require 'run_loop/plist_buddy'
 require "run_loop/codesign"
 require 'run_loop/app'
 require 'run_loop/ipa'
+require "run_loop/http/error"
+require "run_loop/http/server"
+require "run_loop/http/request"
+require "run_loop/http/retriable_client"
+require "run_loop/device_agent/client"
 require "run_loop/device_agent/runner"
 require "run_loop/device_agent/frameworks"
 require "run_loop/device_agent/launcher_strategy"
@@ -42,11 +47,6 @@ require "run_loop/simctl"
 require 'run_loop/template'
 require "run_loop/locale"
 require "run_loop/language"
-require "run_loop/xcuitest"
-require "run_loop/http/error"
-require "run_loop/http/server"
-require "run_loop/http/request"
-require "run_loop/http/retriable_client"
 require "run_loop/physical_device/life_cycle"
 require "run_loop/physical_device/ios_device_manager"
 
@@ -110,7 +110,7 @@ module RunLoop
 
     gesture_performer = RunLoop.detect_gesture_performer(cloned_options, xcode, device)
     if gesture_performer == :device_agent
-      RunLoop::XCUITest.run(cloned_options)
+      RunLoop::DeviceAgent::Client.run(cloned_options)
     else
       if RunLoop::Instruments.new.instruments_app_running?
         raise %q(The Instruments.app is open.
@@ -261,8 +261,8 @@ Invalid Xcode and iOS combination:
 Xcode version: #{xcode.version.to_s}
   iOS version: #{device.version.to_s}
 
-Calabash cannot test iOS < 9.0 using Xcode 8 because XCUITest is not compatible
-with iOS < 9.0 and UIAutomation is not available in Xcode 8.
+Calabash cannot test iOS < 9.0 using Xcode 8 because DeviceAgent is not
+compatible with iOS < 9.0 and UIAutomation is not available in Xcode 8.
 
 You can rerun your test if you have Xcode 7 installed:
 
@@ -280,7 +280,7 @@ $ DEVELOPER_DIR=/path/to/Xcode/7.3.1/Xcode.app/Contents/Developer cucumber
   #
   # First pass at choosing the correct code path.
   #
-  # We don't know if we can test on iOS 8 with UIAutomation or XCUITest on
+  # We don't know if we can test on iOS 8 with UIAutomation or DeviceAgent on
   # Xcode 8.
   #
   # @param [Hash] options The options passed by the user
@@ -311,8 +311,8 @@ Invalid Xcode and iOS combination:
 Xcode version: #{xcode.version.to_s}
   iOS version: #{device.version.to_s}
 
-Calabash cannot test iOS < 9.0 using Xcode 8 because XCUITest is not compatible
-with iOS < 9.0 and UIAutomation is not available in Xcode 8.
+Calabash cannot test iOS < 9.0 using Xcode 8 because DeviceAgent is not
+compatible with iOS < 9.0 and UIAutomation is not available in Xcode 8.
 
 You can rerun your test if you have Xcode 7 installed:
 

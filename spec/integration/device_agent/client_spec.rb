@@ -1,5 +1,5 @@
 
-describe RunLoop::XCUITest do
+describe RunLoop::DeviceAgent::Client do
 
   before do
     allow(RunLoop::Environment).to receive(:debug?).and_return(true)
@@ -14,8 +14,8 @@ describe RunLoop::XCUITest do
       if File.exist?(workspace)
         expect(RunLoop::Environment).to receive(:cbxws).and_return(workspace)
         cbx_launcher = RunLoop::DeviceAgent::Xcodebuild.new(device)
-        xcuitest = RunLoop::XCUITest.new(bundle_identifier, device, cbx_launcher)
-        xcuitest.launch
+        client = RunLoop::DeviceAgent::Client.new(bundle_identifier, device, cbx_launcher)
+        client.launch
 
         options = { :raise_on_timeout => true, :timeout => 5 }
         RunLoop::ProcessWaiter.new("Preferences", options).wait_for_any
@@ -26,8 +26,8 @@ describe RunLoop::XCUITest do
           sleep(1)
         end
 
-        point = xcuitest.query_for_coordinate("General")
-        xcuitest.perform_coordinate_gesture("touch", point[:x], point[:y])
+        point = client.query_for_coordinate("General")
+        client.perform_coordinate_gesture("touch", point[:x], point[:y])
       else
         RunLoop.log_debug("Skipping :xcodebuild cbx launcher test")
         RunLoop.log_debug("Could not find a DeviceAgent.iOS repo")
@@ -36,8 +36,8 @@ describe RunLoop::XCUITest do
 
     it "ios_device_manager" do
       cbx_launcher = RunLoop::DeviceAgent::IOSDeviceManager.new(device)
-      xcuitest = RunLoop::XCUITest.new(bundle_identifier, device, cbx_launcher)
-      xcuitest.launch
+      client = RunLoop::DeviceAgent::Client.new(bundle_identifier, device, cbx_launcher)
+      client.launch
 
       options = { :raise_on_timeout => true, :timeout => 5 }
       RunLoop::ProcessWaiter.new("Preferences", options).wait_for_any
@@ -48,8 +48,8 @@ describe RunLoop::XCUITest do
         sleep(1)
       end
 
-      point = xcuitest.query_for_coordinate("General")
-      xcuitest.perform_coordinate_gesture("touch", point[:x], point[:y])
+      point = client.query_for_coordinate("General")
+      client.perform_coordinate_gesture("touch", point[:x], point[:y])
     end
   end
 end

@@ -58,6 +58,7 @@ puts '> simctl  => Simctl instance'
 puts '> default_sim => Default simulator'
 puts '> verbose     => turn on DEBUG logging'
 puts '> quiet       => turn off DEBUG logging'
+puts "> holmes      => Launch an app with DeviceAgent"
 puts ''
 
 def xcode
@@ -73,12 +74,12 @@ def simctl
 end
 
 def default_sim
-  @default_sim ||= lambda do
+  @default_sim ||= begin
     name = RunLoop::Core.default_simulator(xcode)
     simctl.simulators.find do |sim|
       sim.instruments_identifier(xcode) == name
     end
-  end.call
+  end
 end
 
 def verbose
@@ -117,50 +118,16 @@ def delete_simulator(name)
   true
 end
 
-
-def cbx_launcher
-  device_agent_ws = ENV["CBXWS"]
-
-  if device_agent_ws == nil || device_agent_ws == ""
-    return :ios_device_manager
-  end
-
-  if device_agent_ws == "1"
-    path = File.expand_path(File.join("..", "DeviceAgent.iOS", "CBXDriver.xcworkspace"))
-    if File.exist?(path)
-      ENV["CBXWS"] = path
-    end
-  elsif device_agent_ws
-    if !File.exist?(device_agent_ws)
-      raise %Q[CBXWS defined as
-
-      #{device_agent_ws}
-
-but that directory does not exist.
-]
-    end
-  end
-  puts "XCUITest workspace = #{ENV["CBXWS"]}"
-  :xcodebuild
-end
-
-def xcuitest(bundle_id="com.apple.Preferences")
-  device = RunLoop::Device.detect_device({}, xcode, simctl, instruments)
-  cbx_launcher = RunLoop::DeviceAgent::Xcodebuild.new(device)
-  RunLoop::XCUITest.new(bundle_id, device, cbx_launcher)
-end
-
 def holmes(options={})
   device = RunLoop::Device.detect_device({}, xcode, simctl, instruments)
 
   default_options = {
     :app => "com.apple.Preferences",
     :device => device.udid,
-    :xcuitest => true,
     :xcode => xcode,
     :simctl => simctl,
     :gesture_performer => :device_agent,
-    :cbx_launcher => cbx_launcher
+    :cbx_launcher => :ios_device_manager
   }
 
   merged_options = default_options.merge(options)
