@@ -11,18 +11,31 @@ describe RunLoop::DeviceAgent::Xcodebuild do
 
   describe "#workspace" do
 
-    it "raises an error if CBXWS is not defined" do
+    it "raises an error DeviceAgent.xcworkspace cannot be found" do
       expect(RunLoop::Environment).to receive(:cbxws).and_return(nil)
+      path = "path/to/DeviceAgent.xcworkspace"
+      expect(xcodebuild).to receive(:default_workspace).and_return(path)
+      expect(File).to receive(:exist?).with(path).and_return(false)
 
       expect do
         xcodebuild.workspace
-      end.to raise_error(RuntimeError,
-                         /The CBXWS env var is undefined. Are you a maintainer/)
+      end.to raise_error RuntimeError,
+                         /Cannot find the DeviceAgent\.xcworkspace/
     end
 
-    it "returns the path to the CBXDriver.xcworkspace" do
-      path = "path/to/CBXDriver.xcworkspace"
+    it "returns the path to the workspace indicated by the CBXWS env var" do
+      path = "path/to/DeviceAgent.xcworkspace"
       expect(RunLoop::Environment).to receive(:cbxws).and_return(path)
+      expect(File).to receive(:exist?).with(path).and_return(true)
+
+      expect(xcodebuild.workspace).to be == path
+    end
+
+    it "returns the path to the default workspace if CBXWS is undefined" do
+      path = "path/to/DeviceAgent.xcworkspace"
+      expect(RunLoop::Environment).to receive(:cbxws).and_return(nil)
+      expect(xcodebuild).to receive(:default_workspace).and_return(path)
+      expect(File).to receive(:exist?).with(path).and_return(true)
 
       expect(xcodebuild.workspace).to be == path
     end
@@ -58,4 +71,3 @@ describe RunLoop::DeviceAgent::Xcodebuild do
     end
   end
 end
-
