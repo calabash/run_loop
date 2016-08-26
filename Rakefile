@@ -89,6 +89,10 @@ namespace :device_agent do
     @bin ||= File.join(device_agent_dir, "bin", "iOSDeviceManager")
   end
 
+  def cli_json
+    @cli_json ||= File.join(device_agent_dir, "bin", "CLI.json")
+  end
+
   def cbx_paths
     @cbx_paths ||= begin
       [
@@ -207,6 +211,8 @@ target = #{target}
       Dir.chdir(File.join("Distribution", "dependencies")) do
         ditto(File.join("bin", "iOSDeviceManager"), bin)
         log_info("Installed #{bin}")
+        ditto(File.join("bin", "CLI.json"), cli_json)
+        log_info("Installed #{cli_json}")
         ditto_zip("Frameworks", frameworks_zip)
         log_info("Installed #{frameworks_zip}")
         ditto_zip(File.join("app", "DeviceAgent-Runner.app"), app_zip)
@@ -231,6 +237,7 @@ target = #{target}
     rm_path(app_zip)
     rm_path(ipa_dir)
     rm_path(bin)
+    rm_path(cli_json)
   end
 
   desc "Remove DeviceAgent binaries, but leave the original .zip files"
