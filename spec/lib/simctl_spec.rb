@@ -186,6 +186,7 @@ describe RunLoop::Simctl do
         expect(simctl.send(:string_for_sim_state, 1)).to be == "Shutdown"
         expect(simctl.send(:string_for_sim_state, 2)).to be == "Shutting Down"
         expect(simctl.send(:string_for_sim_state, 3)).to be == "Booted"
+        expect(simctl.send(:string_for_sim_state, -1)).to be == "Plist Missing"
       end
 
       it "raises an error for invalid states" do
