@@ -54,6 +54,29 @@ module RunLoop
 
         cbx_launcher = Client.detect_cbx_launcher(options, device)
 
+        code_sign_identity = options[:code_sign_identity]
+        if !code_sign_identity
+          code_sign_identity = RunLoop::Environment::code_sign_identity
+        end
+
+        if device.physical_device? && cbx_launcher.name == :ios_device_manager
+          if !code_sign_identity
+            raise RuntimeError, %Q[
+Targeting a physical devices requires a code signing identity.
+
+Rerun your test with:
+
+$ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
+
+To see the valid code signing identities on your device run:
+
+$ xcrun security find-identity -v -p codesigning
+
+]
+          end
+        end
+
+        launch_options = options.merge({:code_sign_identity => code_sign_identity})
         xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device, cbx_launcher)
         xcuitest.launch(options)
 
@@ -62,7 +85,8 @@ module RunLoop
             :cbx_launcher => cbx_launcher.name,
             :udid => device.udid,
             :app => bundle_id,
-            :gesture_performer => :device_agent
+            :gesture_performer => :device_agent,
+            :code_sign_identity => code_sign_identity
           }
           RunLoop::Cache.default.write(cache)
         end
@@ -625,7 +649,7 @@ Sending request to perform '#{parameters[:gesture]}' with:
 
         start = Time.now
         RunLoop.log_debug("Waiting for CBX-Runner to launch...")
-        pid = cbx_launcher.launch
+        pid = cbx_launcher.launch(options)
 
         if cbx_launcher.name == :xcodebuild
           sleep(2.0)

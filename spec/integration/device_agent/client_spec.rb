@@ -9,10 +9,14 @@ describe RunLoop::DeviceAgent::Client do
     let(:device) { Resources.shared.default_simulator }
     let(:bundle_identifier) { "com.apple.Preferences" }
 
+    before do
+      RunLoop::CoreSimulator.quit_simulator
+      RunLoop::Simctl.new.wait_for_shutdown(device, 30, 0.1)
+    end
+
     it "xcodebuild" do
-      workspace = File.expand_path(File.join("..", "DeviceAgent.iOS", "CBXDriver.xcworkspace"))
+      workspace = File.expand_path(File.join("..", "DeviceAgent.iOS", "DeviceAgent.xcworkspace"))
       if File.exist?(workspace)
-        expect(RunLoop::Environment).to receive(:cbxws).and_return(workspace)
         cbx_launcher = RunLoop::DeviceAgent::Xcodebuild.new(device)
         client = RunLoop::DeviceAgent::Client.new(bundle_identifier, device, cbx_launcher)
         client.launch

@@ -40,7 +40,7 @@ but binary does not exist at that path.
 
       # @!visibility private
       def name
-        :xctestctl
+        :ios_device_manager
       end
 
       # @!visibility private
@@ -66,7 +66,9 @@ but binary does not exist at that path.
       end
 
       # @!visibility private
-      def launch
+      def launch(options)
+        code_sign_identity = options[:code_sign_identity]
+
         RunLoop::DeviceAgent::Frameworks.instance.install
 
         # WIP: it is unclear what the behavior should be.
@@ -86,19 +88,24 @@ but binary does not exist at that path.
           # sim = CoreSimulator.new(device, cbxapp)
           # sim.install
           # sim.launch_simulator
+        else
+          if !code_sign_identity
+            raise ArgumentError, %Q[
+Targeting a physical devices requires a code signing identity.
+
+Rerun your test with:
+
+$ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
+
+]
+          end
+
         end
 
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
-        args = ["start_test",
-                "-r", runner.runner,
-                "-t", runner.tester,
-                "-d", device.udid]
+        args = ["start_test", "-d", device.udid]
 
-        code_sign_identity = RunLoop::Environment.code_sign_identity
-        if !code_sign_identity
-          code_sign_identity = "iPhone Developer"
-        end
 
         if device.physical_device?
           args << "-c"
