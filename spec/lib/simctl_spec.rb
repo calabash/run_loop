@@ -197,12 +197,24 @@ describe RunLoop::Simctl do
     end
 
     context "#simulator_state_as_int" do
-      it "returns the numeric state of the simulator" do
+      it "returns the numeric state of the simulator by asking the sim plist" do
+        plist = device.simulator_device_plist
+        expect(File).to receive(:exist?).with(plist).and_return(true)
+
         pbuddy = RunLoop::PlistBuddy.new
         expect(simctl).to receive(:pbuddy).and_return(pbuddy)
         expect(pbuddy).to receive(:plist_read).and_return("10")
 
         expect(simctl.simulator_state_as_int(device)).to be == 10
+      end
+
+      it "returns the Plist Missing state (-1) if the plist is missing" do
+        plist = device.simulator_device_plist
+        expect(File).to receive(:exist?).with(plist).and_return(false)
+
+        expected = RunLoop::Simctl::SIM_STATES["Plist Missing"]
+
+        expect(simctl.simulator_state_as_int(device)).to be == expected
       end
     end
 
