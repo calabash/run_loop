@@ -143,7 +143,7 @@ describe RunLoop do
         it "raises error if unknown gesture_performer" do
           options[:gesture_performer] = :unknown_performer
 
-          expect(device).to receive(:version).and_return(RunLoop::Version.new("9.1"))
+          allow(device).to receive(:version).and_return(RunLoop::Version.new("9.1"))
 
           expect do
             RunLoop.detect_gesture_performer(options, xcode, device)
