@@ -80,6 +80,7 @@ but binary does not exist at that path.
         RunLoop::DeviceAgent::Frameworks.instance.install
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
+        start = Time.now
         if device.simulator?
           cbxapp = RunLoop::App.new(runner.runner)
 
@@ -146,7 +147,8 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         Process.detach(pid)
 
         if device.simulator?
-          device.simulator_wait_for_stable_state
+          # Give it a whirl.
+          # device.simulator_wait_for_stable_state
         end
 
         pid.to_i
