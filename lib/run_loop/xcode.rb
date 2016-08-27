@@ -237,7 +237,7 @@ module RunLoop
     # @raise [RuntimeError] If path to Xcode.app/Contents/Developer
     #   cannot be determined.
     def developer_dir
-      @xcode_developer_dir ||= lambda do
+      @xcode_developer_dir ||= begin
         if RunLoop::Environment.developer_dir
           path = RunLoop::Environment.developer_dir
         else
@@ -267,7 +267,7 @@ $ man xcode-select
 }
         end
         path
-      end.call
+      end
     end
 
     private

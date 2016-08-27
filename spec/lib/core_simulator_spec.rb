@@ -140,6 +140,66 @@ describe RunLoop::CoreSimulator do
     end
   end
 
+  describe ".app_installed?" do
+    let(:device) { RunLoop::Device.new("denis", "8.3", "udid") }
+    let(:bundle_id) { "com.example.Example" }
+    let(:options) { { :xcode => RunLoop::Xcode.new } }
+
+    describe "raises error when" do
+      it "device arg is RunLoop::Device that is not a simulator" do
+        expect(device).to receive(:physical_device?).at_least(:once).and_return(true)
+
+        expect do
+          RunLoop::CoreSimulator.app_installed?(device, bundle_id)
+        end.to raise_error ArgumentError, /The device must be a simulator/
+      end
+
+      it "device arg is a String that does not match any simulator" do
+        expect do
+          RunLoop::CoreSimulator.app_installed?("no matching sim", bundle_id)
+        end.to raise_error ArgumentError
+      end
+    end
+
+    it "returns false when the bundle id does not match a user or system app" do
+
+      expect(RunLoop::CoreSimulator).to(
+        receive(:user_app_installed?).with(device, bundle_id)
+      ).and_return(false)
+
+      expect(RunLoop::CoreSimulator).to(
+        receive(:system_app_installed?).with(bundle_id, options[:xcode])
+      ).and_return(false)
+
+      actual = RunLoop::CoreSimulator.app_installed?(device, bundle_id, options)
+      expect(actual).to be_falsey
+    end
+
+    context "app is installed" do
+      it "returns true if user app is installed" do
+        expect(RunLoop::CoreSimulator).to(
+          receive(:user_app_installed?).with(device, bundle_id)
+        ).and_return(true)
+
+        actual = RunLoop::CoreSimulator.app_installed?(device, bundle_id)
+        expect(actual).to be_truthy
+      end
+
+      it "returns true if system app is installed" do
+        expect(RunLoop::CoreSimulator).to(
+          receive(:user_app_installed?).with(device, bundle_id)
+        ).and_return(false)
+
+        expect(RunLoop::CoreSimulator).to(
+          receive(:system_app_installed?).with(bundle_id, options[:xcode])
+        ).and_return(true)
+
+        actual = RunLoop::CoreSimulator.app_installed?(device, bundle_id, options)
+        expect(actual).to be_truthy
+      end
+    end
+  end
+
   describe 'instance methods' do
     before do
       allow(RunLoop::CoreSimulator).to receive(:terminate_core_simulator_processes).and_return true

@@ -127,5 +127,17 @@ describe RunLoop::CoreSimulator do
     actual = RunLoop::CoreSimulator.set_language(simulator, "en")
     expect(actual.first).to be == "en"
   end
+
+  context ".app_installed?" do
+    it "returns true if app is installed" do
+      actual = RunLoop::CoreSimulator.app_installed?(simulator, "com.apple.Preferences")
+      expect(actual).to be_truthy
+    end
+
+    it "returns false if app is not installed" do
+      actual = RunLoop::CoreSimulator.app_installed?(simulator, "com.example.Preferences")
+      expect(actual).to be_falsey
+    end
+  end
 end
 

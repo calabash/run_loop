@@ -246,13 +246,46 @@ class RunLoop::CoreSimulator
     end
 
     if simulator.physical_device?
-      raise ArgumentError,
-        "The language cannot be set on physical devices"
+      raise ArgumentError, "The language cannot be set on physical devices"
     end
 
     self.quit_simulator
     RunLoop.log_debug("Setting preferred language to '#{lang_code}'")
     simulator.simulator_set_language(lang_code)
+  end
+
+  # @!visibility private
+  #
+  # @param [RunLoop::Device, String] device a simulator UDID, instruments-ready
+  #   name, or a RunLoop::Device
+  # @param [String] bundle_identifier the app to check for
+  #
+  # @raise [ArgumentError] if no device can be found matching the UDID or
+  #   instruments-ready name
+  # @raise [ArgumentError] if device is not a simulator
+  # @raise [ArgumentError] if language_code is invalid
+  #
+  # @return [Boolean] true if the app with the identifier is installed
+  def self.app_installed?(device, bundle_identifier, options={})
+    merged_options = {:xcode => RunLoop::Xcode.new}.merge(options)
+
+    if device.is_a?(RunLoop::Device)
+      simulator = device
+    else
+      simulator = RunLoop::Device.device_with_identifier(device, merged_options)
+    end
+
+    if simulator.physical_device?
+      raise ArgumentError, "The device must be a simulator"
+    end
+
+    start = Time.now
+
+    installed = self.send(:user_app_installed?, device, bundle_identifier) ||
+      self.send(:system_app_installed?, bundle_identifier, merged_options[:xcode])
+
+    RunLoop.log_debug("Took #{Time.now - start} seconds to check if app was installed")
+    installed
   end
 
   # @!visibility private
@@ -887,6 +920,46 @@ Command had no output
       reset_app_sandbox_internal_sdk_gte_8
     else
       reset_app_sandbox_internal_sdk_lt_8
+    end
+  end
+
+  # @!visibility private
+  def self.system_applications_dir(xcode=RunLoop::Xcode.new)
+    base_dir = xcode.developer_dir
+    sim_apps_dir = "Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"
+    File.expand_path(File.join(base_dir, sim_apps_dir))
+  end
+
+  # @!visibility private
+  def self.system_app_installed?(bundle_identifier, xcode)
+    apps_dir = self.send(:system_applications_dir, xcode)
+
+    return false if !File.exist?(apps_dir)
+
+    black_list = ["Fitness.app", "Photo Booth.app", "ScreenSharingViewService.app"]
+
+    Dir.glob("#{apps_dir}/*.app").detect do |app_dir|
+      basename = File.basename(app_dir)
+      if black_list.include?(basename)
+        false
+      else
+        begin
+          RunLoop::App.new(app_dir).bundle_identifier == bundle_identifier
+        rescue ArgumentError => _
+          bundle_name = File.basename(app_dir)
+          RunLoop.log_debug("Could not create an App from simulator system app: #{bundle_name}")
+          nil
+        end
+      end
+    end
+  end
+
+  # @!visibility private
+  def self.user_app_installed?(device, bundle_identifier)
+    core_sim = self.new(device, bundle_identifier, {:quit_sim_on_init => false})
+    sim_apps_dir = core_sim.send(:device_applications_dir)
+    Dir.glob("#{sim_apps_dir}/**/*.app").find do |path|
+      RunLoop::App.new(path).bundle_identifier == bundle_identifier
     end
   end
 

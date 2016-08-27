@@ -22,7 +22,7 @@ module RunLoop
       DEFAULTS = {
         :port => 27753,
         :simulator_ip => "127.0.0.1",
-        :http_timeout => RunLoop::Environment.ci? ? 120 : 60,
+        :http_timeout => RunLoop::Environment.ci? ? 120 : 10,
         :route_version => "1.0",
         :shutdown_device_agent_before_launch => false
       }
@@ -78,7 +78,7 @@ $ xcrun security find-identity -v -p codesigning
 
         launch_options = options.merge({:code_sign_identity => code_sign_identity})
         xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device, cbx_launcher)
-        xcuitest.launch(options)
+        xcuitest.launch(launch_options)
 
         if !RunLoop::Environment.xtc?
           cache = {
@@ -119,7 +119,7 @@ $ xcrun security find-identity -v -p codesigning
         end
       end
 
-      attr_reader :bundle_id, :device, :cbx_launcher
+      attr_reader :bundle_id, :device, :cbx_launcher, :launch_options
 
       # @!visibility private
       #
@@ -147,6 +147,7 @@ $ xcrun security find-identity -v -p codesigning
 
       # @!visibility private
       def launch(options={})
+        @launch_options = options
         start = Time.now
         launch_cbx_runner(options)
         launch_aut
@@ -268,6 +269,13 @@ $ xcrun security find-identity -v -p codesigning
         parameters = { merged_options[:specifier] => mark }
         request = request("query", parameters)
         client = client(http_options)
+
+        RunLoop.log_debug %Q[Sending query with parameters:
+
+#{JSON.pretty_generate(parameters)}
+
+]
+
         response = client.post(request)
         hash = expect_200_response(response)
         elements = hash["result"]
@@ -373,12 +381,11 @@ $ xcrun security find-identity -v -p codesigning
       # @!visibility private
       def make_gesture_request(parameters)
 
-        RunLoop.log_debug(%Q[
-Sending request to perform '#{parameters[:gesture]}' with:
+        RunLoop.log_debug %Q[Sending request to perform '#{parameters[:gesture]}' with:
 
 #{JSON.pretty_generate(parameters)}
 
-                          ])
+]
         request = request("gesture", parameters)
         client = client(http_options)
         response = client.post(request)
@@ -570,15 +577,43 @@ Sending request to perform '#{parameters[:gesture]}' with:
         options = ping_options
         request = request("shutdown")
         client = client(options)
+        body = nil
         begin
           response = client.post(request)
           body = response.body
-          RunLoop.log_debug("CBX-Runner says, \"#{body}\"")
+          RunLoop.log_debug("DeviceAgent-Runner says, \"#{body}\"")
+
+          now = Time.now
+          poll_until = now + 10.0
+          running = true
+          while Time.now < poll_until
+            running = !running?
+            break if running
+            sleep(0.1)
+          end
+
+          RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
           body
         rescue => e
-          RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
-          nil
+          RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e}")
+        ensure
+          quit_options = { :timeout => 0.5 }
+          term_options = { :timeout => 0.5 }
+          kill_options = { :timeout => 0.5 }
+
+          process_name = "iOSDeviceManager"
+          RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
+            quit = RunLoop::ProcessTerminator.new(pid, "QUIT", process_name, quit_options)
+            if !quit.kill_process
+              term = RunLoop::ProcessTerminator.new(pid, "TERM", process_name, term_options)
+              if !term.kill_process
+                kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
+                kill.kill_process
+              end
+            end
+          end
         end
+        body
       end
 
       # @!visibility private
@@ -656,7 +691,14 @@ Sending request to perform '#{parameters[:gesture]}' with:
         end
 
         begin
-          health
+          timeout = RunLoop::Environment.ci? ? 120 : 60
+          health_options = {
+            :timeout => timeout,
+            :interval => 0.1,
+            :retries => (timeout/0.1).to_i
+          }
+
+          health(health_options)
         rescue RunLoop::HTTP::Error => _
           raise %Q[
 
@@ -669,7 +711,7 @@ To diagnose the problem tail the launcher log file:
 
 $ tail -1000 -F #{cbx_launcher.class.log_file}
 
-                ]
+]
         end
 
         RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
@@ -683,6 +725,33 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
         client = client(http_options)
         request = request("session", {:bundleID => bundle_id})
 
+        if device.simulator?
+          # Yes, we could use iOSDeviceManager to check, I dont understand the
+          # behavior yet - does it require the simulator be launched?
+          # CoreSimulator can check without launching the simulator.
+          installed = CoreSimulator.app_installed?(device, bundle_id)
+        else
+          if cbx_launcher.name == :xcodebuild
+            # :xcodebuild users are on their own.
+            RunLoop.log_debug("Detected :xcodebuild launcher; skipping app installed check")
+            installed = true
+          else
+            installed = cbx_launcher.app_installed?(bundle_id)
+          end
+        end
+
+        if !installed
+          raise RuntimeError, %Q[
+The app you are trying to launch is not installed on the target device:
+
+bundle identifier: #{bundle_id}
+           device: #{device}
+
+Please install it.
+
+]
+        end
+
         begin
           response = client.post(request)
           RunLoop.log_debug("Launched #{bundle_id} on #{device}")
@@ -694,11 +763,14 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
           end
           expect_200_response(response)
         rescue => e
-          raise e.class, %Q[Could not launch #{bundle_id} on #{device}:
+          raise e.class, %Q[
+
+Could not launch #{bundle_id} on #{device}:
 
 #{e.message}
 
 Something went wrong.
+
 ]
         end
       end
