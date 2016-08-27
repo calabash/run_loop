@@ -7,6 +7,9 @@ module RunLoop
     # A wrapper around the test-control binary.
     class IOSDeviceManager < RunLoop::DeviceAgent::LauncherStrategy
 
+      require "run_loop/shell"
+      include RunLoop::Shell
+
       # @!visibility private
       @@ios_device_manager = nil
 
@@ -70,25 +73,17 @@ but binary does not exist at that path.
         code_sign_identity = options[:code_sign_identity]
 
         RunLoop::DeviceAgent::Frameworks.instance.install
+        cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
-        # WIP: it is unclear what the behavior should be.
         if device.simulator?
-          # Simulator cannot be running for this version.
-          CoreSimulator.quit_simulator
+          cbxapp = RunLoop::App.new(runner.runner)
 
-          CoreSimulator.wait_for_simulator_state(device, "Shutdown")
-
-          # TODO: run-loop is responsible for detecting an outdated CBX-Runner
-          # application and installing a new one.  However, iOSDeviceManager
-          # fails if simulator is already running.
-
-          # cbxapp = RunLoop::App.new(runner.runner)
-          #
-          # # quits the simulator
-          # sim = CoreSimulator.new(device, cbxapp)
-          # sim.install
-          # sim.launch_simulator
+          # quits the simulator
+          sim = CoreSimulator.new(device, cbxapp)
+          sim.install
+          sim.launch_simulator
         else
+
           if !code_sign_identity
             raise ArgumentError, %Q[
 Targeting a physical devices requires a code signing identity.
@@ -100,17 +95,34 @@ $ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
 ]
           end
 
+          options = {:log_cmd => true}
+          args = [
+            cmd, "install",
+            "--device-id", device.udid,
+            "--app-bundle", runner.runner,
+            "--codesign-identity", code_sign_identity
+          ]
+
+          start = Time.now
+          hash = run_shell_command(args, options)
+
+
+          if hash[:exit_status] != 0
+            raise RuntimeError, %Q[
+
+Could not install #{runner.runner}.  iOSDeviceManager says:
+
+#{hash[:out]}
+
+            ]
+          end
         end
+
+        RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent");
 
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
-        args = ["start_test", "-d", device.udid]
-
-
-        if device.physical_device?
-          args << "-c"
-          args << code_sign_identity
-        end
+        args = ["start_test", "--device-id", device.udid]
 
         log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
