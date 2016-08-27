@@ -22,7 +22,7 @@ module RunLoop
       DEFAULTS = {
         :port => 27753,
         :simulator_ip => "127.0.0.1",
-        :http_timeout => RunLoop::Environment.ci? ? 120 : 60,
+        :http_timeout => RunLoop::Environment.ci? ? 120 : 10,
         :route_version => "1.0",
         :shutdown_device_agent_before_launch => false
       }
@@ -691,7 +691,14 @@ $ xcrun security find-identity -v -p codesigning
         end
 
         begin
-          health
+          timeout = RunLoop::Environment.ci? ? 120 : 60
+          health_options = {
+            :timeout => timeout,
+            :interval => 0.1,
+            :retries => (timeout/0.1).to_i
+          }
+
+          health(health_options)
         rescue RunLoop::HTTP::Error => _
           raise %Q[
 
