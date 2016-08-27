@@ -40,7 +40,7 @@ DeviceAgent is only available for iOS >= 9.0
       # @!visibility private
       #
       # Does whatever it takes to launch the DeviceAgent-Runner on the device.
-      def launch
+      def launch(options)
         abstract_method!
       end
 

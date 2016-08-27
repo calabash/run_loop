@@ -30,7 +30,7 @@ module RunLoop
       end
 
       # @!visibility private
-      def launch
+      def launch(_)
         workspace
 
         if device.simulator?

@@ -27,7 +27,7 @@ describe RunLoop::DeviceAgent::LauncherStrategy do
 
     it "#launch" do
       expect do
-        launcher.launch
+        launcher.launch({})
       end.to raise_error RunLoop::Abstract::AbstractMethodError, /launch/
     end
 

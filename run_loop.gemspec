@@ -8,6 +8,7 @@ bash_scripts = ["scripts/udidetect",
 plists = Dir.glob('plists/**/*.plist')
 
 device_agent = ["lib/run_loop/device_agent/bin/iOSDeviceManager",
+                "lib/run_loop/device_agent/bin/CLI.json",
                 "lib/run_loop/device_agent/app/DeviceAgent-Runner.app.zip",
                 "lib/run_loop/device_agent/ipa/DeviceAgent-Runner.app.zip",
                 "lib/run_loop/device_agent/Frameworks.zip"]

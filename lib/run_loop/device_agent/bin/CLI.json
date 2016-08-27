@@ -1,0 +1,125 @@
+{
+    "start_test" : {
+        "-d" : {
+            "longFlag" : "--device-id",
+            "optionName" : "device-identifier",
+            "info" : "iOS Simulator GUID or 40-digit physical device ID",
+            "required" : true
+        },
+        "-b" : {
+            "longFlag" : "--test-runner-bundle-id",
+            "optionName" : "test_runner_bundle_id",
+            "info" : "BundleID of the Test Runner application (DeviceAgent)",
+            "required" : false,
+            "default" : "com.apple.test.DeviceAgent-Runner"
+        },
+        "-s" : {
+            "longFlag" : "--session-id",
+            "optionName" : "session_id",
+            "info" : "Session ID for the XCUITest",
+            "required" : false,
+            "default" : "BEEFBABE-FEED-BABE-BEEF-CAFEBEEFFACE"
+        },
+        "-k" : {
+            "longFlag" : "--keep-alive",
+            "optionName" : "true-or-false",
+            "info" : "Only set to false for smoke testing/debugging this tool",
+            "required" : false,
+            "default" : true
+        }        
+    },
+    "is_installed" : {
+        "-b" : {
+            "longFlag" : "--bundle-identifier",
+            "optionName" : "bundle-id",
+            "info" : "bundle identifier (e.g. com.my.app)",
+            "required" : true
+        },
+        "-d" : {
+            "longFlag" : "--device-id",
+            "optionName" : "device-identifier",
+            "info" : "iOS Simulator GUID or 40-digit physical device ID",
+            "required" : true
+        }
+    },
+    "install" : {
+        "-d" : {
+            "longFlag" : "--device-id",
+            "optionName" : "device-identifier",
+            "info" : "iOS Simulator GUID or 40-digit physical device ID",
+            "required" : true
+        },
+        "-a" : {
+            "longFlag" : "--app-bundle",
+            "optionName" : "path/to/app-bundle.app",
+            "info" : "Path .app bundle (for .ipas, unzip and look inside of 'Payload')",
+            "required" : true
+        },
+        "-c" : {
+            "longFlag" : "--codesign-identity",
+            "optionName" : "codesign-identity",
+            "info" : "Identity used to codesign app bundle [device only]",
+            "required" : false,
+            "default" : ""
+        },
+        "-u" : {
+            "longFlag" : "--update-app",
+            "optionName" : "true-or-false",
+            "info" : "When true, will reinstall the app if the device contains an older version than the bundle specified",
+            "required" : false,
+            "default" : true
+        }
+    },
+    "kill_simulator" : {
+        "-d" : {
+            "longFlag" : "--device-id",
+            "optionName" : "device-identifier",
+            "info" : "iOS Simulator GUID",
+            "required" : true
+        }
+    },
+    "launch_simulator" : {
+        "-d" : {
+            "longFlag" : "--device-id",
+            "optionName" : "device-identifier",
+            "info" : "iOS Simulator GUID",
+            "required" : true
+        }
+    },
+    "uninstall" : {
+        "-d" : {
+            "longFlag" : "--device-id",
+            "optionName" : "device-identifier",
+            "info" : "iOS Simulator GUID or 40-digit physical device ID",
+            "required" : true
+        },
+        "-b" : {
+            "longFlag" : "--bundle-identifier",
+            "optionName" : "bundle-id",
+            "info" : "bundle identifier (e.g. com.my.app)",
+            "required" : true
+        }
+    },
+    "set_location" : {
+        "-d" : {
+            "longFlag" : "--device-id",
+            "optionName" : "device-identifier",
+            "info" : "iOS Simulator GUID or 40-digit physical device ID",
+            "required" : true
+        },
+        "-l" : {
+            "longFlag" : "--location",
+            "optionName" : "lat,lng",
+            "info" : "latitude and longitude separated by a single comma",
+            "required" : true
+        }
+    },
+    "stop_simulating_location" : {
+        "-d" : {
+            "longFlag" : "--device-id",
+            "optionName" : "device-identifier",
+            "info" : "40-digit physical device ID",
+            "required" : true
+        }
+    }
+}

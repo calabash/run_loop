@@ -24,6 +24,7 @@ module RunLoop
       "Shutdown" => 1,
       "Shutting Down" => 2,
       "Booted" => 3,
+      "Plist Missing" => -1
     }.freeze
 
     # @!visibility private
@@ -38,24 +39,28 @@ module RunLoop
 
     # @!visibility private
     def self.ensure_valid_core_simulator_service
+      max_tries = 3
+      valid = false
+      3.times do |try|
+        valid = self.valid_core_simulator_service?
+        break if valid
+        RunLoop.log_debug("Invalid CoreSimulator service for active Xcode: try #{try + 1} of #{max_tries}")
+      end
+      valid
+    end
+
+    # @!visibility private
+    def self.valid_core_simulator_service?
       require "run_loop/shell"
       args = ["xcrun", "simctl", "help"]
 
-      max_tries = 3
-      3.times do |try|
-        hash = {}
-        begin
-          hash = Shell.run_shell_command(args)
-          if hash[:exit_status] != 0
-            RunLoop.log_debug("Invalid CoreSimulator service for active Xcode: try #{try + 1} of #{max_tries}")
-          else
-            return true
-          end
-        rescue RunLoop::Shell::Error => _
-          RunLoop.log_debug("Invalid CoreSimulator service for active Xcode, retrying #{try + 1} of #{max_tries}")
-        end
+      begin
+        hash = Shell.run_shell_command(args)
+        hash[:exit_status] == 0 &&
+          !hash[:out][/Failed to locate a valid instance of CoreSimulatorService/]
+      rescue RunLoop::Shell::Error => _
+        false
       end
-      false
     end
 
     # @!visibility private
@@ -119,7 +124,11 @@ module RunLoop
     # @!visibility private
     def simulator_state_as_int(device)
       plist = device.simulator_device_plist
-      pbuddy.plist_read("state", plist).to_i
+      if File.exist?(plist)
+        pbuddy.plist_read("state", plist).to_i
+      else
+        SIM_STATES["Plist Missing"]
+      end
     end
 
     # @!visibility private
