@@ -712,6 +712,33 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
         client = client(http_options)
         request = request("session", {:bundleID => bundle_id})
 
+        if device.simulator?
+          # Yes, we could use iOSDeviceManager to check, I dont understand the
+          # behavior yet - does it require the simulator be launched?
+          # CoreSimulator can check without launching the simulator.
+          installed = CoreSimulator.app_installed?(device, bundle_id)
+        else
+          if cbx_launcher.name == :xcodebuild
+            # :xcodebuild users are on their own.
+            RunLoop.log_debug("Detected :xcodebuild launcher; skipping app installed check")
+            installed = true
+          else
+            installed = cbx_launcher.app_installed?(bundle_id)
+          end
+        end
+
+        if !installed
+          raise RuntimeError, %Q[
+The app you are trying to launch is not installed on the target device:
+
+bundle identifier: #{bundle_id}
+           device: #{device}
+
+Please install it.
+
+]
+        end
+
         begin
           response = client.post(request)
           RunLoop.log_debug("Launched #{bundle_id} on #{device}")
@@ -723,11 +750,14 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
           end
           expect_200_response(response)
         rescue => e
-          raise e.class, %Q[Could not launch #{bundle_id} on #{device}:
+          raise e.class, %Q[
+
+Could not launch #{bundle_id} on #{device}:
 
 #{e.message}
 
 Something went wrong.
+
 ]
         end
       end
