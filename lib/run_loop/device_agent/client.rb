@@ -78,7 +78,7 @@ $ xcrun security find-identity -v -p codesigning
 
         launch_options = options.merge({:code_sign_identity => code_sign_identity})
         xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device, cbx_launcher)
-        xcuitest.launch(options)
+        xcuitest.launch(launch_options)
 
         if !RunLoop::Environment.xtc?
           cache = {
@@ -119,7 +119,7 @@ $ xcrun security find-identity -v -p codesigning
         end
       end
 
-      attr_reader :bundle_id, :device, :cbx_launcher
+      attr_reader :bundle_id, :device, :cbx_launcher, :launch_options
 
       # @!visibility private
       #
@@ -147,6 +147,7 @@ $ xcrun security find-identity -v -p codesigning
 
       # @!visibility private
       def launch(options={})
+        @launch_options = options
         start = Time.now
         launch_cbx_runner(options)
         launch_aut
@@ -570,15 +571,43 @@ Sending request to perform '#{parameters[:gesture]}' with:
         options = ping_options
         request = request("shutdown")
         client = client(options)
+        body = nil
         begin
           response = client.post(request)
           body = response.body
-          RunLoop.log_debug("CBX-Runner says, \"#{body}\"")
+          RunLoop.log_debug("DeviceAgent-Runner says, \"#{body}\"")
+
+          now = Time.now
+          poll_until = now + 10.0
+          running = true
+          while Time.now < poll_until
+            running = !running?
+            break if running
+            sleep(0.1)
+          end
+
+          RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
           body
         rescue => e
-          RunLoop.log_debug("CBX-Runner shutdown error: #{e}")
-          nil
+          RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e}")
+        ensure
+          quit_options = { :timeout => 0.5 }
+          term_options = { :timeout => 0.5 }
+          kill_options = { :timeout => 0.5 }
+
+          process_name = "iOSDeviceManager"
+          RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
+            quit = RunLoop::ProcessTerminator.new(pid, "QUIT", process_name, quit_options)
+            if !quit.kill_process
+              term = RunLoop::ProcessTerminator.new(pid, "TERM", process_name, term_options)
+              if !term.kill_process
+                kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
+                kill.kill_process
+              end
+            end
+          end
         end
+        body
       end
 
       # @!visibility private
@@ -669,7 +698,7 @@ To diagnose the problem tail the launcher log file:
 
 $ tail -1000 -F #{cbx_launcher.class.log_file}
 
-                ]
+]
         end
 
         RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
