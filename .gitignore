@@ -16,8 +16,8 @@ test/version_tmp
 tmp
 
 # The DeviceAgent binaries
-lib/run_loop/device_agent/app/CBX-Runner.app
-lib/run_loop/device_agent/ipa/CBX-Runner.app
+lib/run_loop/device_agent/app/DeviceAgent-Runner.app
+lib/run_loop/device_agent/ipa/DeviceAgent-Runner.app
 lib/run_loop/device_agent/Frameworks
 
 # RubyMine

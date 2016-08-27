@@ -23,53 +23,70 @@ describe RunLoop::Simctl do
     expect(File.exist?(RunLoop::Simctl.uia_automation_plugin_plist)).to be_truthy
   end
 
-  context ".ensure_valid_core_simulator_service" do
+  context ".valid_core_simulator_service?" do
     let(:args) { ["xcrun", "simctl", "help"] }
     let(:hash) { { } }
-    it "returns true if simctl help exits with 0" do
+
+    it "returns true if simctl help exits with 0 and a valid CoreSimulatorService is located" do
       hash[:exit_status] = 0
+      hash[:out] = "Apple!!!"
       expect(RunLoop::Shell).to receive(:run_shell_command).with(args).and_return(hash)
 
-      actual = RunLoop::Simctl.ensure_valid_core_simulator_service
+      actual = RunLoop::Simctl.valid_core_simulator_service?
       expect(actual).to be == true
     end
 
-    it "returns false if simctl help fails more than 3 times" do
+    it "returns false if simctl help fails" do
       hash[:exit_status] = 1
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).exactly(3).times.and_return(hash)
+      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).and_return(hash)
 
-      actual = RunLoop::Simctl.ensure_valid_core_simulator_service
+      actual = RunLoop::Simctl.valid_core_simulator_service?
       expect(actual).to be == false
     end
 
-    it "returns true after rescuing Shell::Error 2 times" do
+    it "returns false if CoreSimulatorService is invalid" do
       hash[:exit_status] = 0
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).exactly(2).times.and_raise RunLoop::Shell::Error
+      hash[:out] = "Failed to locate a valid instance of CoreSimulatorService"
+
       expect(RunLoop::Shell).to receive(:run_shell_command).with(args).and_return(hash)
+
+      actual = RunLoop::Simctl.valid_core_simulator_service?
+      expect(actual).to be == false
+    end
+
+    it "returns false if simctl help raises a shell error" do
+      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).times.and_raise RunLoop::Shell::Error
+
+      actual = RunLoop::Simctl.valid_core_simulator_service?
+      expect(actual).to be == false
+    end
+  end
+
+  context ".ensure_valid_core_simulator_service" do
+
+    it "returns true after trying once if all is well" do
+      expect(RunLoop::Simctl).to receive(:valid_core_simulator_service?).and_return(true)
 
       actual = RunLoop::Simctl.ensure_valid_core_simulator_service
       expect(actual).to be == true
     end
 
-    it "returns true after handling non-zero exit 2 times" do
-      fail_hash = {:exit_status => 1}
-      hash[:exit_status] = 0
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).exactly(2).times.and_return(fail_hash)
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).and_return(hash)
+    it "returns true after 3 tries" do
+      expect(RunLoop::Simctl).to(
+        receive(:valid_core_simulator_service?).and_return(false, false, true)
+      )
 
       actual = RunLoop::Simctl.ensure_valid_core_simulator_service
       expect(actual).to be == true
     end
 
-    it "returns true after handling one Shell::Error and one non-zero exit" do
-      fail_hash = {:exit_status => 1}
-      hash[:exit_status] = 0
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).and_raise RunLoop::Shell::Error
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).times.and_return(fail_hash)
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).and_return(hash)
+    it "returns false after 3 tries" do
+      expect(RunLoop::Simctl).to(
+        receive(:valid_core_simulator_service?).and_return(false, false, false)
+      )
 
       actual = RunLoop::Simctl.ensure_valid_core_simulator_service
-      expect(actual).to be == true
+      expect(actual).to be == false
     end
   end
 
@@ -186,6 +203,7 @@ describe RunLoop::Simctl do
         expect(simctl.send(:string_for_sim_state, 1)).to be == "Shutdown"
         expect(simctl.send(:string_for_sim_state, 2)).to be == "Shutting Down"
         expect(simctl.send(:string_for_sim_state, 3)).to be == "Booted"
+        expect(simctl.send(:string_for_sim_state, -1)).to be == "Plist Missing"
       end
 
       it "raises an error for invalid states" do
@@ -196,12 +214,24 @@ describe RunLoop::Simctl do
     end
 
     context "#simulator_state_as_int" do
-      it "returns the numeric state of the simulator" do
+      it "returns the numeric state of the simulator by asking the sim plist" do
+        plist = device.simulator_device_plist
+        expect(File).to receive(:exist?).with(plist).and_return(true)
+
         pbuddy = RunLoop::PlistBuddy.new
         expect(simctl).to receive(:pbuddy).and_return(pbuddy)
         expect(pbuddy).to receive(:plist_read).and_return("10")
 
         expect(simctl.simulator_state_as_int(device)).to be == 10
+      end
+
+      it "returns the Plist Missing state (-1) if the plist is missing" do
+        plist = device.simulator_device_plist
+        expect(File).to receive(:exist?).with(plist).and_return(false)
+
+        expected = RunLoop::Simctl::SIM_STATES["Plist Missing"]
+
+        expect(simctl.simulator_state_as_int(device)).to be == expected
       end
     end
 

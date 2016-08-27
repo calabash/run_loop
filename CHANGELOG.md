@@ -1,5 +1,18 @@
 ## Change Log
 
+### 2.1.8
+
+Many thanks to the crew on Gitter. Special thanks to:
+
+* @JoeSSS, @TeresaP, @ark-konopacki, and @MortenGregersen
+
+for beta testing.
+
+* DeviceAgent 0.1.0 + code sign fix for physical devices #517
+* Update to DeviceAgent 0.1.0 #516
+* Update DeviceAgent stack in response to DeviceAgent.iOS name changes #515
+* XCUITest #query filters by visibility #513
+
 ### 2.1.7
 
 * XCUITest: add #pan\_between\_coordinates #511

@@ -43,7 +43,9 @@ describe RunLoop::Core do
                   "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/System Trace.tracetemplate",
                   "/Xcode/6.2/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Time Profiler.tracetemplate",
             ]
+      allow(instruments).to receive(:xcode).and_return(xcode)
       expect(instruments).to receive(:templates).and_return(templates)
+      expect(xcode).to receive(:version_gte_8?).and_return(false)
 
       expect do
         RunLoop::Core.default_tracetemplate(instruments)

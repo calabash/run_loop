@@ -316,9 +316,11 @@ module RunLoop
     end
 
     # !@visibility private
-    # Returns the value of CBXWS.  This can be used to override the default
-    # CBXDriver.xcworkspace.  You should only set this if you are actively
-    # developing the CBXDriver.
+    # Returns the value of CBXWS.  This can be used in conjunction with
+    # :cbx_launcher => :xcodebuild to launch the DeviceAgent rather than
+    # iOSDeviceManager.
+    #
+    # You should only set this if you are actively developing the DeviceAgent.
     def self.cbxws
       value = ENV["CBXWS"]
       if value.nil? || value == ""
@@ -326,12 +328,14 @@ module RunLoop
       else
         path = File.expand_path(value)
         if !File.directory?(path)
-          raise RuntimeError, %Q[CBXWS is set, but there is no workspace at
+          raise RuntimeError, %Q[
+CBXWS is set, but there is no workspace at
+
 #{path}
 
-Only set CBXWS if you are developing new features in the CBXRunner.
+Only set CBXWS if you are developing new features in the DeviceAgent.
 
-Check your environment.]
+]
         end
         path
       end

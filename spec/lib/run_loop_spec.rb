@@ -13,6 +13,9 @@ describe RunLoop do
   describe ".run" do
 
     it "does not mangle options" do
+
+      allow(xcode).to receive(:version_gte_8?).and_return(false)
+
       options = {
         :xcode => xcode,
         :simctl => simctl,
@@ -140,6 +143,8 @@ describe RunLoop do
         it "raises error if unknown gesture_performer" do
           options[:gesture_performer] = :unknown_performer
 
+          allow(device).to receive(:version).and_return(RunLoop::Version.new("9.1"))
+
           expect do
             RunLoop.detect_gesture_performer(options, xcode, device)
           end.to raise_error RuntimeError, /Invalid :gesture_performer option:/
@@ -157,4 +162,3 @@ describe RunLoop do
     end
   end
 end
-

@@ -5,7 +5,15 @@ module RunLoop
     # @!visibility private
     #
     # A wrapper around the test-control binary.
-    class IOSDeviceManager < RunLoop::DeviceAgent::Launcher
+    class IOSDeviceManager < RunLoop::DeviceAgent::LauncherStrategy
+
+      EXIT_CODES = {
+        "0" => :success,
+        "2" => :false
+      }.freeze
+
+      require "run_loop/shell"
+      include RunLoop::Shell
 
       # @!visibility private
       @@ios_device_manager = nil
@@ -40,7 +48,7 @@ but binary does not exist at that path.
 
       # @!visibility private
       def name
-        :xctestctl
+        :ios_device_manager
       end
 
       # @!visibility private
@@ -55,55 +63,72 @@ but binary does not exist at that path.
 
       # @!visibility private
       def runner
-        @runner ||= RunLoop::DeviceAgent::CBXRunner.new(device)
+        @runner ||= RunLoop::DeviceAgent::Runner.new(device)
       end
 
       # @!visibility private
       def self.log_file
-        path = File.join(Launcher.dot_dir, "ios-device-manager.log")
+        path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
         FileUtils.touch(path) if !File.exist?(path)
         path
       end
 
       # @!visibility private
-      def launch
+      def launch(options)
+        code_sign_identity = options[:code_sign_identity]
+
         RunLoop::DeviceAgent::Frameworks.instance.install
+        cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
-        # WIP: it is unclear what the behavior should be.
+        start = Time.now
         if device.simulator?
-          # Simulator cannot be running for this version.
-          CoreSimulator.quit_simulator
+          cbxapp = RunLoop::App.new(runner.runner)
 
-          CoreSimulator.wait_for_simulator_state(device, "Shutdown")
+          # quits the simulator
+          sim = CoreSimulator.new(device, cbxapp)
+          sim.install
+          sim.launch_simulator
+        else
 
-          # TODO: run-loop is responsible for detecting an outdated CBX-Runner
-          # application and installing a new one.  However, iOSDeviceManager
-          # fails if simulator is already running.
+          if !code_sign_identity
+            raise ArgumentError, %Q[
+Targeting a physical devices requires a code signing identity.
 
-          # cbxapp = RunLoop::App.new(runner.runner)
-          #
-          # # quits the simulator
-          # sim = CoreSimulator.new(device, cbxapp)
-          # sim.install
-          # sim.launch_simulator
+Rerun your test with:
+
+$ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
+
+]
+          end
+
+          options = {:log_cmd => true}
+          args = [
+            cmd, "install",
+            "--device-id", device.udid,
+            "--app-bundle", runner.runner,
+            "--codesign-identity", code_sign_identity
+          ]
+
+          start = Time.now
+          hash = run_shell_command(args, options)
+
+
+          if hash[:exit_status] != 0
+            raise RuntimeError, %Q[
+
+Could not install #{runner.runner}.  iOSDeviceManager says:
+
+#{hash[:out]}
+
+            ]
+          end
         end
+
+        RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent");
 
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
-        args = ["start_test",
-                "-r", runner.runner,
-                "-t", runner.tester,
-                "-d", device.udid]
-
-        code_sign_identity = RunLoop::Environment.code_sign_identity
-        if !code_sign_identity
-          code_sign_identity = "iPhone Developer"
-        end
-
-        if device.physical_device?
-          args << "-c"
-          args << code_sign_identity
-        end
+        args = ["start_test", "--device-id", device.udid]
 
         log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
@@ -122,10 +147,50 @@ but binary does not exist at that path.
         Process.detach(pid)
 
         if device.simulator?
-          device.simulator_wait_for_stable_state
+          # Give it a whirl.
+          # device.simulator_wait_for_stable_state
         end
 
         pid.to_i
+      end
+
+      def app_installed?(bundle_identifier)
+        options = {:log_cmd => true}
+
+        cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
+
+        args = [
+          cmd, "is_installed",
+          "--device-id", device.udid,
+          "--bundle-identifier", bundle_identifier
+        ]
+
+        start = Time.now
+        hash = run_shell_command(args, options)
+
+        exit_status = EXIT_CODES[hash[:exit_status].to_s]
+        if exit_status == :success
+          true
+        elsif exit_status == :false
+          false
+        else
+          raise RuntimeError, %Q[
+
+Could not check if app is installed:
+
+bundle identifier: #{bundle_identifier}
+           device: #{device}
+
+iOSDeviceManager says:
+
+#{hash[:out]}
+
+]
+        end
+
+        RunLoop::log_debug("Took #{Time.now - start} seconds to check if app was installed");
+
+        hash[:exit_status] == 0
       end
     end
   end
