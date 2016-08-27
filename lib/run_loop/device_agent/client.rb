@@ -269,6 +269,13 @@ $ xcrun security find-identity -v -p codesigning
         parameters = { merged_options[:specifier] => mark }
         request = request("query", parameters)
         client = client(http_options)
+
+        RunLoop.log_debug %Q[Sending query with parameters:
+
+#{JSON.pretty_generate(parameters)}
+
+]
+
         response = client.post(request)
         hash = expect_200_response(response)
         elements = hash["result"]
@@ -374,12 +381,11 @@ $ xcrun security find-identity -v -p codesigning
       # @!visibility private
       def make_gesture_request(parameters)
 
-        RunLoop.log_debug(%Q[
-Sending request to perform '#{parameters[:gesture]}' with:
+        RunLoop.log_debug %Q[Sending request to perform '#{parameters[:gesture]}' with:
 
 #{JSON.pretty_generate(parameters)}
 
-                          ])
+]
         request = request("gesture", parameters)
         client = client(http_options)
         response = client.post(request)

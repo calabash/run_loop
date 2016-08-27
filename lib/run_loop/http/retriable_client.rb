@@ -113,7 +113,13 @@ module RunLoop
         interval = options.fetch(:interval, @interval)
         header = options.fetch(:header, HEADER)
 
-        RunLoop.log_debug("HTTP: #{request_method} #{@server.endpoint + request.route} #{options}")
+        if RunLoop::Environment.debug?
+          http_options = {
+            :retries => retries,
+            :timeout => timeout
+          }
+          RunLoop.log_debug("HTTP: #{request_method} #{@server.endpoint + request.route} #{http_options}")
+        end
 
         start_time = Time.now
         last_error = nil
