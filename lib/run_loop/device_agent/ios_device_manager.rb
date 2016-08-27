@@ -7,6 +7,11 @@ module RunLoop
     # A wrapper around the test-control binary.
     class IOSDeviceManager < RunLoop::DeviceAgent::LauncherStrategy
 
+      EXIT_CODES = {
+        "0" => :success,
+        "2" => :false
+      }.freeze
+
       require "run_loop/shell"
       include RunLoop::Shell
 
@@ -145,6 +150,45 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         end
 
         pid.to_i
+      end
+
+      def app_installed?(bundle_identifier)
+        options = {:log_cmd => true}
+
+        cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
+
+        args = [
+          cmd, "is_installed",
+          "--device-id", device.udid,
+          "--bundle-identifier", bundle_identifier
+        ]
+
+        start = Time.now
+        hash = run_shell_command(args, options)
+
+        exit_status = EXIT_CODES[hash[:exit_status].to_s]
+        if exit_status == :success
+          true
+        elsif exit_status == :false
+          false
+        else
+          raise RuntimeError, %Q[
+
+Could not check if app is installed:
+
+bundle identifier: #{bundle_identifier}
+           device: #{device}
+
+iOSDeviceManager says:
+
+#{hash[:out]}
+
+]
+        end
+
+        RunLoop::log_debug("Took #{Time.now - start} seconds to check if app was installed");
+
+        hash[:exit_status] == 0
       end
     end
   end
