@@ -692,9 +692,6 @@ failed with this output:
     end
 
     # @!visibility private
-    CORE_SIMULATOR_DEVICE_DIR = File.expand_path('~/Library/Developer/CoreSimulator/Devices')
-
-    # @!visibility private
     def self.ensure_physical_device_connected(identifier, options)
       if identifier.nil?
         env = self.device_from_environment
