@@ -126,7 +126,7 @@ def holmes(options={})
     :device => device.udid,
     :xcode => xcode,
     :simctl => simctl,
-    :gesture_performer => :device_agent,
+    :automator => :device_agent,
     :cbx_launcher => :ios_device_manager
   }
 

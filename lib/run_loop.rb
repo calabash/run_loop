@@ -108,8 +108,8 @@ module RunLoop
     device = Device.detect_device(cloned_options, xcode, simctl, instruments)
     cloned_options[:device] = device
 
-    gesture_performer = RunLoop.detect_gesture_performer(cloned_options, xcode, device)
-    if gesture_performer == :device_agent
+    automator = RunLoop.detect_automator(cloned_options, xcode, device)
+    if automator == :device_agent
       RunLoop::DeviceAgent::Client.run(cloned_options)
     else
       if RunLoop::Instruments.new.instruments_app_running?
@@ -247,7 +247,7 @@ Please quit the Instruments.app and try again.)
   #
   # @param [RunLoop::Xcode] xcode The active Xcode
   # @param [RunLoop::Device] device The device under test.
-  def self.default_gesture_performer(xcode, device)
+  def self.default_automator(xcode, device)
     # TODO XTC support
     return :instruments if RunLoop::Environment.xtc?
 
@@ -286,21 +286,21 @@ $ DEVELOPER_DIR=/path/to/Xcode/7.3.1/Xcode.app/Contents/Developer cucumber
   # @param [Hash] options The options passed by the user
   # @param [RunLoop::Xcode] xcode The active Xcode
   # @param [RunLoop::Device] device The device under test
-  def self.detect_gesture_performer(options, xcode, device)
+  def self.detect_automator(options, xcode, device)
     # TODO XTC support
     return :instruments if RunLoop::Environment.xtc?
 
-    gesture_performer = options[:gesture_performer]
+    automator = options[:automator]
 
-    if gesture_performer
+    if automator
       if xcode.version_gte_8?
-        if gesture_performer == :instruments
+        if automator == :instruments
           raise RuntimeError, %Q[
-Incompatible :gesture_performer option for active Xcode.
+Incompatible :automator option for active Xcode.
 
-Detected :gesture_performer => :instruments and Xcode #{xcode.version}.
+Detected :automator => :instruments and Xcode #{xcode.version}.
 
-Don't set the :gesture_performer option unless you are gem maintainer.
+Don't set the :automator option unless you are gem maintainer.
 
 ]
         elsif device.version < RunLoop::Version.new("9.0")
@@ -318,25 +318,25 @@ You can rerun your test if you have Xcode 7 installed:
 
 $ DEVELOPER_DIR=/path/to/Xcode/7.3.1/Xcode.app/Contents/Developer cucumber
 
-Don't set the :gesture_performer option unless you are gem maintainer.
+Don't set the :automator option unless you are gem maintainer.
 
 ]
         end
       end
 
-      if ![:device_agent, :instruments].include?(gesture_performer)
+      if ![:device_agent, :instruments].include?(automator)
         raise RuntimeError, %Q[
-Invalid :gesture_performer option: #{gesture_performer}
+Invalid :automator option: #{automator}
 
-Allowed performers: :device_agent or :instruments.
+Allowed automators: :device_agent or :instruments.
 
-Don't set the :gesture_performer option unless you are gem maintainer.
+Don't set the :automator option unless you are gem maintainer.
 
 ]
       end
-      gesture_performer
+      automator
     else
-      RunLoop.default_gesture_performer(xcode, device)
+      RunLoop.default_automator(xcode, device)
     end
   end
 end

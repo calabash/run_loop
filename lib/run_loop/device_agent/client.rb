@@ -85,7 +85,7 @@ $ xcrun security find-identity -v -p codesigning
             :cbx_launcher => cbx_launcher.name,
             :udid => device.udid,
             :app => bundle_id,
-            :gesture_performer => :device_agent,
+            :automator => :device_agent,
             :code_sign_identity => code_sign_identity
           }
           RunLoop::Cache.default.write(cache)
