@@ -185,7 +185,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("device")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # TODO Legacy API; remove once this branch is merged:
@@ -198,7 +198,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("pid")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -207,7 +207,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("version")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -216,7 +216,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("sessionIdentifier")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -225,7 +225,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("tree")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -235,7 +235,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("query", parameters)
         client = client(options)
         response = client.post(request)
-        hash = expect_200_response(response)
+        hash = expect_300_response(response)
         result = hash["result"]
         result.count != 0
       end
@@ -295,7 +295,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("query", parameters)
         client = client(http_options)
         response = client.post(request)
-        hash = expect_200_response(response)
+        hash = expect_300_response(response)
         !hash["result"].empty?
       end
 
@@ -340,7 +340,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("rotate_home_button_to", parameters)
         client = client(http_options)
         response = client.post(request)
-        json = expect_200_response(response)
+        json = expect_300_response(response)
         sleep(sleep_for)
         json
       end
@@ -389,7 +389,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("gesture", parameters)
         client = client(http_options)
         response = client.post(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -431,7 +431,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("volume", parameters)
         client = client(http_options)
         response = client.post(request)
-        json = expect_200_response(response)
+        json = expect_300_response(response)
         # Set in the route
         sleep(0.2)
         json
@@ -761,7 +761,7 @@ Please install it.
             # in the simulator_wait_for_stable_state; it waits too long.
             # device.simulator_wait_for_stable_state
           end
-          expect_200_response(response)
+          expect_300_response(response)
         rescue => e
           raise e.class, %Q[
 
@@ -787,7 +787,7 @@ Something went wrong.
       end
 
       # @!visibility private
-      def expect_200_response(response)
+      def expect_300_response(response)
         body = response_body_to_hash(response)
         if response.status_code < 300 && !body["error"]
           return body
@@ -795,20 +795,22 @@ Something went wrong.
 
         if response.status_code > 300
           raise RunLoop::DeviceAgent::Client::HTTPError,
-                %Q[Expected status code < 300, found #{response.status_code}.
+                %Q[
+Expected status code < 300, found #{response.status_code}.
 
 Server replied with:
 
 #{body}
 
-                ]
+]
         else
           raise RunLoop::DeviceAgent::Client::HTTPError,
-                %Q[Expected JSON response with no error, but found
+                %Q[
+Expected JSON response with no error, but found
 
 #{body["error"]}
 
-                ]
+]
 
         end
       end
