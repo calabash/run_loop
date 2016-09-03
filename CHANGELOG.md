@@ -1,5 +1,9 @@
 ## Change Log
 
+### 2.1.9
+
+* DeviceAgent: replace :gesture\_performer with :automator #520
+
 ### 2.1.8
 
 Many thanks to the crew on Gitter. Special thanks to:
