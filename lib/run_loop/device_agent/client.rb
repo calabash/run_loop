@@ -255,18 +255,131 @@ $ xcrun security find-identity -v -p codesigning
         request = request("gesture", parameters)
         client = client(options)
         response = client.post(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
-      def query(mark, options={})
-        default_options = {
-          all: false,
-          specifier: :id
-        }
-        merged_options = default_options.merge(options)
+      #
+      # @example
+      #  query({id: "login", :type "Button"})
+      #
+      #  query({marked: "login"})
+      #
+      #  query({marked: "login", type: "TextField"})
+      #
+      #  query({type: "Button", index: 2})
+      #
+      #  query({text: "Log in"})
+      #
+      #  query({id: "hidden button", :all => true})
+      #
+      #  # Escaping single quote is not necessary, but supported.
+      #  query({text: "Karl's problem"})
+      #  query({text: "Karl\'s problem"})
+      #
+      #  # Escaping double quote is not necessary, but supported.
+      #  query({text: "\"To know is not enough.\""})
+      #  query({text: %Q["To know is not enough."]})
+      #
+      # Querying for text with newlines is not supported yet.
+      #
+      # The query language supports the following keys:
+      # * :marked - accessibilityIdentifier, accessibilityLabel, text, and value
+      # * :id - accessibilityIdentifier
+      # * :type - an XCUIElementType shorthand, e.g. XCUIElementTypeButton =>
+      #   Button. See the link below for available types.  Note, however that
+      #   some XCUIElementTypes are not available on iOS.
+      # * :index - Applied after all other specifiers.
+      # * :all - Filter the result by visibility. Defaults to false. See the
+      #   discussion below about visibility.
+      #
+      # ### Visibility
+      #
+      # The rules for visibility are:
+      #
+      # 1. If any part of the view is visible, the visible.
+      # 2. If the view has alpha 0, it is not visible.
+      # 3. If the view has a size (0,0) it is not visible.
+      # 4. If the view is not within the bounds of the screen, it is not visible.
+      #
+      # Visibility is determined using the "hitable" XCUIElement property.
+      # XCUITest, particularly under Xcode 7, is not consistent about setting
+      # the "hitable" property correctly.  Views that are not "hitable" might
+      # respond to gestures.
+      #
+      # Regarding rule #1 - this is different from the Calabash iOS and Android
+      # definition of visibility which requires the mid-point of the view to be
+      # visible.
+      #
+      # ### Results
+      #
+      # Results are returned as an Array of Hashes.
+      #
+      # ```
+      # [
+      #  {
+      #    "enabled": true,
+      #    "id": "mostly hidden button",
+      #    "hitable": true,
+      #    "rect": {
+      #      "y": 459,
+      #      "x": 24,
+      #      "height": 25,
+      #      "width": 100
+      #    },
+      #    "label": "Mostly Hidden",
+      #    "type": "Button",
+      #    "hit_point": {
+      #      "x": 25,
+      #      "y": 460
+      #    },
+      #    "test_id": 1
+      #  }
+      # ]
+      # ```
+      #
+      # @see http://masilotti.com/xctest-documentation/Constants/XCUIElementType.html
+      # @param [Hash] uiquery A hash describing the query.
+      # @return [Array<Hash>] An array of elements matching the `uiquery`.
+      def query(uiquery)
+        merged_options = {
+          all: false
+        }.merge(uiquery)
 
-        parameters = { merged_options[:specifier] => mark }
+        allowed_keys = [:all, :id, :index, :marked, :text, :type]
+        unknown_keys = uiquery.keys - allowed_keys
+        if !unknown_keys.empty?
+          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+          raise ArgumentError, %Q[
+Unsupported key or keys found: '#{unknown_keys}'.
+
+Allowed keys for a query are: #{keys}
+
+          ]
+        end
+
+        has_any_key = (allowed_keys & uiquery.keys).any?
+        if !has_any_key
+          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+          raise ArgumentError, %Q[
+Query does not contain any keysUnsupported key or keys found: '#{unknown_keys}'.
+
+Allowed keys for a query are: #{keys}
+
+]
+        end
+
+        parameters = merged_options.dup.tap { |hs| hs.delete(:all) }
+        if parameters.empty?
+          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+          raise ArgumentError, %Q[
+Query must contain at least one of these keys:
+
+#{keys}
+
+]
+        end
+
         request = request("query", parameters)
         client = client(http_options)
 
@@ -277,7 +390,7 @@ $ xcrun security find-identity -v -p codesigning
 ]
 
         response = client.post(request)
-        hash = expect_200_response(response)
+        hash = expect_300_response(response)
         elements = hash["result"]
 
         if merged_options[:all]
