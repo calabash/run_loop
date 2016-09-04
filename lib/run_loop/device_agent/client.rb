@@ -422,7 +422,6 @@ Query must contain at least one of these keys:
       end
 
       # @!visibility private
-      #
       # @see #query
       def query_for_coordinate(uiquery)
         element = wait_for_view(uiquery)
@@ -430,29 +429,61 @@ Query must contain at least one of these keys:
       end
 
       # @!visibility private
-      def touch(mark, options={})
-        coordinate = query_for_coordinate(mark)
-        perform_coordinate_gesture("touch",
-                                   coordinate[:x], coordinate[:y],
-                                   options)
+      #
+      # :num_fingers
+      # :duration
+      # :repetitions
+      # @see #query
+      def touch(uiquery, options={})
+        coordinate = query_for_coordinate(uiquery)
+        perform_coordinate_gesture("touch", coordinate[:x], coordinate[:y], options)
       end
 
-      alias_method :tap, :touch
+      # @!visibility private
+      # @see #touch
+      def touch_coordinate(coordinate, options={})
+        x = coordinate[:x] || coordinate["x"]
+        y = coordinate[:y] || coordinate["y"]
+        touch_point(x, y, options)
+      end
 
       # @!visibility private
-      def double_tap(mark, options={})
-        coordinate = query_for_coordinate(mark)
+      # @see #touch
+      def touch_point(x, y, options={})
+        perform_coordinate_gesture("touch", x, y, options)
+      end
+
+      # @!visibility private
+      # @see #touch
+      # @see #query
+      def double_tap(uiquery, options={})
+        coordinate = query_for_coordinate(uiquery)
         perform_coordinate_gesture("double_tap",
                                    coordinate[:x], coordinate[:y],
                                    options)
       end
 
       # @!visibility private
-      def two_finger_tap(mark, options={})
-        coordinate = query_for_coordinate(mark)
+      # @see #touch
+      # @see #query
+      def two_finger_tap(uiquery, options={})
+        coordinate = query_for_coordinate(uiquery)
         perform_coordinate_gesture("two_finger_tap",
                                    coordinate[:x], coordinate[:y],
                                    options)
+      end
+
+      # @!visibility private
+      # @see #touch
+      # @see #query
+      def long_press(uiquery, options={})
+        merged_options = {
+          :duration => 1.1
+        }.merge(options)
+
+        coordinate = query_for_coordinate(uiquery)
+        perform_coordinate_gesture("touch", coordinate[:x], coordinate[:y],
+                                   merged_options)
       end
 
       # @!visibility private
@@ -540,11 +571,10 @@ Query must contain at least one of these keys:
 
 #{JSON.pretty_generate(new_rect)}
 
-                          ])
+])
         {:x => touchx,
          :y => touchy}
       end
-
 
       # @!visibility private
       def change_volume(up_or_down)
