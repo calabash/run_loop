@@ -422,9 +422,11 @@ Query must contain at least one of these keys:
       end
 
       # @!visibility private
-      def query_for_coordinate(mark)
-        elements = query(mark)
-        coordinate_from_query_result(elements)
+      #
+      # @see #query
+      def query_for_coordinate(uiquery)
+        element = wait_for_view(uiquery)
+        coordinate_from_query_result([element])
       end
 
       # @!visibility private
