@@ -36,7 +36,7 @@ module RunLoop
         if device.simulator?
           # quits the simulator
           sim = CoreSimulator.new(device, "")
-          sim.launch_simulator
+          sim.launch_simulator({:wait_for_stable => false})
         end
 
         start = Time.now
