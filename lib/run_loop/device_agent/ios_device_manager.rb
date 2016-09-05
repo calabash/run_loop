@@ -126,8 +126,6 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
 
         RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent");
 
-        cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
-
         args = ["start_test", "--device-id", device.udid]
 
         log_file = IOSDeviceManager.log_file
