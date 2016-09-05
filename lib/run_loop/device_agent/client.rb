@@ -1080,6 +1080,7 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
         client = client(http_options)
         request = request("session", {:bundleID => bundle_id})
 
+        # This check needs to be done _before_ the DeviceAgent is launched.
         if device.simulator?
           # Yes, we could use iOSDeviceManager to check, I dont understand the
           # behavior yet - does it require the simulator be launched?
@@ -1091,7 +1092,10 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
             RunLoop.log_debug("Detected :xcodebuild launcher; skipping app installed check")
             installed = true
           else
-            installed = cbx_launcher.app_installed?(bundle_id)
+            # Too slow for most devices
+            # https://jira.xamarin.com/browse/TCFW-273
+            # installed = cbx_launcher.app_installed?(bundle_id)
+            installed = true
           end
         end
 
