@@ -1,5 +1,14 @@
 ## Change Log
 
+### 2.1.10
+
+Not release yet.
+
+* DA:IDM: Disable is installed? check for physical devices
+* DA:IDM: only restart the simulator if necessary
+* CLI: simctl tail displays last 5000 lines
+* Expand DeviceAgent#query and gestures #522
+
 ### 2.1.9
 
 * DeviceAgent: replace :gesture\_performer with :automator #520
