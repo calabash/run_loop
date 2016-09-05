@@ -1038,7 +1038,7 @@ to match no views.
         end
 
         start = Time.now
-        RunLoop.log_debug("Waiting for CBX-Runner to launch...")
+        RunLoop.log_debug("Waiting for DeviceAgent to launch...")
         pid = cbx_launcher.launch(options)
 
         if cbx_launcher.name == :xcodebuild
