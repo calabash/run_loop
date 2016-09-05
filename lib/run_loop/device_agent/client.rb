@@ -28,6 +28,15 @@ module RunLoop
       }
 
       # @!visibility private
+      #
+      # These defaults may change at any time.
+      WAIT_DEFAULTS = {
+        timeout: RunLoop::Environment.ci? ? 16 : 8,
+        retry_frequency: 0.1,
+        exception_class: Timeout::Error
+      }
+
+      # @!visibility private
       def self.run(options={})
         # logger = options[:logger]
         simctl = options[:sim_control] || options[:simctl] || RunLoop::Simctl.new
@@ -185,7 +194,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("device")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # TODO Legacy API; remove once this branch is merged:
@@ -198,7 +207,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("pid")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -207,7 +216,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("version")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -216,7 +225,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("sessionIdentifier")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -225,7 +234,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("tree")
         client = client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -235,7 +244,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("query", parameters)
         client = client(options)
         response = client.post(request)
-        hash = expect_200_response(response)
+        hash = expect_300_response(response)
         result = hash["result"]
         result.count != 0
       end
@@ -255,18 +264,131 @@ $ xcrun security find-identity -v -p codesigning
         request = request("gesture", parameters)
         client = client(options)
         response = client.post(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
-      def query(mark, options={})
-        default_options = {
-          all: false,
-          specifier: :id
-        }
-        merged_options = default_options.merge(options)
+      #
+      # @example
+      #  query({id: "login", :type "Button"})
+      #
+      #  query({marked: "login"})
+      #
+      #  query({marked: "login", type: "TextField"})
+      #
+      #  query({type: "Button", index: 2})
+      #
+      #  query({text: "Log in"})
+      #
+      #  query({id: "hidden button", :all => true})
+      #
+      #  # Escaping single quote is not necessary, but supported.
+      #  query({text: "Karl's problem"})
+      #  query({text: "Karl\'s problem"})
+      #
+      #  # Escaping double quote is not necessary, but supported.
+      #  query({text: "\"To know is not enough.\""})
+      #  query({text: %Q["To know is not enough."]})
+      #
+      # Querying for text with newlines is not supported yet.
+      #
+      # The query language supports the following keys:
+      # * :marked - accessibilityIdentifier, accessibilityLabel, text, and value
+      # * :id - accessibilityIdentifier
+      # * :type - an XCUIElementType shorthand, e.g. XCUIElementTypeButton =>
+      #   Button. See the link below for available types.  Note, however that
+      #   some XCUIElementTypes are not available on iOS.
+      # * :index - Applied after all other specifiers.
+      # * :all - Filter the result by visibility. Defaults to false. See the
+      #   discussion below about visibility.
+      #
+      # ### Visibility
+      #
+      # The rules for visibility are:
+      #
+      # 1. If any part of the view is visible, the visible.
+      # 2. If the view has alpha 0, it is not visible.
+      # 3. If the view has a size (0,0) it is not visible.
+      # 4. If the view is not within the bounds of the screen, it is not visible.
+      #
+      # Visibility is determined using the "hitable" XCUIElement property.
+      # XCUITest, particularly under Xcode 7, is not consistent about setting
+      # the "hitable" property correctly.  Views that are not "hitable" might
+      # respond to gestures.
+      #
+      # Regarding rule #1 - this is different from the Calabash iOS and Android
+      # definition of visibility which requires the mid-point of the view to be
+      # visible.
+      #
+      # ### Results
+      #
+      # Results are returned as an Array of Hashes.
+      #
+      # ```
+      # [
+      #  {
+      #    "enabled": true,
+      #    "id": "mostly hidden button",
+      #    "hitable": true,
+      #    "rect": {
+      #      "y": 459,
+      #      "x": 24,
+      #      "height": 25,
+      #      "width": 100
+      #    },
+      #    "label": "Mostly Hidden",
+      #    "type": "Button",
+      #    "hit_point": {
+      #      "x": 25,
+      #      "y": 460
+      #    },
+      #    "test_id": 1
+      #  }
+      # ]
+      # ```
+      #
+      # @see http://masilotti.com/xctest-documentation/Constants/XCUIElementType.html
+      # @param [Hash] uiquery A hash describing the query.
+      # @return [Array<Hash>] An array of elements matching the `uiquery`.
+      def query(uiquery)
+        merged_options = {
+          all: false
+        }.merge(uiquery)
 
-        parameters = { merged_options[:specifier] => mark }
+        allowed_keys = [:all, :id, :index, :marked, :text, :type]
+        unknown_keys = uiquery.keys - allowed_keys
+        if !unknown_keys.empty?
+          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+          raise ArgumentError, %Q[
+Unsupported key or keys found: '#{unknown_keys}'.
+
+Allowed keys for a query are: #{keys}
+
+          ]
+        end
+
+        has_any_key = (allowed_keys & uiquery.keys).any?
+        if !has_any_key
+          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+          raise ArgumentError, %Q[
+Query does not contain any keysUnsupported key or keys found: '#{unknown_keys}'.
+
+Allowed keys for a query are: #{keys}
+
+]
+        end
+
+        parameters = merged_options.dup.tap { |hs| hs.delete(:all) }
+        if parameters.empty?
+          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+          raise ArgumentError, %Q[
+Query must contain at least one of these keys:
+
+#{keys}
+
+]
+        end
+
         request = request("query", parameters)
         client = client(http_options)
 
@@ -277,7 +399,7 @@ $ xcrun security find-identity -v -p codesigning
 ]
 
         response = client.post(request)
-        hash = expect_200_response(response)
+        hash = expect_300_response(response)
         elements = hash["result"]
 
         if merged_options[:all]
@@ -295,40 +417,73 @@ $ xcrun security find-identity -v -p codesigning
         request = request("query", parameters)
         client = client(http_options)
         response = client.post(request)
-        hash = expect_200_response(response)
+        hash = expect_300_response(response)
         !hash["result"].empty?
       end
 
       # @!visibility private
-      def query_for_coordinate(mark)
-        elements = query(mark)
-        coordinate_from_query_result(elements)
+      # @see #query
+      def query_for_coordinate(uiquery)
+        element = wait_for_view(uiquery)
+        coordinate_from_query_result([element])
       end
 
       # @!visibility private
-      def touch(mark, options={})
-        coordinate = query_for_coordinate(mark)
-        perform_coordinate_gesture("touch",
-                                   coordinate[:x], coordinate[:y],
-                                   options)
+      #
+      # :num_fingers
+      # :duration
+      # :repetitions
+      # @see #query
+      def touch(uiquery, options={})
+        coordinate = query_for_coordinate(uiquery)
+        perform_coordinate_gesture("touch", coordinate[:x], coordinate[:y], options)
       end
 
-      alias_method :tap, :touch
+      # @!visibility private
+      # @see #touch
+      def touch_coordinate(coordinate, options={})
+        x = coordinate[:x] || coordinate["x"]
+        y = coordinate[:y] || coordinate["y"]
+        touch_point(x, y, options)
+      end
 
       # @!visibility private
-      def double_tap(mark, options={})
-        coordinate = query_for_coordinate(mark)
+      # @see #touch
+      def touch_point(x, y, options={})
+        perform_coordinate_gesture("touch", x, y, options)
+      end
+
+      # @!visibility private
+      # @see #touch
+      # @see #query
+      def double_tap(uiquery, options={})
+        coordinate = query_for_coordinate(uiquery)
         perform_coordinate_gesture("double_tap",
                                    coordinate[:x], coordinate[:y],
                                    options)
       end
 
       # @!visibility private
-      def two_finger_tap(mark, options={})
-        coordinate = query_for_coordinate(mark)
+      # @see #touch
+      # @see #query
+      def two_finger_tap(uiquery, options={})
+        coordinate = query_for_coordinate(uiquery)
         perform_coordinate_gesture("two_finger_tap",
                                    coordinate[:x], coordinate[:y],
                                    options)
+      end
+
+      # @!visibility private
+      # @see #touch
+      # @see #query
+      def long_press(uiquery, options={})
+        merged_options = {
+          :duration => 1.1
+        }.merge(options)
+
+        coordinate = query_for_coordinate(uiquery)
+        perform_coordinate_gesture("touch", coordinate[:x], coordinate[:y],
+                                   merged_options)
       end
 
       # @!visibility private
@@ -340,7 +495,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("rotate_home_button_to", parameters)
         client = client(http_options)
         response = client.post(request)
-        json = expect_200_response(response)
+        json = expect_300_response(response)
         sleep(sleep_for)
         json
       end
@@ -389,7 +544,7 @@ $ xcrun security find-identity -v -p codesigning
         request = request("gesture", parameters)
         client = client(http_options)
         response = client.post(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -416,11 +571,10 @@ $ xcrun security find-identity -v -p codesigning
 
 #{JSON.pretty_generate(new_rect)}
 
-                          ])
+])
         {:x => touchx,
          :y => touchy}
       end
-
 
       # @!visibility private
       def change_volume(up_or_down)
@@ -431,10 +585,206 @@ $ xcrun security find-identity -v -p codesigning
         request = request("volume", parameters)
         client = client(http_options)
         response = client.post(request)
-        json = expect_200_response(response)
+        json = expect_300_response(response)
         # Set in the route
         sleep(0.2)
         json
+      end
+
+      # TODO: animation model
+      def wait_for_animations
+        sleep(0.5)
+      end
+
+      # @!visibility private
+      def wait_for(timeout_message, options={}, &block)
+        wait_options = WAIT_DEFAULTS.merge(options)
+        timeout = wait_options[:timeout]
+        exception_class = wait_options[:exception_class]
+        with_timeout(timeout, timeout_message, exception_class) do
+          loop do
+            value = block.call
+            return value if value
+            sleep(wait_options[:retry_frequency])
+          end
+        end
+      end
+
+      # @!visibility private
+      def wait_for_keyboard(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for the keyboard to appear.
+
+]
+        wait_for(message, options) do
+          keyboard_visible?
+        end
+      end
+
+      # @!visibility private
+      def wait_for_alert(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for an alert to appear.
+
+]
+        wait_for(message, options) do
+          alert_visible?
+        end
+      end
+
+      # @!visibility private
+      def wait_for_no_alert(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for an alert to disappear.
+
+]
+
+        wait_for(message, options) do
+          !alert_visible?
+        end
+      end
+
+      # @!visibility private
+      def wait_for_text_in_view(text, uiquery, options={})
+        merged_options = WAIT_DEFAULTS.merge(options)
+        result = wait_for_view(uiquery, merged_options)
+
+        candidates = [result["value"],
+                      result["label"]]
+        match = candidates.any? do |elm|
+          elm == text
+        end
+        if !match
+          fail(%Q[
+
+Expected to find '#{text}' as a 'value' or 'label' in
+
+#{JSON.pretty_generate(result)}
+
+])
+        end
+      end
+
+      # @!visibility private
+      def wait_for_view(uiquery, options={})
+        merged_options = WAIT_DEFAULTS.merge(options)
+
+        unless merged_options[:message]
+          message = %Q[
+
+Waited #{merged_options[:timeout]} seconds for
+
+#{uiquery}
+
+to match a view.
+
+]
+          merged_options[:timeout_message] = message
+        end
+
+        result = nil
+        wait_for(merged_options[:timeout_message], options) do
+          result = query(uiquery)
+          !result.empty?
+        end
+
+        result[0]
+      end
+
+      # @!visibility private
+      def wait_for_no_view(uiquery, options={})
+        merged_options = WAIT_DEFAULTS.merge(options)
+        unless merged_options[:message]
+          message = %Q[
+
+Waited #{merged_options[:timeout]} seconds for
+
+#{uiquery}
+
+to match no views.
+
+]
+          merged_options[:timeout_message] = message
+        end
+
+        result = nil
+        wait_for(merged_options[:timeout_message], options) do
+          result = query(uiquery)
+          result.empty?
+        end
+
+        result[0]
+      end
+
+      # @!visibility private
+      class PrivateWaitTimeoutError < RuntimeError ; end
+
+      # @!visibility private
+      def with_timeout(timeout, timeout_message,
+                       exception_class=WAIT_DEFAULTS[:exception_class], &block)
+        if timeout_message.nil? ||
+          (timeout_message.is_a?(String) && timeout_message.empty?)
+          raise ArgumentError, 'You must provide a timeout message'
+        end
+
+        unless block_given?
+          raise ArgumentError, 'You must provide a block'
+        end
+
+        # Timeout.timeout will never timeout if the given `timeout` is zero.
+        # We will raise an exception if the timeout is zero.
+        # Timeout.timeout already raises an exception if `timeout` is negative.
+        if timeout == 0
+          raise ArgumentError, 'Timeout cannot be 0'
+        end
+
+        message = if timeout_message.is_a?(Proc)
+          timeout_message.call({timeout: timeout})
+        else
+          timeout_message
+        end
+
+        failed = false
+
+        begin
+          Timeout.timeout(timeout, PrivateWaitTimeoutError) do
+            return block.call
+          end
+        rescue PrivateWaitTimeoutError => _
+          # If we raise Timeout here the stack trace will be cluttered and we
+          # wish to show the user a clear message, avoiding
+          # "`rescue in with_timeout':" in the stack trace.
+          failed = true
+        end
+
+        if failed
+          fail(exception_class, message)
+        end
+      end
+
+      # @!visibility private
+      def fail(*several_variants)
+        arg0 = several_variants[0]
+        arg1 = several_variants[1]
+
+        if arg1.nil?
+          exception_type = RuntimeError
+          message = arg0
+        else
+          exception_type = arg0
+          message = arg1
+        end
+
+        raise exception_type, message
       end
 
       private
@@ -554,7 +904,12 @@ $ xcrun security find-identity -v -p codesigning
         # https://xamarin.atlassian.net/browse/TCFW-255
         # httpclient is unable to send a valid DELETE
         args = ["curl", "-X", "DELETE", %Q[#{url}#{versioned_route("session")}]]
-        run_shell_command(args, {:log_cmd => true})
+
+        begin
+          run_shell_command(args, {:log_cmd => true, :timeout => 10})
+        rescue Shell::TimeoutError => _
+          RunLoop.log_debug("Timed out calling DELETE session/ after 10 seconds")
+        end
 
         # options = ping_options
         # request = request("session")
@@ -761,7 +1116,7 @@ Please install it.
             # in the simulator_wait_for_stable_state; it waits too long.
             # device.simulator_wait_for_stable_state
           end
-          expect_200_response(response)
+          expect_300_response(response)
         rescue => e
           raise e.class, %Q[
 
@@ -787,7 +1142,7 @@ Something went wrong.
       end
 
       # @!visibility private
-      def expect_200_response(response)
+      def expect_300_response(response)
         body = response_body_to_hash(response)
         if response.status_code < 300 && !body["error"]
           return body
@@ -795,20 +1150,22 @@ Something went wrong.
 
         if response.status_code > 300
           raise RunLoop::DeviceAgent::Client::HTTPError,
-                %Q[Expected status code < 300, found #{response.status_code}.
+                %Q[
+Expected status code < 300, found #{response.status_code}.
 
 Server replied with:
 
 #{body}
 
-                ]
+]
         else
           raise RunLoop::DeviceAgent::Client::HTTPError,
-                %Q[Expected JSON response with no error, but found
+                %Q[
+Expected JSON response with no error, but found
 
 #{body["error"]}
 
-                ]
+]
 
         end
       end
