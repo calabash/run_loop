@@ -904,7 +904,12 @@ to match no views.
         # https://xamarin.atlassian.net/browse/TCFW-255
         # httpclient is unable to send a valid DELETE
         args = ["curl", "-X", "DELETE", %Q[#{url}#{versioned_route("session")}]]
-        run_shell_command(args, {:log_cmd => true})
+
+        begin
+          run_shell_command(args, {:log_cmd => true, :timeout => 10})
+        rescue Shell::TimeoutError => _
+          RunLoop.log_debug("Timed out calling DELETE session/ after 10 seconds")
+        end
 
         # options = ping_options
         # request = request("session")
