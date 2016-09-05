@@ -30,7 +30,7 @@ describe RunLoop::DeviceAgent::Client do
           sleep(1)
         end
 
-        point = client.query_for_coordinate("General")
+        point = client.query_for_coordinate({marked: "General"})
         client.perform_coordinate_gesture("touch", point[:x], point[:y])
       else
         RunLoop.log_debug("Skipping :xcodebuild cbx launcher test")
@@ -52,7 +52,7 @@ describe RunLoop::DeviceAgent::Client do
         sleep(1)
       end
 
-      point = client.query_for_coordinate("General")
+      point = client.query_for_coordinate({marked: "General"})
       client.perform_coordinate_gesture("touch", point[:x], point[:y])
     end
   end
