@@ -84,8 +84,8 @@ but binary does not exist at that path.
         if device.simulator?
           cbxapp = RunLoop::App.new(runner.runner)
 
-          # quits the simulator
-          sim = CoreSimulator.new(device, cbxapp)
+          # Quits the simulator if CoreSimulator is not already in control of it.
+          sim = CoreSimulator.new(device, cbxapp, {:quit_sim_on_init => false})
           sim.install
           sim.launch_simulator
         else
