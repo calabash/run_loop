@@ -282,6 +282,7 @@ module RunLoop
     def self.ci?
       [
         self.ci_var_defined?,
+        self.xtc?,
         self.travis?,
         self.jenkins?,
         self.circle_ci?,
