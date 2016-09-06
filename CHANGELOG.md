@@ -2,7 +2,15 @@
 
 ### 2.1.10
 
-Not release yet.
+Not released yet.
+
+#### DeviceAgent
+
+* 0.1.1
+* 459bb837ac42cc2b757455b52096b77129837ef5
+* Server: disable automatic SpringBoard alert dismiss #155
+
+#### Gem
 
 * DA:IDM: Disable is installed? check for physical devices
 * DA:IDM: only restart the simulator if necessary
