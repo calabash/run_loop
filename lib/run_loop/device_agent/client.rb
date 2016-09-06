@@ -22,8 +22,11 @@ module RunLoop
       DEFAULTS = {
         :port => 27753,
         :simulator_ip => "127.0.0.1",
-        :http_timeout => RunLoop::Environment.ci? ? 120 : 10,
+        :http_timeout => (RunLoop::Environment.ci? ||
+                          RunLoop::Environment.xtc?) ? 120 : 10,
         :route_version => "1.0",
+        # This value must always be false on the XTC.
+        # This is should only be used by gem maintainers.
         :shutdown_device_agent_before_launch => false
       }
 
@@ -31,7 +34,8 @@ module RunLoop
       #
       # These defaults may change at any time.
       WAIT_DEFAULTS = {
-        timeout: RunLoop::Environment.ci? ? 16 : 8,
+        timeout: (RunLoop::Environment.ci? ||
+                  RunLoop::Environment.xtc?) ? 30 : 8,
         retry_frequency: 0.1,
         exception_class: Timeout::Error
       }
