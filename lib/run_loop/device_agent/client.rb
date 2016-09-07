@@ -999,43 +999,21 @@ to match no views.
         if merged_options[:shutdown_device_agent_before_launch]
           RunLoop.log_debug("Launch options insist that the DeviceAgent be shutdown")
           shutdown
+        end
 
-          if cbx_launcher.name == :xcodebuild
-            sleep(5.0)
-          end
+        if cbx_runner_stale?
+          RunLoop.log_debug("The DeviceAgent that is running is stale; shutting down")
+          shutdown
         end
 
         if running?
           RunLoop.log_debug("DeviceAgent is already running")
-          if cbx_runner_stale?
-            shutdown
-          else
-            # TODO: is it necessary to return the pid?  Or can we return true?
-            return server_pid
-          end
-        end
-
-        if cbx_launcher.name == :xcodebuild
-          RunLoop.log_debug("xcodebuild is the launcher - terminating existing xcodebuild processes")
-          term_options = { :timeout => 0.5 }
-          kill_options = { :timeout => 0.5 }
-          RunLoop::ProcessWaiter.new("xcodebuild").pids.each do |pid|
-            term = RunLoop::ProcessTerminator.new(pid, 'TERM', "xcodebuild", term_options)
-            killed = term.kill_process
-            unless killed
-              RunLoop::ProcessTerminator.new(pid, 'KILL', "xcodebuild", kill_options)
-            end
-          end
-          sleep(2.0)
+          return true
         end
 
         start = Time.now
         RunLoop.log_debug("Waiting for DeviceAgent to launch...")
-        pid = cbx_launcher.launch(options)
-
-        if cbx_launcher.name == :xcodebuild
-          sleep(2.0)
-        end
+        @launcher_pid = cbx_launcher.launch(options)
 
         begin
           timeout = RunLoop::Environment.ci? ? 120 : 60
@@ -1044,7 +1022,6 @@ to match no views.
             :interval => 0.1,
             :retries => (timeout/0.1).to_i
           }
-
           health(health_options)
         rescue RunLoop::HTTP::Error => _
           raise %Q[
@@ -1062,9 +1039,7 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
         end
 
         RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
-
-        # TODO: is it necessary to return the pid?  Or can we return true?
-        pid
+        true
       end
 
       # @!visibility private
@@ -1132,8 +1107,14 @@ Something went wrong.
         begin
           JSON.parse(body)
         rescue TypeError, JSON::ParserError => _
-          raise RunLoop::DeviceAgent::Client::HTTPError,
-                "Could not parse response '#{body}'; the app has probably crashed"
+          raise RunLoop::DeviceAgent::Client::HTTPError, %Q[
+Could not parse response from server:
+
+body => "#{body}"
+
+If the body empty, the DeviceAgent has probably crashed.
+
+]
         end
       end
 
@@ -1162,7 +1143,6 @@ Expected JSON response with no error, but found
 #{body["error"]}
 
 ]
-
         end
       end
 
