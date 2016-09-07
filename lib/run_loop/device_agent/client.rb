@@ -910,19 +910,6 @@ to match no views.
         rescue Shell::TimeoutError => _
           RunLoop.log_debug("Timed out calling DELETE session/ after 10 seconds")
         end
-
-        # options = ping_options
-        # request = request("session")
-        # client = client(options)
-        # begin
-        #   response = client.delete(request)
-        #   body = expect_200_response(response)
-        #   RunLoop.log_debug("CBX-Runner says, #{body}")
-        #   body
-        # rescue => e
-        #   RunLoop.log_debug("CBX-Runner session delete error: #{e}")
-        #   nil
-        # end
       end
 
       # @!visibility private
