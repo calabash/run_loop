@@ -975,8 +975,8 @@ to match no views.
         hash
       end
 
-
-      # TODO cbx_runner_stale? returns false always
+      # TODO Might not be necessary - this is an edge case and it is likely
+      # that iOSDeviceManager will be able to handle this for us.
       def cbx_runner_stale?
         false
         # The RunLoop::Version class needs to be updated to handle timestamps.
