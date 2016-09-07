@@ -913,49 +913,54 @@ to match no views.
       end
 
       # @!visibility private
-      # TODO expect 200 response and parse body (atm the body in not valid JSON)
       def shutdown
-        session_delete
-        options = ping_options
-        request = request("shutdown")
-        client = client(options)
-        body = nil
         begin
-          response = client.post(request)
-          body = response.body
-          RunLoop.log_debug("DeviceAgent-Runner says, \"#{body}\"")
+          if !running?
+            RunLoop.log_debug("DeviceAgent-Runner is not running")
+          else
+            session_delete
 
-          now = Time.now
-          poll_until = now + 10.0
-          running = true
-          while Time.now < poll_until
-            running = !running?
-            break if running
-            sleep(0.1)
+            request = request("shutdown")
+            client = client(ping_options)
+            response = client.post(request)
+            hash = expect_300_response(response)
+            message = hash["message"]
+
+            RunLoop.log_debug(%Q[DeviceAgent-Runner says, "#{message}"])
+
+            now = Time.now
+            poll_until = now + 10.0
+            running = true
+            while Time.now < poll_until
+              running = !running?
+              break if running
+              sleep(0.1)
+            end
+
+            RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
           end
-
-          RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
-          body
-        rescue => e
-          RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e}")
+        rescue RunLoop::DeviceAgent::Client::HTTPError => e
+          RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e.message}")
         ensure
-          quit_options = { :timeout => 0.5 }
-          term_options = { :timeout => 0.5 }
-          kill_options = { :timeout => 0.5 }
+          if @launcher_pid
+            term_options = { :timeout => 1.5 }
+            kill_options = { :timeout => 1.0 }
 
-          process_name = "iOSDeviceManager"
-          RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
-            quit = RunLoop::ProcessTerminator.new(pid, "QUIT", process_name, quit_options)
-            if !quit.kill_process
-              term = RunLoop::ProcessTerminator.new(pid, "TERM", process_name, term_options)
-              if !term.kill_process
-                kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
-                kill.kill_process
-              end
+            process_name = cbx_launcher.name
+            pid = @launcher_pid.to_i
+
+            term = RunLoop::ProcessTerminator.new(pid, "TERM", process_name, term_options)
+            if !term.kill_process
+              kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
+              kill.kill_process
+            end
+
+            if process_name == :xcodebuild
+              sleep(10)
             end
           end
         end
-        body
+        hash
       end
 
       # @!visibility private
