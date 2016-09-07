@@ -364,7 +364,7 @@ Unsupported key or keys found: '#{unknown_keys}'.
 
 Allowed keys for a query are: #{keys}
 
-          ]
+]
         end
 
         has_any_key = (allowed_keys & uiquery.keys).any?
