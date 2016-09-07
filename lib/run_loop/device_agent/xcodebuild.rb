@@ -35,15 +35,11 @@ module RunLoop
 
         if device.simulator?
           # quits the simulator
-          sim = CoreSimulator.new(device, "")
-          sim.launch_simulator({:wait_for_stable => false})
+          # sim = CoreSimulator.new(device, "")
+          # sim.launch_simulator({:wait_for_stable => false})
         end
 
-        start = Time.now
-        RunLoop.log_debug("Waiting for CBX-Runner to build...")
-        pid = xcodebuild
-        RunLoop.log_debug("Took #{Time.now - start} seconds to build and launch CBX-Runner")
-        pid
+        xcodebuild
       end
 
       # @!visibility private
@@ -104,6 +100,11 @@ Use the CBXWS environment variable to override the default.
 
         pid = Process.spawn(env, *args, options)
         Process.detach(pid)
+
+        sleep_for = 15
+        RunLoop.log_debug("Waiting #{sleep_for} seconds for DeviceAgent to build...")
+        sleep(sleep_for)
+
         pid.to_i
       end
 

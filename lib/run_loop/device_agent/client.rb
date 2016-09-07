@@ -95,11 +95,13 @@ $ xcrun security find-identity -v -p codesigning
 
         if !RunLoop::Environment.xtc?
           cache = {
-            :cbx_launcher => cbx_launcher.name,
             :udid => device.udid,
             :app => bundle_id,
             :automator => :device_agent,
-            :code_sign_identity => code_sign_identity
+            :code_sign_identity => code_sign_identity,
+            :launcher => cbx_launcher.name,
+            :launcher_pid => xcuitest.launcher_pid,
+            :launch_options => xcuitest.launch_options
           }
           RunLoop::Cache.default.write(cache)
         end
@@ -132,7 +134,7 @@ $ xcrun security find-identity -v -p codesigning
         end
       end
 
-      attr_reader :bundle_id, :device, :cbx_launcher, :launch_options
+      attr_reader :bundle_id, :device, :cbx_launcher, :launch_options, :launcher_pid
 
       # @!visibility private
       #
@@ -914,81 +916,73 @@ to match no views.
         rescue Shell::TimeoutError => _
           RunLoop.log_debug("Timed out calling DELETE session/ after 10 seconds")
         end
-
-        # options = ping_options
-        # request = request("session")
-        # client = client(options)
-        # begin
-        #   response = client.delete(request)
-        #   body = expect_200_response(response)
-        #   RunLoop.log_debug("CBX-Runner says, #{body}")
-        #   body
-        # rescue => e
-        #   RunLoop.log_debug("CBX-Runner session delete error: #{e}")
-        #   nil
-        # end
       end
 
       # @!visibility private
-      # TODO expect 200 response and parse body (atm the body in not valid JSON)
       def shutdown
-        session_delete
-        options = ping_options
-        request = request("shutdown")
-        client = client(options)
-        body = nil
         begin
-          response = client.post(request)
-          body = response.body
-          RunLoop.log_debug("DeviceAgent-Runner says, \"#{body}\"")
+          if !running?
+            RunLoop.log_debug("DeviceAgent-Runner is not running")
+          else
+            session_delete
 
-          now = Time.now
-          poll_until = now + 10.0
-          running = true
-          while Time.now < poll_until
-            running = !running?
-            break if running
-            sleep(0.1)
+            request = request("shutdown")
+            client = client(ping_options)
+            response = client.post(request)
+            hash = expect_300_response(response)
+            message = hash["message"]
+
+            RunLoop.log_debug(%Q[DeviceAgent-Runner says, "#{message}"])
+
+            now = Time.now
+            poll_until = now + 10.0
+            running = true
+            while Time.now < poll_until
+              running = !running?
+              break if running
+              sleep(0.1)
+            end
+
+            RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
           end
-
-          RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
-          body
-        rescue => e
-          RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e}")
+        rescue RunLoop::DeviceAgent::Client::HTTPError => e
+          RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e.message}")
         ensure
-          quit_options = { :timeout => 0.5 }
-          term_options = { :timeout => 0.5 }
-          kill_options = { :timeout => 0.5 }
+          if @launcher_pid
+            term_options = { :timeout => 1.5 }
+            kill_options = { :timeout => 1.0 }
 
-          process_name = "iOSDeviceManager"
-          RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
-            quit = RunLoop::ProcessTerminator.new(pid, "QUIT", process_name, quit_options)
-            if !quit.kill_process
-              term = RunLoop::ProcessTerminator.new(pid, "TERM", process_name, term_options)
-              if !term.kill_process
-                kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
-                kill.kill_process
-              end
+            process_name = cbx_launcher.name
+            pid = @launcher_pid.to_i
+
+            term = RunLoop::ProcessTerminator.new(pid, "TERM", process_name, term_options)
+            if !term.kill_process
+              kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
+              kill.kill_process
+            end
+
+            if process_name == :xcodebuild
+              sleep(10)
             end
           end
         end
-        body
+        hash
       end
 
       # @!visibility private
-      # TODO expect 200 response and parse body (atm the body is not valid JSON)
       def health(options={})
         merged_options = http_options.merge(options)
         request = request("health")
         client = client(merged_options)
         response = client.get(request)
-        body = response.body
-        RunLoop.log_debug("CBX-Runner driver says, \"#{body}\"")
-        body
+        hash = expect_300_response(response)
+        status = hash["status"]
+        RunLoop.log_debug(%Q[DeviceAgent says, "#{status}"])
+        hash
       end
 
-
-      # TODO cbx_runner_stale? returns false always
+      # TODO Might not be necessary - this is an edge case and it is likely
+      # that iOSDeviceManager will be able to handle this for us.
       def cbx_runner_stale?
         false
         # The RunLoop::Version class needs to be updated to handle timestamps.
@@ -1011,43 +1005,21 @@ to match no views.
         if merged_options[:shutdown_device_agent_before_launch]
           RunLoop.log_debug("Launch options insist that the DeviceAgent be shutdown")
           shutdown
+        end
 
-          if cbx_launcher.name == :xcodebuild
-            sleep(5.0)
-          end
+        if cbx_runner_stale?
+          RunLoop.log_debug("The DeviceAgent that is running is stale; shutting down")
+          shutdown
         end
 
         if running?
           RunLoop.log_debug("DeviceAgent is already running")
-          if cbx_runner_stale?
-            shutdown
-          else
-            # TODO: is it necessary to return the pid?  Or can we return true?
-            return server_pid
-          end
-        end
-
-        if cbx_launcher.name == :xcodebuild
-          RunLoop.log_debug("xcodebuild is the launcher - terminating existing xcodebuild processes")
-          term_options = { :timeout => 0.5 }
-          kill_options = { :timeout => 0.5 }
-          RunLoop::ProcessWaiter.new("xcodebuild").pids.each do |pid|
-            term = RunLoop::ProcessTerminator.new(pid, 'TERM', "xcodebuild", term_options)
-            killed = term.kill_process
-            unless killed
-              RunLoop::ProcessTerminator.new(pid, 'KILL', "xcodebuild", kill_options)
-            end
-          end
-          sleep(2.0)
+          return true
         end
 
         start = Time.now
         RunLoop.log_debug("Waiting for DeviceAgent to launch...")
-        pid = cbx_launcher.launch(options)
-
-        if cbx_launcher.name == :xcodebuild
-          sleep(2.0)
-        end
+        @launcher_pid = cbx_launcher.launch(options)
 
         begin
           timeout = RunLoop::Environment.ci? ? 120 : 60
@@ -1056,7 +1028,6 @@ to match no views.
             :interval => 0.1,
             :retries => (timeout/0.1).to_i
           }
-
           health(health_options)
         rescue RunLoop::HTTP::Error => _
           raise %Q[
@@ -1074,9 +1045,7 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
         end
 
         RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
-
-        # TODO: is it necessary to return the pid?  Or can we return true?
-        pid
+        true
       end
 
       # @!visibility private
@@ -1144,8 +1113,14 @@ Something went wrong.
         begin
           JSON.parse(body)
         rescue TypeError, JSON::ParserError => _
-          raise RunLoop::DeviceAgent::Client::HTTPError,
-                "Could not parse response '#{body}'; the app has probably crashed"
+          raise RunLoop::DeviceAgent::Client::HTTPError, %Q[
+Could not parse response from server:
+
+body => "#{body}"
+
+If the body empty, the DeviceAgent has probably crashed.
+
+]
         end
       end
 
@@ -1174,7 +1149,6 @@ Expected JSON response with no error, but found
 #{body["error"]}
 
 ]
-
         end
       end
 

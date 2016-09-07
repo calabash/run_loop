@@ -6,9 +6,20 @@ Not released yet.
 
 #### DeviceAgent
 
-* 0.1.1
-* 459bb837ac42cc2b757455b52096b77129837ef5
+* 0.1.2
+SHA: f9491a2c61eed5aea61eeda9443c599371edd8f0
+* Add marked query specifier and add tests for /query API #152
 * Server: disable automatic SpringBoard alert dismiss #155
+
+#### iOSDeviceManager
+
+SHA: a430edc60596932b2b9e7431fb20e196444a0777
+* Make: copy FB Frameworks with ditto #44
+
+#### FBSimulatorControl
+
+SHA: 2c961c1aef77f2d7c4cb4970feee72b61a019d1d
+* Bootstrap: log when a testCaseDidFailForTest #5
 
 #### Gem
 
