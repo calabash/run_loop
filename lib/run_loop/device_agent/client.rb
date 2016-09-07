@@ -91,11 +91,13 @@ $ xcrun security find-identity -v -p codesigning
 
         if !RunLoop::Environment.xtc?
           cache = {
-            :cbx_launcher => cbx_launcher.name,
             :udid => device.udid,
             :app => bundle_id,
             :automator => :device_agent,
-            :code_sign_identity => code_sign_identity
+            :code_sign_identity => code_sign_identity,
+            :launcher => cbx_launcher.name,
+            :launcher_pid => xcuitest.launcher_pid,
+            :launch_options => xcuitest.launch_options
           }
           RunLoop::Cache.default.write(cache)
         end
@@ -128,7 +130,7 @@ $ xcrun security find-identity -v -p codesigning
         end
       end
 
-      attr_reader :bundle_id, :device, :cbx_launcher, :launch_options
+      attr_reader :bundle_id, :device, :cbx_launcher, :launch_options, :launcher_pid
 
       # @!visibility private
       #
