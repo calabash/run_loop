@@ -964,15 +964,15 @@ to match no views.
       end
 
       # @!visibility private
-      # TODO expect 200 response and parse body (atm the body is not valid JSON)
       def health(options={})
         merged_options = http_options.merge(options)
         request = request("health")
         client = client(merged_options)
         response = client.get(request)
-        body = response.body
-        RunLoop.log_debug("CBX-Runner driver says, \"#{body}\"")
-        body
+        hash = expect_300_response(response)
+        status = hash["status"]
+        RunLoop.log_debug(%Q[DeviceAgent says, "#{status}"])
+        hash
       end
 
 
