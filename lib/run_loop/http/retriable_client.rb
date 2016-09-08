@@ -49,7 +49,6 @@ module RunLoop
       # @option options [Number] :interval (0.5) How long to sleep between
       #  retries.
       def initialize(server, options = {})
-        @client = options[:client] || ::HTTPClient.new
         @server = server
         @retries = options.fetch(:retries, 5)
         @timeout = options.fetch(:timeout, 5)
