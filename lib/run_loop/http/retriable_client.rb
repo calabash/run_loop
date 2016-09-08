@@ -156,8 +156,9 @@ module RunLoop
           client.receive_timeout = [time_diff, client.receive_timeout].min
 
           begin
-            return client.send(request_method, @server.endpoint + request.route,
-                               request.params, header)
+            return send_request(client, request_method,
+                                @server.endpoint + request.route,
+                                request.params, header)
           rescue *RETRY_ON => e
             last_error = e
             sleep interval
@@ -173,7 +174,10 @@ module RunLoop
 
         raise HTTP::Error, last_error
       end
+
+      def send_request(client, request_method, endpoint, parameters, header)
+        client.send(request_method, endpoint, parameters, header)
+      end
     end
   end
 end
-
