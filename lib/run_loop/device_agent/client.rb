@@ -215,27 +215,9 @@ $ xcrun security find-identity -v -p codesigning
       alias_method :runtime, :device_info
 
       # @!visibility private
-      def server_pid
-        options = http_options
-        request = request("pid")
-        client = http_client(options)
-        response = client.get(request)
-        expect_300_response(response)
-      end
-
-      # @!visibility private
       def server_version
         options = http_options
         request = request("version")
-        client = http_client(options)
-        response = client.get(request)
-        expect_300_response(response)
-      end
-
-      # @!visibility private
-      def session_identifier
-        options = http_options
-        request = request("sessionIdentifier")
         client = http_client(options)
         response = client.get(request)
         expect_300_response(response)
@@ -935,6 +917,24 @@ PRIVATE
             :retries => (DEFAULTS[:http_timeout]/0.1).to_i
           }
         end
+      end
+
+      # @!visibility private
+      def server_pid
+        options = http_options
+        request = request("pid")
+        client = http_client(options)
+        response = client.get(request)
+        expect_300_response(response)
+      end
+
+      # @!visibility private
+      def session_identifier
+        options = http_options
+        request = request("sessionIdentifier")
+        client = http_client(options)
+        response = client.get(request)
+        expect_300_response(response)
       end
 
       # @!visibility private
