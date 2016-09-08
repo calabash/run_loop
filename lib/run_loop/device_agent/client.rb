@@ -195,6 +195,8 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
+      #
+      # Experimental!
       def launch_other_app(bundle_id)
         launch_aut(bundle_id)
       end
