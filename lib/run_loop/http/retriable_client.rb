@@ -160,6 +160,7 @@ module RunLoop
                                 @server.endpoint + request.route,
                                 request.params, header)
           rescue *RETRY_ON => e
+            new_client!
             last_error = e
             sleep interval
           end
