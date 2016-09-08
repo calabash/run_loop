@@ -110,10 +110,13 @@ module RunLoop
           RunLoop.log_debug("HTTP: #{request_method} #{@server.endpoint + request.route} #{http_options}")
         end
 
+        if !client
+          raise RuntimeError, "This RetriableClient is not attached to client"
+        end
+
         start_time = Time.now
         last_error = nil
 
-        client = @client.dup
         client.receive_timeout = timeout
 
         retries.times do |_|
