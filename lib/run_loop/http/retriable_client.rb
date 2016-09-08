@@ -54,17 +54,6 @@ module RunLoop
         @retries = options.fetch(:retries, 5)
         @timeout = options.fetch(:timeout, 5)
         @interval = options.fetch(:interval, 0.5)
-        @on_error = {}
-      end
-
-      # @!visibility private
-      def on_error(type, &block)
-        @on_error[type] = block
-      end
-
-      # @!visibility private
-      def change_server(new_server)
-        @server = new_server
       end
 
       # Make an HTTP get request.
@@ -127,8 +116,7 @@ module RunLoop
         client = @client.dup
         client.receive_timeout = timeout
 
-        retries.times do |i|
-          first_try = i == 0
+        retries.times do |_|
 
           # Subtract the aggregate time we've spent thus far to make sure we're
           # not exceeding the request timeout across retries.
@@ -144,14 +132,6 @@ module RunLoop
             return client.send(request_method, @server.endpoint + request.route,
                                request.params, header)
           rescue *RETRY_ON => e
-            #RunLoop.log_debug("Rescued http error: #{e}")
-
-            if first_try
-              if @on_error[e.class]
-                @on_error[e.class].call(@server)
-              end
-            end
-
             last_error = e
             sleep interval
           end
