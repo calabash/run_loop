@@ -53,6 +53,10 @@ module RunLoop
         @retries = options.fetch(:retries, 5)
         @timeout = options.fetch(:timeout, 5)
         @interval = options.fetch(:interval, 0.5)
+
+        # Call after setting the attr.
+        # Yes, it is redundant to set @client, but it makes testing easier.
+        @client = new_client!
       end
 
       # Make an HTTP get request.
@@ -93,7 +97,28 @@ module RunLoop
         request(request, :delete, options)
       end
 
+      # Call HTTPClient#reset_all
+      def reset_all!
+        if @client
+          @client.reset_all
+          @client = nil
+        end
+      end
+
       private
+
+      def new_client!
+        reset_all!
+
+        # Assumes ::HTTPClient has these defaults:
+        # connect_timeout = 60
+        # send_timeout = 120
+        # There is an rspec test for this.
+        new_client = HTTPClient.new
+        new_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        new_client.receive_timeout = timeout
+        @client = new_client
+      end
 
       def request(request, request_method, options={})
         retries = options.fetch(:retries, @retries)
