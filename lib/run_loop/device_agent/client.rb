@@ -198,7 +198,7 @@ $ xcrun security find-identity -v -p codesigning
       def device_info
         options = http_options
         request = request("device")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
         expect_300_response(response)
       end
@@ -211,7 +211,7 @@ $ xcrun security find-identity -v -p codesigning
       def server_pid
         options = http_options
         request = request("pid")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
         expect_300_response(response)
       end
@@ -220,7 +220,7 @@ $ xcrun security find-identity -v -p codesigning
       def server_version
         options = http_options
         request = request("version")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
         expect_300_response(response)
       end
@@ -229,7 +229,7 @@ $ xcrun security find-identity -v -p codesigning
       def session_identifier
         options = http_options
         request = request("sessionIdentifier")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
         expect_300_response(response)
       end
@@ -238,7 +238,7 @@ $ xcrun security find-identity -v -p codesigning
       def tree
         options = http_options
         request = request("tree")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
         expect_300_response(response)
       end
@@ -248,7 +248,7 @@ $ xcrun security find-identity -v -p codesigning
         options = http_options
         parameters = { :type => "Keyboard" }
         request = request("query", parameters)
-        client = client(options)
+        client = http_client(options)
         response = client.post(request)
         hash = expect_300_response(response)
         result = hash["result"]
@@ -268,7 +268,7 @@ $ xcrun security find-identity -v -p codesigning
           }
         }
         request = request("gesture", parameters)
-        client = client(options)
+        client = http_client(options)
         response = client.post(request)
         expect_300_response(response)
       end
@@ -396,7 +396,7 @@ Query must contain at least one of these keys:
         end
 
         request = request("query", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
 
         RunLoop.log_debug %Q[Sending query with parameters:
 
@@ -421,7 +421,7 @@ Query must contain at least one of these keys:
       def alert_visible?
         parameters = { :type => "Alert" }
         request = request("query", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
         hash = expect_300_response(response)
         !hash["result"].empty?
@@ -499,7 +499,7 @@ Query must contain at least one of these keys:
           :orientation => orientation
         }
         request = request("rotate_home_button_to", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
         json = expect_300_response(response)
         sleep(sleep_for)
@@ -548,7 +548,7 @@ Query must contain at least one of these keys:
 
 ]
         request = request("gesture", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
         expect_300_response(response)
       end
@@ -589,7 +589,7 @@ Query must contain at least one of these keys:
           :volume => string
         }
         request = request("volume", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
         json = expect_300_response(response)
         # Set in the route
@@ -793,7 +793,12 @@ to match no views.
         raise exception_type, message
       end
 
+=begin
+PRIVATE
+=end
       private
+
+      attr_reader :http_client
 
       # @!visibility private
       def xcrun
@@ -867,8 +872,28 @@ to match no views.
       end
 
       # @!visibility private
-      def client(options={})
-        RunLoop::HTTP::RetriableClient.new(server, options)
+      def http_client(options={})
+        if !@http_client
+          @http_client = RunLoop::HTTP::RetriableClient.new(server, options)
+        else
+          # If the options are different, create a new client
+          if options[:retries] != @http_client.retries ||
+            options[:timeout] != @http_client.timeout ||
+            options[:interval] != @http_client.interval
+            reset_http_client!
+            @http_client = RunLoop::HTTP::RetriableClient.new(server, options)
+          else
+          end
+        end
+        @http_client
+      end
+
+      # @!visibility private
+      def reset_http_client!
+        if @http_client
+          @http_client.reset_all!
+          @http_client = nil
+        end
       end
 
       # @!visibility private
@@ -927,7 +952,7 @@ to match no views.
             session_delete
 
             request = request("shutdown")
-            client = client(ping_options)
+            client = http_client(ping_options)
             response = client.post(request)
             hash = expect_300_response(response)
             message = hash["message"]
@@ -973,7 +998,7 @@ to match no views.
       def health(options={})
         merged_options = http_options.merge(options)
         request = request("health")
-        client = client(merged_options)
+        client = http_client(merged_options)
         response = client.get(request)
         hash = expect_300_response(response)
         status = hash["status"]
@@ -1050,7 +1075,7 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
 
       # @!visibility private
       def launch_aut(bundle_id = @bundle_id)
-        client = client(http_options)
+        client = http_client(http_options)
         request = request("session", {:bundleID => bundle_id})
 
         # This check needs to be done _before_ the DeviceAgent is launched.
