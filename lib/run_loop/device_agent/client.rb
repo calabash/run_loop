@@ -1152,14 +1152,16 @@ If the body empty, the DeviceAgent has probably crashed.
       # @!visibility private
       def expect_300_response(response)
         body = response_body_to_hash(response)
-        if response.status_code < 300 && !body["error"]
+        if response.status_code < 400 && !body["error"]
           return body
         end
 
-        if response.status_code > 300
+        reset_http_client!
+
+        if response.status_code >= 400
           raise RunLoop::DeviceAgent::Client::HTTPError,
                 %Q[
-Expected status code < 300, found #{response.status_code}.
+Expected status code < 400, found #{response.status_code}.
 
 Server replied with:
 
