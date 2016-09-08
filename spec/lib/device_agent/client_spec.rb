@@ -248,7 +248,7 @@ describe RunLoop::DeviceAgent::Client do
     server = client.send(:server)
     expect(RunLoop::HTTP::RetriableClient).to receive(:new).with(server, options).and_call_original
 
-    expect(client.send(:client, options)).to be_a_kind_of(RunLoop::HTTP::RetriableClient)
+    expect(client.send(:http_client, options)).to be_a_kind_of(RunLoop::HTTP::RetriableClient)
   end
 
   context "#versioned_route" do

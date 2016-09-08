@@ -182,6 +182,11 @@ $ xcrun security find-identity -v -p codesigning
 
       # @!visibility private
       def stop
+        if RunLoop::Environment.xtc?
+          RunLoop.log_error("Calling shutdown on the XTC is not supported.")
+          return
+        end
+
         begin
           shutdown
         rescue => _
@@ -190,6 +195,8 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
+      #
+      # Experimental!
       def launch_other_app(bundle_id)
         launch_aut(bundle_id)
       end
@@ -198,7 +205,7 @@ $ xcrun security find-identity -v -p codesigning
       def device_info
         options = http_options
         request = request("device")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
         expect_300_response(response)
       end
@@ -208,28 +215,10 @@ $ xcrun security find-identity -v -p codesigning
       alias_method :runtime, :device_info
 
       # @!visibility private
-      def server_pid
-        options = http_options
-        request = request("pid")
-        client = client(options)
-        response = client.get(request)
-        expect_300_response(response)
-      end
-
-      # @!visibility private
       def server_version
         options = http_options
         request = request("version")
-        client = client(options)
-        response = client.get(request)
-        expect_300_response(response)
-      end
-
-      # @!visibility private
-      def session_identifier
-        options = http_options
-        request = request("sessionIdentifier")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
         expect_300_response(response)
       end
@@ -238,7 +227,7 @@ $ xcrun security find-identity -v -p codesigning
       def tree
         options = http_options
         request = request("tree")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
         expect_300_response(response)
       end
@@ -248,7 +237,7 @@ $ xcrun security find-identity -v -p codesigning
         options = http_options
         parameters = { :type => "Keyboard" }
         request = request("query", parameters)
-        client = client(options)
+        client = http_client(options)
         response = client.post(request)
         hash = expect_300_response(response)
         result = hash["result"]
@@ -268,7 +257,7 @@ $ xcrun security find-identity -v -p codesigning
           }
         }
         request = request("gesture", parameters)
-        client = client(options)
+        client = http_client(options)
         response = client.post(request)
         expect_300_response(response)
       end
@@ -396,7 +385,7 @@ Query must contain at least one of these keys:
         end
 
         request = request("query", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
 
         RunLoop.log_debug %Q[Sending query with parameters:
 
@@ -421,7 +410,7 @@ Query must contain at least one of these keys:
       def alert_visible?
         parameters = { :type => "Alert" }
         request = request("query", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
         hash = expect_300_response(response)
         !hash["result"].empty?
@@ -499,7 +488,7 @@ Query must contain at least one of these keys:
           :orientation => orientation
         }
         request = request("rotate_home_button_to", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
         json = expect_300_response(response)
         sleep(sleep_for)
@@ -548,7 +537,7 @@ Query must contain at least one of these keys:
 
 ]
         request = request("gesture", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
         expect_300_response(response)
       end
@@ -589,7 +578,7 @@ Query must contain at least one of these keys:
           :volume => string
         }
         request = request("volume", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
         json = expect_300_response(response)
         # Set in the route
@@ -793,7 +782,12 @@ to match no views.
         raise exception_type, message
       end
 
+=begin
+PRIVATE
+=end
       private
+
+      attr_reader :http_client
 
       # @!visibility private
       def xcrun
@@ -867,8 +861,28 @@ to match no views.
       end
 
       # @!visibility private
-      def client(options={})
-        RunLoop::HTTP::RetriableClient.new(server, options)
+      def http_client(options={})
+        if !@http_client
+          @http_client = RunLoop::HTTP::RetriableClient.new(server, options)
+        else
+          # If the options are different, create a new client
+          if options[:retries] != @http_client.retries ||
+            options[:timeout] != @http_client.timeout ||
+            options[:interval] != @http_client.interval
+            reset_http_client!
+            @http_client = RunLoop::HTTP::RetriableClient.new(server, options)
+          else
+          end
+        end
+        @http_client
+      end
+
+      # @!visibility private
+      def reset_http_client!
+        if @http_client
+          @http_client.reset_all!
+          @http_client = nil
+        end
       end
 
       # @!visibility private
@@ -906,6 +920,24 @@ to match no views.
       end
 
       # @!visibility private
+      def server_pid
+        options = http_options
+        request = request("pid")
+        client = http_client(options)
+        response = client.get(request)
+        expect_300_response(response)
+      end
+
+      # @!visibility private
+      def session_identifier
+        options = http_options
+        request = request("sessionIdentifier")
+        client = http_client(options)
+        response = client.get(request)
+        expect_300_response(response)
+      end
+
+      # @!visibility private
       def session_delete
         # https://xamarin.atlassian.net/browse/TCFW-255
         # httpclient is unable to send a valid DELETE
@@ -920,6 +952,12 @@ to match no views.
 
       # @!visibility private
       def shutdown
+
+        if RunLoop::Environment.xtc?
+          RunLoop.log_error("Calling shutdown on the XTC is not supported.")
+          return
+        end
+
         begin
           if !running?
             RunLoop.log_debug("DeviceAgent-Runner is not running")
@@ -927,7 +965,7 @@ to match no views.
             session_delete
 
             request = request("shutdown")
-            client = client(ping_options)
+            client = http_client(ping_options)
             response = client.post(request)
             hash = expect_300_response(response)
             message = hash["message"]
@@ -936,10 +974,10 @@ to match no views.
 
             now = Time.now
             poll_until = now + 10.0
-            running = true
+            stopped = false
             while Time.now < poll_until
-              running = !running?
-              break if running
+              stopped = !running?
+              break if stopped
               sleep(0.1)
             end
 
@@ -973,7 +1011,7 @@ to match no views.
       def health(options={})
         merged_options = http_options.merge(options)
         request = request("health")
-        client = client(merged_options)
+        client = http_client(merged_options)
         response = client.get(request)
         hash = expect_300_response(response)
         status = hash["status"]
@@ -1050,7 +1088,7 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
 
       # @!visibility private
       def launch_aut(bundle_id = @bundle_id)
-        client = client(http_options)
+        client = http_client(http_options)
         request = request("session", {:bundleID => bundle_id})
 
         # This check needs to be done _before_ the DeviceAgent is launched.
@@ -1127,14 +1165,16 @@ If the body empty, the DeviceAgent has probably crashed.
       # @!visibility private
       def expect_300_response(response)
         body = response_body_to_hash(response)
-        if response.status_code < 300 && !body["error"]
+        if response.status_code < 400 && !body["error"]
           return body
         end
 
-        if response.status_code > 300
+        reset_http_client!
+
+        if response.status_code >= 400
           raise RunLoop::DeviceAgent::Client::HTTPError,
                 %Q[
-Expected status code < 300, found #{response.status_code}.
+Expected status code < 400, found #{response.status_code}.
 
 Server replied with:
 
