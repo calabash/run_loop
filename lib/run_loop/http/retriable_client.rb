@@ -114,11 +114,12 @@ module RunLoop
         reset_all!
 
         # Assumes ::HTTPClient has these defaults:
-        # connect_timeout = 60
         # send_timeout = 120
-        # There is an rspec test for this.
+        # There is an rspec test for this so we will know if they change.
+
         new_client = HTTPClient.new
         new_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        new_client.connect_timeout = 15
         new_client.receive_timeout = timeout
         @client = new_client
       end

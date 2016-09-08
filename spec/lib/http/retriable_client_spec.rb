@@ -101,12 +101,12 @@ describe RunLoop::HTTP::RetriableClient do
       expect(retriable_client.instance_variable_get(:@client)).to be == actual
       expect(actual.ssl_config.verify_mode).to be == OpenSSL::SSL::VERIFY_NONE
 
-      # Using our timeout
+      # Using our timeout and a default connect timeout
       expect(actual.receive_timeout).to be == 3030
+      expect(actual.connect_timeout).to be == 15
 
       # ::HTTPClient defaults are what we expect
       expect(actual.send_timeout).to be == 120
-      expect(actual.connect_timeout).to be == 60
     end
   end
 
