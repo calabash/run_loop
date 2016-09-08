@@ -93,6 +93,9 @@ module RunLoop
         request(request, :post, options)
       end
 
+      # There is bug in HTTPClient so this method does work.
+      # https://xamarin.atlassian.net/browse/TCFW-255
+      # httpclient is unable to send a valid DELETE
       def delete(request, options={})
         request(request, :delete, options)
       end
