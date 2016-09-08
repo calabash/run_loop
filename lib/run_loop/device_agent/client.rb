@@ -182,6 +182,11 @@ $ xcrun security find-identity -v -p codesigning
 
       # @!visibility private
       def stop
+        if RunLoop::Environment.xtc?
+          RunLoop.log_error("Calling shutdown on the XTC is not supported.")
+          return
+        end
+
         begin
           shutdown
         rescue => _
