@@ -5,7 +5,7 @@ module RunLoop
     # An HTTP client that retries its connection on errors and can time out.
     # @!visibility private
     class RetriableClient
-      attr_reader :client
+      attr_reader :client, :retries, :timeout, :interval
 
       # @!visibility private
        RETRY_ON =
