@@ -952,6 +952,12 @@ PRIVATE
 
       # @!visibility private
       def shutdown
+
+        if RunLoop::Environment.xtc?
+          RunLoop.log_error("Calling shutdown on the XTC is not supported.")
+          return
+        end
+
         begin
           if !running?
             RunLoop.log_debug("DeviceAgent-Runner is not running")
