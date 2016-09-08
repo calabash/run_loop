@@ -974,10 +974,10 @@ PRIVATE
 
             now = Time.now
             poll_until = now + 10.0
-            running = true
+            stopped = false
             while Time.now < poll_until
-              running = !running?
-              break if running
+              stopped = !running?
+              break if stopped
               sleep(0.1)
             end
 
