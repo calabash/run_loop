@@ -18,7 +18,10 @@ describe RunLoop::DeviceAgent::Client do
       workspace = File.expand_path(File.join("..", "DeviceAgent.iOS", "DeviceAgent.xcworkspace"))
       if File.exist?(workspace)
         cbx_launcher = RunLoop::DeviceAgent::Xcodebuild.new(device)
-        client = RunLoop::DeviceAgent::Client.new(bundle_identifier, device, cbx_launcher)
+        client = RunLoop::DeviceAgent::Client.new(bundle_identifier,
+                                                  device,
+                                                  cbx_launcher,
+                                                  {})
         client.launch
 
         options = { :raise_on_timeout => true, :timeout => 5 }
@@ -40,7 +43,9 @@ describe RunLoop::DeviceAgent::Client do
 
     it "ios_device_manager" do
       cbx_launcher = RunLoop::DeviceAgent::IOSDeviceManager.new(device)
-      client = RunLoop::DeviceAgent::Client.new(bundle_identifier, device, cbx_launcher)
+      client = RunLoop::DeviceAgent::Client.new(bundle_identifier,
+                                                device, cbx_launcher,
+                                                {})
       client.launch
 
       options = { :raise_on_timeout => true, :timeout => 5 }

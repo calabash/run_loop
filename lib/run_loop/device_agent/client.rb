@@ -123,10 +123,9 @@ $ xcrun security find-identity -v -p codesigning
             shutdown_device_agent_before_launch: shutdown_before_launch
         }
 
-        # TODO: Client.new should take launch_options argument
-        xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device, cbx_launcher)
-        # TODO: launch should take no arguments
-        xcuitest.launch(launcher_options)
+        xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device,
+                                                    cbx_launcher, launcher_options)
+        xcuitest.launch
 
         if !RunLoop::Environment.xtc?
           cache = {
@@ -179,12 +178,16 @@ $ xcrun security find-identity -v -p codesigning
       # @param [RunLoop::Device] device The device under test.
       # @param [RunLoop::DeviceAgent::LauncherStrategy] cbx_launcher The entity that
       #  launches the CBXRunner.
-      #
-      # TODO This should take a launch_options non-optional argument
-      def initialize(bundle_id, device, cbx_launcher)
+      def initialize(bundle_id, device, cbx_launcher, launcher_options)
         @bundle_id = bundle_id
         @device = device
         @cbx_launcher = cbx_launcher
+        @launcher_options = launcher_options
+
+        if !@launcher_options[:device_agent_install_timeout]
+          default = DEFAULTS[:device_agent_install_timeout]
+          @launcher_options[:device_agent_install_timeout] = default
+        end
       end
 
       # @!visibility private
@@ -198,10 +201,9 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
-      # TODO: Should take no arguments
-      def launch(launcher_options={})
+      def launch
         start = Time.now
-        launch_cbx_runner(launcher_options)
+        launch_cbx_runner
         launch_aut
         elapsed = Time.now - start
         RunLoop.log_debug("Took #{elapsed} seconds to launch #{bundle_id} on #{device}")
@@ -1093,10 +1095,8 @@ PRIVATE
       end
 
       # @!visibility private
-      # TODO: Should take no arguments
-      def launch_cbx_runner(options={})
-        # TODO: move to initialize
-        @launcher_options = options
+      def launch_cbx_runner
+        options = launcher_options
 
         if options[:shutdown_device_agent_before_launch]
           RunLoop.log_debug("Launch options insist that the DeviceAgent be shutdown")
@@ -1194,7 +1194,7 @@ Please install it.
             if retries >= 0
               if !running?
                 RunLoop.log_debug("The DeviceAgent stopped running after POST /session; retrying")
-                launch_cbx_runner(launcher_options)
+                launch_cbx_runner
               else
                 RunLoop.log_debug("Failed to launch the AUT: #{bundle_id}; retrying")
               end
