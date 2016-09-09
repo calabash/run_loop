@@ -596,7 +596,8 @@ Command had no output
     timeout = DEFAULT_OPTIONS[:install_app_timeout]
     simctl.install(device, app, timeout)
 
-    device.simulator_wait_for_stable_state
+    # Experimental: don't wait after the install
+    # device.simulator_wait_for_stable_state
     installed_app_bundle_dir
   end
 
