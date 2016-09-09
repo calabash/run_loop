@@ -19,14 +19,22 @@ module RunLoop
       # @!visibility private
       #
       # These defaults may change at any time.
+      #
+      # You can override these values if they do not work in your environment.
+      #
+      # For cucumber users, the best place to override would be in your
+      # features/support/env.rb.
+      #
+      # For example:
+      #
+      # RunLoop::DeviceAgent::Client::DEFAULTS[:http_timeout] = 60
       DEFAULTS = {
         :port => 27753,
         :simulator_ip => "127.0.0.1",
-        :http_timeout => (RunLoop::Environment.ci? ||
-                          RunLoop::Environment.xtc?) ? 120 : 10,
+        :http_timeout => (RunLoop::Environment.ci? || RunLoop::Environment.xtc?) ? 120 : 10,
         :route_version => "1.0",
         # This value must always be false on the XTC.
-        # This is should only be used by gem maintainers.
+        # This is should only be used by gem maintainers or very advanced users.
         :shutdown_device_agent_before_launch => false
       }
 
