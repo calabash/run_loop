@@ -407,13 +407,32 @@ Query must contain at least one of these keys:
       end
 
       # @!visibility private
-      def alert_visible?
+      def alert
         parameters = { :type => "Alert" }
         request = request("query", parameters)
         client = http_client(http_options)
         response = client.post(request)
         hash = expect_300_response(response)
-        !hash["result"].empty?
+        hash["result"]
+      end
+
+      # @!visibility private
+      def alert_visible?
+        !alert.empty?
+      end
+
+      # @!visibility private
+      def spring_board_alert
+        request = request("springBoardAlert")
+        client = http_client(http_options)
+        response = client.get(request)
+        hash = expect_300_response(response)
+        hash["result"]
+      end
+
+      # @!visibility private
+      def spring_board_alert_visible?
+        !spring_board_alert.empty?
       end
 
       # @!visibility private
