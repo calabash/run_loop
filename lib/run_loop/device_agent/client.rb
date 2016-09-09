@@ -112,9 +112,21 @@ $ xcrun security find-identity -v -p codesigning
           end
         end
 
-        launch_options = options.merge({:code_sign_identity => code_sign_identity})
+        install_timeout = options.fetch(:device_agent_install_timeout,
+                                                     DEFAULTS[:device_agent_install_timeout])
+        shutdown_before_launch = options.fetch(:shutdown_device_agent_before_launch,
+                                               DEFAULTS[:shutdown_device_agent_before_launch])
+
+        launcher_options = {
+            code_sign_identity: code_sign_identity,
+            device_agent_install_timeout: install_timeout,
+            shutdown_device_agent_before_launch: shutdown_before_launch
+        }
+
+        # TODO: Client.new should take launch_options argument
         xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device, cbx_launcher)
-        xcuitest.launch(launch_options)
+        # TODO: launch should take no arguments
+        xcuitest.launch(launcher_options)
 
         if !RunLoop::Environment.xtc?
           cache = {
@@ -124,7 +136,7 @@ $ xcrun security find-identity -v -p codesigning
             :code_sign_identity => code_sign_identity,
             :launcher => cbx_launcher.name,
             :launcher_pid => xcuitest.launcher_pid,
-            :launch_options => xcuitest.launch_options
+            :launcher_options => launcher_options
           }
           RunLoop::Cache.default.write(cache)
         end
@@ -157,7 +169,7 @@ $ xcrun security find-identity -v -p codesigning
         end
       end
 
-      attr_reader :bundle_id, :device, :cbx_launcher, :launch_options, :launcher_pid
+      attr_reader :bundle_id, :device, :cbx_launcher, :launcher_options, :launcher_pid
 
       # @!visibility private
       #
@@ -167,6 +179,8 @@ $ xcrun security find-identity -v -p codesigning
       # @param [RunLoop::Device] device The device under test.
       # @param [RunLoop::DeviceAgent::LauncherStrategy] cbx_launcher The entity that
       #  launches the CBXRunner.
+      #
+      # TODO This should take a launch_options non-optional argument
       def initialize(bundle_id, device, cbx_launcher)
         @bundle_id = bundle_id
         @device = device
@@ -184,10 +198,10 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
-      def launch(options={})
-        @launch_options = options
+      # TODO: Should take no arguments
+      def launch(launcher_options={})
         start = Time.now
-        launch_cbx_runner(options)
+        launch_cbx_runner(launcher_options)
         launch_aut
         elapsed = Time.now - start
         RunLoop.log_debug("Took #{elapsed} seconds to launch #{bundle_id} on #{device}")
@@ -1079,10 +1093,12 @@ PRIVATE
       end
 
       # @!visibility private
+      # TODO: Should take no arguments
       def launch_cbx_runner(options={})
-        merged_options = DEFAULTS.merge(options)
+        # TODO: move to initialize
+        @launcher_options = options
 
-        if merged_options[:shutdown_device_agent_before_launch]
+        if options[:shutdown_device_agent_before_launch]
           RunLoop.log_debug("Launch options insist that the DeviceAgent be shutdown")
           shutdown
         end
@@ -1102,7 +1118,7 @@ PRIVATE
         @launcher_pid = cbx_launcher.launch(options)
 
         begin
-          timeout = RunLoop::Environment.ci? ? 120 : 60
+          timeout = options[:device_agent_install_timeout] * 1.5
           health_options = {
             :timeout => timeout,
             :interval => 0.1,
@@ -1164,17 +1180,28 @@ Please install it.
 ]
         end
 
+        retries = 5
+
         begin
           response = client.post(request)
           RunLoop.log_debug("Launched #{bundle_id} on #{device}")
           RunLoop.log_debug("#{response.body}")
-          if device.simulator?
-            # It is not clear yet whether we should do this.  There is a problem
-            # in the simulator_wait_for_stable_state; it waits too long.
-            # device.simulator_wait_for_stable_state
-          end
+
           expect_300_response(response)
         rescue => e
+          retries = retries - 1
+          if !RunLoop::Environment.xtc?
+            if retries >= 0
+              if !running?
+                RunLoop.log_debug("The DeviceAgent stopped running after POST /session; retrying")
+                launch_cbx_runner(launcher_options)
+              else
+                RunLoop.log_debug("Failed to launch the AUT: #{bundle_id}; retrying")
+              end
+              retry
+            end
+          end
+
           raise e.class, %Q[
 
 Could not launch #{bundle_id} on #{device}:
