@@ -11,11 +11,8 @@ module RunLoop
       # @!visibility private
       def install
         if File.exist?(frameworks)
-          RunLoop.log_debug("#{frameworks} already exists; skipping install")
           return true
         end
-
-        RunLoop.log_debug("Installing Frameworks to #{rootdir}")
 
         options = { :log_cmd => true }
 
@@ -23,7 +20,6 @@ module RunLoop
           RunLoop.log_unix_cmd("cd #{rootdir}")
           shell.run_shell_command(["ditto", "-xk", File.basename(zip), "."], options)
         end
-        RunLoop.log_debug("Installed frameworks to #{rootdir}")
       end
 
       private

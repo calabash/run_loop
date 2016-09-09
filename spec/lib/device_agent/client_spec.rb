@@ -2,9 +2,13 @@
 describe RunLoop::DeviceAgent::Client do
 
   let(:bundle_id) { "com.apple.Preferences" }
+  let(:launcher_options) { {} }
   let(:device) { Resources.shared.simulator("9.0") }
   let(:cbx_launcher) { RunLoop::DeviceAgent::LauncherStrategy.new(device) }
-  let(:client) { RunLoop::DeviceAgent::Client.new(bundle_id, device, cbx_launcher) }
+  let(:client) do
+    RunLoop::DeviceAgent::Client.new(bundle_id, device,
+                                     cbx_launcher, launcher_options)
+  end
 
   let(:response) do
     Class.new do
@@ -248,7 +252,7 @@ describe RunLoop::DeviceAgent::Client do
     server = client.send(:server)
     expect(RunLoop::HTTP::RetriableClient).to receive(:new).with(server, options).and_call_original
 
-    expect(client.send(:client, options)).to be_a_kind_of(RunLoop::HTTP::RetriableClient)
+    expect(client.send(:http_client, options)).to be_a_kind_of(RunLoop::HTTP::RetriableClient)
   end
 
   context "#versioned_route" do

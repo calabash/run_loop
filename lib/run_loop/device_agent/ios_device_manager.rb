@@ -76,6 +76,7 @@ but binary does not exist at that path.
       # @!visibility private
       def launch(options)
         code_sign_identity = options[:code_sign_identity]
+        install_timeout = options[:device_agent_install_timeout]
 
         RunLoop::DeviceAgent::Frameworks.instance.install
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
@@ -84,11 +85,21 @@ but binary does not exist at that path.
         if device.simulator?
           cbxapp = RunLoop::App.new(runner.runner)
 
-          # quits the simulator
-          sim = CoreSimulator.new(device, cbxapp)
+          # Quits the simulator if CoreSimulator is not already in control of it.
+          sim = CoreSimulator.new(device, cbxapp, {:quit_sim_on_init => false})
           sim.install
           sim.launch_simulator
         else
+
+          if !install_timeout
+            raise ArgumentError, %Q[
+
+Expected :device_agent_install_timeout key in options:
+
+#{options}
+
+]
+          end
 
           if !code_sign_identity
             raise ArgumentError, %Q[
@@ -101,7 +112,7 @@ $ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
 ]
           end
 
-          options = {:log_cmd => true}
+          options = {:log_cmd => true, :timeout => install_timeout}
           args = [
             cmd, "install",
             "--device-id", device.udid,
@@ -112,7 +123,6 @@ $ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
           start = Time.now
           hash = run_shell_command(args, options)
 
-
           if hash[:exit_status] != 0
             raise RuntimeError, %Q[
 
@@ -120,13 +130,11 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
 
 #{hash[:out]}
 
-            ]
+]
           end
         end
 
         RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent");
-
-        cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
         args = ["start_test", "--device-id", device.udid]
 
@@ -145,11 +153,6 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         # to testmanagerd will fail.
         pid = Process.spawn(env, cmd, *args, options)
         Process.detach(pid)
-
-        if device.simulator?
-          # Give it a whirl.
-          # device.simulator_wait_for_stable_state
-        end
 
         pid.to_i
       end

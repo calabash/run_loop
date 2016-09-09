@@ -19,12 +19,48 @@ module RunLoop
       # @!visibility private
       #
       # These defaults may change at any time.
+      #
+      # You can override these values if they do not work in your environment.
+      #
+      # For cucumber users, the best place to override would be in your
+      # features/support/env.rb.
+      #
+      # For example:
+      #
+      # RunLoop::DeviceAgent::Client::DEFAULTS[:http_timeout] = 60
       DEFAULTS = {
         :port => 27753,
         :simulator_ip => "127.0.0.1",
-        :http_timeout => RunLoop::Environment.ci? ? 120 : 10,
+        :http_timeout => (RunLoop::Environment.ci? || RunLoop::Environment.xtc?) ? 120 : 10,
         :route_version => "1.0",
+
+        # Ignored in the XTC.
+        # This key is subject to removal or changes
+        :device_agent_install_timeout => RunLoop::Environment.ci? ? 120 : 60,
+        # This value must always be false on the XTC.
+        # This is should only be used by gem maintainers or very advanced users.
         :shutdown_device_agent_before_launch => false
+      }
+
+      # @!visibility private
+      #
+      # These defaults may change at any time.
+      #
+      # You can override these values if they do not work in your environment.
+      #
+      # For cucumber users, the best place to override would be in your
+      # features/support/env.rb.
+      #
+      # For example:
+      #
+      # RunLoop::DeviceAgent::Client::WAIT_DEFAULTS[:timeout] = 30
+      WAIT_DEFAULTS = {
+        timeout: (RunLoop::Environment.ci? ||
+                  RunLoop::Environment.xtc?) ? 30 : 15,
+        # This key is subject to removal or changes.
+        retry_frequency: 0.1,
+        # This key is subject to removal or changes.
+        exception_class: Timeout::Error
       }
 
       # @!visibility private
@@ -76,17 +112,30 @@ $ xcrun security find-identity -v -p codesigning
           end
         end
 
-        launch_options = options.merge({:code_sign_identity => code_sign_identity})
-        xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device, cbx_launcher)
-        xcuitest.launch(launch_options)
+        install_timeout = options.fetch(:device_agent_install_timeout,
+                                                     DEFAULTS[:device_agent_install_timeout])
+        shutdown_before_launch = options.fetch(:shutdown_device_agent_before_launch,
+                                               DEFAULTS[:shutdown_device_agent_before_launch])
+
+        launcher_options = {
+            code_sign_identity: code_sign_identity,
+            device_agent_install_timeout: install_timeout,
+            shutdown_device_agent_before_launch: shutdown_before_launch
+        }
+
+        xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device,
+                                                    cbx_launcher, launcher_options)
+        xcuitest.launch
 
         if !RunLoop::Environment.xtc?
           cache = {
-            :cbx_launcher => cbx_launcher.name,
             :udid => device.udid,
             :app => bundle_id,
             :automator => :device_agent,
-            :code_sign_identity => code_sign_identity
+            :code_sign_identity => code_sign_identity,
+            :launcher => cbx_launcher.name,
+            :launcher_pid => xcuitest.launcher_pid,
+            :launcher_options => launcher_options
           }
           RunLoop::Cache.default.write(cache)
         end
@@ -119,7 +168,7 @@ $ xcrun security find-identity -v -p codesigning
         end
       end
 
-      attr_reader :bundle_id, :device, :cbx_launcher, :launch_options
+      attr_reader :bundle_id, :device, :cbx_launcher, :launcher_options, :launcher_pid
 
       # @!visibility private
       #
@@ -129,10 +178,16 @@ $ xcrun security find-identity -v -p codesigning
       # @param [RunLoop::Device] device The device under test.
       # @param [RunLoop::DeviceAgent::LauncherStrategy] cbx_launcher The entity that
       #  launches the CBXRunner.
-      def initialize(bundle_id, device, cbx_launcher)
+      def initialize(bundle_id, device, cbx_launcher, launcher_options)
         @bundle_id = bundle_id
         @device = device
         @cbx_launcher = cbx_launcher
+        @launcher_options = launcher_options
+
+        if !@launcher_options[:device_agent_install_timeout]
+          default = DEFAULTS[:device_agent_install_timeout]
+          @launcher_options[:device_agent_install_timeout] = default
+        end
       end
 
       # @!visibility private
@@ -146,10 +201,9 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
-      def launch(options={})
-        @launch_options = options
+      def launch
         start = Time.now
-        launch_cbx_runner(options)
+        launch_cbx_runner
         launch_aut
         elapsed = Time.now - start
         RunLoop.log_debug("Took #{elapsed} seconds to launch #{bundle_id} on #{device}")
@@ -167,6 +221,11 @@ $ xcrun security find-identity -v -p codesigning
 
       # @!visibility private
       def stop
+        if RunLoop::Environment.xtc?
+          RunLoop.log_error("Calling shutdown on the XTC is not supported.")
+          return
+        end
+
         begin
           shutdown
         rescue => _
@@ -175,6 +234,8 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
+      #
+      # Experimental!
       def launch_other_app(bundle_id)
         launch_aut(bundle_id)
       end
@@ -183,9 +244,9 @@ $ xcrun security find-identity -v -p codesigning
       def device_info
         options = http_options
         request = request("device")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # TODO Legacy API; remove once this branch is merged:
@@ -193,39 +254,21 @@ $ xcrun security find-identity -v -p codesigning
       alias_method :runtime, :device_info
 
       # @!visibility private
-      def server_pid
-        options = http_options
-        request = request("pid")
-        client = client(options)
-        response = client.get(request)
-        expect_200_response(response)
-      end
-
-      # @!visibility private
       def server_version
         options = http_options
         request = request("version")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
-        expect_200_response(response)
-      end
-
-      # @!visibility private
-      def session_identifier
-        options = http_options
-        request = request("sessionIdentifier")
-        client = client(options)
-        response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
       def tree
         options = http_options
         request = request("tree")
-        client = client(options)
+        client = http_client(options)
         response = client.get(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -233,9 +276,9 @@ $ xcrun security find-identity -v -p codesigning
         options = http_options
         parameters = { :type => "Keyboard" }
         request = request("query", parameters)
-        client = client(options)
+        client = http_client(options)
         response = client.post(request)
-        hash = expect_200_response(response)
+        hash = expect_300_response(response)
         result = hash["result"]
         result.count != 0
       end
@@ -253,22 +296,135 @@ $ xcrun security find-identity -v -p codesigning
           }
         }
         request = request("gesture", parameters)
-        client = client(options)
+        client = http_client(options)
         response = client.post(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
-      def query(mark, options={})
-        default_options = {
-          all: false,
-          specifier: :id
-        }
-        merged_options = default_options.merge(options)
+      #
+      # @example
+      #  query({id: "login", :type "Button"})
+      #
+      #  query({marked: "login"})
+      #
+      #  query({marked: "login", type: "TextField"})
+      #
+      #  query({type: "Button", index: 2})
+      #
+      #  query({text: "Log in"})
+      #
+      #  query({id: "hidden button", :all => true})
+      #
+      #  # Escaping single quote is not necessary, but supported.
+      #  query({text: "Karl's problem"})
+      #  query({text: "Karl\'s problem"})
+      #
+      #  # Escaping double quote is not necessary, but supported.
+      #  query({text: "\"To know is not enough.\""})
+      #  query({text: %Q["To know is not enough."]})
+      #
+      # Querying for text with newlines is not supported yet.
+      #
+      # The query language supports the following keys:
+      # * :marked - accessibilityIdentifier, accessibilityLabel, text, and value
+      # * :id - accessibilityIdentifier
+      # * :type - an XCUIElementType shorthand, e.g. XCUIElementTypeButton =>
+      #   Button. See the link below for available types.  Note, however that
+      #   some XCUIElementTypes are not available on iOS.
+      # * :index - Applied after all other specifiers.
+      # * :all - Filter the result by visibility. Defaults to false. See the
+      #   discussion below about visibility.
+      #
+      # ### Visibility
+      #
+      # The rules for visibility are:
+      #
+      # 1. If any part of the view is visible, the visible.
+      # 2. If the view has alpha 0, it is not visible.
+      # 3. If the view has a size (0,0) it is not visible.
+      # 4. If the view is not within the bounds of the screen, it is not visible.
+      #
+      # Visibility is determined using the "hitable" XCUIElement property.
+      # XCUITest, particularly under Xcode 7, is not consistent about setting
+      # the "hitable" property correctly.  Views that are not "hitable" might
+      # respond to gestures.
+      #
+      # Regarding rule #1 - this is different from the Calabash iOS and Android
+      # definition of visibility which requires the mid-point of the view to be
+      # visible.
+      #
+      # ### Results
+      #
+      # Results are returned as an Array of Hashes.
+      #
+      # ```
+      # [
+      #  {
+      #    "enabled": true,
+      #    "id": "mostly hidden button",
+      #    "hitable": true,
+      #    "rect": {
+      #      "y": 459,
+      #      "x": 24,
+      #      "height": 25,
+      #      "width": 100
+      #    },
+      #    "label": "Mostly Hidden",
+      #    "type": "Button",
+      #    "hit_point": {
+      #      "x": 25,
+      #      "y": 460
+      #    },
+      #    "test_id": 1
+      #  }
+      # ]
+      # ```
+      #
+      # @see http://masilotti.com/xctest-documentation/Constants/XCUIElementType.html
+      # @param [Hash] uiquery A hash describing the query.
+      # @return [Array<Hash>] An array of elements matching the `uiquery`.
+      def query(uiquery)
+        merged_options = {
+          all: false
+        }.merge(uiquery)
 
-        parameters = { merged_options[:specifier] => mark }
+        allowed_keys = [:all, :id, :index, :marked, :text, :type]
+        unknown_keys = uiquery.keys - allowed_keys
+        if !unknown_keys.empty?
+          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+          raise ArgumentError, %Q[
+Unsupported key or keys found: '#{unknown_keys}'.
+
+Allowed keys for a query are: #{keys}
+
+]
+        end
+
+        has_any_key = (allowed_keys & uiquery.keys).any?
+        if !has_any_key
+          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+          raise ArgumentError, %Q[
+Query does not contain any keysUnsupported key or keys found: '#{unknown_keys}'.
+
+Allowed keys for a query are: #{keys}
+
+]
+        end
+
+        parameters = merged_options.dup.tap { |hs| hs.delete(:all) }
+        if parameters.empty?
+          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+          raise ArgumentError, %Q[
+Query must contain at least one of these keys:
+
+#{keys}
+
+]
+        end
+
         request = request("query", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
 
         RunLoop.log_debug %Q[Sending query with parameters:
 
@@ -277,7 +433,7 @@ $ xcrun security find-identity -v -p codesigning
 ]
 
         response = client.post(request)
-        hash = expect_200_response(response)
+        hash = expect_300_response(response)
         elements = hash["result"]
 
         if merged_options[:all]
@@ -290,45 +446,97 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
-      def alert_visible?
+      def alert
         parameters = { :type => "Alert" }
         request = request("query", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
-        hash = expect_200_response(response)
-        !hash["result"].empty?
+        hash = expect_300_response(response)
+        hash["result"]
       end
 
       # @!visibility private
-      def query_for_coordinate(mark)
-        elements = query(mark)
-        coordinate_from_query_result(elements)
+      def alert_visible?
+        !alert.empty?
       end
 
       # @!visibility private
-      def touch(mark, options={})
-        coordinate = query_for_coordinate(mark)
-        perform_coordinate_gesture("touch",
-                                   coordinate[:x], coordinate[:y],
-                                   options)
+      def spring_board_alert
+        request = request("springBoardAlert")
+        client = http_client(http_options)
+        response = client.get(request)
+        hash = expect_300_response(response)
+        hash["result"]
       end
 
-      alias_method :tap, :touch
+      # @!visibility private
+      def spring_board_alert_visible?
+        !spring_board_alert.empty?
+      end
 
       # @!visibility private
-      def double_tap(mark, options={})
-        coordinate = query_for_coordinate(mark)
+      # @see #query
+      def query_for_coordinate(uiquery)
+        element = wait_for_view(uiquery)
+        coordinate_from_query_result([element])
+      end
+
+      # @!visibility private
+      #
+      # :num_fingers
+      # :duration
+      # :repetitions
+      # @see #query
+      def touch(uiquery, options={})
+        coordinate = query_for_coordinate(uiquery)
+        perform_coordinate_gesture("touch", coordinate[:x], coordinate[:y], options)
+      end
+
+      # @!visibility private
+      # @see #touch
+      def touch_coordinate(coordinate, options={})
+        x = coordinate[:x] || coordinate["x"]
+        y = coordinate[:y] || coordinate["y"]
+        touch_point(x, y, options)
+      end
+
+      # @!visibility private
+      # @see #touch
+      def touch_point(x, y, options={})
+        perform_coordinate_gesture("touch", x, y, options)
+      end
+
+      # @!visibility private
+      # @see #touch
+      # @see #query
+      def double_tap(uiquery, options={})
+        coordinate = query_for_coordinate(uiquery)
         perform_coordinate_gesture("double_tap",
                                    coordinate[:x], coordinate[:y],
                                    options)
       end
 
       # @!visibility private
-      def two_finger_tap(mark, options={})
-        coordinate = query_for_coordinate(mark)
+      # @see #touch
+      # @see #query
+      def two_finger_tap(uiquery, options={})
+        coordinate = query_for_coordinate(uiquery)
         perform_coordinate_gesture("two_finger_tap",
                                    coordinate[:x], coordinate[:y],
                                    options)
+      end
+
+      # @!visibility private
+      # @see #touch
+      # @see #query
+      def long_press(uiquery, options={})
+        merged_options = {
+          :duration => 1.1
+        }.merge(options)
+
+        coordinate = query_for_coordinate(uiquery)
+        perform_coordinate_gesture("touch", coordinate[:x], coordinate[:y],
+                                   merged_options)
       end
 
       # @!visibility private
@@ -338,9 +546,9 @@ $ xcrun security find-identity -v -p codesigning
           :orientation => orientation
         }
         request = request("rotate_home_button_to", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
-        json = expect_200_response(response)
+        json = expect_300_response(response)
         sleep(sleep_for)
         json
       end
@@ -387,9 +595,9 @@ $ xcrun security find-identity -v -p codesigning
 
 ]
         request = request("gesture", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
-        expect_200_response(response)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -416,11 +624,10 @@ $ xcrun security find-identity -v -p codesigning
 
 #{JSON.pretty_generate(new_rect)}
 
-                          ])
+])
         {:x => touchx,
          :y => touchy}
       end
-
 
       # @!visibility private
       def change_volume(up_or_down)
@@ -429,15 +636,216 @@ $ xcrun security find-identity -v -p codesigning
           :volume => string
         }
         request = request("volume", parameters)
-        client = client(http_options)
+        client = http_client(http_options)
         response = client.post(request)
-        json = expect_200_response(response)
+        json = expect_300_response(response)
         # Set in the route
         sleep(0.2)
         json
       end
 
+      # TODO: animation model
+      def wait_for_animations
+        sleep(0.5)
+      end
+
+      # @!visibility private
+      def wait_for(timeout_message, options={}, &block)
+        wait_options = WAIT_DEFAULTS.merge(options)
+        timeout = wait_options[:timeout]
+        exception_class = wait_options[:exception_class]
+        with_timeout(timeout, timeout_message, exception_class) do
+          loop do
+            value = block.call
+            return value if value
+            sleep(wait_options[:retry_frequency])
+          end
+        end
+      end
+
+      # @!visibility private
+      def wait_for_keyboard(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for the keyboard to appear.
+
+]
+        wait_for(message, options) do
+          keyboard_visible?
+        end
+      end
+
+      # @!visibility private
+      def wait_for_alert(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for an alert to appear.
+
+]
+        wait_for(message, options) do
+          alert_visible?
+        end
+      end
+
+      # @!visibility private
+      def wait_for_no_alert(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for an alert to disappear.
+
+]
+
+        wait_for(message, options) do
+          !alert_visible?
+        end
+      end
+
+      # @!visibility private
+      def wait_for_text_in_view(text, uiquery, options={})
+        merged_options = WAIT_DEFAULTS.merge(options)
+        result = wait_for_view(uiquery, merged_options)
+
+        candidates = [result["value"],
+                      result["label"]]
+        match = candidates.any? do |elm|
+          elm == text
+        end
+        if !match
+          fail(%Q[
+
+Expected to find '#{text}' as a 'value' or 'label' in
+
+#{JSON.pretty_generate(result)}
+
+])
+        end
+      end
+
+      # @!visibility private
+      def wait_for_view(uiquery, options={})
+        merged_options = WAIT_DEFAULTS.merge(options)
+
+        unless merged_options[:message]
+          message = %Q[
+
+Waited #{merged_options[:timeout]} seconds for
+
+#{uiquery}
+
+to match a view.
+
+]
+          merged_options[:timeout_message] = message
+        end
+
+        result = nil
+        wait_for(merged_options[:timeout_message], options) do
+          result = query(uiquery)
+          !result.empty?
+        end
+
+        result[0]
+      end
+
+      # @!visibility private
+      def wait_for_no_view(uiquery, options={})
+        merged_options = WAIT_DEFAULTS.merge(options)
+        unless merged_options[:message]
+          message = %Q[
+
+Waited #{merged_options[:timeout]} seconds for
+
+#{uiquery}
+
+to match no views.
+
+]
+          merged_options[:timeout_message] = message
+        end
+
+        result = nil
+        wait_for(merged_options[:timeout_message], options) do
+          result = query(uiquery)
+          result.empty?
+        end
+
+        result[0]
+      end
+
+      # @!visibility private
+      class PrivateWaitTimeoutError < RuntimeError ; end
+
+      # @!visibility private
+      def with_timeout(timeout, timeout_message,
+                       exception_class=WAIT_DEFAULTS[:exception_class], &block)
+        if timeout_message.nil? ||
+          (timeout_message.is_a?(String) && timeout_message.empty?)
+          raise ArgumentError, 'You must provide a timeout message'
+        end
+
+        unless block_given?
+          raise ArgumentError, 'You must provide a block'
+        end
+
+        # Timeout.timeout will never timeout if the given `timeout` is zero.
+        # We will raise an exception if the timeout is zero.
+        # Timeout.timeout already raises an exception if `timeout` is negative.
+        if timeout == 0
+          raise ArgumentError, 'Timeout cannot be 0'
+        end
+
+        message = if timeout_message.is_a?(Proc)
+          timeout_message.call({timeout: timeout})
+        else
+          timeout_message
+        end
+
+        failed = false
+
+        begin
+          Timeout.timeout(timeout, PrivateWaitTimeoutError) do
+            return block.call
+          end
+        rescue PrivateWaitTimeoutError => _
+          # If we raise Timeout here the stack trace will be cluttered and we
+          # wish to show the user a clear message, avoiding
+          # "`rescue in with_timeout':" in the stack trace.
+          failed = true
+        end
+
+        if failed
+          fail(exception_class, message)
+        end
+      end
+
+      # @!visibility private
+      def fail(*several_variants)
+        arg0 = several_variants[0]
+        arg1 = several_variants[1]
+
+        if arg1.nil?
+          exception_type = RuntimeError
+          message = arg0
+        else
+          exception_type = arg0
+          message = arg1
+        end
+
+        raise exception_type, message
+      end
+
+=begin
+PRIVATE
+=end
       private
+
+      attr_reader :http_client
 
       # @!visibility private
       def xcrun
@@ -511,8 +919,28 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
-      def client(options={})
-        RunLoop::HTTP::RetriableClient.new(server, options)
+      def http_client(options={})
+        if !@http_client
+          @http_client = RunLoop::HTTP::RetriableClient.new(server, options)
+        else
+          # If the options are different, create a new client
+          if options[:retries] != @http_client.retries ||
+            options[:timeout] != @http_client.timeout ||
+            options[:interval] != @http_client.interval
+            reset_http_client!
+            @http_client = RunLoop::HTTP::RetriableClient.new(server, options)
+          else
+          end
+        end
+        @http_client
+      end
+
+      # @!visibility private
+      def reset_http_client!
+        if @http_client
+          @http_client.reset_all!
+          @http_client = nil
+        end
       end
 
       # @!visibility private
@@ -550,86 +978,107 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
+      def server_pid
+        options = http_options
+        request = request("pid")
+        client = http_client(options)
+        response = client.get(request)
+        expect_300_response(response)
+      end
+
+      # @!visibility private
+      def session_identifier
+        options = http_options
+        request = request("sessionIdentifier")
+        client = http_client(options)
+        response = client.get(request)
+        expect_300_response(response)
+      end
+
+      # @!visibility private
       def session_delete
         # https://xamarin.atlassian.net/browse/TCFW-255
         # httpclient is unable to send a valid DELETE
         args = ["curl", "-X", "DELETE", %Q[#{url}#{versioned_route("session")}]]
-        run_shell_command(args, {:log_cmd => true})
 
-        # options = ping_options
-        # request = request("session")
-        # client = client(options)
-        # begin
-        #   response = client.delete(request)
-        #   body = expect_200_response(response)
-        #   RunLoop.log_debug("CBX-Runner says, #{body}")
-        #   body
-        # rescue => e
-        #   RunLoop.log_debug("CBX-Runner session delete error: #{e}")
-        #   nil
-        # end
+        begin
+          run_shell_command(args, {:log_cmd => true, :timeout => 10})
+        rescue Shell::TimeoutError => _
+          RunLoop.log_debug("Timed out calling DELETE session/ after 10 seconds")
+        end
       end
 
       # @!visibility private
-      # TODO expect 200 response and parse body (atm the body in not valid JSON)
       def shutdown
-        session_delete
-        options = ping_options
-        request = request("shutdown")
-        client = client(options)
-        body = nil
+
+        if RunLoop::Environment.xtc?
+          RunLoop.log_error("Calling shutdown on the XTC is not supported.")
+          return
+        end
+
         begin
-          response = client.post(request)
-          body = response.body
-          RunLoop.log_debug("DeviceAgent-Runner says, \"#{body}\"")
+          if !running?
+            RunLoop.log_debug("DeviceAgent-Runner is not running")
+          else
+            session_delete
 
-          now = Time.now
-          poll_until = now + 10.0
-          running = true
-          while Time.now < poll_until
-            running = !running?
-            break if running
-            sleep(0.1)
+            request = request("shutdown")
+            client = http_client(ping_options)
+            response = client.post(request)
+            hash = expect_300_response(response)
+            message = hash["message"]
+
+            RunLoop.log_debug(%Q[DeviceAgent-Runner says, "#{message}"])
+
+            now = Time.now
+            poll_until = now + 10.0
+            stopped = false
+            while Time.now < poll_until
+              stopped = !running?
+              break if stopped
+              sleep(0.1)
+            end
+
+            RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
           end
-
-          RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
-          body
-        rescue => e
-          RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e}")
+        rescue RunLoop::DeviceAgent::Client::HTTPError => e
+          RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e.message}")
         ensure
-          quit_options = { :timeout => 0.5 }
-          term_options = { :timeout => 0.5 }
-          kill_options = { :timeout => 0.5 }
+          if @launcher_pid
+            term_options = { :timeout => 1.5 }
+            kill_options = { :timeout => 1.0 }
 
-          process_name = "iOSDeviceManager"
-          RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
-            quit = RunLoop::ProcessTerminator.new(pid, "QUIT", process_name, quit_options)
-            if !quit.kill_process
-              term = RunLoop::ProcessTerminator.new(pid, "TERM", process_name, term_options)
-              if !term.kill_process
-                kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
-                kill.kill_process
-              end
+            process_name = cbx_launcher.name
+            pid = @launcher_pid.to_i
+
+            term = RunLoop::ProcessTerminator.new(pid, "TERM", process_name, term_options)
+            if !term.kill_process
+              kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
+              kill.kill_process
+            end
+
+            if process_name == :xcodebuild
+              sleep(10)
             end
           end
         end
-        body
+        hash
       end
 
       # @!visibility private
-      # TODO expect 200 response and parse body (atm the body is not valid JSON)
       def health(options={})
         merged_options = http_options.merge(options)
         request = request("health")
-        client = client(merged_options)
+        client = http_client(merged_options)
         response = client.get(request)
-        body = response.body
-        RunLoop.log_debug("CBX-Runner driver says, \"#{body}\"")
-        body
+        hash = expect_300_response(response)
+        status = hash["status"]
+        RunLoop.log_debug(%Q[DeviceAgent says, "#{status}"])
+        hash
       end
 
-
-      # TODO cbx_runner_stale? returns false always
+      # TODO Might not be necessary - this is an edge case and it is likely
+      # that iOSDeviceManager will be able to handle this for us.
       def cbx_runner_stale?
         false
         # The RunLoop::Version class needs to be updated to handle timestamps.
@@ -646,58 +1095,35 @@ $ xcrun security find-identity -v -p codesigning
       end
 
       # @!visibility private
-      def launch_cbx_runner(options={})
-        merged_options = DEFAULTS.merge(options)
+      def launch_cbx_runner
+        options = launcher_options
 
-        if merged_options[:shutdown_device_agent_before_launch]
+        if options[:shutdown_device_agent_before_launch]
           RunLoop.log_debug("Launch options insist that the DeviceAgent be shutdown")
           shutdown
+        end
 
-          if cbx_launcher.name == :xcodebuild
-            sleep(5.0)
-          end
+        if cbx_runner_stale?
+          RunLoop.log_debug("The DeviceAgent that is running is stale; shutting down")
+          shutdown
         end
 
         if running?
           RunLoop.log_debug("DeviceAgent is already running")
-          if cbx_runner_stale?
-            shutdown
-          else
-            # TODO: is it necessary to return the pid?  Or can we return true?
-            return server_pid
-          end
-        end
-
-        if cbx_launcher.name == :xcodebuild
-          RunLoop.log_debug("xcodebuild is the launcher - terminating existing xcodebuild processes")
-          term_options = { :timeout => 0.5 }
-          kill_options = { :timeout => 0.5 }
-          RunLoop::ProcessWaiter.new("xcodebuild").pids.each do |pid|
-            term = RunLoop::ProcessTerminator.new(pid, 'TERM', "xcodebuild", term_options)
-            killed = term.kill_process
-            unless killed
-              RunLoop::ProcessTerminator.new(pid, 'KILL', "xcodebuild", kill_options)
-            end
-          end
-          sleep(2.0)
+          return true
         end
 
         start = Time.now
-        RunLoop.log_debug("Waiting for CBX-Runner to launch...")
-        pid = cbx_launcher.launch(options)
-
-        if cbx_launcher.name == :xcodebuild
-          sleep(2.0)
-        end
+        RunLoop.log_debug("Waiting for DeviceAgent to launch...")
+        @launcher_pid = cbx_launcher.launch(options)
 
         begin
-          timeout = RunLoop::Environment.ci? ? 120 : 60
+          timeout = options[:device_agent_install_timeout] * 1.5
           health_options = {
             :timeout => timeout,
             :interval => 0.1,
             :retries => (timeout/0.1).to_i
           }
-
           health(health_options)
         rescue RunLoop::HTTP::Error => _
           raise %Q[
@@ -715,16 +1141,15 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
         end
 
         RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
-
-        # TODO: is it necessary to return the pid?  Or can we return true?
-        pid
+        true
       end
 
       # @!visibility private
       def launch_aut(bundle_id = @bundle_id)
-        client = client(http_options)
+        client = http_client(http_options)
         request = request("session", {:bundleID => bundle_id})
 
+        # This check needs to be done _before_ the DeviceAgent is launched.
         if device.simulator?
           # Yes, we could use iOSDeviceManager to check, I dont understand the
           # behavior yet - does it require the simulator be launched?
@@ -736,7 +1161,10 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
             RunLoop.log_debug("Detected :xcodebuild launcher; skipping app installed check")
             installed = true
           else
-            installed = cbx_launcher.app_installed?(bundle_id)
+            # Too slow for most devices
+            # https://jira.xamarin.com/browse/TCFW-273
+            # installed = cbx_launcher.app_installed?(bundle_id)
+            installed = true
           end
         end
 
@@ -752,17 +1180,28 @@ Please install it.
 ]
         end
 
+        retries = 5
+
         begin
           response = client.post(request)
           RunLoop.log_debug("Launched #{bundle_id} on #{device}")
           RunLoop.log_debug("#{response.body}")
-          if device.simulator?
-            # It is not clear yet whether we should do this.  There is a problem
-            # in the simulator_wait_for_stable_state; it waits too long.
-            # device.simulator_wait_for_stable_state
-          end
-          expect_200_response(response)
+
+          expect_300_response(response)
         rescue => e
+          retries = retries - 1
+          if !RunLoop::Environment.xtc?
+            if retries >= 0
+              if !running?
+                RunLoop.log_debug("The DeviceAgent stopped running after POST /session; retrying")
+                launch_cbx_runner
+              else
+                RunLoop.log_debug("Failed to launch the AUT: #{bundle_id}; retrying")
+              end
+              retry
+            end
+          end
+
           raise e.class, %Q[
 
 Could not launch #{bundle_id} on #{device}:
@@ -781,35 +1220,44 @@ Something went wrong.
         begin
           JSON.parse(body)
         rescue TypeError, JSON::ParserError => _
-          raise RunLoop::DeviceAgent::Client::HTTPError,
-                "Could not parse response '#{body}'; the app has probably crashed"
+          raise RunLoop::DeviceAgent::Client::HTTPError, %Q[
+Could not parse response from server:
+
+body => "#{body}"
+
+If the body empty, the DeviceAgent has probably crashed.
+
+]
         end
       end
 
       # @!visibility private
-      def expect_200_response(response)
+      def expect_300_response(response)
         body = response_body_to_hash(response)
-        if response.status_code < 300 && !body["error"]
+        if response.status_code < 400 && !body["error"]
           return body
         end
 
-        if response.status_code > 300
+        reset_http_client!
+
+        if response.status_code >= 400
           raise RunLoop::DeviceAgent::Client::HTTPError,
-                %Q[Expected status code < 300, found #{response.status_code}.
+                %Q[
+Expected status code < 400, found #{response.status_code}.
 
 Server replied with:
 
 #{body}
 
-                ]
+]
         else
           raise RunLoop::DeviceAgent::Client::HTTPError,
-                %Q[Expected JSON response with no error, but found
+                %Q[
+Expected JSON response with no error, but found
 
 #{body["error"]}
 
-                ]
-
+]
         end
       end
 

@@ -1,5 +1,42 @@
 ## Change Log
 
+### 2.1.10
+
+#### DeviceAgent
+
+* 0.1.2
+* SHA: 3f985f3b4fb8f986c7450bd4db60eb6bd10f9f80
+* Add marked query specifier and add tests for /query API #152
+* Server: disable automatic SpringBoard alert dismiss #155
+
+#### iOSDeviceManager
+
+* SHA: fe4942dc2ba245021f10ce7658235be31f25566b
+* Resiging: be defensive when calling NSTask #47
+* Use ditto instead of zip when generating nuget package #46
+* Resigning: fix mobileprovision decode and import #45
+* Make: copy FB Frameworks with ditto #44
+
+#### FBSimulatorControl
+
+* SHA: e3971e6d8b79b551ba8f5e05b72d355e18d7bc96
+* Make: build the Frameworks like Facebook does #7
+* Expose one-off check to see if test complete #6
+* Bootstrap: log when a testCaseDidFailForTest #5
+
+#### Gem
+
+* Allow the user to increase the default DeviceAgent install time #529
+* DA:Client: prototype API for SpringBoard alerts #528
+* CoreSim: don't wait after simctl install #527
+* Improve DeviceAgent::Client HTTP interactions #526
+* DeviceAgent: Cleanup life cycle methods #525
+* DA:Client: increase default timeouts for Xamarin Test Cloud #524
+* DA:IDM: Disable is installed? check for physical devices
+* DA:IDM: only restart the simulator if necessary
+* CLI: simctl tail displays last 5000 lines
+* Expand DeviceAgent#query and gestures #522
+
 ### 2.1.9
 
 * DeviceAgent: replace :gesture\_performer with :automator #520

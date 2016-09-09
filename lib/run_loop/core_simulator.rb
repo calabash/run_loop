@@ -342,7 +342,10 @@ class RunLoop::CoreSimulator
   end
 
   # Launch the simulator indicated by device.
-  def launch_simulator
+  def launch_simulator(options={})
+    merged_options = {
+      :wait_for_stable => true
+    }.merge(options)
 
     if running_simulator_pid != nil
       # There is a running simulator.
@@ -370,7 +373,9 @@ class RunLoop::CoreSimulator
     options = { :timeout => 5, :raise_on_timeout => true }
     RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
 
-    device.simulator_wait_for_stable_state
+    if merged_options[:wait_for_stable]
+      device.simulator_wait_for_stable_state
+    end
 
     elapsed = Time.now - start_time
     RunLoop.log_debug("Took #{elapsed} seconds to launch the simulator")
@@ -591,7 +596,8 @@ Command had no output
     timeout = DEFAULT_OPTIONS[:install_app_timeout]
     simctl.install(device, app, timeout)
 
-    device.simulator_wait_for_stable_state
+    # Experimental: don't wait after the install
+    # device.simulator_wait_for_stable_state
     installed_app_bundle_dir
   end
 

@@ -5,7 +5,7 @@ module RunLoop
     # An HTTP client that retries its connection on errors and can time out.
     # @!visibility private
     class RetriableClient
-      attr_reader :client
+      attr_reader :client, :retries, :timeout, :interval
 
       # @!visibility private
        RETRY_ON =
@@ -49,22 +49,14 @@ module RunLoop
       # @option options [Number] :interval (0.5) How long to sleep between
       #  retries.
       def initialize(server, options = {})
-        @client = options[:client] || ::HTTPClient.new
         @server = server
         @retries = options.fetch(:retries, 5)
         @timeout = options.fetch(:timeout, 5)
         @interval = options.fetch(:interval, 0.5)
-        @on_error = {}
-      end
 
-      # @!visibility private
-      def on_error(type, &block)
-        @on_error[type] = block
-      end
-
-      # @!visibility private
-      def change_server(new_server)
-        @server = new_server
+        # Call after setting the attr.
+        # Yes, it is redundant to set @client, but it makes testing easier.
+        @client = new_client!
       end
 
       # Make an HTTP get request.
@@ -101,11 +93,36 @@ module RunLoop
         request(request, :post, options)
       end
 
+      # There is bug in HTTPClient so this method does work.
+      # https://xamarin.atlassian.net/browse/TCFW-255
+      # httpclient is unable to send a valid DELETE
       def delete(request, options={})
         request(request, :delete, options)
       end
 
+      # Call HTTPClient#reset_all
+      def reset_all!
+        if @client
+          @client.reset_all
+          @client = nil
+        end
+      end
+
       private
+
+      def new_client!
+        reset_all!
+
+        # Assumes ::HTTPClient has these defaults:
+        # send_timeout = 120
+        # There is an rspec test for this so we will know if they change.
+
+        new_client = HTTPClient.new
+        new_client.ssl_config.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        new_client.connect_timeout = 15
+        new_client.receive_timeout = timeout
+        @client = new_client
+      end
 
       def request(request, request_method, options={})
         retries = options.fetch(:retries, @retries)
@@ -121,14 +138,16 @@ module RunLoop
           RunLoop.log_debug("HTTP: #{request_method} #{@server.endpoint + request.route} #{http_options}")
         end
 
+        if !client
+          raise RuntimeError, "This RetriableClient is not attached to client"
+        end
+
         start_time = Time.now
         last_error = nil
 
-        client = @client.dup
         client.receive_timeout = timeout
 
-        retries.times do |i|
-          first_try = i == 0
+        retries.times do |_|
 
           # Subtract the aggregate time we've spent thus far to make sure we're
           # not exceeding the request timeout across retries.
@@ -141,17 +160,11 @@ module RunLoop
           client.receive_timeout = [time_diff, client.receive_timeout].min
 
           begin
-            return client.send(request_method, @server.endpoint + request.route,
-                               request.params, header)
+            return send_request(client, request_method,
+                                @server.endpoint + request.route,
+                                request.params, header)
           rescue *RETRY_ON => e
-            #RunLoop.log_debug("Rescued http error: #{e}")
-
-            if first_try
-              if @on_error[e.class]
-                @on_error[e.class].call(@server)
-              end
-            end
-
+            new_client!
             last_error = e
             sleep interval
           end
@@ -166,7 +179,10 @@ module RunLoop
 
         raise HTTP::Error, last_error
       end
+
+      def send_request(client, request_method, endpoint, parameters, header)
+        client.send(request_method, endpoint, parameters, header)
+      end
     end
   end
 end
-

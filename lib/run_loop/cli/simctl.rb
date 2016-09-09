@@ -21,7 +21,7 @@ module RunLoop
             puts "No simulator for active Xcode (version #{version}) is booted."
           else
             log_file = device.simulator_log_file_path
-            exec('tail', *['-F', log_file])
+            exec('tail', *["-n", "5000", '-F', log_file])
           end
         end
       end
