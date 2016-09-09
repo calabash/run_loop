@@ -144,11 +144,6 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         pid = Process.spawn(env, cmd, *args, options)
         Process.detach(pid)
 
-        if device.simulator?
-          # Give it a whirl.
-          # device.simulator_wait_for_stable_state
-        end
-
         pid.to_i
       end
 
