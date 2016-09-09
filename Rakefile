@@ -192,6 +192,17 @@ target = #{target}
     end
   end
 
+  def checkout(path)
+    args = ["checkout", path]
+
+    log_unix_cmd("git #{args.join(" ")}")
+
+    result = system("git", *args)
+    if !result
+      raise %Q[Could not checkout: #{path}]
+    end
+  end
+
   task :build do
     banner("Building")
 
@@ -262,6 +273,15 @@ target = #{target}
       ditto_unzip(app_zip, File.join(device_agent_dir, "app"))
       ditto_unzip(ipa_zip, File.join(device_agent_dir, "ipa"))
     end
+  end
+
+  desc "Roll back changes to DeviceAgent stack"
+  task :checkout do
+    banner("Git Checkout")
+    checkout(bin)
+    checkout(frameworks_zip)
+    checkout(app_zip)
+    checkout(ipa_zip)
   end
 end
 
