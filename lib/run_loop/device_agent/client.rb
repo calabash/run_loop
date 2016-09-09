@@ -45,10 +45,21 @@ module RunLoop
       # @!visibility private
       #
       # These defaults may change at any time.
+      #
+      # You can override these values if they do not work in your environment.
+      #
+      # For cucumber users, the best place to override would be in your
+      # features/support/env.rb.
+      #
+      # For example:
+      #
+      # RunLoop::DeviceAgent::Client::WAIT_DEFAULTS[:timeout] = 30
       WAIT_DEFAULTS = {
         timeout: (RunLoop::Environment.ci? ||
-                  RunLoop::Environment.xtc?) ? 30 : 8,
+                  RunLoop::Environment.xtc?) ? 30 : 15,
+        # This key is subject to removal or changes.
         retry_frequency: 0.1,
+        # This key is subject to removal or changes.
         exception_class: Timeout::Error
       }
 
