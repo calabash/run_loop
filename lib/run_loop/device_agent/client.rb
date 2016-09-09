@@ -33,6 +33,10 @@ module RunLoop
         :simulator_ip => "127.0.0.1",
         :http_timeout => (RunLoop::Environment.ci? || RunLoop::Environment.xtc?) ? 120 : 10,
         :route_version => "1.0",
+
+        # Ignored in the XTC.
+        # This key is subject to removal or changes
+        :device_agent_install_timeout => RunLoop::Environment.ci? ? 120 : 60,
         # This value must always be false on the XTC.
         # This is should only be used by gem maintainers or very advanced users.
         :shutdown_device_agent_before_launch => false
