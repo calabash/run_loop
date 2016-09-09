@@ -2,9 +2,13 @@
 describe RunLoop::DeviceAgent::Client do
 
   let(:bundle_id) { "com.apple.Preferences" }
+  let(:launcher_options) { {} }
   let(:device) { Resources.shared.simulator("9.0") }
   let(:cbx_launcher) { RunLoop::DeviceAgent::LauncherStrategy.new(device) }
-  let(:client) { RunLoop::DeviceAgent::Client.new(bundle_id, device, cbx_launcher) }
+  let(:client) do
+    RunLoop::DeviceAgent::Client.new(bundle_id, device,
+                                     cbx_launcher, launcher_options)
+  end
 
   let(:response) do
     Class.new do
