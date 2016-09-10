@@ -26,6 +26,30 @@ module RunLoop
       :timeout => RunLoop::Environment.ci? ? 40 : 20
     }
 
+    # Extracts the value of :inject_dylib from options Hash.
+    # @param options [Hash] arguments passed to {RunLoop.run}
+    # @return [String, nil] If the options contains :inject_dylibs and it is a
+    #  path to a dylib that exists, return the path.  Otherwise return nil or
+    #  raise an error.
+    # @raise [RuntimeError] If :inject_dylib points to a path that does not exist.
+    # @raise [ArgumentError] If :inject_dylib is not a String.
+    def self.dylib_path_from_options(options)
+      inject_dylib = options.fetch(:inject_dylib, nil)
+      return nil if inject_dylib.nil?
+      if !inject_dylib.is_a? String
+        raise ArgumentError, %Q[
+
+Expected :inject_dylib to be a path to a dylib, but found '#{inject_dylib}'
+
+]
+      end
+      dylib_path = File.expand_path(inject_dylib)
+      unless File.exist?(dylib_path)
+        raise "Cannot load dylib.  The file '#{dylib_path}' does not exist."
+      end
+      dylib_path
+    end
+
     # @!attribute [r] process_name
     # The name of the process to inject the dylib into.  This should be obtained
     #  by inspecting the Info.plist in the app bundle.
