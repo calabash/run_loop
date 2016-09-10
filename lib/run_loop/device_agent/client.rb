@@ -13,6 +13,7 @@ module RunLoop
       include RunLoop::Encoding
 
       require "run_loop/cache"
+      require "run_loop/dylib_injector"
 
       class HTTPError < RuntimeError; end
 
@@ -78,6 +79,11 @@ module RunLoop
         app = app_details[:app]
         bundle_id = app_details[:bundle_id]
 
+        # process name and dylib path
+        dylib_injection_details = Client.details_for_dylib_injection(device,
+                                                                     options,
+                                                                     app_details)
+
         if device.simulator? && app
           core_sim = RunLoop::CoreSimulator.new(device, app, :xcode => xcode)
           if reset_options
@@ -120,7 +126,8 @@ $ xcrun security find-identity -v -p codesigning
         launcher_options = {
             code_sign_identity: code_sign_identity,
             device_agent_install_timeout: install_timeout,
-            shutdown_device_agent_before_launch: shutdown_before_launch
+            shutdown_device_agent_before_launch: shutdown_before_launch,
+            dylib_injection_details: dylib_injection_details
         }
 
         xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device,
@@ -135,7 +142,7 @@ $ xcrun security find-identity -v -p codesigning
             :code_sign_identity => code_sign_identity,
             :launcher => cbx_launcher.name,
             :launcher_pid => xcuitest.launcher_pid,
-            :launcher_options => launcher_options
+            :launcher_options => xcuitest.launcher_options
           }
           RunLoop::Cache.default.write(cache)
         end
@@ -168,6 +175,52 @@ $ xcrun security find-identity -v -p codesigning
         end
       end
 
+      def self.details_for_dylib_injection(device, options, app_details)
+        dylib_path = RunLoop::DylibInjector.dylib_path_from_options(options)
+
+        return nil if !dylib_path
+
+        if device.physical_device?
+          raise ArgumentError, %Q[
+
+Detected :inject_dylib option when targeting a physical device:
+
+  #{device}
+
+Injecting the Calabash iOS Server is not supported on physical devices.
+
+]
+        end
+
+        app = app_details[:app]
+        bundle_id = app_details[:bundle_id]
+
+        details = { dylib_path: dylib_path }
+
+        if !app
+          # Special case handling of the Settings.app
+          if bundle_id == "com.apple.Preferences"
+            details[:process_name] = "Preferences"
+          else
+            raise ArgumentError, %Q[
+
+Detected :inject_dylib option, but the target application is a bundle identifier:
+
+  app: #{bundle_id}
+
+To use dylib injection, you must provide a path to an .app bundle.
+
+]
+          end
+        else
+          details[:process_name] = app.executable_name
+        end
+        details
+      end
+
+=begin
+INSTANCE METHODS
+=end
       attr_reader :bundle_id, :device, :cbx_launcher, :launcher_options, :launcher_pid
 
       # @!visibility private
@@ -1146,9 +1199,6 @@ $ tail -1000 -F #{cbx_launcher.class.log_file}
 
       # @!visibility private
       def launch_aut(bundle_id = @bundle_id)
-        client = http_client(http_options)
-        request = request("session", {:bundleID => bundle_id})
-
         # This check needs to be done _before_ the DeviceAgent is launched.
         if device.simulator?
           # Yes, we could use iOSDeviceManager to check, I dont understand the
@@ -1181,6 +1231,8 @@ Please install it.
         end
 
         retries = 5
+        client = http_client(http_options)
+        request = request("session", {:bundleID => bundle_id})
 
         begin
           response = client.post(request)
@@ -1188,6 +1240,15 @@ Please install it.
           RunLoop.log_debug("#{response.body}")
 
           expect_300_response(response)
+
+          # Dylib injection.  DeviceAgent.run checks the arguments.
+          dylib_injection_details = launcher_options[:dylib_injection_details]
+          if dylib_injection_details
+            process_name = dylib_injection_details[:process_name]
+            dylib_path = dylib_injection_details[:dylib_path]
+            injector = RunLoop::DylibInjector.new(process_name, dylib_path)
+            injector.retriable_inject_dylib
+          end
         rescue => e
           retries = retries - 1
           if !RunLoop::Environment.xtc?
@@ -1271,7 +1332,7 @@ Expected JSON response with no error, but found
           raise ArgumentError, %Q[
 Expected #{position} to be a Symbol or Fixnum but found #{position.class}
 
-          ]
+]
         end
       end
 
@@ -1293,6 +1354,7 @@ Expected #{position} to be a Symbol or Fixnum but found #{position.class}
 Could not coerce '#{position}' into a valid orientation.
 
 Valid values are: :down, :up, :right, :left, :bottom, :top
+
 ]
         end
       end

@@ -279,7 +279,7 @@ Logfile: #{log_file}
 
       RunLoop::Logging.log_debug(logger, "Launching took #{Time.now-before_instruments_launch} seconds")
 
-      dylib_path = self.dylib_path_from_options(merged_options)
+      dylib_path = RunLoop::DylibInjector.dylib_path_from_options(merged_options)
 
       if dylib_path
         if device.physical_device?
@@ -313,26 +313,6 @@ Logfile: #{log_file}
       true
     end
 
-    # Extracts the value of :inject_dylib from options Hash.
-    # @param options [Hash] arguments passed to {RunLoop.run}
-    # @return [String, nil] If the options contains :inject_dylibs and it is a
-    #  path to a dylib that exists, return the path.  Otherwise return nil or
-    #  raise an error.
-    # @raise [RuntimeError] If :inject_dylib points to a path that does not exist.
-    # @raise [ArgumentError] If :inject_dylib is not a String.
-    def self.dylib_path_from_options(options)
-      inject_dylib = options.fetch(:inject_dylib, nil)
-      return nil if inject_dylib.nil?
-      unless inject_dylib.is_a? String
-        raise ArgumentError, "Expected :inject_dylib to be a path to a dylib, but found '#{inject_dylib}'"
-      end
-      dylib_path = File.expand_path(inject_dylib)
-      unless File.exist?(dylib_path)
-        raise "Cannot load dylib.  The file '#{dylib_path}' does not exist."
-      end
-      dylib_path
-    end
-
     # Returns the a default simulator to target.  This default needs to be one
     # that installed by default in the current Xcode version.
     #
@@ -364,7 +344,6 @@ Logfile: #{log_file}
         "iPhone 5s (8.0 Simulator)"
       end
     end
-
 
     def self.create_uia_pipe(repl_path)
       begin
