@@ -514,8 +514,8 @@ Query must contain at least one of these keys:
       end
 
       # @!visibility private
-      def spring_board_alert
-        request = request("springBoardAlert")
+      def springboard_alert
+        request = request("springboard-alert")
         client = http_client(http_options)
         response = client.get(request)
         hash = expect_300_response(response)
@@ -523,8 +523,8 @@ Query must contain at least one of these keys:
       end
 
       # @!visibility private
-      def spring_board_alert_visible?
-        !spring_board_alert.empty?
+      def springboard_alert_visible?
+        !springboard_alert.empty?
       end
 
       # @!visibility private
