@@ -1,5 +1,13 @@
 ## Change Log
 
+### 2.2.0
+
+* Fix retry with dylib injection and DeviceAgent #534 @MortenGregersen
+
+* DeviceAgent 1.0.0 a87ab2fe62a7c80aca6dd69e75b1bf923a87b2ef
+* iOSDeviceManager fe4942dc2ba245021f10ce7658235be31f25566b
+* FBSimulatorControl e3971e6d8b79b551ba8f5e05b72d355e18d7bc96
+
 ### 2.1.11
 
 #### DeviceAgent
