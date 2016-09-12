@@ -1231,10 +1231,10 @@ Please install it.
         end
 
         retries = 5
-        client = http_client(http_options)
-        request = request("session", {:bundleID => bundle_id})
 
         begin
+          client = http_client(http_options)
+          request = request("session", {:bundleID => bundle_id})
           response = client.post(request)
           RunLoop.log_debug("Launched #{bundle_id} on #{device}")
           RunLoop.log_debug("#{response.body}")
