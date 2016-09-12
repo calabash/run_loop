@@ -19,6 +19,7 @@
 
 #### Gem
 
+* Respond to DeviceAgent SpringBoard alert route changes #532
 * Support LPServer dylib injection on Simulators when running with
   DeviceAgent #531
 
