@@ -1358,6 +1358,15 @@ Valid values are: :down, :up, :right, :left, :bottom, :top
 ]
         end
       end
+
+      # @!visibility private
+      # Private method.  Do not call.
+      def _dismiss_springboard_alerts
+        request = request("dismiss-springboard-alerts")
+        client = http_client(http_options)
+        response = client.post(request)
+        expect_300_response(response)
+      end
     end
   end
 end
