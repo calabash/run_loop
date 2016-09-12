@@ -1,5 +1,27 @@
 ## Change Log
 
+### 2.1.11
+
+#### DeviceAgent
+
+* 0.1.2
+* SHA: 1ec8d02c54868559b301c218bbcd870cb16c23d9
+* Handle SpringBoard alerts: take 2 - update based on Chris F
+  changes + POST /dismiss-springboard-alerts #157
+
+#### iOSDeviceManager
+
+* SHA: fe4942dc2ba245021f10ce7658235be31f25566b
+
+#### FBSimulatorControl
+
+* SHA: e3971e6d8b79b551ba8f5e05b72d355e18d7bc96
+
+#### Gem
+
+* Support LPServer dylib injection on Simulators when running with
+  DeviceAgent #531
+
 ### 2.1.10
 
 #### DeviceAgent
