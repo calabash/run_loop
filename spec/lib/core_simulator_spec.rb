@@ -786,8 +786,7 @@ describe RunLoop::CoreSimulator do
         timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:install_app_timeout]
         expect(core_sim.simctl).to receive(:install).with(device, app, timeout).and_return(true)
 
-        # Experimental: don't wait after the install
-        expect(core_sim.device).not_to receive(:simulator_wait_for_stable_state)
+        expect(core_sim.device).to receive(:simulator_wait_for_stable_state)
 
         expect(core_sim).to receive(:installed_app_bundle_dir).and_return('/new/path')
 
