@@ -325,6 +325,59 @@ INSTANCE METHODS
       end
 
       # @!visibility private
+      def flat_tree
+        hash = tree
+        $tmp_hash = []
+
+        def ihash(h)
+          if h.key?("children")
+            puts "recursing..."
+
+            if h["type"] != "Other"
+              tmp_tmp_hash = {}
+              h.each_pair do |key, value|
+                if key != "children"
+                  puts "key : #{key} value : #{value}"
+                  tmp_tmp_hash[key] = value
+
+                end
+              end
+              $tmp_hash.push(tmp_tmp_hash)
+            end
+
+            if h["type"] == "Table"
+              puts "End?"
+              puts h["children"].count
+              h["children"].each do |item|
+                puts item['id'] unless item['id'].nil?
+                tmp_tmp_hash = {}
+                item.each_pair do |key, value|
+                  if key != "children"
+                    puts "key : #{key} value : #{value}"
+                    tmp_tmp_hash[key] = value
+
+                  end
+                end
+                $tmp_hash.push(tmp_tmp_hash)
+              end
+
+            end
+
+            if h["children"].count == 2
+              ihash(h["children"][1])
+            else
+              ihash(h["children"][0])
+            end
+
+          end
+        end
+        ihash(hash)
+
+        $tmp_hash
+      end
+
+
+      # @!visibility private
       def keyboard_visible?
         options = http_options
         parameters = { :type => "Keyboard" }
