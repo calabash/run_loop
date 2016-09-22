@@ -325,38 +325,26 @@ INSTANCE METHODS
       end
 
       # @!visibility private
-      # @param filter_view array of views to show
-      # example:
-      # filter_view = ["Other", "StatusBar", "Window", "Cell", "NavigationBar", "Application"]
-      def flat_tree(filter_view = [])
+      def flat_tree
         hash = tree
         tmp_array = []
-        reformat_hash(hash, tmp_array, filter_view)
+        reformat_hash(hash, tmp_array)
         tmp_array
       end
 
       # @!visibility private
-      def reformat_hash(h, tmp_array, filter_view = [])
+      def reformat_hash(h, tmp_array)
         tmp_tmp_hash = {}
-        if filter_view.include?(h["type"])
-          h.each_pair do |key, value|
-            if key != "children"
-              tmp_tmp_hash[key] = value
-            end
+        h.each_pair do |key, value|
+          if key != "children"
+            tmp_tmp_hash[key] = value
           end
-          tmp_array.push(tmp_tmp_hash)
-        elsif filter_view.empty?
-          h.each_pair do |key, value|
-            if key != "children"
-              tmp_tmp_hash[key] = value
-            end
-          end
-          tmp_array.push(tmp_tmp_hash)
         end
+        tmp_array.push(tmp_tmp_hash)
 
         if h.key?("children")
           h["children"].each do |item|
-            reformat_hash(item, tmp_array, filter_view)
+            reformat_hash(item, tmp_array)
           end
         end
       end
