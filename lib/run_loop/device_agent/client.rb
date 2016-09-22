@@ -327,55 +327,37 @@ INSTANCE METHODS
       # @!visibility private
       def flat_tree
         hash = tree
-        $tmp_hash = []
-
-        def ihash(h)
-          if h.key?("children")
-            puts "recursing..."
-
-            if h["type"] != "Other"
-              tmp_tmp_hash = {}
-              h.each_pair do |key, value|
-                if key != "children"
-                  puts "key : #{key} value : #{value}"
-                  tmp_tmp_hash[key] = value
-
-                end
-              end
-              $tmp_hash.push(tmp_tmp_hash)
-            end
-
-            if h["type"] == "Table"
-              puts "End?"
-              puts h["children"].count
-              h["children"].each do |item|
-                puts item['id'] unless item['id'].nil?
-                tmp_tmp_hash = {}
-                item.each_pair do |key, value|
-                  if key != "children"
-                    puts "key : #{key} value : #{value}"
-                    tmp_tmp_hash[key] = value
-
-                  end
-                end
-                $tmp_hash.push(tmp_tmp_hash)
-              end
-
-            end
-
-            if h["children"].count == 2
-              ihash(h["children"][1])
-            else
-              ihash(h["children"][0])
-            end
-
-          end
-        end
-        ihash(hash)
-
-        $tmp_hash
+        tmp_array = []
+        filter_view = ["Other", "StatusBar", "Window", "Cell", "NavigationBar", "Application"]
+        reformat_hash(hash, tmp_array, filter_view)
+        tmp_array
       end
 
+      # @!visibility private
+      def reformat_hash(h, tmp_array, filter_view = [])
+        tmp_tmp_hash = {}
+        if !filter_view.include?(h["type"])
+          h.each_pair do |key, value|
+            if key != "children"
+              tmp_tmp_hash[key] = value
+            end
+          end
+          tmp_array.push(tmp_tmp_hash)
+        elsif filter_view.empty?
+          h.each_pair do |key, value|
+            if key != "children"
+              tmp_tmp_hash[key] = value
+            end
+          end
+          tmp_array.push(tmp_tmp_hash)
+        end
+
+        if h.key?("children")
+          h["children"].each do |item|
+            reformat_hash(item, tmp_array, filter_view)
+          end
+        end
+      end
 
       # @!visibility private
       def keyboard_visible?
