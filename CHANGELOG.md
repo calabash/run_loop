@@ -1,5 +1,28 @@
 ## Change Log
 
+### 2.2.1
+
+The DeviceAgent stack contains fixes for:
+
+* iOSDeviceManager crashes during DeviceAgent install (resigning)
+* entering text causes app crashes
+
+#### DeviceAgent 1.0.1
+
+**3ad75a33442a38cf1688ba705802c7de92a9fe9a**
+
+* Server: branch on element and snapshot when computing visibility #163
+* Remove exception handling when computing visibility attributes in
+  JSONUtils #162
+* Server: resolve application before entering text #160
+
+#### iOSDeviceManager
+
+**de929cdbbb1f8b46f8c300fd6a8ea3f03aa4182c**
+
+* MobileProfile: synchronize NSMutableArray inserts #48
+* FBSimulatorControl SHA: 49f35f46eee79ec6ba8c1a744c256073e819cece
+
 ### 2.2.0
 
 * Fix retry with dylib injection and DeviceAgent #534 @MortenGregersen
