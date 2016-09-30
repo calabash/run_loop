@@ -86,7 +86,7 @@ describe RunLoop::Xcode do
     end
   end
 
-  describe "#version_gte_80?" do
+  describe "#version_gte_8?" do
     it "true" do
       expect(xcode).to receive(:version).and_return(xcode.v80,
                                                     RunLoop::Version.new("8.1"))
