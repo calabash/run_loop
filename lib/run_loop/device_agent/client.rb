@@ -325,6 +325,31 @@ INSTANCE METHODS
       end
 
       # @!visibility private
+      def flat_tree
+        hash = tree
+        tmp_array = []
+        reformat_hash(hash, tmp_array)
+        tmp_array
+      end
+
+      # @!visibility private
+      def reformat_hash(h, tmp_array)
+        tmp_tmp_hash = {}
+        h.each_pair do |key, value|
+          if key != "children"
+            tmp_tmp_hash[key] = value
+          end
+        end
+        tmp_array.push(tmp_tmp_hash)
+
+        if h.key?("children")
+          h["children"].each do |item|
+            reformat_hash(item, tmp_array)
+          end
+        end
+      end
+
+      # @!visibility private
       def keyboard_visible?
         options = http_options
         parameters = { :type => "Keyboard" }
