@@ -325,31 +325,6 @@ INSTANCE METHODS
       end
 
       # @!visibility private
-      def flat_tree
-        hash = tree
-        tmp_array = []
-        reformat_hash(hash, tmp_array)
-        tmp_array
-      end
-
-      # @!visibility private
-      def reformat_hash(h, tmp_array)
-        tmp_tmp_hash = {}
-        h.each_pair do |key, value|
-          if key != "children"
-            tmp_tmp_hash[key] = value
-          end
-        end
-        tmp_array.push(tmp_tmp_hash)
-
-        if h.key?("children")
-          h["children"].each do |item|
-            reformat_hash(item, tmp_array)
-          end
-        end
-      end
-
-      # @!visibility private
       def keyboard_visible?
         options = http_options
         parameters = { :type => "Keyboard" }
@@ -1381,6 +1356,33 @@ Could not coerce '#{position}' into a valid orientation.
 Valid values are: :down, :up, :right, :left, :bottom, :top
 
 ]
+        end
+      end
+
+      # @!visibility private
+      # Private method.  Do not call.
+      # Flattens the result of `tree`.
+      def _flatten_tree
+        result = []
+        _flatten_tree_helper(tree, result)
+        result
+      end
+
+      # @!visibility private
+      # Private method.  Do not call.
+      def _flatten_tree_helper(tree, accumulator_array)
+        element_in_tree = {}
+        tree.each_pair do |key, value|
+          if key != "children"
+            element_in_tree[key] = value
+          end
+        end
+        accumulator_array.push(element_in_tree)
+
+        if tree.key?("children")
+          tree["children"].each do |subtree|
+            _flatten_tree_helper(subtree, accumulator_array)
+          end
         end
       end
 

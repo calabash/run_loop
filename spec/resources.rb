@@ -308,6 +308,17 @@ class Resources
     end
   end
 
+  def device_agent_tree_hashes(name)
+    case name
+      when :preferences
+        path = File.join(resources_dir, "device-agent-tree", "preferences.json")
+      else
+        raise ArgumentError, "Unexpected tree hash name: '#{name}'"
+    end
+
+    JSON.parse(File.read(path))
+  end
+
   def simulator_with_sdk_test(sdk_test, simctl)
     simctl.simulators.shuffle.detect do |device|
       [
