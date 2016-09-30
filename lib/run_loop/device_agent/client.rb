@@ -84,8 +84,13 @@ module RunLoop
                                                                      options,
                                                                      app_details)
 
+        default_options = {
+            :xcode => xcode
+        }
+        merged_options = default_options.merge(options)
+
         if device.simulator? && app
-          core_sim = RunLoop::CoreSimulator.new(device, app, :xcode => xcode)
+          core_sim = RunLoop::CoreSimulator.new(device, app, merged_options)
           if reset_options
             core_sim.reset_app_sandbox
           end
