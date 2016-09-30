@@ -1361,6 +1361,33 @@ Valid values are: :down, :up, :right, :left, :bottom, :top
 
       # @!visibility private
       # Private method.  Do not call.
+      # Flattens the result of `tree`.
+      def _flatten_tree
+        result = []
+        _flatten_tree_helper(tree, result)
+        result
+      end
+
+      # @!visibility private
+      # Private method.  Do not call.
+      def _flatten_tree_helper(tree, accumulator_array)
+        element_in_tree = {}
+        tree.each_pair do |key, value|
+          if key != "children"
+            element_in_tree[key] = value
+          end
+        end
+        accumulator_array.push(element_in_tree)
+
+        if tree.key?("children")
+          tree["children"].each do |subtree|
+            _flatten_tree_helper(subtree, accumulator_array)
+          end
+        end
+      end
+
+      # @!visibility private
+      # Private method.  Do not call.
       def _dismiss_springboard_alerts
         request = request("dismiss-springboard-alerts")
         client = http_client(http_options)

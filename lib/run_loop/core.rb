@@ -316,14 +316,14 @@ Logfile: #{log_file}
     # Returns the a default simulator to target.  This default needs to be one
     # that installed by default in the current Xcode version.
     #
-    # For historical reasons, the most recent non-64b SDK should be used.
-    #
     # @param [RunLoop::Xcode] xcode Used to detect the current xcode
     #  version.
     def self.default_simulator(xcode=RunLoop::Xcode.new)
 
-      if xcode.version_gte_8?
-        "iPhone 6s (10.0)"
+      if xcode.version_gte_81?
+        "iPhone 7 (10.1)"
+      elsif xcode.version_gte_8?
+        "iPhone 7 (10.0)"
       elsif xcode.version_gte_73?
         "iPhone 6s (9.3)"
       elsif xcode.version_gte_72?
