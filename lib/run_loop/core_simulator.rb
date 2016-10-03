@@ -596,8 +596,12 @@ Command had no output
     timeout = DEFAULT_OPTIONS[:install_app_timeout]
     simctl.install(device, app, timeout)
 
-    # Experimental: don't wait after the install
-    # device.simulator_wait_for_stable_state
+    # On Xcode 7, we must wait.  The app might not be installed otherwise.  This
+    # is particularly true for iPads where the app bundle is installed, but
+    # SpringBoard does not detect the app has been installed.
+    #
+    # On Xcode 8, more testing is needed.
+    device.simulator_wait_for_stable_state
     installed_app_bundle_dir
   end
 

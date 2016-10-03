@@ -435,4 +435,20 @@ describe RunLoop::DeviceAgent::Client do
                          /to be :xcodebuild or :ios_device_manager/)
     end
   end
+
+  context "flattening the tree" do
+    it "returns a flat hash of GET /tree" do
+      hash = Resources.shared.device_agent_tree_hashes(:preferences)
+      expect(client).to receive(:tree).and_return(hash)
+
+      actual = client.send(:_flatten_tree)
+      expect(actual.count).to be == 61
+      top = actual[0]
+      expect(top["id"]).to be == "Settings"
+      bottom = actual[60]
+      expect(bottom["type"]).to be == "Other"
+
+      expect(actual.all? { |element| element["children"] == nil }).to be_truthy
+    end
+  end
 end

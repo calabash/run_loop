@@ -341,6 +341,8 @@ version: #{version}
     # the app and data container exists, but Springboard does not detect them.
     #
     # 6. 1 and 2 must hold for 1.5 seconds.
+    #
+    # TODO needs update for Xcode 8 + iOS 10 simulators.
     def simulator_wait_for_stable_state
 
       # How long to wait between stability checks.
@@ -374,7 +376,9 @@ version: #{version}
       # iOS 9 simulators have an additional boot screen.
       is_gte_ios9 = version >= RunLoop::Version.new('9.0')
 
-      # iOS 9 iPad simulators need additional time to stabilize.
+      # iOS 9 iPad simulators need additional time to stabilize, especially
+      # to ensure that `simctl install` notifies SpringBoard that a new app
+      # has been installed.
       is_ipad = simulator_is_ipad?
 
       timeout = SIM_STABLE_STATE_OPTIONS[:timeout]
