@@ -317,7 +317,7 @@ INSTANCE METHODS
 
       # @!visibility private
       def tree
-        options = http_options
+        options = tree_http_options
         request = request("tree")
         client = http_client(options)
         response = client.get(request)
@@ -1048,6 +1048,18 @@ PRIVATE
             :retries => (DEFAULTS[:http_timeout]/0.1).to_i
           }
         end
+      end
+
+      # @!visibility private
+      #
+      # Tree can take a very long time.
+      def tree_http_options
+        timeout = DEFAULTS[:http_timeout] * 6
+        {
+          :timeout => timeout,
+          :interval => 0.1,
+          :retries => (timeout/0.1).to_i
+        }
       end
 
       # @!visibility private
