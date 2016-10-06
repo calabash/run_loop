@@ -356,6 +356,26 @@ INSTANCE METHODS
 
       # @!visibility private
       #
+      # Some clients are performing keyboard checks _before_ calling #enter_text.
+      #
+      # 1. Removes duplicate check.
+      # 2. It turns out DeviceAgent query can be very slow.
+      def enter_text_without_keyboard_check(string)
+        options = http_options
+        parameters = {
+          :gesture => "enter_text",
+          :options => {
+            :string => string
+          }
+        }
+        request = request("gesture", parameters)
+        client = http_client(options)
+        response = client.post(request)
+        expect_300_response(response)
+      end
+
+      # @!visibility private
+      #
       # @example
       #  query({id: "login", :type "Button"})
       #
