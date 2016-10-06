@@ -590,6 +590,21 @@ module RunLoop
                       :key => 'AutomaticMinimizationEnabled',
                       :value => 0,
                       :type => 'integer'
+                },
+                :keyboard_caps_lock => {
+                    :key => 'KeyboardCapsLock',
+                    :value => 0,
+                    :type => 'integer'
+                },
+                :keyboard_autocapitalization => {
+                    :key => 'KeyboardAutocapitalization',
+                    :value => 0,
+                    :type => 'integer'
+                },
+                :keyboard_autocorrection => {
+                    :key => 'KeyboardAutocorrection',
+                    :value => 0,
+                    :type => 'integer'
                 }
           }
 
