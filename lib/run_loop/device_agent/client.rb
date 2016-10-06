@@ -317,7 +317,7 @@ INSTANCE METHODS
 
       # @!visibility private
       def tree
-        options = http_options
+        options = tree_http_options
         request = request("tree")
         client = http_client(options)
         response = client.get(request)
@@ -397,6 +397,12 @@ INSTANCE METHODS
       #  query({text: "\"To know is not enough.\""})
       #  query({text: %Q["To know is not enough."]})
       #
+      #  # Equivalent to Calabash query("*")
+      #  query({})
+      #
+      #  # Equivalent to Calabash query("all *")
+      #  query({all: true})
+      #
       # Querying for text with newlines is not supported yet.
       #
       # The query language supports the following keys:
@@ -469,45 +475,40 @@ INSTANCE METHODS
           raise ArgumentError, %Q[
 Unsupported key or keys found: '#{unknown_keys}'.
 
-Allowed keys for a query are: #{keys}
-
-]
-        end
-
-        has_any_key = (allowed_keys & uiquery.keys).any?
-        if !has_any_key
-          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
-          raise ArgumentError, %Q[
-Query does not contain any keysUnsupported key or keys found: '#{unknown_keys}'.
-
-Allowed keys for a query are: #{keys}
-
-]
-        end
-
-        parameters = merged_options.dup.tap { |hs| hs.delete(:all) }
-        if parameters.empty?
-          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
-          raise ArgumentError, %Q[
-Query must contain at least one of these keys:
+Allowed keys for a query are:
 
 #{keys}
 
 ]
         end
 
-        request = request("query", parameters)
-        client = http_client(http_options)
+        if _wildcard_query?(uiquery)
+          elements = _flatten_tree
+        else
+          parameters = merged_options.dup.tap { |hs| hs.delete(:all) }
+          if parameters.empty?
+            keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
+            raise ArgumentError, %Q[
+Query must contain at least one of these keys:
 
-        RunLoop.log_debug %Q[Sending query with parameters:
+#{keys}
+
+]
+          end
+
+          request = request("query", parameters)
+          client = http_client(http_options)
+
+          RunLoop.log_debug %Q[Sending query with parameters:
 
 #{JSON.pretty_generate(parameters)}
 
 ]
 
-        response = client.post(request)
-        hash = expect_300_response(response)
-        elements = hash["result"]
+          response = client.post(request)
+          hash = expect_300_response(response)
+          elements = hash["result"]
+        end
 
         if merged_options[:all]
           elements
@@ -1051,6 +1052,18 @@ PRIVATE
       end
 
       # @!visibility private
+      #
+      # Tree can take a very long time.
+      def tree_http_options
+        timeout = DEFAULTS[:http_timeout] * 6
+        {
+          :timeout => timeout,
+          :interval => 0.1,
+          :retries => (timeout/0.1).to_i
+        }
+      end
+
+      # @!visibility private
       def server_pid
         options = http_options
         request = request("pid")
@@ -1414,6 +1427,16 @@ Valid values are: :down, :up, :right, :left, :bottom, :top
         response = client.post(request)
         expect_300_response(response)
       end
+
+      # @!visibility private
+      # Private method.  Do not call.
+      def _wildcard_query?(uiquery)
+        return true if uiquery.empty?
+        return false if uiquery.count != 1
+
+        uiquery.has_key?(:all)
+      end
+
     end
   end
 end
