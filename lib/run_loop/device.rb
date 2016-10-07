@@ -144,7 +144,13 @@ removed (1.5.0).  It has been replaced by an options hash with two keys:
     # @raise [ArgumentError] If DEVICE_TARGET or options specify an identifier
     #  that does not match an iOS Simulator or physical device.
     def self.detect_device(options, xcode, simctl, instruments)
-      device = self.device_from_opts_or_env(options)
+      detected_device = RunLoop::DetectAUT::Xcode.detect_selected_device
+      if detected_device.is_a?(RunLoop::Device)
+        device = detected_device
+      else
+        device = self.device_from_opts_or_env(options)
+      end
+
 
       # Passed an instance of RunLoop::Device
       return device if device && device.is_a?(RunLoop::Device)
