@@ -337,6 +337,18 @@ INSTANCE METHODS
       end
 
       # @!visibility private
+      def clear_text()
+        options = http_options
+        parameters = {
+          :gesture => "clear_text"
+        }
+        request = request("gesture", parameters)
+        client = http_client(options)
+        response = client.post(request)
+        expect_300_response(response)
+      end
+
+      # @!visibility private
       def enter_text(string)
         if !keyboard_visible?
           raise RuntimeError, "Keyboard must be visible"
