@@ -110,8 +110,8 @@ removed (1.5.0).  It has been replaced by an options hash with two keys:
 
       instruments = merged_options[:instruments]
       simctl = merged_options[:simctl]
+      xcode = merged_options[:xcode]
 
-      xcode = RunLoop::Xcode.new
       simulator = simctl.simulators.detect do |sim|
         sim.instruments_identifier(xcode) == udid_or_name ||
               sim.udid == udid_or_name
