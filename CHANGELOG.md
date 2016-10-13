@@ -16,7 +16,7 @@ The DeviceAgent stack contains fixes for:
 * DeviceAgent::Client: add support for query("\*") and query("all \*") #550
 * DeviceAgent::Client: enter text without keyboard check #548
 
-#### DeviceAgent 1.0.1
+#### DeviceAgent 1.0.2
 
 **20fbc23ece073e5beea611a4aafae436ad78e54b**
 
