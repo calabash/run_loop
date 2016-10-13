@@ -9,6 +9,9 @@ The DeviceAgent stack contains fixes for:
 
 #### run-loop
 
+* DA:Client: increase timeouts for enter text calls #557
+* Forward launch options to CoreSimulator #556 @MortenGregersen
+* Gem: update the DeviceAgent stack to 1.0.2 #554
 * Adds clear text for device agent #551 (not public yet)
 * DeviceAgent::Client: add support for query("\*") and query("all \*") #550
 * DeviceAgent::Client: enter text without keyboard check #548
