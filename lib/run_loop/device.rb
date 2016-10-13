@@ -110,8 +110,8 @@ removed (1.5.0).  It has been replaced by an options hash with two keys:
 
       instruments = merged_options[:instruments]
       simctl = merged_options[:simctl]
+      xcode = merged_options[:xcode]
 
-      xcode = RunLoop::Xcode.new
       simulator = simctl.simulators.detect do |sim|
         sim.instruments_identifier(xcode) == udid_or_name ||
               sim.udid == udid_or_name
@@ -376,7 +376,10 @@ version: #{version}
       # iOS 9 simulators have an additional boot screen.
       is_gte_ios9 = version >= RunLoop::Version.new('9.0')
 
-      # iOS 9 iPad simulators need additional time to stabilize, especially
+      # Xcode 8 simulators do not need to wait for log file
+      is_xcode8 = RunLoop::Xcode.new.version_gte_8?
+
+      # iOS > 9 iPad simulators need additional time to stabilize, especially
       # to ensure that `simctl install` notifies SpringBoard that a new app
       # has been installed.
       is_ipad = simulator_is_ipad?
@@ -388,7 +391,12 @@ version: #{version}
       RunLoop.log_debug("Waiting for simulator to stabilize with timeout: #{timeout} seconds")
 
       current_dir_sha = simulator_data_directory_sha
-      current_log_sha = simulator_log_file_sha
+      if is_xcode8
+        current_log_sha = true
+      else
+        current_log_sha = simulator_log_file_sha
+      end
+
       is_stable = false
       waited_for_boot = false
       waited_for_ipad = false
@@ -396,7 +404,11 @@ version: #{version}
 
       while Time.now < poll_until do
         latest_dir_sha = simulator_data_directory_sha
-        latest_log_sha = simulator_log_file_sha
+        if is_xcode8
+          latest_log_sha = true
+        else
+          latest_log_sha = simulator_log_file_sha
+        end
 
         is_stable = [current_dir_sha == latest_dir_sha,
                      current_log_sha == latest_log_sha].all?

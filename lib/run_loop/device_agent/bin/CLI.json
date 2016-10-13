@@ -18,7 +18,7 @@
             "optionName" : "session_id",
             "info" : "Session ID for the XCUITest",
             "required" : false,
-            "default" : "BEEFBABE-FEED-BABE-BEEF-CAFEBEEFFACE"
+            "default" : "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE"
         },
         "-k" : {
             "longFlag" : "--keep-alive",

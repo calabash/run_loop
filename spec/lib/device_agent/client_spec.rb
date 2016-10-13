@@ -451,4 +451,19 @@ describe RunLoop::DeviceAgent::Client do
       expect(actual.all? { |element| element["children"] == nil }).to be_truthy
     end
   end
+
+  context "#_wildcard_query?" do
+    it "returns true if uiquery is empty" do
+      expect(client.send(:_wildcard_query?, {})).to be_truthy
+    end
+
+    it "returns true if uiquery contains only the :all key" do
+      expect(client.send(:_wildcard_query?, {:all => true})).to be_truthy
+      expect(client.send(:_wildcard_query?, {:all => false})).to be_truthy
+    end
+
+    it "return false otherwise" do
+      expect(client.send(:_wildcard_query?, {:type => "Button"})).to be_falsey
+    end
+  end
 end
