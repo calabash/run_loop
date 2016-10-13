@@ -337,8 +337,8 @@ INSTANCE METHODS
       end
 
       # @!visibility private
-      def clear_text()
-        options = http_options
+      def clear_text
+        options = enter_text_http_options
         parameters = {
           :gesture => "clear_text"
         }
@@ -353,7 +353,7 @@ INSTANCE METHODS
         if !keyboard_visible?
           raise RuntimeError, "Keyboard must be visible"
         end
-        options = http_options
+        options = enter_text_http_options
         parameters = {
           :gesture => "enter_text",
           :options => {
@@ -373,7 +373,7 @@ INSTANCE METHODS
       # 1. Removes duplicate check.
       # 2. It turns out DeviceAgent query can be very slow.
       def enter_text_without_keyboard_check(string)
-        options = http_options
+        options = enter_text_http_options
         parameters = {
           :gesture => "enter_text",
           :options => {
@@ -1067,6 +1067,18 @@ PRIVATE
       #
       # Tree can take a very long time.
       def tree_http_options
+        timeout = DEFAULTS[:http_timeout] * 6
+        {
+          :timeout => timeout,
+          :interval => 0.1,
+          :retries => (timeout/0.1).to_i
+        }
+      end
+
+      # @!visibility private
+      #
+      # A patch while we are trying to figure out what is wrong with text entry.
+      def enter_text_http_options
         timeout = DEFAULTS[:http_timeout] * 6
         {
           :timeout => timeout,
