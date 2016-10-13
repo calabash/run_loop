@@ -1,11 +1,42 @@
 ## Change Log
 
+### 2.2.2
+
+The DeviceAgent stack contains fixes for:
+
+* Fixes for pan gesture
+* Code signing improvements
+
+#### run-loop
+
+* Adds clear text for device agent #551 (not public yet)
+* DeviceAgent::Client: add support for query("\*") and query("all \*") #550
+* DeviceAgent::Client: enter text without keyboard check #548
+
+#### DeviceAgent 1.0.1
+
+**20fbc23ece073e5beea611a4aafae436ad78e54b**
+
+* Drag avoid inertia #167
+* Fix drag repetitions and correct duration from first point #164
+* Touch: increase touch duration by 0.01 #161
+
+#### iOSDeviceManager
+
+**cd24f2078ddac8a6435c819b8b980023636d6108**
+
+* Sign sim app bundles with the ad hoc signature '-' #63
+* Make entitlement match robust to different entitlement formats #58
+* Find usable codesign identity when not specified #53
+
 ### 2.2.1
 
 The DeviceAgent stack contains fixes for:
 
 * iOSDeviceManager crashes during DeviceAgent install (resigning)
 * entering text causes app crashes
+
+#### RunLoop
 
 * DeviceAgent: update stack to 1.0.1 #545
 * Support for Xcode 8.1 #543 @ark-konopacki
