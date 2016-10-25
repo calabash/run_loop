@@ -15,3 +15,19 @@ module AwesomePrint
     end
   end
 end
+
+module Kernel
+  # Patch for BasicObject inspections.
+  # https://github.com/awesome-print/awesome_print/pull/253
+  def ap(object, options = {})
+    if object_id
+      begin
+        puts object.ai(options)
+      rescue NoMethodError => _
+        puts "(Object doesn't support #inspect)"
+      end
+
+      object unless AwesomePrint.console?
+    end
+  end
+end
