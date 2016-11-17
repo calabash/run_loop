@@ -181,8 +181,8 @@ function isPrivacyAlert(alert) {
 
   var title = findAlertTitle(alert);
 
-    // Comment this out when capturing new regexes. See the comment below.
-  Log.output({"alert":title});
+  // Comment this out when capturing new regexes. See the comment below.
+  // Log.output({"alert":title});
 
   // When debugging or trying to capture the regexes for a new
   // localization, uncomment the logging below.
@@ -215,8 +215,8 @@ function isPrivacyAlert(alert) {
   // $ APP_LANG="nl" APP_LOCALE="nl" be cucumber -t @supported -p macmini
 
   // This is very slow, so only do this if you are trying to capture regexes.
-  var buttonNames = findAlertButtonNames(alert);
-  Log.output({"alert":{"title":title, "buttons":buttonNames, "capture":"YES"}});
+  // var buttonNames = findAlertButtonNames(alert);
+  // Log.output({"alert":{"title":title, "buttons":buttonNames, "capture":"YES"}});
 
   var answer;
   var expression;
