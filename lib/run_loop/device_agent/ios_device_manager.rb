@@ -134,20 +134,23 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
           end
         end
 
-        RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent");
+        start_test
+      end
 
-        args = ["start_test", "--device-id", device.udid]
+      def start_test
+        cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
+        args = ['start_test', '--device-id', device.udid]
 
         log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
         FileUtils.touch(log_file)
 
         env = {
-          "CLOBBER" => "1"
+            'CLOBBER' => '1'
         }
 
         options = {:out => log_file, :err => log_file}
-        RunLoop.log_unix_cmd("#{cmd} #{args.join(" ")} >& #{log_file}")
+        RunLoop.log_unix_cmd("#{cmd} #{args.join(' ')} >& #{log_file}")
 
         # Gotta keep the ios_device_manager process alive or the connection
         # to testmanagerd will fail.
