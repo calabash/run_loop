@@ -158,7 +158,18 @@ function frenchLocalizations() {
 function portugueseBrazilLocalizations() {
   return [
     ["Permitir", /acesso à sua localização/],
-    ["Permitir", /[Dd]eseja [Ee]nviar [Nn]otificações/]
+    ["Permitir", /acesso à sua localização/],
+    ["OK", /Deseja Ter Acesso às Suas Fotos/],
+    ["OK", /Deseja Ter Acesso aos Seus Contatos/],
+    ["OK", /Acesso ao Seu Calendário/],
+    ["OK", /Deseja Ter Acesso aos Seus Lembretes/],
+    ["OK", /Would Like to Access Your Motion Activity/],
+    ["OK", /Deseja Ter Acesso à Câmera/],
+    ["OK", /Deseja Ter Acesso às Suas Atividades de Movimento e Preparo Físico/],
+    ["OK", /Deseja Ter Acesso às Contas do Twitter/],
+    ["OK", /data available to nearby bluetooth devices/],
+    ["Permitir", /[Dd]eseja [Ee]nviar [Nn]otificações/],
+    ["OK", /[Dd]eseja [Ee]nviar-lhe [Nn]otificações/]  
   ];
 }
 
