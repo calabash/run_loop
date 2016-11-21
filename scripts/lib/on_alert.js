@@ -176,7 +176,7 @@ function localizations() {
   return [].concat(
      danishLocalizations(),
      dutchLocalizations(),
-     englishLocalizations(),
+     englishLocalizations(),n
      germanLocalizations(),
      russianLocalizations(),
      spanishLocalizations(),
@@ -192,7 +192,7 @@ function isPrivacyAlert(alert) {
   var title = findAlertTitle(alert);
 
   // Comment this out when capturing new regexes. See the comment below.
-  // Log.output({"alert":title});
+  Log.output({"alert":title});
 
   // When debugging or trying to capture the regexes for a new
   // localization, uncomment the logging below.
