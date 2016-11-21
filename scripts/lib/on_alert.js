@@ -176,7 +176,7 @@ function localizations() {
   return [].concat(
      danishLocalizations(),
      dutchLocalizations(),
-     englishLocalizations(),n
+     englishLocalizations(),
      germanLocalizations(),
      russianLocalizations(),
      spanishLocalizations(),
