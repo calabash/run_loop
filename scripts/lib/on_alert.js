@@ -155,6 +155,23 @@ function frenchLocalizations() {
   ];
 }
 
+function portugueseBrazilLocalizations() {
+  return [
+    ["Permitir", /acesso à sua localização/],
+    ["Permitir", /acesso à sua localização/],
+    ["OK", /Deseja Ter Acesso às Suas Fotos/],
+    ["OK", /Deseja Ter Acesso aos Seus Contatos/],
+    ["OK", /Acesso ao Seu Calendário/],
+    ["OK", /Deseja Ter Acesso aos Seus Lembretes/],
+    ["OK", /Would Like to Access Your Motion Activity/],
+    ["OK", /Deseja Ter Acesso à Câmera/],
+    ["OK", /Deseja Ter Acesso às Suas Atividades de Movimento e Preparo Físico/],
+    ["OK", /Deseja Ter Acesso às Contas do Twitter/],
+    ["OK", /data available to nearby bluetooth devices/],
+    ["OK", /[Dd]eseja [Ee]nviar-lhe [Nn]otificações/]  
+  ];
+}
+
 function localizations() {
   return [].concat(
      danishLocalizations(),
@@ -163,7 +180,8 @@ function localizations() {
      germanLocalizations(),
      russianLocalizations(),
      spanishLocalizations(),
-     frenchLocalizations()
+     frenchLocalizations(),
+     portugueseBrazilLocalizations() 
   );
 }
 
@@ -207,8 +225,8 @@ function isPrivacyAlert(alert) {
   // $ APP_LANG="nl" APP_LOCALE="nl" be cucumber -t @supported -p macmini
 
   // This is very slow, so only do this if you are trying to capture regexes.
-  //var buttonNames = findAlertButtonNames(alert);
-  //Log.output({"alert":{"title":title, "buttons":buttonNames, "capture":"YES"}});
+  // var buttonNames = findAlertButtonNames(alert);
+  // Log.output({"alert":{"title":title, "buttons":buttonNames, "capture":"YES"}});
 
   var answer;
   var expression;
