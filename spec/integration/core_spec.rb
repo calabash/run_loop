@@ -2,25 +2,6 @@ require 'tmpdir'
 
 describe RunLoop::Core do
 
-  describe '.automation_template' do
-
-    it 'ignores the TRACE_TEMPLATE env var if the tracetemplate does not exist' do
-      tracetemplate = '/tmp/some.tracetemplate'
-      expect(RunLoop::Environment).to receive(:trace_template).and_return(tracetemplate)
-      instruments = Resources.shared.instruments
-      xcode = Resources.shared.xcode
-
-      actual = RunLoop::Core.automation_template(instruments)
-      expect(actual).not_to be == nil
-      expect(actual).not_to be == tracetemplate
-      if xcode.beta?
-        expect(actual[/Automation.tracetemplate/, 0]).to be_truthy
-      else
-        expect(actual).to be == 'Automation'
-      end
-    end
-  end
-
   describe '.default_tracetemplate' do
     describe 'returns a template for' do
       xcode = Resources.shared.xcode
