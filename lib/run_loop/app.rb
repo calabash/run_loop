@@ -369,7 +369,7 @@ Bundle must:
     def font?(file)
       extension = File.extname(file)
 
-      extension == ".tff" || extension == ".otf"
+      extension == ".ttf" || extension == ".otf"
     end
   end
 end

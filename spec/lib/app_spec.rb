@@ -483,7 +483,7 @@ describe RunLoop::App do
 
   describe "#font?" do
     it "returns trues" do
-      expect(app.send(:font?, "path/to/my.tff")).to be_truthy
+      expect(app.send(:font?, "path/to/my.ttf")).to be_truthy
       expect(app.send(:font?, "path/to/my.otf")).to be_truthy
     end
 
