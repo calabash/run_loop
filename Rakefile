@@ -203,11 +203,42 @@ target = #{target}
     end
   end
 
+  def ensure_valid_core_simulator_service
+    max_tries = 3
+    valid = false
+    3.times do |try|
+      valid = valid_core_simulator_service?
+      break if valid
+      log_info("Invalid CoreSimulator service for active Xcode: try #{try + 1} of #{max_tries}")
+    end
+    if valid
+      log_info("CoreSimulatorService is valid")
+    else
+      puts "CoreSimulatorService is invalid, try running again."
+      exit 1
+    end
+  end
+
+  def valid_core_simulator_service?
+    require "run_loop/shell"
+    args = ["xcrun", "simctl", "help"]
+
+    begin
+      hash = RunLoop::Shell.run_shell_command(args)
+      hash[:exit_status] == 0 &&
+        !hash[:out][/Failed to locate a valid instance of CoreSimulatorService/]
+    rescue RunLoop::Shell::Error => _
+      false
+    end
+  end
+
   task :build do
     banner("Building")
 
     # Memoize base target directory
     device_agent_dir
+
+    ensure_valid_core_simulator_service
 
     env = {"DEVICEAGENT_PATH" => device_agent,
            "FBSIMCONTROL_PATH" => fbsimctl}
