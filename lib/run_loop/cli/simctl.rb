@@ -10,19 +10,22 @@ module RunLoop
 
       desc 'tail', 'Tail the log file of the booted simulator'
       def tail
-        tail_booted
+        tail_simulator_logs
       end
 
       no_commands do
-        def tail_booted
-          device = booted_device
-          if device.nil?
-            version = xcode.version
-            puts "No simulator for active Xcode (version #{version}) is booted."
-          else
-            log_file = device.simulator_log_file_path
-            exec('tail', *["-n", "5000", '-F', log_file])
-          end
+        def tail_simulator_logs
+          paths = simctl.simulators.map do |simulator|
+            log_file_path = simulator.simulator_log_file_path
+            if log_file_path && File.exist?(log_file_path)
+              log_file_path
+            else
+              nil
+            end
+          end.compact
+
+          args = ["-n", "1000", "-F"] + paths
+          exec("tail", *args)
         end
       end
 
