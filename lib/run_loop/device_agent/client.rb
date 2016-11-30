@@ -107,23 +107,6 @@ module RunLoop
           code_sign_identity = RunLoop::Environment::code_sign_identity
         end
 
-        if device.physical_device? && cbx_launcher.name == :ios_device_manager
-          if !code_sign_identity
-            raise RuntimeError, %Q[
-Targeting a physical devices requires a code signing identity.
-
-Rerun your test with:
-
-$ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
-
-To see the valid code signing identities on your device run:
-
-$ xcrun security find-identity -v -p codesigning
-
-]
-          end
-        end
-
         install_timeout = options.fetch(:device_agent_install_timeout,
                                                      DEFAULTS[:device_agent_install_timeout])
         shutdown_before_launch = options.fetch(:shutdown_device_agent_before_launch,
