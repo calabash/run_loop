@@ -29,6 +29,7 @@ module RunLoop
       # For example:
       #
       # RunLoop::DeviceAgent::Client::DEFAULTS[:http_timeout] = 60
+      # RunLoop::DeviceAgent::Client::DEFAULTS[:device_agent_install_timeout] = 120
       DEFAULTS = {
         :port => 27753,
         :simulator_ip => "127.0.0.1",
@@ -37,7 +38,7 @@ module RunLoop
 
         # Ignored in the XTC.
         # This key is subject to removal or changes
-        :device_agent_install_timeout => RunLoop::Environment.ci? ? 120 : 60,
+        :device_agent_install_timeout => RunLoop::Environment.ci? ? 120 : 90,
         # This value must always be false on the XTC.
         # This is should only be used by gem maintainers or very advanced users.
         :shutdown_device_agent_before_launch => false
