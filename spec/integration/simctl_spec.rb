@@ -2,7 +2,7 @@
 describe RunLoop::Simctl do
 
   let(:simctl) { Resources.shared.simctl }
-  let(:device) { Resources.shared.simctl.simulators.sample }
+  let(:device) { Resources.shared.default_simulator }
   let(:app) { RunLoop::App.new(Resources.shared.cal_app_bundle_path) }
   let(:core_sim) { RunLoop::CoreSimulator.new(device, app) }
 
