@@ -802,6 +802,8 @@ Timed out after #{timeout} seconds waiting for an alert to disappear.
         merged_options = WAIT_DEFAULTS.merge(options)
         result = wait_for_view(uiquery, merged_options)
 
+        # This is not quite right.  It is possible to get a false positive.
+        # If result does not have "value" or "label" and the text is nil
         candidates = [result["value"],
                       result["label"]]
         match = candidates.any? do |elm|
