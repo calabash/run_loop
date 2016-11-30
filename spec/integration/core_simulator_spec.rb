@@ -1,7 +1,5 @@
 describe RunLoop::CoreSimulator do
-  let(:simulator) do
-    Resources.shared.simctl.simulators.sample
-  end
+  let(:simulator) { Resources.shared.default_simulator }
 
   let(:app) { RunLoop::App.new(Resources.shared.cal_app_bundle_path) }
   let(:xcrun) { RunLoop::Xcrun.new }
