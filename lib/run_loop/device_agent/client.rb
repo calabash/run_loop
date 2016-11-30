@@ -111,12 +111,16 @@ module RunLoop
                                                      DEFAULTS[:device_agent_install_timeout])
         shutdown_before_launch = options.fetch(:shutdown_device_agent_before_launch,
                                                DEFAULTS[:shutdown_device_agent_before_launch])
+        aut_args = options.fetch(:args, [])
+        aut_env = options.fetch(:env, {})
 
         launcher_options = {
             code_sign_identity: code_sign_identity,
             device_agent_install_timeout: install_timeout,
             shutdown_device_agent_before_launch: shutdown_before_launch,
-            dylib_injection_details: dylib_injection_details
+            dylib_injection_details: dylib_injection_details,
+            aut_args: aut_args,
+            aut_env: aut_env
         }
 
         xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device,
@@ -1278,7 +1282,12 @@ Please install it.
 
         begin
           client = http_client(http_options)
-          request = request("session", {:bundleID => bundle_id})
+          request = request("session",
+                            {
+                              :bundleID => bundle_id,
+                              :launchArgs => launcher_options[:aut_args],
+                              :environment => launcher_options[:aut_env]
+                            })
           response = client.post(request)
           RunLoop.log_debug("Launched #{bundle_id} on #{device}")
           RunLoop.log_debug("#{response.body}")
