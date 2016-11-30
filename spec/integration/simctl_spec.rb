@@ -15,7 +15,7 @@ describe RunLoop::Simctl do
   end
 
   it "#wait_for_shutdown" do
-    expect(simctl.wait_for_shutdown(device, 1.0, 0)).to be_truthy
+    expect(simctl.wait_for_shutdown(device, 10.0, 0)).to be_truthy
   end
 
   it "handles the app life cycle" do
