@@ -307,10 +307,6 @@ INSTANCE METHODS
         expect_300_response(response)
       end
 
-      # TODO Legacy API; remove once this branch is merged:
-      # https://github.com/calabash/DeviceAgent.iOS/pull/133
-      alias_method :runtime, :device_info
-
       # @!visibility private
       def server_version
         options = http_options
