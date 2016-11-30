@@ -101,24 +101,21 @@ Expected :device_agent_install_timeout key in options:
 ]
           end
 
-          if !code_sign_identity
-            raise ArgumentError, %Q[
-Targeting a physical devices requires a code signing identity.
-
-Rerun your test with:
-
-$ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
-
-]
-          end
-
           options = {:log_cmd => true, :timeout => install_timeout}
-          args = [
-            cmd, "install",
-            "--device-id", device.udid,
-            "--app-bundle", runner.runner,
-            "--codesign-identity", code_sign_identity
-          ]
+          if code_sign_identity
+            args = [
+              cmd, "install",
+              "--device-id", device.udid,
+              "--app-bundle", runner.runner,
+              "--codesign-identity", code_sign_identity
+            ]
+          else
+            args = [
+              cmd, "install",
+              "--device-id", device.udid,
+              "--app-bundle", runner.runner
+            ]
+          end
 
           start = Time.now
           hash = run_shell_command(args, options)
