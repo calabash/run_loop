@@ -67,6 +67,15 @@ but binary does not exist at that path.
       end
 
       # @!visibility private
+      #
+      # In earlier implementations, the ios-device-manager.log was located in
+      # ~/.run-loop/xcuitest/ios-device-manager.log
+      #
+      # Now iOSDeviceManager logs almost everything to a fixed location.
+      #
+      # ~/.calabash/iOSDeviceManager/logs/current.log
+      #
+      # There is still occasional output to ~/.run-loop.
       def self.log_file
         path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
         FileUtils.touch(path) if !File.exist?(path)

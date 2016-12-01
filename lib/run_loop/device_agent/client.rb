@@ -1236,7 +1236,7 @@ device: #{device}
 
 To diagnose the problem tail the launcher log file:
 
-$ tail -1000 -F #{cbx_launcher.class.log_file}
+$ tail -1000 -F #{cbx_launcher_log_file}
 
 ]
         end
@@ -1414,6 +1414,17 @@ Could not coerce '#{position}' into a valid orientation.
 Valid values are: :down, :up, :right, :left, :bottom, :top
 
 ]
+        end
+      end
+
+      # @!visibility private
+      def cbx_launcher_log_file
+        if cbx_launcher.name == :ios_device_manager
+          # The location of the iOSDeviceManager logs has changed
+          File.join(RunLoop::Environment.user_home_directory,
+                    ".calabash", "iOSDeviceManager", "logs", "current.log")
+        else
+          cbx_launcher.class.log_file
         end
       end
 
