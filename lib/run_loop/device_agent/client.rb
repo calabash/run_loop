@@ -1280,13 +1280,18 @@ Please install it.
 
         retries = 5
 
+        # Launch arguments and environment arguments cannot be nil
+        # The public interface Client.run has a guard against this, but
+        # internal callers to do not.
+        aut_args = launcher_options.fetch(:aut_args, [])
+        aut_env = launcher_options.fetch(:aut_env, {})
         begin
           client = http_client(http_options)
           request = request("session",
                             {
                               :bundleID => bundle_id,
-                              :launchArgs => launcher_options[:aut_args],
-                              :environment => launcher_options[:aut_env]
+                              :launchArgs => aut_args,
+                              :environment => aut_env
                             })
           response = client.post(request)
           RunLoop.log_debug("Launched #{bundle_id} on #{device}")
