@@ -366,7 +366,7 @@ INSTANCE METHODS
         parameters = {
           :gesture => "enter_text",
           :options => {
-            :string => string
+            :string => string.to_s
           }
         }
         request = request("gesture", parameters)
