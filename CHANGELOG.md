@@ -1,5 +1,48 @@
 ## Change Log
 
+### 2.2.3
+
+#### DeviceAgent 1.0.3
+
+Built from tag [1.0.3](https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.0.3)
+
+* Add iTunes and Apple Music SpringBoard alerts #183
+* Add UITextView to TestApp #181
+* Use Testmanagerd `XCT_sendString` to enter text except on i386/armv7 devices #178
+* Fixes if statement in querying delete key for clear text #177
+* Add GET environment and arguments #176
+* Update SpringBoard alert definitions for iOS 10 #175
+* clear\_text should tap keyboard delete key #170
+
+DeviceAgent now dismisses the following US English SpringBoard alerts:
+
+* Sign In to iTunes
+* Access Apple Music And Your Media
+* Health Access
+* Enable Dictation
+* pt\_BR localizations - thanks @oscartanner
+
+#### iOSDeviceManager 1.0.3
+
+Built from tag [1.0.3](https://github.com/calabash/iOSDeviceManager/releases/tag/1.0.3)
+
+Includes [facebook/FBSimulatorControl 0.2.2 @
+f0cc887](https://github.com/calabash/FBSimulatorControl/commit/f0cc8874a9fc1474e278db7571f8c35b9f88a354).
+
+The corresponding calabash/FBSimulatorControl tag is
+[fb-0.2.2-at-f0cc887](https://github.com/calabash/FBSimulatorControl/releases/tag/fb-0.2.2-at-f0cc887-iOSDeviceManager-1.0.3)
+
+* Match array-based entitlements with * and <TEAM ID>. #95
+* FB Frameworks 0.2.2 with Sierra + Xcode >= 8.1 support #94
+* Fix timeout by using mach\_absolute\_time() #93
+* Fix ShasumProvider generating strings with missing characters. #92
+* Upload files to application's data container #91
+* Update to Facebook frameworks to 0.2.2 #89
+* Use CocoaLumberjack provided by FBSimulatorControl #85
+* Fix cannot find XCTBootstrap.framework compile time errors #83
+* Simplify how we get the common name for a certificate #82
+* Use CommonCrypto to get SHA1 instead of shelling out #80
+
 ### 2.2.2
 
 The DeviceAgent stack contains fixes for:
