@@ -28,6 +28,33 @@
             "default" : true
         }        
     },
+  "upload" : {
+    "-b" : {
+      "longFlag" : "--bundle-identifier",
+      "optionName" : "bundle-id",
+      "info" : "bundle identifier (e.g. com.my.app)",
+      "required" : true
+      },
+    "-d" : {
+      "longFlag" : "--device-id",
+      "optionName" : "device-identifier",
+      "info" : "iOS Simulator GUID or 40-digit physical device ID",
+      "required" : true
+    },
+    "-f" : {
+      "longFlag" : "--filepath",
+      "optionName" : "filepath",
+      "info" : "absolute path to file to be uploaded",
+      "required" : true
+    },
+    "-o" : {
+      "longFlag" : "--overwrite",
+      "optionName" : "overwrite",
+      "info" : "overwrite file if already in app container",
+      "required" : false,
+      "default" : false
+    }
+  },
     "is_installed" : {
         "-b" : {
             "longFlag" : "--bundle-identifier",
