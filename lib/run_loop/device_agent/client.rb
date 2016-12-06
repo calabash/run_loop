@@ -29,15 +29,16 @@ module RunLoop
       # For example:
       #
       # RunLoop::DeviceAgent::Client::DEFAULTS[:http_timeout] = 60
+      # RunLoop::DeviceAgent::Client::DEFAULTS[:device_agent_install_timeout] = 120
       DEFAULTS = {
         :port => 27753,
         :simulator_ip => "127.0.0.1",
-        :http_timeout => (RunLoop::Environment.ci? || RunLoop::Environment.xtc?) ? 120 : 10,
+        :http_timeout => (RunLoop::Environment.ci? || RunLoop::Environment.xtc?) ? 120 : 20,
         :route_version => "1.0",
 
         # Ignored in the XTC.
         # This key is subject to removal or changes
-        :device_agent_install_timeout => RunLoop::Environment.ci? ? 120 : 60,
+        :device_agent_install_timeout => RunLoop::Environment.ci? ? 120 : 90,
         # This value must always be false on the XTC.
         # This is should only be used by gem maintainers or very advanced users.
         :shutdown_device_agent_before_launch => false
@@ -106,33 +107,20 @@ module RunLoop
           code_sign_identity = RunLoop::Environment::code_sign_identity
         end
 
-        if device.physical_device? && cbx_launcher.name == :ios_device_manager
-          if !code_sign_identity
-            raise RuntimeError, %Q[
-Targeting a physical devices requires a code signing identity.
-
-Rerun your test with:
-
-$ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
-
-To see the valid code signing identities on your device run:
-
-$ xcrun security find-identity -v -p codesigning
-
-]
-          end
-        end
-
         install_timeout = options.fetch(:device_agent_install_timeout,
                                                      DEFAULTS[:device_agent_install_timeout])
         shutdown_before_launch = options.fetch(:shutdown_device_agent_before_launch,
                                                DEFAULTS[:shutdown_device_agent_before_launch])
+        aut_args = options.fetch(:args, [])
+        aut_env = options.fetch(:env, {})
 
         launcher_options = {
             code_sign_identity: code_sign_identity,
             device_agent_install_timeout: install_timeout,
             shutdown_device_agent_before_launch: shutdown_before_launch,
-            dylib_injection_details: dylib_injection_details
+            dylib_injection_details: dylib_injection_details,
+            aut_args: aut_args,
+            aut_env: aut_env
         }
 
         xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device,
@@ -307,10 +295,6 @@ INSTANCE METHODS
         expect_300_response(response)
       end
 
-      # TODO Legacy API; remove once this branch is merged:
-      # https://github.com/calabash/DeviceAgent.iOS/pull/133
-      alias_method :runtime, :device_info
-
       # @!visibility private
       def server_version
         options = http_options
@@ -362,7 +346,7 @@ INSTANCE METHODS
         parameters = {
           :gesture => "enter_text",
           :options => {
-            :string => string
+            :string => string.to_s
           }
         }
         request = request("gesture", parameters)
@@ -382,7 +366,7 @@ INSTANCE METHODS
         parameters = {
           :gesture => "enter_text",
           :options => {
-            :string => string
+            :string => string.to_s
           }
         }
         request = request("gesture", parameters)
@@ -802,6 +786,8 @@ Timed out after #{timeout} seconds waiting for an alert to disappear.
         merged_options = WAIT_DEFAULTS.merge(options)
         result = wait_for_view(uiquery, merged_options)
 
+        # This is not quite right.  It is possible to get a false positive.
+        # If result does not have "value" or "label" and the text is nil
         candidates = [result["value"],
                       result["label"]]
         match = candidates.any? do |elm|
@@ -1250,7 +1236,7 @@ device: #{device}
 
 To diagnose the problem tail the launcher log file:
 
-$ tail -1000 -F #{cbx_launcher.class.log_file}
+$ tail -1000 -F #{cbx_launcher_log_file}
 
 ]
         end
@@ -1294,9 +1280,19 @@ Please install it.
 
         retries = 5
 
+        # Launch arguments and environment arguments cannot be nil
+        # The public interface Client.run has a guard against this, but
+        # internal callers to do not.
+        aut_args = launcher_options.fetch(:aut_args, [])
+        aut_env = launcher_options.fetch(:aut_env, {})
         begin
           client = http_client(http_options)
-          request = request("session", {:bundleID => bundle_id})
+          request = request("session",
+                            {
+                              :bundleID => bundle_id,
+                              :launchArgs => aut_args,
+                              :environment => aut_env
+                            })
           response = client.post(request)
           RunLoop.log_debug("Launched #{bundle_id} on #{device}")
           RunLoop.log_debug("#{response.body}")
@@ -1418,6 +1414,17 @@ Could not coerce '#{position}' into a valid orientation.
 Valid values are: :down, :up, :right, :left, :bottom, :top
 
 ]
+        end
+      end
+
+      # @!visibility private
+      def cbx_launcher_log_file
+        if cbx_launcher.name == :ios_device_manager
+          # The location of the iOSDeviceManager logs has changed
+          File.join(RunLoop::Environment.user_home_directory,
+                    ".calabash", "iOSDeviceManager", "logs", "current.log")
+        else
+          cbx_launcher.class.log_file
         end
       end
 

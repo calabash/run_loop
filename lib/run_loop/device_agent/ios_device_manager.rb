@@ -67,6 +67,15 @@ but binary does not exist at that path.
       end
 
       # @!visibility private
+      #
+      # In earlier implementations, the ios-device-manager.log was located in
+      # ~/.run-loop/xcuitest/ios-device-manager.log
+      #
+      # Now iOSDeviceManager logs almost everything to a fixed location.
+      #
+      # ~/.calabash/iOSDeviceManager/logs/current.log
+      #
+      # There is still occasional output to ~/.run-loop.
       def self.log_file
         path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
         FileUtils.touch(path) if !File.exist?(path)
@@ -101,24 +110,21 @@ Expected :device_agent_install_timeout key in options:
 ]
           end
 
-          if !code_sign_identity
-            raise ArgumentError, %Q[
-Targeting a physical devices requires a code signing identity.
-
-Rerun your test with:
-
-$ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
-
-]
-          end
-
           options = {:log_cmd => true, :timeout => install_timeout}
-          args = [
-            cmd, "install",
-            "--device-id", device.udid,
-            "--app-bundle", runner.runner,
-            "--codesign-identity", code_sign_identity
-          ]
+          if code_sign_identity
+            args = [
+              cmd, "install",
+              "--device-id", device.udid,
+              "--app-bundle", runner.runner,
+              "--codesign-identity", code_sign_identity
+            ]
+          else
+            args = [
+              cmd, "install",
+              "--device-id", device.udid,
+              "--app-bundle", runner.runner
+            ]
+          end
 
           start = Time.now
           hash = run_shell_command(args, options)
