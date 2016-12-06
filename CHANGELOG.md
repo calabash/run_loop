@@ -2,6 +2,17 @@
 
 ### 2.2.3
 
+* Update to DeviceAgent stack to 1.0.3 #572
+* CODE\_SIGN\_IDENTITY is not longer required #570
+* Increase DeviceAgent timeouts #569
+* DA:Client: launch AUT with args and environment #567
+* run-loop simctl tail shows all simulator logs #566
+* App: fix TrueType font extension to avoid otool failures #565
+* Added pt-BR translations for permissions alerts #563 @oscartanner
+* Support Xcode 8.2 #561
+* Turns enter text input parameter to string for numeric keyboards #560
+* Gem: patch awesome\_print for BasicObject #559
+
 #### DeviceAgent 1.0.3
 
 Built from tag [1.0.3](https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.0.3)
