@@ -253,8 +253,6 @@ target = #{target}
       Dir.chdir(File.join("Distribution", "dependencies")) do
         ditto(File.join("bin", "iOSDeviceManager"), bin)
         log_info("Installed #{bin}")
-        ditto(File.join("bin", "CLI.json"), cli_json)
-        log_info("Installed #{cli_json}")
         ditto_zip("Frameworks", frameworks_zip)
         log_info("Installed #{frameworks_zip}")
         ditto_zip(File.join("app", "DeviceAgent-Runner.app"), app_zip)
