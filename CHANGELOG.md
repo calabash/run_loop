@@ -1,5 +1,31 @@
 ## Change Log
 
+### 2.2.4
+
+DeviceAgent 1.0.4 can dismiss SpringBoard alerts in any orientation.
+
+* DeviceAgent: no longer requires CLI.json #574
+
+#### DeviceAgent 1.0.4
+
+Built from tag [1.0.4](https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.0.4)
+
+DeviceAgent can dismiss SpringBoard alerts in any orientation.
+
+* Replace NSRunLoop runUntilDate: with CFRunLoopRunInMode to avoid
+  unreliable NSDate behaviors #187
+* SpringBoard: use XCUIElement#tap to dismiss alerts #186
+* DeviceAgent: generate and distribute a dSYM #185
+
+#### iOSDeviceManager 1.0.4
+
+FBSimulatorControl was not updated.  See the 1.0.3 notes for details.
+
+* Remove DeviceAgent.iOS.Deployment #99
+* CLI.json is no longer necessary for the iOSDeviceManager binary #96
+
+Built from tag [1.0.4](https://github.com/calabash/iOSDeviceManager/releases/tag/1.0.4)
+
 ### 2.2.3
 
 * Update to DeviceAgent stack to 1.0.3 #572
