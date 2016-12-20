@@ -124,16 +124,9 @@ Could not find repo #{name}.  Checked these two directories:
 
 To specify a non-standard location for these repositories, use:
 
-*  FBSIMCONTROL_PATH=path/to/FBSimulatorControl
 *   DEVICEAGENT_PATH=path/to/DeviceAgent.iOS
 * IOS_DEVICE_MANAGER=path/to/iOSDeviceManager
 ]
-  end
-
-  def fbsimctl
-    path = ENV["FBSIMCTL"] || expect_path_to_repo("FBSimulatorControl")
-    log_info "Using FBSIMCONTROL_PATH=#{path}"
-    path
   end
 
   def device_agent
@@ -240,8 +233,8 @@ target = #{target}
 
     ensure_valid_core_simulator_service
 
-    env = {"DEVICEAGENT_PATH" => device_agent,
-           "FBSIMCONTROL_PATH" => fbsimctl}
+    env = {"DEVICEAGENT_PATH" => device_agent}
+
     Dir.chdir(ios_device_manager) do
       result = system(env, "make", "dependencies")
       if !result
