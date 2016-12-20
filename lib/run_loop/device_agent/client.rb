@@ -784,23 +784,52 @@ Timed out after #{timeout} seconds waiting for an alert to disappear.
       # @!visibility private
       def wait_for_text_in_view(text, uiquery, options={})
         merged_options = WAIT_DEFAULTS.merge(options)
-        result = wait_for_view(uiquery, merged_options)
 
-        # This is not quite right.  It is possible to get a false positive.
-        # If result does not have "value" or "label" and the text is nil
-        candidates = [result["value"],
-                      result["label"]]
-        match = candidates.any? do |elm|
-          elm == text
-        end
-        if !match
-          fail(%Q[
+        begin
+          wait_for("TMP", merged_options) do
+            view = query(uiquery).first
 
-Expected to find '#{text}' as a 'value' or 'label' in
+            if view
+              # Guard against this edge case:
+              #
+              # Text is "" and value or label keys do not exist in view which
+              # implies that value or label was the empty string (see the
+              # DeviceAgent JSONUtils and Facebook macros).
+              if text == "" || text == nil
+                view["value"] == nil && view["label"] == nil
+              else
+                [view["value"], view["label"]].any? { |elm| elm == text }
+              end
+            else
+              false
+            end
+          end
+        rescue merged_options[:exception_class] => e
+          view = query(uiquery)
+          if !view
+            message = %Q[
+Timed out wait after #{merged_options[:timeout]} seconds waiting for a view to match:
 
-#{JSON.pretty_generate(result)}
+  #{uiquery}
 
-])
+]
+          else
+            message = %Q[
+Timed out after #{merged_options[:timeout]} seconds waiting for a view matching:
+
+  '#{uiquery}'
+
+to have 'value' or 'label' matching text:
+
+  '#{text}'
+
+Found:
+
+#{JSON.pretty_generate(view)}
+
+]
+          end
+          fail(merged_options[:exception_class], message)
         end
       end
 
