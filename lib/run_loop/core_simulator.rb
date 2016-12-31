@@ -70,12 +70,12 @@ class RunLoop::CoreSimulator
               # Not yet.
               # "com.apple.CoreSimulator.SimVerificationService",
 
-              'SimulatorBridge',
-              'configd_sim',
-              'CoreSimulatorBridge',
+              "SimulatorBridge",
+              "configd_sim",
+              "CoreSimulatorBridge",
 
               # Xcode 7
-              'ids_simd'
+              "ids_simd"
         ]
 
   # @!visibility private
