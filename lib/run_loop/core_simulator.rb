@@ -31,9 +31,6 @@ class RunLoop::CoreSimulator
   WAIT_FOR_SIMULATOR_STATE_INTERVAL = 0.1
 
   # @!visibility private
-  @@simulator_pid = nil
-
-  # @!visibility private
   attr_reader :app
 
   # @!visibility private
@@ -133,8 +130,6 @@ class RunLoop::CoreSimulator
       send_term_first = process_details[1]
       self.term_or_kill(process_name, send_term_first)
     end
-
-    self.simulator_pid = nil
   end
 
   # @!visibility private
@@ -280,16 +275,6 @@ class RunLoop::CoreSimulator
     installed
   end
 
-  # @!visibility private
-  def self.simulator_pid
-    @@simulator_pid
-  end
-
-  # @!visibility private
-  def self.simulator_pid=(pid)
-    @@simulator_pid = pid
-  end
-
   # @param [RunLoop::Device] device The device.
   # @param [RunLoop::App] app The application.
   # @param [Hash] options Controls the behavior of this class.
@@ -297,17 +282,9 @@ class RunLoop::CoreSimulator
   # @option options :xcode An instance of Xcode to use
   #  simulators in the initialize method.
   def initialize(device, app, options={})
-    defaults = { :quit_sim_on_init => true }
-    merged = defaults.merge(options)
-
     @app = app
     @device = device
-
-    @xcode = merged[:xcode]
-
-    if merged[:quit_sim_on_init]
-      RunLoop::CoreSimulator.quit_simulator
-    end
+    @xcode = options[:xcode]
 
     # stdio.pipe - can cause problems finding the SHA of a simulator
     rm_instruments_pipe
@@ -339,20 +316,26 @@ class RunLoop::CoreSimulator
       :wait_for_stable => true
     }.merge(options)
 
-    if running_simulator_pid != nil
-      # There is a running simulator.
+    running_sim_details = running_simulator_details
 
+    # Is there a running simulator?
+    if running_sim_details[:pid]
       # Did we launch it?
-      if running_simulator_pid == RunLoop::CoreSimulator.simulator_pid
-        # Nothing to do, we already launched the simulator.
-        return
-      else
-        # We did not launch this simulator; quit it.
-        RunLoop::CoreSimulator.quit_simulator
+      if running_sim_details[:launched_by_run_loop]
+        # Is running simulator the correct simulator?
+        device.update_simulator_state
+        if device.state == "Booted"
+          # Nothing to do, we already launched the simulator.
+          return
+        end
       end
     end
 
-    args = ['open', '-g', '-a', sim_app_path, '--args', '-CurrentDeviceUDID', device.udid]
+    # We did not launch this simulator; quit it.
+    RunLoop::CoreSimulator.quit_simulator
+
+    args = ['open', '-g', '-a', sim_app_path, '--args',
+            '-CurrentDeviceUDID', device.udid, "LAUNCHED_BY_RUN_LOOP"]
 
     RunLoop.log_debug("Launching #{device} with:")
     RunLoop.log_unix_cmd("xcrun #{args.join(' ')}")
@@ -371,9 +354,6 @@ class RunLoop::CoreSimulator
 
     elapsed = Time.now - start_time
     RunLoop.log_debug("Took #{elapsed} seconds to launch the simulator")
-
-    # Keep track of the pid so we can know if we have already launched this sim.
-    RunLoop::CoreSimulator.simulator_pid = running_simulator_pid
 
     true
   end
@@ -527,23 +507,15 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   # @return [String] The path to the simulator app for the current version of
   #  Xcode.
   def sim_app_path
-    @sim_app_path ||= lambda {
-      dev_dir = xcode.developer_dir
-      if xcode.version_gte_7?
-        "#{dev_dir}/Applications/Simulator.app"
-      else
-        "#{dev_dir}/Applications/iOS Simulator.app"
-      end
-    }.call
+    @sim_app_path ||= begin
+      "#{xcode.developer_dir}/Applications/#{sim_name}.app"
+    end
   end
 
   # @!visibility private
-  # Returns the current Simulator pid.
   #
-  # @note Will only search for the current Xcode simulator.
-  #
-  # @return [Integer, nil] The pid as a String or nil if no process is found.
-  def running_simulator_pid
+  # @return [Hash] details about the running simulator.
+  def running_simulator_details
     process_name = "MacOS/#{sim_name}"
 
     args = ["ps", "x", "-o", "pid,command"]
@@ -552,34 +524,42 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
     exit_status = hash[:exit_status]
     if exit_status != 0
       raise RuntimeError,
-%Q{Could not find the pid of #{sim_name} with:
+%Q{Could not find the process details of #{sim_name} with:
 
 #{args.join(" ")}
 
-Command exited with status #{exit_status}
-Message: '#{hash[:out]}'
+Command exited with status: #{exit_status}
+
+  '#{hash[:out]}'
 }
     end
 
     if hash[:out].nil? || hash[:out] == ""
        raise RuntimeError,
-%Q{Could not find the pid of #{sim_name} with:
+%Q{Could not find the process details of #{sim_name} with:
 
 #{args.join(" ")}
 
-Command had no output
+Command had no output.
 }
     end
 
     lines = hash[:out].split("\n")
 
     match = lines.detect do |line|
-      line[/#{process_name}/, 0]
+      line[/#{process_name}/]
     end
 
-    return nil if match.nil?
+    return {} if match.nil?
 
-    match.split(" ").first.to_i
+    hash = {}
+
+    pid = match.split(" ").first.to_i
+    hash[:pid] = pid
+
+    hash[:launched_by_run_loop] = match[/LAUNCHED_BY_RUN_LOOP/]
+
+    hash
   end
 
   # @!visibility private
