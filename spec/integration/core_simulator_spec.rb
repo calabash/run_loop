@@ -37,38 +37,29 @@ describe RunLoop::CoreSimulator do
     it 'can launch the simulator' do
       expect(core_sim.launch_simulator).to be_truthy
 
-      pid = RunLoop::CoreSimulator.simulator_pid
-      running = core_sim.send(:running_simulator_pid)
+      pid = core_sim.send(:running_simulator_details)[:pid]
 
-      expect(pid).to be == running
+      expect(pid).to be_truthy
     end
 
     it 'does not relaunch if the simulator is already running' do
       core_sim.launch_simulator
 
+      pid = core_sim.send(:running_simulator_details)[:pid]
       expect(Process).not_to receive(:spawn)
 
       core_sim.launch_simulator
 
-      pid = RunLoop::CoreSimulator.simulator_pid
-      running = core_sim.send(:running_simulator_pid)
-
-      expect(pid).to be == running
+      expect(core_sim.send(:running_simulator_details)[:pid]).to be == pid
     end
 
     it 'quits the simulator if it is not the same' do
       core_sim.launch_simulator
 
-      running = core_sim.send(:running_simulator_pid)
-      RunLoop::CoreSimulator.class_variable_set(:@@simulator_pid, running - 1)
-
+      expect(core_sim).to receive(:running_simulator_details).and_return({:pid => 1})
       expect(Process).to receive(:spawn).and_call_original
 
       core_sim.launch_simulator
-
-      pid = RunLoop::CoreSimulator.simulator_pid
-      running = core_sim.send(:running_simulator_pid)
-      expect(pid).to be == running
     end
   end
 
@@ -88,10 +79,6 @@ describe RunLoop::CoreSimulator do
       RunLoop::CoreSimulator.quit_simulator
 
       expect(core_sim.launch).to be_truthy
-
-      pid = RunLoop::CoreSimulator.simulator_pid
-      running = core_sim.send(:running_simulator_pid)
-      expect(pid).to be == running
     end
   end
 
