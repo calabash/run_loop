@@ -3,6 +3,10 @@ module RunLoop
   # A class for waiting on processes.
   class ProcessWaiter
 
+    require "run_loop/shell"
+
+    include RunLoop::Shell
+
     attr_reader :process_name
 
     def initialize(process_name, options={})
@@ -13,9 +17,21 @@ module RunLoop
     # Collect a list of Integer pids.
     # @return [Array<Integer>] An array of integer pids for the `process_name`
     def pids
-      process_info = `ps x -o pid,comm | grep -v grep | grep '#{process_name}'`
-      process_array = process_info.split("\n")
-      process_array.map { |process| process.split(' ').first.strip.to_i }
+      cmd = ["pgrep", "-x", process_name]
+      hash = run_shell_command(cmd)
+      out = hash[:out]
+
+      if out.nil? || out == ""
+        []
+      else
+        out.split($-0).map do |pid|
+          if pid.nil? || pid == ""
+            nil
+          else
+            pid.to_i
+          end
+        end.compact
+      end
     end
 
     # Is the `process_name` a running?
@@ -57,7 +73,6 @@ module RunLoop
       end
       there_are_n
     end
-
 
     # Wait for `process_name` to start.
     def wait_for_any
