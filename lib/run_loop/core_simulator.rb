@@ -93,7 +93,7 @@ class RunLoop::CoreSimulator
               ['iOS Simulator.app', true],
 
               # Xcode >= 7.0
-              ['Simulator.app', true],
+              ["Simulator", true],
 
               # Multiple launchd_sim processes have been causing problems.  This
               # is a first pass at investigating what it would mean to kill the
