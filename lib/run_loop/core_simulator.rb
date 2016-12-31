@@ -508,8 +508,9 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
         killed = term.kill_process
       end
 
-      unless killed
-        RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
+      if !killed
+        term = RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
+        term.kill_process
       end
     end
   end
