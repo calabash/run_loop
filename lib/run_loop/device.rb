@@ -322,67 +322,8 @@ version: #{version}
     end
 
     # @!visibility private
-    #
-    # Waits for three conditions:
-    #
-    # 1. The SHA sum of the simulator data/ directory to be stable.
-    # 2. No more log messages are begin generated.
-    # 3. 1 and 2 must hold for 1.5 seconds.
-    #
-    # When the simulator version is >= iOS 9, two more conditions are added to
-    # get past the iOS 9+ boot screen.
-    #
-    # 4. Wait for com.apple.audio.SystemSoundServer-iOS-Simulator process to
-    #    start.
-    # 5. 1 and 2 must hold for 1.5 seconds.
-    #
-    # When the simulator version is >= iOS 9 and the device is an iPad another
-    # condition is added because simctl fails to correctly install applications;
-    # the app and data container exists, but Springboard does not detect them.
-    #
-    # 6. 1 and 2 must hold for 1.5 seconds.
-    #
-    # TODO needs update for Xcode 8 + iOS 10 simulators.
     def simulator_wait_for_stable_state
-
-      # How long to wait between stability checks.
-      # Shorter than this gives false positives.
-      delay = 0.5
-
-      # How many times to wait for stable state.
-      max_stable_count = 3
-
-      # How long to wait for iOS 9 boot screen.
-      boot_screen_wait_options = {
-        :max_boot_screen_wait => 10,
-        :raise_on_timeout => false
-      }
-
-      # How much additional time to wait for iOS 9+ iPads.
-      #
-      # Installing and launching on iPads is problematic.
-      # Sometimes the app is installed, but SpringBoard does
-      # not recognize that the app is installed even though
-      # simctl says that it is.
-      additional_ipad_delay = delay * 2
-
-      # Adjust for CI environments
-      if RunLoop::Environment.ci?
-        max_stable_count = 5
-        boot_screen_wait_options[:max_boot_screen_wait] = 20
-        additional_ipad_delay = delay * 4
-      end
-
-      # iOS 9 simulators have an additional boot screen.
-      is_gte_ios9 = version >= RunLoop::Version.new('9.0')
-
-      # Xcode 8 simulators do not need to wait for log file
-      is_xcode8 = RunLoop::Xcode.new.version_gte_8?
-
-      # iOS > 9 iPad simulators need additional time to stabilize, especially
-      # to ensure that `simctl install` notifies SpringBoard that a new app
-      # has been installed.
-      is_ipad = simulator_is_ipad?
+      required = simulator_required_child_processes
 
       timeout = SIM_STABLE_STATE_OPTIONS[:timeout]
       now = Time.now
@@ -390,51 +331,32 @@ version: #{version}
 
       RunLoop.log_debug("Waiting for simulator to stabilize with timeout: #{timeout} seconds")
 
-      current_dir_sha = simulator_data_directory_sha
-      if is_xcode8
-        current_log_sha = true
-      else
-        current_log_sha = simulator_log_file_sha
+      while !required.empty? && Time.now < poll_until do
+        required = required.map do |process_name|
+          if simulator_process_running?(process_name)
+            nil
+          else
+            process_name
+          end
+        end.compact
+        sleep(0.5)
       end
 
       is_stable = false
-      waited_for_boot = false
-      waited_for_ipad = false
-      stable_count = 0
-
-      while Time.now < poll_until do
-        latest_dir_sha = simulator_data_directory_sha
-        if is_xcode8
-          latest_log_sha = true
-        else
-          latest_log_sha = simulator_log_file_sha
-        end
-
-        is_stable = [current_dir_sha == latest_dir_sha,
-                     current_log_sha == latest_log_sha].all?
-
-        if is_stable
-          stable_count = stable_count + 1
-          if stable_count == max_stable_count
-            if is_gte_ios9 && !waited_for_boot
-              process_name = "com.apple.audio.SystemSoundServer-iOS-Simulator"
-              RunLoop::ProcessWaiter.new(process_name, boot_screen_wait_options).wait_for_any
-              waited_for_boot = true
-              stable_count = 0
-            elsif is_gte_ios9 && is_ipad && !waited_for_ipad
-              RunLoop.log_debug("Waiting additional time for iOS 9 iPad to stabilize")
-              sleep(additional_ipad_delay)
-              waited_for_ipad = true
-              stable_count = 0
-            else
-              break
-            end
+      if required.empty?
+        elapsed = Time.now - now
+        RunLoop.log_debug("All required simulator processes have started after #{elapsed}")
+        current_dir_sha = simulator_data_directory_sha
+        while Time.now < poll_until do
+          latest_dir_sha = simulator_data_directory_sha
+          is_stable = current_dir_sha == latest_dir_sha
+          if is_stable
+            RunLoop.log_debug("Simulator data directory has stabilized")
+            break
+          else
+            sleep(1.0)
           end
         end
-
-        current_dir_sha = latest_dir_sha
-        current_log_sha = latest_log_sha
-        sleep(delay)
       end
 
       if is_stable
@@ -541,9 +463,18 @@ failed with this output:
       simulator_languages
     end
 
+=begin
+  PRIVATE METHODS
+=end
+
     private
 
-    attr_reader :pbuddy, :simctl, :xcrun
+    attr_reader :pbuddy, :simctl, :xcrun, :xcode
+
+    # @!visibility private
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
 
     # @!visibility private
     def xcrun
@@ -608,6 +539,76 @@ failed with this output:
         `killall udidetect &> /dev/null`
       end
       udid
+    end
+
+    # @!visibility private
+    def simulator_required_child_processes
+      @simulator_required_child_processes ||= begin
+        required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
+        if xcode.version_gte_8?
+          required << "medialibraryd"
+        end
+
+        if simulator_is_ipad? && version.major == 9
+          required << "com.apple.audio.SystemSoundServer-iOS-Simulator"
+        end
+
+        required
+      end
+    end
+
+    # @!visibility private
+    def simulator_launchd_sim_pid
+      waiter = RunLoop::ProcessWaiter.new("launchd_sim")
+      waiter.wait_for_any
+
+      return nil if !waiter.running_process?
+
+      pid = nil
+
+      waiter.pids.each do |launchd_sim_pid|
+        cmd = ["ps", "x", "-o", "pid,command", launchd_sim_pid.to_s]
+        hash = run_shell_command(cmd)
+        out = hash[:out]
+        process_line = out.split($-0)[1]
+        if !process_line || process_line == ""
+          false
+        else
+          pid = process_line.split(" ").first.strip
+          if process_line[/#{udid}/] == nil
+            RunLoop.log_debug("Terminating launchd_sim process with pid #{pid}")
+            RunLoop::ProcessTerminator.new(pid, "KILL", "launchd_sim").kill_process
+            pid = nil
+          end
+        end
+      end
+      pid
+    end
+
+    # @!visibility private
+    def process_parent_is_launchd_sim?(pid)
+      launchd_sim_pid = simulator_launchd_sim_pid
+      return false if !launchd_sim_pid
+
+      cmd = ["ps", "x", "-o", "ppid=", "-p", pid.to_s]
+      hash = run_shell_command(cmd)
+
+      out = hash[:out]
+      if out.nil? || out == ""
+        false
+      else
+        ppid = out.strip
+        ppid == launchd_sim_pid.to_s
+      end
+    end
+
+    # @!visibility private
+    def simulator_process_running?(process_name)
+      waiter = RunLoop::ProcessWaiter.new(process_name)
+      waiter.pids.any? do |pid|
+        process_parent_is_launchd_sim?(pid)
+        #process_parent_is_current_xcode?(pid)
+      end
     end
 
     # @!visibility private
