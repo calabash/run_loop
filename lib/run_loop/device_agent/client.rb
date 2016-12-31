@@ -91,6 +91,8 @@ module RunLoop
         merged_options = default_options.merge(options)
 
         if device.simulator? && app
+          RunLoop::Core.expect_simulator_compatible_arch(device, app)
+
           core_sim = RunLoop::CoreSimulator.new(device, app, merged_options)
           if reset_options
             core_sim.reset_app_sandbox
