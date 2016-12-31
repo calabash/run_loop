@@ -15,6 +15,10 @@ describe RunLoop::Simctl do
   end
 
   it "#wait_for_shutdown" do
+    RunLoop::CoreSimulator.quit_simulator
+    core_sim = RunLoop::CoreSimulator.new(device, app)
+    core_sim.launch_simulator
+    RunLoop::CoreSimulator.quit_simulator
     expect(simctl.wait_for_shutdown(device, 10.0, 0)).to be_truthy
   end
 
@@ -22,8 +26,6 @@ describe RunLoop::Simctl do
     timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:wait_for_state_timeout]
     delay = RunLoop::CoreSimulator::WAIT_FOR_SIMULATOR_STATE_INTERVAL
     expect(simctl.erase(device, timeout, delay)).to be_truthy
-
-    device.simulator_wait_for_stable_state
 
     core_sim.launch_simulator
 
