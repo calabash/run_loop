@@ -84,39 +84,31 @@ class RunLoop::CoreSimulator
   SIMULATOR_QUIT_PROCESSES =
         [
               # Xcode 7 start throwing this error.
-              ['splashboardd', false],
-
-              # Xcode < 5.1
-              ['iPhone Simulator.app', true],
-
-              # 7.0 < Xcode <= 6.0
-              ['iOS Simulator.app', true],
+              ["splashboardd", false],
 
               # Xcode >= 7.0
               ["Simulator", true],
 
-              # Multiple launchd_sim processes have been causing problems.  This
-              # is a first pass at investigating what it would mean to kill the
-              # launchd_sim process.
-              ['launchd_sim', false],
+              # Multiple launchd_sim processes have been causing problems.
+              # In theory, killing the parent launchd_sim process should kill
+              # child processes like assetsd, but in practice this does not
+              # always happen.
+              ["launchd_sim", false],
 
               # Required for DeviceAgent termination; the simulator hangs otherwise.
               ["xpcproxy", false],
 
-              # Causes crash reports on Xcode < 7.0
-              ["apsd", true],
-
               # assetsd instances clobber each other and are not properly
               # killed when quiting the simulator.
-              ['assetsd', false],
+              ["assetsd", false],
 
               # iproxy is started by UITest.
-              ['iproxy', false],
+              ["iproxy", false],
 
               # Started by Xamarin Studio, this is the parent process of the
               # processes launched by Xamarin's interaction with
               # CoreSimulatorBridge.
-              ['csproxy', false],
+              ["csproxy", false],
         ]
 
   # @!visibility private
