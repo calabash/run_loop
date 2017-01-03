@@ -1334,7 +1334,7 @@ Please install it.
           client = http_client(http_options)
           request = request("session",
                             {
-                              :bundleID => bundle_id,
+                              :bundle_id => bundle_id,
                               :launchArgs => aut_args,
                               :environment => aut_env
                             })
