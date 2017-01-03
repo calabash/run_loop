@@ -755,6 +755,20 @@ Timed out after #{timeout} seconds waiting for the keyboard to appear.
       end
 
       # @!visibility private
+      def wait_for_no_keyboard(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for the keyboard to disappear.
+
+]
+        wait_for(message, options) do
+          !keyboard_visible?
+        end
+      end
+
+      # @!visibility private
       def wait_for_alert(timeout=WAIT_DEFAULTS[:timeout])
         options = WAIT_DEFAULTS.dup
         options[:timeout] = timeout
