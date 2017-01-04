@@ -15,7 +15,10 @@ module RunLoop
       require "run_loop/cache"
       require "run_loop/dylib_injector"
 
+      require "run_loop/physical_device/ios_device_manager"
+
       class HTTPError < RuntimeError; end
+      class TestmanagerdConnectionLost < Exception; end
 
       # @!visibility private
       #
@@ -308,6 +311,7 @@ INSTANCE METHODS
 
       # @!visibility private
       def tree
+        ensure_testmanagerd_health
         options = tree_http_options
         request = request("tree")
         client = http_client(options)
@@ -317,6 +321,7 @@ INSTANCE METHODS
 
       # @!visibility private
       def keyboard_visible?
+        ensure_testmanagerd_health
         options = http_options
         parameters = { :type => "Keyboard" }
         request = request("query", parameters)
@@ -329,6 +334,7 @@ INSTANCE METHODS
 
       # @!visibility private
       def clear_text
+        ensure_testmanagerd_health
         options = enter_text_http_options
         parameters = {
           :gesture => "clear_text"
@@ -341,6 +347,7 @@ INSTANCE METHODS
 
       # @!visibility private
       def enter_text(string)
+        ensure_testmanagerd_health
         if !keyboard_visible?
           raise RuntimeError, "Keyboard must be visible"
         end
@@ -364,6 +371,7 @@ INSTANCE METHODS
       # 1. Removes duplicate check.
       # 2. It turns out DeviceAgent query can be very slow.
       def enter_text_without_keyboard_check(string)
+        ensure_testmanagerd_health
         options = enter_text_http_options
         parameters = {
           :gesture => "enter_text",
@@ -467,6 +475,7 @@ INSTANCE METHODS
       # @param [Hash] uiquery A hash describing the query.
       # @return [Array<Hash>] An array of elements matching the `uiquery`.
       def query(uiquery)
+        ensure_testmanagerd_health
         merged_options = {
           all: false
         }.merge(uiquery)
@@ -524,6 +533,7 @@ Query must contain at least one of these keys:
 
       # @!visibility private
       def alert
+        ensure_testmanagerd_health
         parameters = { :type => "Alert" }
         request = request("query", parameters)
         client = http_client(http_options)
@@ -539,6 +549,7 @@ Query must contain at least one of these keys:
 
       # @!visibility private
       def springboard_alert
+        ensure_testmanagerd_health
         request = request("springboard-alert")
         client = http_client(http_options)
         response = client.get(request)
@@ -618,6 +629,7 @@ Query must contain at least one of these keys:
 
       # @!visibility private
       def rotate_home_button_to(position, sleep_for=1.0)
+        ensure_testmanagerd_health
         orientation = normalize_orientation_position(position)
         parameters = {
           :orientation => orientation
@@ -665,7 +677,7 @@ Query must contain at least one of these keys:
 
       # @!visibility private
       def make_gesture_request(parameters)
-
+        ensure_testmanagerd_health
         RunLoop.log_debug %Q[Sending request to perform '#{parameters[:gesture]}' with:
 
 #{JSON.pretty_generate(parameters)}
@@ -679,7 +691,7 @@ Query must contain at least one of these keys:
 
       # @!visibility private
       def coordinate_from_query_result(matches)
-
+        ensure_testmanagerd_health
         if matches.nil? || matches.empty?
           raise "Expected #{hash} to contain some results"
         end
@@ -1071,6 +1083,25 @@ PRIVATE
       end
 
       # @!visibility private
+      def ensure_testmanagerd_health(retries=3)
+        request = request('testmanagerd-health', parameters)
+        client = http_client(http_options)
+        response = client.post(request)
+        body = response_body_to_hash(response)
+        if body['error']
+          if retries > 0
+            RunLoop.log_debug("Testmanagerd connection is dead: #{body['reason']}")
+            @cbx_launcher.start_test
+            assert_health
+            ensure_testmanagerd_health(retries - 1)
+          else
+            raise RunLoop::DeviceAgent::Client::HTTPError,
+                  "Max retries reached for establishing connection with tesmanagerd. Invalidation reason: #{body['reason']}"
+          end
+        end
+      end
+
+      # @!visibility private
       def request(route, parameters={})
         versioned = versioned_route(route)
         RunLoop::HTTP::Request.request(versioned, parameters)
@@ -1263,12 +1294,21 @@ PRIVATE
         RunLoop.log_debug("Waiting for DeviceAgent to launch...")
         @launcher_pid = cbx_launcher.launch(options)
 
+        assert_health
+
+        RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
+        true
+      end
+
+      # @!visibility private
+      def assert_health
+        options = launcher_options
         begin
           timeout = options[:device_agent_install_timeout] * 1.5
           health_options = {
-            :timeout => timeout,
-            :interval => 0.1,
-            :retries => (timeout/0.1).to_i
+              :timeout => timeout,
+              :interval => 0.1,
+              :retries => (timeout/0.1).to_i
           }
           health(health_options)
         rescue RunLoop::HTTP::Error => _
@@ -1283,11 +1323,8 @@ To diagnose the problem tail the launcher log file:
 
 $ tail -1000 -F #{cbx_launcher_log_file}
 
-]
+                ]
         end
-
-        RunLoop.log_debug("Took #{Time.now - start} launch and respond to /health")
-        true
       end
 
       # @!visibility private
