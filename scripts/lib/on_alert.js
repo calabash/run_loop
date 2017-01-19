@@ -131,6 +131,18 @@ function dutchLocalizations() {
   ];
 }
 
+function dutch_BE_Localizations() {
+	return [
+		["Sta toe", /toegang tot je locatie toestaan terwijl je de app gebruikt/],
+		["Sta toe", /toegang tot je locatie toestaan, zelfs als je de app niet gebruikt/],
+		["OK", /wil toegang tot je contacten/],
+		["OK", /wil toegang tot je agenda/],
+		["OK", /wil toegang tot je herinneringen/],
+		["OK", /wil toegang tot je foto's/],
+		["OK", /wil toegang tot je bewegings- en fitnessactiviteit/]
+	];
+}
+
 function russianLocalizations() {
   return [
     // Location
@@ -168,7 +180,7 @@ function portugueseBrazilLocalizations() {
     ["OK", /Deseja Ter Acesso às Suas Atividades de Movimento e Preparo Físico/],
     ["OK", /Deseja Ter Acesso às Contas do Twitter/],
     ["OK", /data available to nearby bluetooth devices/],
-    ["OK", /[Dd]eseja [Ee]nviar-lhe [Nn]otificações/]  
+    ["OK", /[Dd]eseja [Ee]nviar-lhe [Nn]otificações/]
   ];
 }
 
@@ -176,12 +188,13 @@ function localizations() {
   return [].concat(
      danishLocalizations(),
      dutchLocalizations(),
+     dutch_BE_Localizations(),
      englishLocalizations(),
      germanLocalizations(),
      russianLocalizations(),
      spanishLocalizations(),
      frenchLocalizations(),
-     portugueseBrazilLocalizations() 
+     portugueseBrazilLocalizations()
   );
 }
 
