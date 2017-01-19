@@ -143,6 +143,23 @@ function dutch_BE_Localizations() {
 	];
 }
 
+function swedishLocalizations() {
+  return [
+    ["Tillåt", /att se din platsinfo när du använder appen/],
+    ["Tillåt", /att se din platsinfo även när du inte använder appen/],
+    ["Tillåt", /även ser din platsinfo när du inte använder appen/],
+    ["OK", /begär åtkomst till dina kontakter/],
+    ["OK", /begär åtkomst till din kalender/],
+    ["OK", /begär åtkomst till dina påminnelser/],
+    ["OK", /begär åtkomst till dina bilder/],
+    ["OK", /vill komma åt dina Twitter-konton/],
+    ["OK", /begär åtkomst till mikrofonen/],
+    ["OK", /begär åtkomst till din rörelse- och träningsaktivitet/],
+    ["OK", /begär åtkomst till kameran/],
+    ["OK", /vill skicka notiser till dig/]
+  ];
+}
+
 function russianLocalizations() {
   return [
     // Location
@@ -189,6 +206,7 @@ function localizations() {
      danishLocalizations(),
      dutchLocalizations(),
      dutch_BE_Localizations(),
+     swedishLocalizations(),
      englishLocalizations(),
      germanLocalizations(),
      russianLocalizations(),
