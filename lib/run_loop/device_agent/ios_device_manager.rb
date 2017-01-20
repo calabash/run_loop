@@ -111,19 +111,12 @@ Expected :device_agent_install_timeout key in options:
           end
 
           options = {:log_cmd => true, :timeout => install_timeout}
+          args = [
+            cmd, "install", device.udid, "--app-path", runner.runner
+          ]
+
           if code_sign_identity
-            args = [
-              cmd, "install",
-              "--device-id", device.udid,
-              "--app-bundle", runner.runner,
-              "--codesign-identity", code_sign_identity
-            ]
-          else
-            args = [
-              cmd, "install",
-              "--device-id", device.udid,
-              "--app-bundle", runner.runner
-            ]
+            args = args + ["--codesign-identity", code_sign_identity]
           end
 
           start = Time.now
@@ -142,7 +135,7 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
 
         RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent");
 
-        args = ["start_test", "--device-id", device.udid]
+        args = ["start_test", device.udid]
 
         log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
@@ -169,8 +162,7 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
         args = [
-          cmd, "is_installed",
-          "--device-id", device.udid,
+          cmd, "is_installed", device.udid,
           "--bundle-identifier", bundle_identifier
         ]
 
