@@ -1,5 +1,40 @@
 ## Change Log
 
+### 2.2.5
+
+* Update iOSDeviceManager arguments for 1.0.5 #584
+* Device: improve the wait-for-simulator-stable algorithm #582
+* ProcessWaiter: improve process detection #581
+* CoreSim: quit simulator only when necessary #580
+* DeviceAgent::Client: check simulator/application architecture
+  compatibility #579
+* Stabilize integration tests for Xcode 8 #578
+* OSS: update vendor licenses #576
+
+#### DeviceAgent 1.0.5 rc1
+
+* Increase touch duration to 0.2 to match XCUITest #198
+* Use CocoaLumberjack for logging #197
+* Update CocoaLumberjack to 3.0.0 #196
+* TestApp: update to calabash.framework 0.20.4 #194
+* Improve hitpoint and visibility calculation #193
+* Fix text entry for i386/armv7 devices #192
+* Dismiss SpringBoard alerts by touching alert buttons with coordinates
+  #191
+* SpringBoard: ask UIApplication for SpringBoard alert before making an
+  expensive XCUITest query #190
+* POST /session raises when app is not installed and when app fails to
+  launch #189
+
+#### iOSDeviceManager 1.0.5 rc1
+
+* Reorganize resigning classes #107
+* Update device model to be an instance variable #105
+* Improve default device detection #104
+* Add support for app lifecycle events on .ipa archives #103
+* Allow positional argument for device ID #102
+* Stores identities rather than making multiple find-identity calls #101
+
 ### 2.2.4
 
 DeviceAgent 1.0.4 can dismiss SpringBoard alerts in any orientation.
