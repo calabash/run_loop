@@ -297,7 +297,7 @@ target = #{target}
     end
   end
 
-  desc "Roll back changes to DeviceAgent stack"
+  desc "Roll back changes to DeviceAgent binaries; does not touch client.rb"
   task :checkout do
     banner("Git Checkout")
     checkout(bin)
