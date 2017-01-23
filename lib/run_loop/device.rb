@@ -322,8 +322,14 @@ version: #{version}
     end
 
     # @!visibility private
-    def simulator_wait_for_stable_state
+    # In megabytes
+    def simulator_size_on_disk
       data_path = File.join(simulator_root_dir, 'data')
+      RunLoop::Directory.size(data_path, :mb)
+    end
+
+    # @!visibility private
+    def simulator_wait_for_stable_state
       required = simulator_required_child_processes
 
       timeout = SIM_STABLE_STATE_OPTIONS[:timeout]
@@ -331,7 +337,7 @@ version: #{version}
       poll_until = now + timeout
 
       RunLoop.log_debug("Waiting for simulator to stabilize with timeout: #{timeout} seconds")
-      footprint = RunLoop::Directory.size(data_path, :mb)
+      footprint = simulator_size_on_disk
 
       if version.major >= 9 && footprint < 18
         first_launch = true
