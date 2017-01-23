@@ -78,6 +78,14 @@ class RunLoop::CoreSimulator
   # @!visibility private
   # Pattern:
   # [ '< process name >', < send term first > ]
+  #
+  # Candidates:
+  #
+  # "UserEventAgent",
+  #  "aslmanager",
+  #  "cfprefsd",
+  #  "mobileassetd",
+  #  "kbd"
   SIMULATOR_QUIT_PROCESSES =
         [
               # Xcode 7 start throwing this error.
