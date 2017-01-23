@@ -131,6 +131,35 @@ function dutchLocalizations() {
   ];
 }
 
+function dutch_BE_Localizations() {
+	return [
+		["Sta toe", /toegang tot je locatie toestaan terwijl je de app gebruikt/],
+		["Sta toe", /toegang tot je locatie toestaan, zelfs als je de app niet gebruikt/],
+		["OK", /wil toegang tot je contacten/],
+		["OK", /wil toegang tot je agenda/],
+		["OK", /wil toegang tot je herinneringen/],
+		["OK", /wil toegang tot je foto's/],
+		["OK", /wil toegang tot je bewegings- en fitnessactiviteit/]
+	];
+}
+
+function swedishLocalizations() {
+  return [
+    ["Tillåt", /att se din platsinfo när du använder appen/],
+    ["Tillåt", /att se din platsinfo även när du inte använder appen/],
+    ["Tillåt", /även ser din platsinfo när du inte använder appen/],
+    ["OK", /begär åtkomst till dina kontakter/],
+    ["OK", /begär åtkomst till din kalender/],
+    ["OK", /begär åtkomst till dina påminnelser/],
+    ["OK", /begär åtkomst till dina bilder/],
+    ["OK", /vill komma åt dina Twitter-konton/],
+    ["OK", /begär åtkomst till mikrofonen/],
+    ["OK", /begär åtkomst till din rörelse- och träningsaktivitet/],
+    ["OK", /begär åtkomst till kameran/],
+    ["OK", /vill skicka notiser till dig/]
+  ];
+}
+
 function russianLocalizations() {
   return [
     // Location
@@ -168,7 +197,7 @@ function portugueseBrazilLocalizations() {
     ["OK", /Deseja Ter Acesso às Suas Atividades de Movimento e Preparo Físico/],
     ["OK", /Deseja Ter Acesso às Contas do Twitter/],
     ["OK", /data available to nearby bluetooth devices/],
-    ["OK", /[Dd]eseja [Ee]nviar-lhe [Nn]otificações/]  
+    ["OK", /[Dd]eseja [Ee]nviar-lhe [Nn]otificações/]
   ];
 }
 
@@ -176,12 +205,14 @@ function localizations() {
   return [].concat(
      danishLocalizations(),
      dutchLocalizations(),
+     dutch_BE_Localizations(),
+     swedishLocalizations(),
      englishLocalizations(),
      germanLocalizations(),
      russianLocalizations(),
      spanishLocalizations(),
      frenchLocalizations(),
-     portugueseBrazilLocalizations() 
+     portugueseBrazilLocalizations()
   );
 }
 
