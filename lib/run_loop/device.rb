@@ -322,6 +322,13 @@ version: #{version}
     end
 
     # @!visibility private
+    # In megabytes
+    def simulator_size_on_disk
+      data_path = File.join(simulator_root_dir, 'data')
+      RunLoop::Directory.size(data_path, :mb)
+    end
+
+    # @!visibility private
     def simulator_wait_for_stable_state
       required = simulator_required_child_processes
 
@@ -330,8 +337,22 @@ version: #{version}
       poll_until = now + timeout
 
       RunLoop.log_debug("Waiting for simulator to stabilize with timeout: #{timeout} seconds")
+      footprint = simulator_size_on_disk
+
+      if version.major >= 9 && footprint < 18
+        first_launch = true
+      elsif version.major == 8
+        if version.minor >= 3 && footprint < 19
+          first_launch = true
+        else
+          first_launch = footprint < 11
+        end
+      else
+        first_launch = true
+      end
 
       while !required.empty? && Time.now < poll_until do
+        sleep(0.5)
         required = required.map do |process_name|
           if simulator_process_running?(process_name)
             nil
@@ -339,29 +360,15 @@ version: #{version}
             process_name
           end
         end.compact
-        sleep(0.5)
       end
 
-      is_stable = false
       if required.empty?
         elapsed = Time.now - now
         RunLoop.log_debug("All required simulator processes have started after #{elapsed}")
-        current_dir_sha = simulator_data_directory_sha
-        while Time.now < poll_until do
-          latest_dir_sha = simulator_data_directory_sha
-          is_stable = current_dir_sha == latest_dir_sha
-          if is_stable
-            RunLoop.log_debug("Simulator data directory has stabilized")
-            break
-          else
-            sleep(1.0)
-          end
+        if first_launch
+          sleep(RunLoop::Environment.ci? ? 10 : 5)
         end
-      end
-
-      if is_stable
-        elapsed = Time.now - now
-        RunLoop.log_debug("Waited a total of #{elapsed} seconds for simulator to stabilize")
+        RunLoop.log_debug("Waited for #{elapsed} seconds for simulator to stabilize")
       else
         RunLoop.log_debug("Timed out after #{timeout} seconds waiting for simulator to stabilize")
       end

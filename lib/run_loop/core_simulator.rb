@@ -450,12 +450,7 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   def uninstall_app_and_sandbox
     return true if !app_is_installed?
 
-    launch_simulator
-
-    timeout = DEFAULT_OPTIONS[:uninstall_app_timeout]
-    simctl.uninstall(device, app, timeout)
-
-    device.simulator_wait_for_stable_state
+    uninstall_app_with_simctl
     true
   end
 
@@ -571,18 +566,58 @@ Command had no output.
   end
 
   # @!visibility private
+  def uninstall_app_with_simctl
+    launch_simulator
+
+    app_size = RunLoop::Directory.size(app.path, :mb)
+    sim_size = device.simulator_size_on_disk
+    target_size = sim_size - app_size + 5
+
+    timeout = DEFAULT_OPTIONS[:install_app_timeout]
+    simctl.uninstall(device, app, timeout)
+
+    current_size = device.simulator_size_on_disk
+    start = Time.now
+    while current_size > target_size && Time.now < start + 5
+      sleep(0.5)
+      current_size = device.simulator_size_on_disk
+    end
+
+    elapsed = Time.now - start
+    if current_size <= target_size
+      RunLoop.log_debug("Waited for #{elapsed} seconds for app to uninstall")
+    else
+      RunLoop.log_debug("Timed out after #{elapsed} seconds for app to uninstall")
+      RunLoop.log_debug("Expected sim size #{current_size} < #{target_size}")
+    end
+  end
+
+  # @!visibility private
   def install_app_with_simctl
     launch_simulator
+
+    app_size = RunLoop::Directory.size(app.path, :mb)
+    sim_size = device.simulator_size_on_disk
+    target_size = sim_size + app_size
 
     timeout = DEFAULT_OPTIONS[:install_app_timeout]
     simctl.install(device, app, timeout)
 
-    # On Xcode 7, we must wait.  The app might not be installed otherwise.  This
-    # is particularly true for iPads where the app bundle is installed, but
-    # SpringBoard does not detect the app has been installed.
-    #
-    # On Xcode 8, more testing is needed.
-    device.simulator_wait_for_stable_state
+    current_size = device.simulator_size_on_disk
+    start = Time.now
+    while current_size <= target_size && Time.now < start + 5
+      sleep(0.5)
+      current_size = device.simulator_size_on_disk
+    end
+
+    elapsed = Time.now - start
+    if current_size > target_size
+      RunLoop.log_debug("Waited for #{elapsed} seconds for app to install")
+    else
+      RunLoop.log_debug("Timed out after #{elapsed} seconds for app to install")
+      RunLoop.log_debug("Expected sim size #{current_size} >= #{target_size}")
+    end
+
     installed_app_bundle_dir
   end
 
@@ -831,20 +866,8 @@ Command had no output.
     RunLoop.log_debug("  App to launch SHA: #{app_sha}")
     RunLoop.log_debug("Will install #{app}")
 
-    FileUtils.rm_rf installed_app_bundle
-    RunLoop.log_debug('Deleted the existing app')
-
-    directory = File.expand_path(File.join(installed_app_bundle, '..'))
-    bundle_name = File.basename(app.path)
-    target = File.join(directory, bundle_name)
-
-    args = ['ditto', app.path, target]
-    xcrun.run_command_in_context(args, log_cmd: true)
-
-    RunLoop.log_debug("Installed #{app} on CoreSimulator #{device.udid}")
-
-    clear_device_launch_csstore
-
+    uninstall_app_with_simctl
+    install_app_with_simctl
     true
   end
 
