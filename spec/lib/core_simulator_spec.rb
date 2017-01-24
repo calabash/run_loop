@@ -273,12 +273,7 @@ describe RunLoop::CoreSimulator do
 
       it 'launches the simulator and installs the app with simctl' do
         expect(core_sim).to receive(:app_is_installed?).and_return true
-        expect(core_sim).to receive(:launch_simulator).and_return true
-
-        timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:uninstall_app_timeout]
-        expect(core_sim.simctl).to receive(:uninstall).with(device, app, timeout).and_return(true)
-        expect(core_sim.device).to receive(:simulator_wait_for_stable_state).and_return true
-
+        expect(core_sim).to receive(:uninstall_app_with_simctl).and_return true
         expect(core_sim.uninstall_app_and_sandbox).to be_truthy
       end
     end
@@ -773,18 +768,6 @@ describe RunLoop::CoreSimulator do
 
         expect(core_sim.install).to be == '/new/path'
       end
-
-      it '#install_app_with_simctl' do
-        expect(core_sim).to receive(:launch_simulator).and_return true
-        timeout = RunLoop::CoreSimulator::DEFAULT_OPTIONS[:install_app_timeout]
-        expect(core_sim.simctl).to receive(:install).with(device, app, timeout).and_return(true)
-
-        expect(core_sim.device).to receive(:simulator_wait_for_stable_state)
-
-        expect(core_sim).to receive(:installed_app_bundle_dir).and_return('/new/path')
-
-        expect(core_sim.send(:install_app_with_simctl)).to be == '/new/path'
-      end
     end
 
     it "#launch_app_with_simctl" do
@@ -1046,18 +1029,11 @@ describe RunLoop::CoreSimulator do
       end
 
       it 'installs the new app' do
-        path = '/some/path'
         expect(core_sim).to receive(:installed_app_bundle_dir).and_return '/some/path'
         expect(core_sim.app).to receive(:sha1).and_return :a
         expect(core_sim).to receive(:installed_app_sha1).and_return :b
-
-        allow(FileUtils).to receive(:rm_rf).with(path).and_return true
-
-        args = ['ditto', app.path, '/some/CalSmoke-cal.app']
-        options = {:log_cmd => true}
-        expect(core_sim.xcrun).to receive(:run_command_in_context).with(args, options).and_return({})
-
-        expect(core_sim).to receive(:clear_device_launch_csstore).and_return true
+        expect(core_sim).to receive(:uninstall_app_with_simctl).and_return true
+        expect(core_sim).to receive(:install_app_with_simctl).and_return true
 
         expect(core_sim.send(:ensure_app_same)).to be_truthy
       end
