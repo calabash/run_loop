@@ -41,7 +41,13 @@ module RunLoop
         :device_agent_install_timeout => RunLoop::Environment.ci? ? 240 : 120,
         # This value must always be false on the XTC.
         # This is should only be used by gem maintainers or very advanced users.
-        :shutdown_device_agent_before_launch => false
+        :shutdown_device_agent_before_launch => false,
+
+        # This value was derived empirically by typing hundreds of strings
+        # using XCUIElement#typeText.  It corresponds to the DeviceAgent
+        # constant CBX_DEFAULT_SEND_STRING_FREQUENCY which is 60.  _Decrease_
+        # this value if you are timing out typing strings.
+        :characters_per_second => 12
       }
 
       # @!visibility private
@@ -329,7 +335,9 @@ INSTANCE METHODS
 
       # @!visibility private
       def clear_text
-        options = enter_text_http_options
+        # Tries to touch the keyboard delete key, but falls back on typing the
+        # backspace character.
+        options = enter_text_http_options("\b")
         parameters = {
           :gesture => "clear_text"
         }
@@ -344,7 +352,7 @@ INSTANCE METHODS
         if !keyboard_visible?
           raise RuntimeError, "Keyboard must be visible"
         end
-        options = enter_text_http_options
+        options = enter_text_http_options(string.to_s)
         parameters = {
           :gesture => "enter_text",
           :options => {
@@ -364,7 +372,7 @@ INSTANCE METHODS
       # 1. Removes duplicate check.
       # 2. It turns out DeviceAgent query can be very slow.
       def enter_text_without_keyboard_check(string)
-        options = enter_text_http_options
+        options = enter_text_http_options(string.to_s)
         parameters = {
           :gesture => "enter_text",
           :options => {
@@ -1114,8 +1122,11 @@ PRIVATE
       # @!visibility private
       #
       # A patch while we are trying to figure out what is wrong with text entry.
-      def enter_text_http_options
-        timeout = DEFAULTS[:http_timeout] * 6
+      def enter_text_http_options(string)
+        characters = string.length + 1
+        characters_per_second = DEFAULTS[:characters_per_second]
+        to_type_timeout = [characters/characters_per_second, 2.0].max
+        timeout = (DEFAULTS[:http_timeout] * 3) + to_type_timeout
         {
           :timeout => timeout,
           :interval => 0.1,
