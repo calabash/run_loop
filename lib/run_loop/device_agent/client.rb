@@ -1223,21 +1223,26 @@ PRIVATE
         hash
       end
 
-      # TODO Might not be necessary - this is an edge case and it is likely
-      # that iOSDeviceManager will be able to handle this for us.
+      # @!visibility private
       def cbx_runner_stale?
-        false
-        # The RunLoop::Version class needs to be updated to handle timestamps.
-        #
-        # if cbx_launcher.name == :xcodebuild
-        #   return false
-        # end
+        return false if RunLoop::Environment.xtc?
+        return false if cbx_launcher.name == :xcodebuild
+        return false if !running?
 
-        # version_info = server_version
-        # running_bundle_version = RunLoop::Version.new(version_info[:bundle_version])
-        # bundle_version = RunLoop::App.new(cbx_launcher.runner.runner).bundle_version
-        #
-        # running_bundle_version < bundle_version
+        version_info = server_version
+        running_version_timestamp = version_info[:bundle_version].to_i
+
+        app = RunLoop::App.new(cbx_launcher.runner.runner)
+        plist_buddy = RunLoop::PlistBuddy.new
+        version_timestamp = plist_buddy.plist_read("CFBundleVersion", app.info_plist_path).to_i
+
+        if running_version_timestamp == version_timestamp
+          RunLoop.log_debug("The running DeviceAgent version is the same as the version on disk")
+          false
+        else
+          RunLoop.log_debug("The running DeviceAgent version is not the same as the version on disk")
+          true
+        end
       end
 
       # @!visibility private
