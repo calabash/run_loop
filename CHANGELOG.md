@@ -26,14 +26,10 @@
 * POST /session raises when app is not installed and when app fails to
   launch #189
 
-#### iOSDeviceManager 1.0.5 rc1
+#### iOSDeviceManager 1.0.4
 
-* Reorganize resigning classes #107
-* Update device model to be an instance variable #105
-* Improve default device detection #104
-* Add support for app lifecycle events on .ipa archives #103
-* Allow positional argument for device ID #102
-* Stores identities rather than making multiple find-identity calls #101
+iOSDeviceManager is unchanged for this version.  See the 2.2.4 release
+notes below for details about the iOSDeviceManager 1.0.4 release.
 
 ### 2.2.4
 
