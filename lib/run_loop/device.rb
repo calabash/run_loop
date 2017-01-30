@@ -470,6 +470,49 @@ failed with this output:
       simulator_languages
     end
 
+    # @!visibility private
+    def simulator_running_app_details
+      pids = simulator_running_app_pids
+      running_apps = {}
+
+      pids.each do |pid|
+        cmd = ["ps", "-o", "comm=", "-p", pid.to_s]
+
+        hash = run_shell_command(cmd)
+        out = hash[:out]
+
+        if out.nil? || out == "" || out.strip.nil?
+          nil
+        else
+          name = out.strip.split("/").last
+
+          cmd = ["ps", "-o", "command=", "-p", pid.to_s]
+          hash = run_shell_command(cmd)
+          out = hash[:out]
+
+          if out.nil? || out == "" || out.strip.nil?
+            nil
+          else
+            tokens = out.split("#{name} ")
+
+            # No arguments
+            if tokens.count == 1
+              args = ""
+            else
+              args = tokens.last.strip
+            end
+
+            running_apps[name] = {
+              args: args,
+              command: out.strip
+            }
+          end
+        end
+      end
+
+      running_apps
+    end
+
 =begin
   PRIVATE METHODS
 =end
@@ -695,6 +738,26 @@ https://github.com/calabash/calabash-ios/wiki/Testing-on-Physical-Devices
 ]
       end
       true
+    end
+
+    # @!visibility private
+    def simulator_running_app_pids
+      simulator_running_user_app_pids +
+        simulator_running_system_app_pids
+    end
+
+    # @!visibility private
+    def simulator_running_user_app_pids
+      path = File.join(udid, "data", "Containers", "Bundle")
+      RunLoop::ProcessWaiter.pgrep_f(path)
+    end
+
+    # @!visibility private
+    def simulator_running_system_app_pids
+      base_dir = xcode.developer_dir
+      sim_apps_dir = "Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"
+      path = File.expand_path(File.join(base_dir, sim_apps_dir))
+      RunLoop::ProcessWaiter.pgrep_f(path)
     end
   end
 end
