@@ -94,6 +94,9 @@ class RunLoop::CoreSimulator
               # Xcode >= 7.0
               ["Simulator", true],
 
+              # Xcode < 7.0
+              ["iOS Simulator", true],
+
               # Multiple launchd_sim processes have been causing problems.
               # In theory, killing the parent launchd_sim process should kill
               # child processes like assetsd, but in practice this does not
