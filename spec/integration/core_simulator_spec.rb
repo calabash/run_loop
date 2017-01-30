@@ -9,6 +9,7 @@ describe RunLoop::CoreSimulator do
   end
 
   before do
+    RunLoop::CoreSimulator.quit_simulator
     allow(RunLoop::Environment).to receive(:debug?).and_return true
   end
 

@@ -8,6 +8,7 @@ describe RunLoop::Simctl do
 
   before do
     allow(RunLoop::Environment).to receive(:debug?).and_return(true)
+    RunLoop::CoreSimulator.quit_simulator
   end
 
   it "#shutdown" do
