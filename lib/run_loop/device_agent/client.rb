@@ -290,6 +290,9 @@ INSTANCE METHODS
       # @!visibility private
       #
       # Experimental!
+      #
+      # This will launch the other app using the same arguments and environment
+      # as the AUT.
       def launch_other_app(bundle_id)
         launch_aut(bundle_id)
       end
