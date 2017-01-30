@@ -50,6 +50,8 @@ module RunLoop
         :characters_per_second => 12
       }
 
+      AUT_LAUNCHED_BY_RUN_LOOP_ARG = "LAUNCHED_BY_RUN_LOOP"
+
       # @!visibility private
       #
       # These defaults may change at any time.
@@ -121,6 +123,10 @@ module RunLoop
                                                DEFAULTS[:shutdown_device_agent_before_launch])
         aut_args = options.fetch(:args, [])
         aut_env = options.fetch(:env, {})
+
+        if !aut_args.include?(AUT_LAUNCHED_BY_RUN_LOOP_ARG)
+          aut_args << AUT_LAUNCHED_BY_RUN_LOOP_ARG
+        end
 
         launcher_options = {
             code_sign_identity: code_sign_identity,

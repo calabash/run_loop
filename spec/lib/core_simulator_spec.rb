@@ -364,6 +364,106 @@ describe RunLoop::CoreSimulator do
       end
     end
 
+    context "#simulator_state_requires_relaunch?" do
+      let (:sim_details) { {} }
+
+      it "returns true if the simulator is not running" do
+        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+
+        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+      end
+
+      it "returns true if the simulator was not launched by run_loop" do
+        sim_details[:pid] = 1234
+        sim_details[:launched_by_run_loop] = false
+        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+
+        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+      end
+
+      it "returns true if the simulator state is not 'Booted'" do
+        sim_details[:pid] = 1234
+        sim_details[:launched_by_run_loop] = true
+        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(device).to receive(:update_simulator_state).and_return(true)
+        expect(device).to receive(:state).and_return("Anything but 'Booted'")
+
+        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+      end
+
+      it "returns false if the simulator state is 'Booted'" do
+        sim_details[:pid] = 1234
+        sim_details[:launched_by_run_loop] = true
+        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(device).to receive(:update_simulator_state).and_return(true)
+        expect(device).to receive(:state).and_return("Booted")
+
+        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_falsey
+      end
+    end
+
+    context "#running_apps_require_relaunch?" do
+      let (:running_apps) { { } }
+      it "returns false if there are no running apps" do
+        expect(device).to receive(:simulator_running_app_details).and_return(running_apps)
+
+        expect(core_sim.send(:running_apps_require_relaunch?)).to be_falsey
+      end
+
+      it "returns true if the DeviceAgent is running, but launched by Xcode" do
+        running_apps["XCTRunner"] = {
+          :args => "ARG0 CBX_LAUNCHED_BY_XCODE"
+        }
+        expect(device).to receive(:simulator_running_app_details).and_return(running_apps)
+
+        expect(core_sim.send(:running_apps_require_relaunch?)).to be_truthy
+      end
+
+      it "returns true if the AUT is running, but was not launched by run_loop" do
+        running_apps["XCTRunner"] = nil
+        running_apps[app.executable_name] = {
+          :args => "ARG0 MISSING-LAUNCHED-BY-RUN-LOOP-ARG ARG1"
+        }
+        expect(device).to receive(:simulator_running_app_details).and_return(running_apps)
+
+        expect(core_sim.send(:running_apps_require_relaunch?)).to be_truthy
+      end
+
+      it "return false if the simulator does not need to be relaunched" do
+        running_apps["XCTRunner"] = {
+          args: "ARG0 ARG1 ARG2"
+        }
+        running_apps[app.executable_name] = {
+          args: "ARG0 #{RunLoop::DeviceAgent::Client::AUT_LAUNCHED_BY_RUN_LOOP_ARG} ARG1"
+        }
+        expect(device).to receive(:simulator_running_app_details).and_return(running_apps)
+
+        expect(core_sim.send(:running_apps_require_relaunch?)).to be_falsey
+      end
+    end
+
+    context "#simulator_requires_relaunch?" do
+      it "returns true if simulator state requires relaunch" do
+        expect(core_sim).to receive(:simulator_state_requires_relaunch?).and_return(true)
+
+        expect(core_sim.simulator_requires_relaunch?).to be_truthy
+      end
+
+      it "returns true if sim state is acceptable, but running apps require a relaunch" do
+        expect(core_sim).to receive(:simulator_state_requires_relaunch?).and_return(false)
+        expect(core_sim).to receive(:running_apps_require_relaunch?).and_return(true)
+
+        expect(core_sim.simulator_requires_relaunch?).to be_truthy
+      end
+
+      it "returns false if the simulator state and running apps are acceptable" do
+        expect(core_sim).to receive(:simulator_state_requires_relaunch?).and_return(false)
+        expect(core_sim).to receive(:running_apps_require_relaunch?).and_return(false)
+
+        expect(core_sim.simulator_requires_relaunch?).to be_falsey
+      end
+    end
+
     describe 'Mocked file system' do
 
       describe '#sdk_gte_8?' do

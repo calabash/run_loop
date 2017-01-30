@@ -318,28 +318,23 @@ class RunLoop::CoreSimulator
     @simctl ||= RunLoop::Simctl.new
   end
 
+  # @!visibility private
+  def simulator_requires_relaunch?
+    [simulator_state_requires_relaunch?,
+     running_apps_require_relaunch?].any?
+  end
+
   # Launch the simulator indicated by device.
   def launch_simulator(options={})
     merged_options = {
       :wait_for_stable => true
     }.merge(options)
 
-    running_sim_details = running_simulator_details
-
-    # Is there a running simulator?
-    if running_sim_details[:pid]
-      # Did we launch it?
-      if running_sim_details[:launched_by_run_loop]
-        # Is running simulator the correct simulator?
-        device.update_simulator_state
-        if device.state == "Booted"
-          # Nothing to do, we already launched the simulator.
-          return
-        end
-      end
+    if !simulator_requires_relaunch?
+      RunLoop.log_debug("Simulator is running and does not require a relaunch.")
+      return
     end
 
-    # We did not launch this simulator; quit it.
     RunLoop::CoreSimulator.quit_simulator
 
     args = ['open', '-g', '-a', sim_app_path, '--args',
@@ -454,6 +449,10 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
     true
   end
 
+=begin
+  PRIVATE METHODS
+=end
+
   private
 
   # @!visibility private
@@ -521,7 +520,7 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   def running_simulator_details
     process_name = "MacOS/#{sim_name}"
 
-    args = ["ps", "x", "-o", "pid,command"]
+    args = ["ps", "x", "-o", "pid=,command="]
     hash = run_shell_command(args)
 
     exit_status = hash[:exit_status]
@@ -547,7 +546,7 @@ Command had no output.
 }
     end
 
-    lines = hash[:out].split("\n")
+    lines = hash[:out].split($-0)
 
     match = lines.detect do |line|
       line[/#{process_name}/]
@@ -557,7 +556,7 @@ Command had no output.
 
     hash = {}
 
-    pid = match.split(" ").first.to_i
+    pid = match.split(" ").first.strip.to_i
     hash[:pid] = pid
 
     hash[:launched_by_run_loop] = match[/LAUNCHED_BY_RUN_LOOP/]
@@ -671,6 +670,80 @@ Command had no output.
   # Xcode support is dropped.
   def sdk_gte_8?
     device.version >= RunLoop::Version.new('8.0')
+  end
+
+  # @!visibility private
+  def simulator_state_requires_relaunch?
+    running_sim_details = running_simulator_details
+
+    # Simulator is not running.
+    if !running_sim_details[:pid]
+      RunLoop.log_debug("Simulator relaunch required: simulator is not running.")
+      return true
+    end
+
+    # Simulator is running, but run-loop did not launch it.
+    if !running_sim_details[:launched_by_run_loop]
+      RunLoop.log_debug("Simulator relaunch required: simulator was not launched by run_loop")
+      return true
+    end
+
+    # Simulator is running, run_loop launched it, but it is not Booted.
+    device.update_simulator_state
+    if device.state == "Booted"
+      RunLoop.log_debug("Simulator relaunch not required: simulator has state 'Booted'")
+      false
+    else
+      RunLoop.log_debug("Simulator relaunch required: simulator does not have state 'Booted'")
+      true
+    end
+  end
+
+  # @!visibility private
+  def running_apps_require_relaunch?
+    running_apps = device.simulator_running_app_details
+
+    if running_apps.empty?
+      RunLoop.log_debug("Simulator relaunch not required: no running apps")
+      return false
+    end
+
+    # DeviceAgent is running, but it was launched by Xcode.
+    if running_apps["XCTRunner"]
+      if running_apps["XCTRunner"][:args][/CBX_LAUNCHED_BY_XCODE/]
+        RunLoop.log_debug("Simulator relaunch required: XCTRunner is controlled by Xcode")
+        return true
+      end
+    end
+
+    # AUT is running, but it was not launched by DeviceAgent.
+    app_name = app.executable_name
+    if running_apps[app_name]
+      launch_arg = RunLoop::DeviceAgent::Client::AUT_LAUNCHED_BY_RUN_LOOP_ARG
+      if !running_apps[app_name][:args][/#{launch_arg}/]
+        RunLoop.log_debug("Simulator relaunch required: AUT is running, but not launched by run-loop")
+        return true
+      end
+    end
+
+    # This is the UITest behavior.  UITest does not inspect the simulator for
+    # system apps that are running - it only checks for running user apps.
+    #
+    # I don't think this condition is necessary, so we'll skip it for now, but
+    # capture there is a difference between UITest and run-loop.
+    #
+    # There is some other application running on the simulator.
+    # running_apps.delete("XCTRunner")
+    # running_apps.delete(app_name)
+    #
+    # if running_apps.empty?
+    #   RunLoop.log_debug("Simulator relaunch not required: only XCTRunner and AUT are running")
+    #   false
+    # else
+    #   RunLoop.log_debug("Simulator relaunch required: other applications are running")
+    #   true
+    # end
+    false
   end
 
   # The data directory for the the device.

@@ -124,5 +124,30 @@ describe RunLoop::CoreSimulator do
       expect(actual).to be_falsey
     end
   end
-end
 
+  context "#simulator_state_requires_relaunch?" do
+    let (:sim_details) { {} }
+
+    before do
+      RunLoop::CoreSimulator.quit_simulator
+    end
+
+    it "returns true if the simulator is not running" do
+      RunLoop::CoreSimulator.quit_simulator
+      expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+    end
+
+    it "returns true if the simulator was not launched by run_loop" do
+      args = ['open', '-g', '-a', core_sim.send(:sim_app_path)]
+      pid = Process.spawn('xcrun', *args)
+      Process.detach(pid)
+
+      options = { :timeout => 5, :raise_on_timeout => true }
+      RunLoop::ProcessWaiter.new(core_sim.send(:sim_name), options).wait_for_any
+
+      core_sim.device.simulator_wait_for_stable_state
+
+      expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+    end
+  end
+end
