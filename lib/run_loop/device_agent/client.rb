@@ -109,7 +109,7 @@ module RunLoop
           core_sim.install
         end
 
-        cbx_launcher = Client.detect_cbx_launcher(options, device)
+        cbx_launcher = Client.detect_cbx_launcher(merged_options, device)
 
         code_sign_identity = options[:code_sign_identity]
         if !code_sign_identity
