@@ -9,6 +9,22 @@ module RunLoop
 
     attr_reader :process_name
 
+    # Return a list of pids by matching `match_string` against the command
+    # and full argument list of the command.  As the name suggests, this
+    # method uses `pgrep -f`.
+    #
+    # @param match_string the string to match against
+    # @return Array[Integer] an array of pids
+    def self.pgrep_f(match_string)
+      cmd = ["pgrep", "-f", match_string]
+      hash = RunLoop::Shell.run_shell_command(cmd)
+
+      out = hash[:out]
+      return [] if out.nil? || out == ""
+
+      out.split($-0).map { |pid| pid.to_i }
+    end
+
     def initialize(process_name, options={})
       @options = DEFAULT_OPTIONS.merge(options)
       @process_name = process_name
