@@ -807,8 +807,8 @@ $ xcrun instruments -s templates
       # Validate the architecture.
       self.expect_simulator_compatible_arch(device, app)
 
-      # Quits the simulator.
-      core_sim = RunLoop::CoreSimulator.new(device, app, :xcode => xcode)
+      RunLoop::CoreSimulator.quit_simulator
+      core_sim = RunLoop::CoreSimulator.new(device, app, xcode: xcode)
 
       # Calabash 0.x can only reset the app sandbox (true/false).
       # Calabash 2.x has advanced reset options.
@@ -816,13 +816,11 @@ $ xcrun instruments -s templates
         core_sim.reset_app_sandbox
       end
 
-      # Will quit the simulator if it is running.
       # @todo fix accessibility_enabled? so we don't have to quit the sim
       # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
       # https://github.com/calabash/run_loop/issues/167
       simctl.ensure_accessibility(device)
 
-      # Will quit the simulator if it is running.
       # @todo fix software_keyboard_enabled? so we don't have to quit the sim
       # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
       # https://github.com/calabash/run_loop/issues/168
