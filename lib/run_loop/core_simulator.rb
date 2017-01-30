@@ -520,7 +520,7 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   def running_simulator_details
     process_name = "MacOS/#{sim_name}"
 
-    args = ["ps", "x", "-o", "pid,command"]
+    args = ["ps", "x", "-o", "pid=,command="]
     hash = run_shell_command(args)
 
     exit_status = hash[:exit_status]
@@ -546,7 +546,7 @@ Command had no output.
 }
     end
 
-    lines = hash[:out].split("\n")
+    lines = hash[:out].split($-0)
 
     match = lines.detect do |line|
       line[/#{process_name}/]
@@ -556,7 +556,7 @@ Command had no output.
 
     hash = {}
 
-    pid = match.split(" ").first.to_i
+    pid = match.split(" ").first.strip.to_i
     hash[:pid] = pid
 
     hash[:launched_by_run_loop] = match[/LAUNCHED_BY_RUN_LOOP/]
