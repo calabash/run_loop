@@ -348,7 +348,7 @@ version: #{version}
           first_launch = footprint < 11
         end
       else
-        first_launch = true
+        first_launch = false
       end
 
       while !required.empty? && Time.now < poll_until do
@@ -366,6 +366,7 @@ version: #{version}
         elapsed = Time.now - now
         RunLoop.log_debug("All required simulator processes have started after #{elapsed}")
         if first_launch
+          RunLoop.log_debug("Detected a first launch, waiting a little longer - footprint was #{footprint} MB")
           sleep(RunLoop::Environment.ci? ? 10 : 5)
         end
         RunLoop.log_debug("Waited for #{elapsed} seconds for simulator to stabilize")
