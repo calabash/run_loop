@@ -78,14 +78,6 @@ class RunLoop::CoreSimulator
   # @!visibility private
   # Pattern:
   # [ '< process name >', < send term first > ]
-  #
-  # Candidates:
-  #
-  # "UserEventAgent",
-  #  "aslmanager",
-  #  "cfprefsd",
-  #  "mobileassetd",
-  #  "kbd"
   SIMULATOR_QUIT_PROCESSES =
         [
               # Xcode 7 start throwing this error.
@@ -117,6 +109,12 @@ class RunLoop::CoreSimulator
               # processes launched by Xamarin's interaction with
               # CoreSimulatorBridge.
               ["csproxy", false],
+
+              # Hundreds of these processes can be present in Xcode 8 and they
+              # appear to influence the behavior of DeviceAgent.
+              ["MobileSMSSpotlightImporter", false],
+              ["UserEventAgent", false],
+              ["mobileassetd", false]
         ]
 
   # @!visibility private
