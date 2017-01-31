@@ -1,7 +1,37 @@
 ## Change Log
 
-### 2.2.5
+### 2.3.0
 
+This release contains a significant change - Simulators will not be
+automatically be relaunched whenever
+`Calabash::Cucumber::Launcher#relaunch` is called.  Instead, run-loop
+will try to keep the simulator running as long as it appears to be
+health.  This change is only for DeviceAgent test runs.  Tests that use
+UIAutomation will continue to relaunch the simulator.
+
+If you are on macOS Sierra or using Xcode >= 8.0, you are running
+against DeviceAgent.  UIAutomation is only used on El Cap with Xcode <
+8.0 and iOS < 10.
+
+If your tests need the simulator to relaunch every time
+`Launcher#relaunch` is called, you can pass the new `:relaunch_simulator =>
+true` option.  This option is provided for backward compatibility.
+
+* Improve Device#simulator\_wait\_for\_stable\_state for iOS <= 8 and iOS >=
+  10.1 #594
+* CoreSimulator manages more processes for Xcode 8 and Sierra #593
+* Stabilize integration tests for Xcode 8.2 #592
+* Allow user to force simulator relaunch when running with DeviceAgent
+  #591
+* CoreSimulator relaunches the simulator if app state is not acceptable
+  #590
+* Use iOSDeviceManager arguments that are 1.0.4 and 1.0.5 compatible
+  #589
+* DA:Client: use a separate timeout for entering text #588
+* DeviceAgent#Client: check if running DeviceAgent is stale #587
+* Decouple simulator wait for stable state and CoreSim install and
+  uninstall #586
+* Add nl\_BE and Swedish localizations for privacy alerts #585
 * Update iOSDeviceManager arguments for 1.0.5 #584
 * Device: improve the wait-for-simulator-stable algorithm #582
 * ProcessWaiter: improve process detection #581
@@ -11,7 +41,9 @@
 * Stabilize integration tests for Xcode 8 #578
 * OSS: update vendor licenses #576
 
-#### DeviceAgent 1.0.5 rc1
+#### DeviceAgent 1.0.5
+
+Built from tag [1.0.5](https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.0.5)
 
 * Increase touch duration to 0.2 to match XCUITest #198
 * Use CocoaLumberjack for logging #197
