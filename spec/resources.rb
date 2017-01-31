@@ -211,6 +211,7 @@ class Resources
     begin
       ENV.delete('DEVELOPER_DIR')
       ENV['DEVELOPER_DIR'] = developer_dir
+      RunLoop::Simctl.ensure_valid_core_simulator_service
       block.call
     ensure
       ENV['DEVELOPER_DIR'] = original_developer_dir

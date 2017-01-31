@@ -3,6 +3,7 @@ describe "Simulator/Binary Compatibility Check" do
   let(:simctl) { Resources.shared.simctl }
 
   before do
+    allow(RunLoop::Environment).to receive(:debug?).and_return(true)
     RunLoop::CoreSimulator.quit_simulator
   end
 
