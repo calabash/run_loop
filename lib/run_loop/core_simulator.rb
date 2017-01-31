@@ -78,14 +78,6 @@ class RunLoop::CoreSimulator
   # @!visibility private
   # Pattern:
   # [ '< process name >', < send term first > ]
-  #
-  # Candidates:
-  #
-  # "UserEventAgent",
-  #  "aslmanager",
-  #  "cfprefsd",
-  #  "mobileassetd",
-  #  "kbd"
   SIMULATOR_QUIT_PROCESSES =
         [
               # Xcode 7 start throwing this error.
@@ -117,6 +109,12 @@ class RunLoop::CoreSimulator
               # processes launched by Xamarin's interaction with
               # CoreSimulatorBridge.
               ["csproxy", false],
+
+              # Hundreds of these processes can be present in Xcode 8 and they
+              # appear to influence the behavior of DeviceAgent.
+              ["MobileSMSSpotlightImporter", false],
+              ["UserEventAgent", false],
+              ["mobileassetd", false]
         ]
 
   # @!visibility private
@@ -131,6 +129,29 @@ class RunLoop::CoreSimulator
       send_term_first = false
       self.term_or_kill(process_name, send_term_first)
     end
+
+    ps_name_fn = lambda do |pid|
+      args = ["ps", "-o", "comm=", "-p", pid.to_s]
+      out = RunLoop::Shell.run_shell_command(args)[:out]
+      if out && out.strip != ""
+        out.strip
+      else
+        "UNKNOWN PROCESS: #{pid}"
+      end
+    end
+
+    kill_options = { :timeout => 0.5 }
+
+    RunLoop::ProcessWaiter.pgrep_f("launchd_sim").each do |pid|
+      process_name = ps_name_fn.call(pid)
+      RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options).kill_process
+    end
+
+    RunLoop::ProcessWaiter.pgrep_f("iPhoneSimulator").each do |pid|
+      process_name = ps_name_fn.call(pid)
+      RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options).kill_process
+    end
+
   end
 
   # @!visibility private
@@ -478,6 +499,16 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
     kill_options = { :timeout => 0.5 }
 
     RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
+
+      # We could try to determine if terminating the process will be successful
+      # by asking for the parent pid and the user id.  This adds another call
+      # to `ps` and does not save any time.  It is easier to simply let the
+      # ProcessTerminator fail.  The downside is that a failure will appear
+      # in the debug log.
+      #
+      # macOS is looking more like iOS.  Process names like 'mobileassetd' are
+      # found in both operating systems.
+
       killed = false
 
       if send_term_first
