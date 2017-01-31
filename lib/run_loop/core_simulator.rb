@@ -129,6 +129,29 @@ class RunLoop::CoreSimulator
       send_term_first = false
       self.term_or_kill(process_name, send_term_first)
     end
+
+    ps_name_fn = lambda do |pid|
+      args = ["ps", "-o", "comm=", "-p", pid.to_s]
+      out = RunLoop::Shell.run_shell_command(args)[:out]
+      if out && out.strip != ""
+        out.strip
+      else
+        "UNKNOWN PROCESS: #{pid}"
+      end
+    end
+
+    kill_options = { :timeout => 0.5 }
+
+    RunLoop::ProcessWaiter.pgrep_f("launchd_sim").each do |pid|
+      process_name = ps_name_fn.call(pid)
+      RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options).kill_process
+    end
+
+    RunLoop::ProcessWaiter.pgrep_f("iPhoneSimulator").each do |pid|
+      process_name = ps_name_fn.call(pid)
+      RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options).kill_process
+    end
+
   end
 
   # @!visibility private
