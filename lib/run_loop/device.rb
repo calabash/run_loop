@@ -31,7 +31,7 @@ module RunLoop
       # exceeded - if the default 30 seconds has passed, the
       # simulator is probably stable enough for subsequent
       # operations.
-      :timeout => RunLoop::Environment.ci? ? 120 : 30
+      :timeout => RunLoop::Environment.ci? ? 240 : 120
     }
 
     attr_reader :name

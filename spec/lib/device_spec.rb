@@ -3,9 +3,9 @@ describe RunLoop::Device do
   describe "SIM_STABLE_STATE_OPTIONS" do
     it ":timeout" do
       if RunLoop::Environment.ci?
-        expected = 120
+        expected = 240
       else
-        expected = 30
+        expected = 120
       end
 
       actual = RunLoop::Device::SIM_STABLE_STATE_OPTIONS[:timeout]
