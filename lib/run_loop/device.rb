@@ -31,7 +31,7 @@ module RunLoop
       # exceeded - if the default 30 seconds has passed, the
       # simulator is probably stable enough for subsequent
       # operations.
-      :timeout => RunLoop::Environment.ci? ? 120 : 30
+      :timeout => RunLoop::Environment.ci? ? 240 : 120
     }
 
     attr_reader :name
@@ -596,7 +596,7 @@ failed with this output:
     def simulator_required_child_processes
       @simulator_required_child_processes ||= begin
         required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
-        if xcode.version_gte_8?
+        if xcode.version_gte_8? && version.major > 8
           required << "medialibraryd"
         end
 
