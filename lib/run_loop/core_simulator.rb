@@ -476,6 +476,16 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
     kill_options = { :timeout => 0.5 }
 
     RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
+
+      # We could try to determine if terminating the process will be successful
+      # by asking for the parent pid and the user id.  This adds another call
+      # to `ps` and does not save any time.  It is easier to simply let the
+      # ProcessTerminator fail.  The downside is that a failure will appear
+      # in the debug log.
+      #
+      # macOS is looking more like iOS.  Process names like 'mobileassetd' are
+      # found in both operating systems.
+
       killed = false
 
       if send_term_first
