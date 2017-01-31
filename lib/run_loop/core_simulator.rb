@@ -1046,7 +1046,7 @@ Command had no output.
 
   # @!visibility private
   def self.user_app_installed?(device, bundle_identifier)
-    core_sim = self.new(device, bundle_identifier, {:quit_sim_on_init => false})
+    core_sim = self.new(device, bundle_identifier)
     sim_apps_dir = core_sim.send(:device_applications_dir)
     Dir.glob("#{sim_apps_dir}/**/*.app").find do |path|
       RunLoop::App.new(path).bundle_identifier == bundle_identifier

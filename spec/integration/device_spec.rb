@@ -1,15 +1,12 @@
 describe RunLoop::Device do
 
-  before do
-    allow(RunLoop::Environment).to receive(:debug?).and_return(true)
-  end
-
   let(:device) { Resources.shared.default_simulator }
   let(:prefs_identifier) { "com.apple.Preferences" }
   let(:aut) { RunLoop::App.new(Resources.shared.app_bundle_path) }
   let(:core_sim) { RunLoop::CoreSimulator.new(device, aut) }
 
   before do
+    allow(RunLoop::Environment).to receive(:debug?).and_return(true)
     RunLoop::CoreSimulator.quit_simulator
     RunLoop::Simctl.new.wait_for_shutdown(device, 30, 0.1)
   end
