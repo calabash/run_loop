@@ -722,6 +722,9 @@ Command had no output.
       return true
     end
 
+    # No device was passed to initializer.
+    return true if device.nil?
+
     # Simulator is running, run_loop launched it, but it is not Booted.
     device.update_simulator_state
     if device.state == "Booted"
@@ -749,6 +752,9 @@ Command had no output.
         return true
       end
     end
+
+    # No app was passed to initializer.
+    return true if app.nil?
 
     # AUT is running, but it was not launched by DeviceAgent.
     app_name = app.executable_name
