@@ -134,34 +134,46 @@ found '#{handle_errors_by}'
     private
 
     def self.skip_file?(file, task, debug)
-      skip = false
-      if File.directory?(file)
-        # Skip directories
-        skip = true
-      elsif !Pathname.new(file).exist?
-        # Skip broken symlinks
-        skip = true
-      elsif !File.exist?(file)
-        # Skip files that don't exist
-        skip = true
-      else
-        case File.ftype(file)
-          when 'fifo'
-            RunLoop.log_warn("#{task} IS SKIPPING FIFO #{file}") if debug
-            skip = true
-          when 'socket'
-            RunLoop.log_warn("#{task} IS SKIPPING SOCKET #{file}") if debug
-            skip = true
-          when 'characterSpecial'
-            RunLoop.log_warn("#{task} IS SKIPPING CHAR SPECIAL #{file}") if debug
-            skip = true
-          when 'blockSpecial'
-            skip = true
-            RunLoop.log_warn("#{task} SKIPPING BLOCK SPECIAL #{file}") if debug
-          else
 
+      skip = false
+      begin
+        if File.directory?(file)
+          # Skip directories
+          skip = true
+        elsif !Pathname.new(file).exist?
+          # Skip broken symlinks
+          skip = true
+        elsif !File.exist?(file)
+          # Skip files that don't exist
+          skip = true
+        else
+          case File.ftype(file)
+            when 'fifo'
+              RunLoop.log_warn("#{task} IS SKIPPING FIFO #{file}") if debug
+              skip = true
+            when 'socket'
+              RunLoop.log_warn("#{task} IS SKIPPING SOCKET #{file}") if debug
+              skip = true
+            when 'characterSpecial'
+              RunLoop.log_warn("#{task} IS SKIPPING CHAR SPECIAL #{file}") if debug
+              skip = true
+            when 'blockSpecial'
+              skip = true
+              RunLoop.log_warn("#{task} SKIPPING BLOCK SPECIAL #{file}") if debug
+            else
+
+          end
         end
+      rescue Errno::ENOENT => e
+        skip = true
+        RunLoop.log_debug(%Q[Encountered an ignorable error while determining if a file should be skipped:
+
+    #{e.message}
+
+    This error can be safely ignored.
+])
       end
+
       skip
     end
 
