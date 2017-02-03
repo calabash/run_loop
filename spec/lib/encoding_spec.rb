@@ -13,14 +13,14 @@ describe RunLoop::Encoding do
       expect(object.transliterate(string)).to be == expected
     end
 
-    it "replaces unknown characters with ?" do
-      string = "ITZVÓÃ ●℆❡♡"
-      expected = "ITZVOA ????"
-      expect(object.transliterate(string)).to be == expected
+    it "replaces unknown characters and does not raise an error" do
+      expect do
+        object.transliterate("ITZVÓÃ ●℆❡♡")
+      end.not_to raise_error
     end
   end
 
-  describe "ensure_command_output_utf8" do
+  describe "#ensure_command_output_utf8" do
     let(:string) { "string" }
     let(:encoded) { "encoded" }
     let(:forced) { "forced" }

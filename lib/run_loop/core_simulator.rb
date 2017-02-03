@@ -31,9 +31,6 @@ class RunLoop::CoreSimulator
   WAIT_FOR_SIMULATOR_STATE_INTERVAL = 0.1
 
   # @!visibility private
-  @@simulator_pid = nil
-
-  # @!visibility private
   attr_reader :app
 
   # @!visibility private
@@ -70,12 +67,12 @@ class RunLoop::CoreSimulator
               # Not yet.
               # "com.apple.CoreSimulator.SimVerificationService",
 
-              'SimulatorBridge',
-              'configd_sim',
-              'CoreSimulatorBridge',
+              "SimulatorBridge",
+              "configd_sim",
+              "CoreSimulatorBridge",
 
               # Xcode 7
-              'ids_simd'
+              "ids_simd"
         ]
 
   # @!visibility private
@@ -84,39 +81,40 @@ class RunLoop::CoreSimulator
   SIMULATOR_QUIT_PROCESSES =
         [
               # Xcode 7 start throwing this error.
-              ['splashboardd', false],
-
-              # Xcode < 5.1
-              ['iPhone Simulator.app', true],
-
-              # 7.0 < Xcode <= 6.0
-              ['iOS Simulator.app', true],
+              ["splashboardd", false],
 
               # Xcode >= 7.0
-              ['Simulator.app', true],
+              ["Simulator", true],
 
-              # Multiple launchd_sim processes have been causing problems.  This
-              # is a first pass at investigating what it would mean to kill the
-              # launchd_sim process.
-              ['launchd_sim', false],
+              # Xcode < 7.0
+              ["iOS Simulator", true],
+
+              # Multiple launchd_sim processes have been causing problems.
+              # In theory, killing the parent launchd_sim process should kill
+              # child processes like assetsd, but in practice this does not
+              # always happen.
+              ["launchd_sim", false],
 
               # Required for DeviceAgent termination; the simulator hangs otherwise.
               ["xpcproxy", false],
 
-              # Causes crash reports on Xcode < 7.0
-              ["apsd", true],
-
               # assetsd instances clobber each other and are not properly
               # killed when quiting the simulator.
-              ['assetsd', false],
+              ["assetsd", false],
 
               # iproxy is started by UITest.
-              ['iproxy', false],
+              ["iproxy", false],
 
               # Started by Xamarin Studio, this is the parent process of the
               # processes launched by Xamarin's interaction with
               # CoreSimulatorBridge.
-              ['csproxy', false],
+              ["csproxy", false],
+
+              # Hundreds of these processes can be present in Xcode 8 and they
+              # appear to influence the behavior of DeviceAgent.
+              ["MobileSMSSpotlightImporter", false],
+              ["UserEventAgent", false],
+              ["mobileassetd", false]
         ]
 
   # @!visibility private
@@ -131,6 +129,29 @@ class RunLoop::CoreSimulator
       send_term_first = false
       self.term_or_kill(process_name, send_term_first)
     end
+
+    ps_name_fn = lambda do |pid|
+      args = ["ps", "-o", "comm=", "-p", pid.to_s]
+      out = RunLoop::Shell.run_shell_command(args)[:out]
+      if out && out.strip != ""
+        out.strip
+      else
+        "UNKNOWN PROCESS: #{pid}"
+      end
+    end
+
+    kill_options = { :timeout => 0.5 }
+
+    RunLoop::ProcessWaiter.pgrep_f("launchd_sim").each do |pid|
+      process_name = ps_name_fn.call(pid)
+      RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options).kill_process
+    end
+
+    RunLoop::ProcessWaiter.pgrep_f("iPhoneSimulator").each do |pid|
+      process_name = ps_name_fn.call(pid)
+      RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options).kill_process
+    end
+
   end
 
   # @!visibility private
@@ -141,8 +162,6 @@ class RunLoop::CoreSimulator
       send_term_first = process_details[1]
       self.term_or_kill(process_name, send_term_first)
     end
-
-    self.simulator_pid = nil
   end
 
   # @!visibility private
@@ -288,16 +307,6 @@ class RunLoop::CoreSimulator
     installed
   end
 
-  # @!visibility private
-  def self.simulator_pid
-    @@simulator_pid
-  end
-
-  # @!visibility private
-  def self.simulator_pid=(pid)
-    @@simulator_pid = pid
-  end
-
   # @param [RunLoop::Device] device The device.
   # @param [RunLoop::App] app The application.
   # @param [Hash] options Controls the behavior of this class.
@@ -305,17 +314,9 @@ class RunLoop::CoreSimulator
   # @option options :xcode An instance of Xcode to use
   #  simulators in the initialize method.
   def initialize(device, app, options={})
-    defaults = { :quit_sim_on_init => true }
-    merged = defaults.merge(options)
-
     @app = app
     @device = device
-
-    @xcode = merged[:xcode]
-
-    if merged[:quit_sim_on_init]
-      RunLoop::CoreSimulator.quit_simulator
-    end
+    @xcode = options[:xcode]
 
     # stdio.pipe - can cause problems finding the SHA of a simulator
     rm_instruments_pipe
@@ -341,26 +342,27 @@ class RunLoop::CoreSimulator
     @simctl ||= RunLoop::Simctl.new
   end
 
+  # @!visibility private
+  def simulator_requires_relaunch?
+    [simulator_state_requires_relaunch?,
+     running_apps_require_relaunch?].any?
+  end
+
   # Launch the simulator indicated by device.
   def launch_simulator(options={})
     merged_options = {
       :wait_for_stable => true
     }.merge(options)
 
-    if running_simulator_pid != nil
-      # There is a running simulator.
-
-      # Did we launch it?
-      if running_simulator_pid == RunLoop::CoreSimulator.simulator_pid
-        # Nothing to do, we already launched the simulator.
-        return
-      else
-        # We did not launch this simulator; quit it.
-        RunLoop::CoreSimulator.quit_simulator
-      end
+    if !simulator_requires_relaunch?
+      RunLoop.log_debug("Simulator is running and does not require a relaunch.")
+      return
     end
 
-    args = ['open', '-g', '-a', sim_app_path, '--args', '-CurrentDeviceUDID', device.udid]
+    RunLoop::CoreSimulator.quit_simulator
+
+    args = ['open', '-g', '-a', sim_app_path, '--args',
+            '-CurrentDeviceUDID', device.udid, "LAUNCHED_BY_RUN_LOOP"]
 
     RunLoop.log_debug("Launching #{device} with:")
     RunLoop.log_unix_cmd("xcrun #{args.join(' ')}")
@@ -379,9 +381,6 @@ class RunLoop::CoreSimulator
 
     elapsed = Time.now - start_time
     RunLoop.log_debug("Took #{elapsed} seconds to launch the simulator")
-
-    # Keep track of the pid so we can know if we have already launched this sim.
-    RunLoop::CoreSimulator.simulator_pid = running_simulator_pid
 
     true
   end
@@ -470,14 +469,13 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   def uninstall_app_and_sandbox
     return true if !app_is_installed?
 
-    launch_simulator
-
-    timeout = DEFAULT_OPTIONS[:uninstall_app_timeout]
-    simctl.uninstall(device, app, timeout)
-
-    device.simulator_wait_for_stable_state
+    uninstall_app_with_simctl
     true
   end
+
+=begin
+  PRIVATE METHODS
+=end
 
   private
 
@@ -501,6 +499,16 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
     kill_options = { :timeout => 0.5 }
 
     RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
+
+      # We could try to determine if terminating the process will be successful
+      # by asking for the parent pid and the user id.  This adds another call
+      # to `ps` and does not save any time.  It is easier to simply let the
+      # ProcessTerminator fail.  The downside is that a failure will appear
+      # in the debug log.
+      #
+      # macOS is looking more like iOS.  Process names like 'mobileassetd' are
+      # found in both operating systems.
+
       killed = false
 
       if send_term_first
@@ -508,8 +516,9 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
         killed = term.kill_process
       end
 
-      unless killed
-        RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
+      if !killed
+        term = RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
+        term.kill_process
       end
     end
   end
@@ -519,13 +528,13 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   # @return [String] A String suitable for searching for a pid, quitting, or
   #  launching the current simulator.
   def sim_name
-    @sim_name ||= lambda {
+    @sim_name ||= begin
       if xcode.version_gte_7?
         "Simulator"
       else
         "iOS Simulator"
       end
-    }.call
+    end
   end
 
   # @!visibility private
@@ -534,74 +543,114 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   # @return [String] The path to the simulator app for the current version of
   #  Xcode.
   def sim_app_path
-    @sim_app_path ||= lambda {
-      dev_dir = xcode.developer_dir
-      if xcode.version_gte_7?
-        "#{dev_dir}/Applications/Simulator.app"
-      else
-        "#{dev_dir}/Applications/iOS Simulator.app"
-      end
-    }.call
+    @sim_app_path ||= begin
+      "#{xcode.developer_dir}/Applications/#{sim_name}.app"
+    end
   end
 
   # @!visibility private
-  # Returns the current Simulator pid.
   #
-  # @note Will only search for the current Xcode simulator.
-  #
-  # @return [Integer, nil] The pid as a String or nil if no process is found.
-  def running_simulator_pid
+  # @return [Hash] details about the running simulator.
+  def running_simulator_details
     process_name = "MacOS/#{sim_name}"
 
-    args = ["ps", "x", "-o", "pid,command"]
+    args = ["ps", "x", "-o", "pid=,command="]
     hash = run_shell_command(args)
 
     exit_status = hash[:exit_status]
     if exit_status != 0
       raise RuntimeError,
-%Q{Could not find the pid of #{sim_name} with:
+%Q{Could not find the process details of #{sim_name} with:
 
 #{args.join(" ")}
 
-Command exited with status #{exit_status}
-Message: '#{hash[:out]}'
+Command exited with status: #{exit_status}
+
+  '#{hash[:out]}'
 }
     end
 
     if hash[:out].nil? || hash[:out] == ""
        raise RuntimeError,
-%Q{Could not find the pid of #{sim_name} with:
+%Q{Could not find the process details of #{sim_name} with:
 
 #{args.join(" ")}
 
-Command had no output
+Command had no output.
 }
     end
 
-    lines = hash[:out].split("\n")
+    lines = hash[:out].split($-0)
 
     match = lines.detect do |line|
-      line[/#{process_name}/, 0]
+      line[/#{process_name}/]
     end
 
-    return nil if match.nil?
+    return {} if match.nil?
 
-    match.split(" ").first.to_i
+    hash = {}
+
+    pid = match.split(" ").first.strip.to_i
+    hash[:pid] = pid
+
+    hash[:launched_by_run_loop] = match[/LAUNCHED_BY_RUN_LOOP/]
+
+    hash
+  end
+
+  # @!visibility private
+  def uninstall_app_with_simctl
+    launch_simulator
+
+    app_size = RunLoop::Directory.size(app.path, :mb)
+    sim_size = device.simulator_size_on_disk
+    target_size = sim_size - app_size + 5
+
+    timeout = DEFAULT_OPTIONS[:install_app_timeout]
+    simctl.uninstall(device, app, timeout)
+
+    current_size = device.simulator_size_on_disk
+    start = Time.now
+    while current_size > target_size && Time.now < start + 5
+      sleep(0.5)
+      current_size = device.simulator_size_on_disk
+    end
+
+    elapsed = Time.now - start
+    if current_size <= target_size
+      RunLoop.log_debug("Waited for #{elapsed} seconds for app to uninstall")
+    else
+      RunLoop.log_debug("Timed out after #{elapsed} seconds for app to uninstall")
+      RunLoop.log_debug("Expected sim size #{current_size} < #{target_size}")
+    end
   end
 
   # @!visibility private
   def install_app_with_simctl
     launch_simulator
 
+    app_size = RunLoop::Directory.size(app.path, :mb)
+    sim_size = device.simulator_size_on_disk
+    target_size = sim_size + app_size
+
     timeout = DEFAULT_OPTIONS[:install_app_timeout]
     simctl.install(device, app, timeout)
 
-    # On Xcode 7, we must wait.  The app might not be installed otherwise.  This
-    # is particularly true for iPads where the app bundle is installed, but
-    # SpringBoard does not detect the app has been installed.
-    #
-    # On Xcode 8, more testing is needed.
-    device.simulator_wait_for_stable_state
+    current_size = device.simulator_size_on_disk
+    start = Time.now
+    while current_size <= target_size && Time.now < start + 5
+      sleep(0.5)
+      current_size = device.simulator_size_on_disk
+    end
+
+    elapsed = Time.now - start
+    if current_size > target_size
+      RunLoop.log_debug("Waited for #{elapsed} seconds for app to install")
+    else
+      RunLoop.log_debug("Timed out after #{elapsed} seconds for app to install")
+      RunLoop.log_debug("Expected sim size #{current_size} >= #{target_size}")
+    end
+
     installed_app_bundle_dir
   end
 
@@ -655,6 +704,86 @@ Command had no output
   # Xcode support is dropped.
   def sdk_gte_8?
     device.version >= RunLoop::Version.new('8.0')
+  end
+
+  # @!visibility private
+  def simulator_state_requires_relaunch?
+    running_sim_details = running_simulator_details
+
+    # Simulator is not running.
+    if !running_sim_details[:pid]
+      RunLoop.log_debug("Simulator relaunch required: simulator is not running.")
+      return true
+    end
+
+    # Simulator is running, but run-loop did not launch it.
+    if !running_sim_details[:launched_by_run_loop]
+      RunLoop.log_debug("Simulator relaunch required: simulator was not launched by run_loop")
+      return true
+    end
+
+    # No device was passed to initializer.
+    return true if device.nil?
+
+    # Simulator is running, run_loop launched it, but it is not Booted.
+    device.update_simulator_state
+    if device.state == "Booted"
+      RunLoop.log_debug("Simulator relaunch not required: simulator has state 'Booted'")
+      false
+    else
+      RunLoop.log_debug("Simulator relaunch required: simulator does not have state 'Booted'")
+      true
+    end
+  end
+
+  # @!visibility private
+  def running_apps_require_relaunch?
+    running_apps = device.simulator_running_app_details
+
+    if running_apps.empty?
+      RunLoop.log_debug("Simulator relaunch not required: no running apps")
+      return false
+    end
+
+    # DeviceAgent is running, but it was launched by Xcode.
+    if running_apps["XCTRunner"]
+      if running_apps["XCTRunner"][:args][/CBX_LAUNCHED_BY_XCODE/]
+        RunLoop.log_debug("Simulator relaunch required: XCTRunner is controlled by Xcode")
+        return true
+      end
+    end
+
+    # No app was passed to initializer.
+    return true if app.nil?
+
+    # AUT is running, but it was not launched by DeviceAgent.
+    app_name = app.executable_name
+    if running_apps[app_name]
+      launch_arg = RunLoop::DeviceAgent::Client::AUT_LAUNCHED_BY_RUN_LOOP_ARG
+      if !running_apps[app_name][:args][/#{launch_arg}/]
+        RunLoop.log_debug("Simulator relaunch required: AUT is running, but not launched by run-loop")
+        return true
+      end
+    end
+
+    # This is the UITest behavior.  UITest does not inspect the simulator for
+    # system apps that are running - it only checks for running user apps.
+    #
+    # I don't think this condition is necessary, so we'll skip it for now, but
+    # capture there is a difference between UITest and run-loop.
+    #
+    # There is some other application running on the simulator.
+    # running_apps.delete("XCTRunner")
+    # running_apps.delete(app_name)
+    #
+    # if running_apps.empty?
+    #   RunLoop.log_debug("Simulator relaunch not required: only XCTRunner and AUT are running")
+    #   false
+    # else
+    #   RunLoop.log_debug("Simulator relaunch required: other applications are running")
+    #   true
+    # end
+    false
   end
 
   # The data directory for the the device.
@@ -850,20 +979,8 @@ Command had no output
     RunLoop.log_debug("  App to launch SHA: #{app_sha}")
     RunLoop.log_debug("Will install #{app}")
 
-    FileUtils.rm_rf installed_app_bundle
-    RunLoop.log_debug('Deleted the existing app')
-
-    directory = File.expand_path(File.join(installed_app_bundle, '..'))
-    bundle_name = File.basename(app.path)
-    target = File.join(directory, bundle_name)
-
-    args = ['ditto', app.path, target]
-    xcrun.run_command_in_context(args, log_cmd: true)
-
-    RunLoop.log_debug("Installed #{app} on CoreSimulator #{device.udid}")
-
-    clear_device_launch_csstore
-
+    uninstall_app_with_simctl
+    install_app_with_simctl
     true
   end
 
@@ -966,7 +1083,7 @@ Command had no output
 
   # @!visibility private
   def self.user_app_installed?(device, bundle_identifier)
-    core_sim = self.new(device, bundle_identifier, {:quit_sim_on_init => false})
+    core_sim = self.new(device, bundle_identifier)
     sim_apps_dir = core_sim.send(:device_applications_dir)
     Dir.glob("#{sim_apps_dir}/**/*.app").find do |path|
       RunLoop::App.new(path).bundle_identifier == bundle_identifier

@@ -288,12 +288,12 @@ $ bundle exec run-loop simctl manage-processes
 
     # @!visibility private
     #
-    # Launches the app on on the device.
+    # Removes the application from the device.
     #
     # Caller is responsible for the following:
     #
     # 1. Launching the simulator.
-    # 2. That the application is installed; simctl uninstall will fail if app
+    # 2. Verifying that the application is installed; simctl uninstall will fail if app
     #    is installed.
     #
     # No checks are made.

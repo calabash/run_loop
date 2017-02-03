@@ -94,8 +94,7 @@ but binary does not exist at that path.
         if device.simulator?
           cbxapp = RunLoop::App.new(runner.runner)
 
-          # Quits the simulator if CoreSimulator is not already in control of it.
-          sim = CoreSimulator.new(device, cbxapp, {:quit_sim_on_init => false})
+          sim = CoreSimulator.new(device, cbxapp)
           sim.install
           sim.launch_simulator
         else
@@ -111,19 +110,15 @@ Expected :device_agent_install_timeout key in options:
           end
 
           options = {:log_cmd => true, :timeout => install_timeout}
+          args = [
+            cmd, "install",
+            "--device-id", device.udid,
+            # -a <== --app-bundle (1.0.4) and --app-path (> 1.0.4)
+            "-a", runner.runner
+          ]
+
           if code_sign_identity
-            args = [
-              cmd, "install",
-              "--device-id", device.udid,
-              "--app-bundle", runner.runner,
-              "--codesign-identity", code_sign_identity
-            ]
-          else
-            args = [
-              cmd, "install",
-              "--device-id", device.udid,
-              "--app-bundle", runner.runner
-            ]
+            args = args + ["--codesign-identity", code_sign_identity]
           end
 
           start = Time.now

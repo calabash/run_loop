@@ -31,7 +31,7 @@ module RunLoop
       # exceeded - if the default 30 seconds has passed, the
       # simulator is probably stable enough for subsequent
       # operations.
-      :timeout => RunLoop::Environment.ci? ? 120 : 30
+      :timeout => RunLoop::Environment.ci? ? 240 : 120
     }
 
     attr_reader :name
@@ -322,124 +322,54 @@ version: #{version}
     end
 
     # @!visibility private
-    #
-    # Waits for three conditions:
-    #
-    # 1. The SHA sum of the simulator data/ directory to be stable.
-    # 2. No more log messages are begin generated.
-    # 3. 1 and 2 must hold for 1.5 seconds.
-    #
-    # When the simulator version is >= iOS 9, two more conditions are added to
-    # get past the iOS 9+ boot screen.
-    #
-    # 4. Wait for com.apple.audio.SystemSoundServer-iOS-Simulator process to
-    #    start.
-    # 5. 1 and 2 must hold for 1.5 seconds.
-    #
-    # When the simulator version is >= iOS 9 and the device is an iPad another
-    # condition is added because simctl fails to correctly install applications;
-    # the app and data container exists, but Springboard does not detect them.
-    #
-    # 6. 1 and 2 must hold for 1.5 seconds.
-    #
-    # TODO needs update for Xcode 8 + iOS 10 simulators.
+    # In megabytes
+    def simulator_size_on_disk
+      data_path = File.join(simulator_root_dir, 'data')
+      RunLoop::Directory.size(data_path, :mb)
+    end
+
+    # @!visibility private
     def simulator_wait_for_stable_state
-
-      # How long to wait between stability checks.
-      # Shorter than this gives false positives.
-      delay = 0.5
-
-      # How many times to wait for stable state.
-      max_stable_count = 3
-
-      # How long to wait for iOS 9 boot screen.
-      boot_screen_wait_options = {
-        :max_boot_screen_wait => 10,
-        :raise_on_timeout => false
-      }
-
-      # How much additional time to wait for iOS 9+ iPads.
-      #
-      # Installing and launching on iPads is problematic.
-      # Sometimes the app is installed, but SpringBoard does
-      # not recognize that the app is installed even though
-      # simctl says that it is.
-      additional_ipad_delay = delay * 2
-
-      # Adjust for CI environments
-      if RunLoop::Environment.ci?
-        max_stable_count = 5
-        boot_screen_wait_options[:max_boot_screen_wait] = 20
-        additional_ipad_delay = delay * 4
-      end
-
-      # iOS 9 simulators have an additional boot screen.
-      is_gte_ios9 = version >= RunLoop::Version.new('9.0')
-
-      # Xcode 8 simulators do not need to wait for log file
-      is_xcode8 = RunLoop::Xcode.new.version_gte_8?
-
-      # iOS > 9 iPad simulators need additional time to stabilize, especially
-      # to ensure that `simctl install` notifies SpringBoard that a new app
-      # has been installed.
-      is_ipad = simulator_is_ipad?
+      required = simulator_required_child_processes
 
       timeout = SIM_STABLE_STATE_OPTIONS[:timeout]
       now = Time.now
       poll_until = now + timeout
 
       RunLoop.log_debug("Waiting for simulator to stabilize with timeout: #{timeout} seconds")
+      footprint = simulator_size_on_disk
 
-      current_dir_sha = simulator_data_directory_sha
-      if is_xcode8
-        current_log_sha = true
-      else
-        current_log_sha = simulator_log_file_sha
-      end
-
-      is_stable = false
-      waited_for_boot = false
-      waited_for_ipad = false
-      stable_count = 0
-
-      while Time.now < poll_until do
-        latest_dir_sha = simulator_data_directory_sha
-        if is_xcode8
-          latest_log_sha = true
+      if version.major >= 9 && footprint < 18
+        first_launch = true
+      elsif version.major == 8
+        if version.minor >= 3 && footprint < 19
+          first_launch = true
         else
-          latest_log_sha = simulator_log_file_sha
+          first_launch = footprint < 11
         end
-
-        is_stable = [current_dir_sha == latest_dir_sha,
-                     current_log_sha == latest_log_sha].all?
-
-        if is_stable
-          stable_count = stable_count + 1
-          if stable_count == max_stable_count
-            if is_gte_ios9 && !waited_for_boot
-              process_name = "com.apple.audio.SystemSoundServer-iOS-Simulator"
-              RunLoop::ProcessWaiter.new(process_name, boot_screen_wait_options).wait_for_any
-              waited_for_boot = true
-              stable_count = 0
-            elsif is_gte_ios9 && is_ipad && !waited_for_ipad
-              RunLoop.log_debug("Waiting additional time for iOS 9 iPad to stabilize")
-              sleep(additional_ipad_delay)
-              waited_for_ipad = true
-              stable_count = 0
-            else
-              break
-            end
-          end
-        end
-
-        current_dir_sha = latest_dir_sha
-        current_log_sha = latest_log_sha
-        sleep(delay)
+      else
+        first_launch = false
       end
 
-      if is_stable
+      while !required.empty? && Time.now < poll_until do
+        sleep(0.5)
+        required = required.map do |process_name|
+          if simulator_process_running?(process_name)
+            nil
+          else
+            process_name
+          end
+        end.compact
+      end
+
+      if required.empty?
         elapsed = Time.now - now
-        RunLoop.log_debug("Waited a total of #{elapsed} seconds for simulator to stabilize")
+        RunLoop.log_debug("All required simulator processes have started after #{elapsed}")
+        if first_launch
+          RunLoop.log_debug("Detected a first launch, waiting a little longer - footprint was #{footprint} MB")
+          sleep(RunLoop::Environment.ci? ? 10 : 5)
+        end
+        RunLoop.log_debug("Waited for #{elapsed} seconds for simulator to stabilize")
       else
         RunLoop.log_debug("Timed out after #{timeout} seconds waiting for simulator to stabilize")
       end
@@ -541,9 +471,61 @@ failed with this output:
       simulator_languages
     end
 
+    # @!visibility private
+    def simulator_running_app_details
+      pids = simulator_running_app_pids
+      running_apps = {}
+
+      pids.each do |pid|
+        cmd = ["ps", "-o", "comm=", "-p", pid.to_s]
+
+        hash = run_shell_command(cmd)
+        out = hash[:out]
+
+        if out.nil? || out == "" || out.strip.nil?
+          nil
+        else
+          name = out.strip.split("/").last
+
+          cmd = ["ps", "-o", "command=", "-p", pid.to_s]
+          hash = run_shell_command(cmd)
+          out = hash[:out]
+
+          if out.nil? || out == "" || out.strip.nil?
+            nil
+          else
+            tokens = out.split("#{name} ")
+
+            # No arguments
+            if tokens.count == 1
+              args = ""
+            else
+              args = tokens.last.strip
+            end
+
+            running_apps[name] = {
+              args: args,
+              command: out.strip
+            }
+          end
+        end
+      end
+
+      running_apps
+    end
+
+=begin
+  PRIVATE METHODS
+=end
+
     private
 
-    attr_reader :pbuddy, :simctl, :xcrun
+    attr_reader :pbuddy, :simctl, :xcrun, :xcode
+
+    # @!visibility private
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
 
     # @!visibility private
     def xcrun
@@ -608,6 +590,76 @@ failed with this output:
         `killall udidetect &> /dev/null`
       end
       udid
+    end
+
+    # @!visibility private
+    def simulator_required_child_processes
+      @simulator_required_child_processes ||= begin
+        required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
+        if xcode.version_gte_8? && version.major > 8
+          required << "medialibraryd"
+        end
+
+        if simulator_is_ipad? && version.major == 9
+          required << "com.apple.audio.SystemSoundServer-iOS-Simulator"
+        end
+
+        required
+      end
+    end
+
+    # @!visibility private
+    def simulator_launchd_sim_pid
+      waiter = RunLoop::ProcessWaiter.new("launchd_sim")
+      waiter.wait_for_any
+
+      return nil if !waiter.running_process?
+
+      pid = nil
+
+      waiter.pids.each do |launchd_sim_pid|
+        cmd = ["ps", "x", "-o", "pid,command", launchd_sim_pid.to_s]
+        hash = run_shell_command(cmd)
+        out = hash[:out]
+        process_line = out.split($-0)[1]
+        if !process_line || process_line == ""
+          false
+        else
+          pid = process_line.split(" ").first.strip
+          if process_line[/#{udid}/] == nil
+            RunLoop.log_debug("Terminating launchd_sim process with pid #{pid}")
+            RunLoop::ProcessTerminator.new(pid, "KILL", "launchd_sim").kill_process
+            pid = nil
+          end
+        end
+      end
+      pid
+    end
+
+    # @!visibility private
+    def process_parent_is_launchd_sim?(pid)
+      launchd_sim_pid = simulator_launchd_sim_pid
+      return false if !launchd_sim_pid
+
+      cmd = ["ps", "x", "-o", "ppid=", "-p", pid.to_s]
+      hash = run_shell_command(cmd)
+
+      out = hash[:out]
+      if out.nil? || out == ""
+        false
+      else
+        ppid = out.strip
+        ppid == launchd_sim_pid.to_s
+      end
+    end
+
+    # @!visibility private
+    def simulator_process_running?(process_name)
+      waiter = RunLoop::ProcessWaiter.new(process_name)
+      waiter.pids.any? do |pid|
+        process_parent_is_launchd_sim?(pid)
+        #process_parent_is_current_xcode?(pid)
+      end
     end
 
     # @!visibility private
@@ -687,6 +739,26 @@ https://github.com/calabash/calabash-ios/wiki/Testing-on-Physical-Devices
 ]
       end
       true
+    end
+
+    # @!visibility private
+    def simulator_running_app_pids
+      simulator_running_user_app_pids +
+        simulator_running_system_app_pids
+    end
+
+    # @!visibility private
+    def simulator_running_user_app_pids
+      path = File.join(udid, "data", "Containers", "Bundle")
+      RunLoop::ProcessWaiter.pgrep_f(path)
+    end
+
+    # @!visibility private
+    def simulator_running_system_app_pids
+      base_dir = xcode.developer_dir
+      sim_apps_dir = "Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"
+      path = File.expand_path(File.join(base_dir, sim_apps_dir))
+      RunLoop::ProcessWaiter.pgrep_f(path)
     end
   end
 end

@@ -38,11 +38,19 @@ module RunLoop
 
         # Ignored in the XTC.
         # This key is subject to removal or changes
-        :device_agent_install_timeout => RunLoop::Environment.ci? ? 120 : 90,
+        :device_agent_install_timeout => RunLoop::Environment.ci? ? 240 : 120,
         # This value must always be false on the XTC.
         # This is should only be used by gem maintainers or very advanced users.
-        :shutdown_device_agent_before_launch => false
+        :shutdown_device_agent_before_launch => false,
+
+        # This value was derived empirically by typing hundreds of strings
+        # using XCUIElement#typeText.  It corresponds to the DeviceAgent
+        # constant CBX_DEFAULT_SEND_STRING_FREQUENCY which is 60.  _Decrease_
+        # this value if you are timing out typing strings.
+        :characters_per_second => 12
       }
+
+      AUT_LAUNCHED_BY_RUN_LOOP_ARG = "LAUNCHED_BY_RUN_LOOP"
 
       # @!visibility private
       #
@@ -67,7 +75,6 @@ module RunLoop
 
       # @!visibility private
       def self.run(options={})
-        # logger = options[:logger]
         simctl = options[:sim_control] || options[:simctl] || RunLoop::Simctl.new
         xcode = options[:xcode] || RunLoop::Xcode.new
         instruments = options[:instruments] || RunLoop::Instruments.new
@@ -88,10 +95,19 @@ module RunLoop
         default_options = {
             :xcode => xcode
         }
+
         merged_options = default_options.merge(options)
 
         if device.simulator? && app
+          RunLoop::Core.expect_simulator_compatible_arch(device, app)
+
+          if merged_options[:relaunch_simulator]
+            RunLoop.log_debug("Detected :relaunch_simulator option; will force simulator to restart")
+            RunLoop::CoreSimulator.quit_simulator
+          end
+
           core_sim = RunLoop::CoreSimulator.new(device, app, merged_options)
+
           if reset_options
             core_sim.reset_app_sandbox
           end
@@ -100,7 +116,7 @@ module RunLoop
           core_sim.install
         end
 
-        cbx_launcher = Client.detect_cbx_launcher(options, device)
+        cbx_launcher = Client.detect_cbx_launcher(merged_options, device)
 
         code_sign_identity = options[:code_sign_identity]
         if !code_sign_identity
@@ -113,6 +129,10 @@ module RunLoop
                                                DEFAULTS[:shutdown_device_agent_before_launch])
         aut_args = options.fetch(:args, [])
         aut_env = options.fetch(:env, {})
+
+        if !aut_args.include?(AUT_LAUNCHED_BY_RUN_LOOP_ARG)
+          aut_args << AUT_LAUNCHED_BY_RUN_LOOP_ARG
+        end
 
         launcher_options = {
             code_sign_identity: code_sign_identity,
@@ -282,6 +302,9 @@ INSTANCE METHODS
       # @!visibility private
       #
       # Experimental!
+      #
+      # This will launch the other app using the same arguments and environment
+      # as the AUT.
       def launch_other_app(bundle_id)
         launch_aut(bundle_id)
       end
@@ -327,7 +350,9 @@ INSTANCE METHODS
 
       # @!visibility private
       def clear_text
-        options = enter_text_http_options
+        # Tries to touch the keyboard delete key, but falls back on typing the
+        # backspace character.
+        options = enter_text_http_options("\b")
         parameters = {
           :gesture => "clear_text"
         }
@@ -342,7 +367,7 @@ INSTANCE METHODS
         if !keyboard_visible?
           raise RuntimeError, "Keyboard must be visible"
         end
-        options = enter_text_http_options
+        options = enter_text_http_options(string.to_s)
         parameters = {
           :gesture => "enter_text",
           :options => {
@@ -362,7 +387,7 @@ INSTANCE METHODS
       # 1. Removes duplicate check.
       # 2. It turns out DeviceAgent query can be very slow.
       def enter_text_without_keyboard_check(string)
-        options = enter_text_http_options
+        options = enter_text_http_options(string.to_s)
         parameters = {
           :gesture => "enter_text",
           :options => {
@@ -753,6 +778,20 @@ Timed out after #{timeout} seconds waiting for the keyboard to appear.
       end
 
       # @!visibility private
+      def wait_for_no_keyboard(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for the keyboard to disappear.
+
+]
+        wait_for(message, options) do
+          !keyboard_visible?
+        end
+      end
+
+      # @!visibility private
       def wait_for_alert(timeout=WAIT_DEFAULTS[:timeout])
         options = WAIT_DEFAULTS.dup
         options[:timeout] = timeout
@@ -784,23 +823,52 @@ Timed out after #{timeout} seconds waiting for an alert to disappear.
       # @!visibility private
       def wait_for_text_in_view(text, uiquery, options={})
         merged_options = WAIT_DEFAULTS.merge(options)
-        result = wait_for_view(uiquery, merged_options)
 
-        # This is not quite right.  It is possible to get a false positive.
-        # If result does not have "value" or "label" and the text is nil
-        candidates = [result["value"],
-                      result["label"]]
-        match = candidates.any? do |elm|
-          elm == text
-        end
-        if !match
-          fail(%Q[
+        begin
+          wait_for("TMP", merged_options) do
+            view = query(uiquery).first
 
-Expected to find '#{text}' as a 'value' or 'label' in
+            if view
+              # Guard against this edge case:
+              #
+              # Text is "" and value or label keys do not exist in view which
+              # implies that value or label was the empty string (see the
+              # DeviceAgent JSONUtils and Facebook macros).
+              if text == "" || text == nil
+                view["value"] == nil && view["label"] == nil
+              else
+                [view["value"], view["label"]].any? { |elm| elm == text }
+              end
+            else
+              false
+            end
+          end
+        rescue merged_options[:exception_class] => e
+          view = query(uiquery)
+          if !view
+            message = %Q[
+Timed out wait after #{merged_options[:timeout]} seconds waiting for a view to match:
 
-#{JSON.pretty_generate(result)}
+  #{uiquery}
 
-])
+]
+          else
+            message = %Q[
+Timed out after #{merged_options[:timeout]} seconds waiting for a view matching:
+
+  '#{uiquery}'
+
+to have 'value' or 'label' matching text:
+
+  '#{text}'
+
+Found:
+
+#{JSON.pretty_generate(view)}
+
+]
+          end
+          fail(merged_options[:exception_class], message)
         end
       end
 
@@ -1069,8 +1137,11 @@ PRIVATE
       # @!visibility private
       #
       # A patch while we are trying to figure out what is wrong with text entry.
-      def enter_text_http_options
-        timeout = DEFAULTS[:http_timeout] * 6
+      def enter_text_http_options(string)
+        characters = string.length + 1
+        characters_per_second = DEFAULTS[:characters_per_second]
+        to_type_timeout = [characters/characters_per_second, 2.0].max
+        timeout = (DEFAULTS[:http_timeout] * 3) + to_type_timeout
         {
           :timeout => timeout,
           :interval => 0.1,
@@ -1178,21 +1249,26 @@ PRIVATE
         hash
       end
 
-      # TODO Might not be necessary - this is an edge case and it is likely
-      # that iOSDeviceManager will be able to handle this for us.
+      # @!visibility private
       def cbx_runner_stale?
-        false
-        # The RunLoop::Version class needs to be updated to handle timestamps.
-        #
-        # if cbx_launcher.name == :xcodebuild
-        #   return false
-        # end
+        return false if RunLoop::Environment.xtc?
+        return false if cbx_launcher.name == :xcodebuild
+        return false if !running?
 
-        # version_info = server_version
-        # running_bundle_version = RunLoop::Version.new(version_info[:bundle_version])
-        # bundle_version = RunLoop::App.new(cbx_launcher.runner.runner).bundle_version
-        #
-        # running_bundle_version < bundle_version
+        version_info = server_version
+        running_version_timestamp = version_info[:bundle_version].to_i
+
+        app = RunLoop::App.new(cbx_launcher.runner.runner)
+        plist_buddy = RunLoop::PlistBuddy.new
+        version_timestamp = plist_buddy.plist_read("CFBundleVersion", app.info_plist_path).to_i
+
+        if running_version_timestamp == version_timestamp
+          RunLoop.log_debug("The running DeviceAgent version is the same as the version on disk")
+          false
+        else
+          RunLoop.log_debug("The running DeviceAgent version is not the same as the version on disk")
+          true
+        end
       end
 
       # @!visibility private
@@ -1289,7 +1365,7 @@ Please install it.
           client = http_client(http_options)
           request = request("session",
                             {
-                              :bundleID => bundle_id,
+                              :bundle_id => bundle_id,
                               :launchArgs => aut_args,
                               :environment => aut_env
                             })

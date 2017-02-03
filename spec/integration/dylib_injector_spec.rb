@@ -10,7 +10,7 @@ if Resources.shared.core_simulator_env?
     let(:injector) { RunLoop::DylibInjector.new(app.executable_name, dylib) }
 
     before do
-      stub_env({'DEBUG' => '1'})
+      allow(RunLoop::Environment).to receive(:debug?).and_return(true)
       RunLoop::CoreSimulator.quit_simulator
     end
 
