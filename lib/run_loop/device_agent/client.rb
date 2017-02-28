@@ -112,7 +112,6 @@ module RunLoop
             core_sim.reset_app_sandbox
           end
 
-          simctl.ensure_software_keyboard(device)
           core_sim.install
         end
 
