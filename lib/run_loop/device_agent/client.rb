@@ -592,6 +592,19 @@ Could not dismiss SpringBoard alert by touching button with title '#{button_titl
         true
       end
 
+      # @!visibility private
+      def set_dismiss_springboard_alerts_automatically(true_or_false)
+        if ![true, false].include?(true_or_false)
+          raise ArgumentError, "Expected #{true_or_false} to be a boolean true or false"
+        end
+
+        parameters = { :dismiss_automatically => true_or_false }
+        request = request("set-dismiss-springboard-alerts-automatically", parameters)
+        client = http_client(http_options)
+        response = client.post(request)
+        hash = expect_300_response(response)
+        hash["is_dismissing_alerts_automatically"]
+      end
 
       # @!visibility private
       # @see #query
