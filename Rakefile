@@ -225,6 +225,30 @@ target = #{target}
     end
   end
 
+  def create_calabash_keychain
+    require "run_loop/environment"
+    path = File.join(RunLoop::Environment.user_home_directory,
+                     ".calabash", "calabash-codesign")
+    if File.exist?(path)
+      Dir.chdir(path) do
+        args = ["apple/create-keychain.sh"]
+        hash = RunLoop::Shell.run_shell_command(args)
+        if hash[:exit_status] != 0
+          raise %Q[
+Failed to create the codesigning keychain:
+
+#{hash[:out]}
+
+]
+        else
+          log_info("Created the Calabash.keychain")
+        end
+      end
+    else
+     log_info("Cannot create the Calabash.keychain")
+    end
+  end
+
   task :build do
     banner("Building")
 
@@ -232,6 +256,8 @@ target = #{target}
     device_agent_dir
 
     ensure_valid_core_simulator_service
+
+    create_calabash_keychain
 
     env = {"DEVICEAGENT_PATH" => device_agent}
 
