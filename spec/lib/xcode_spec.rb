@@ -56,6 +56,7 @@ describe RunLoop::Xcode do
     expect(xcode.send(:fetch_version, key)).to be == version
   end
 
+  it '#v83' do expect(xcode.v83).to be == RunLoop::Version.new('8.3') end
   it '#v82' do expect(xcode.v82).to be == RunLoop::Version.new('8.2') end
   it '#v81' do expect(xcode.v81).to be == RunLoop::Version.new('8.1') end
   it '#v80' do expect(xcode.v80).to be == RunLoop::Version.new('8.0') end
@@ -70,6 +71,20 @@ describe RunLoop::Xcode do
   it '#v60' do expect(xcode.v60).to be == RunLoop::Version.new('6.0') end
   it '#v51' do expect(xcode.v51).to be == RunLoop::Version.new('5.1') end
   it '#v50' do expect(xcode.v50).to be == RunLoop::Version.new('5.0') end
+
+  describe "#version_gte_83?" do
+    it "true" do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("8.3"))
+
+      expect(xcode.version_gte_83?).to be_truthy
+    end
+
+    it "false" do
+      expect(xcode).to receive(:version).and_return xcode.v82
+
+      expect(xcode.version_gte_83?).to be_falsey
+    end
+  end
 
   describe "#version_gte_82?" do
     it "true" do

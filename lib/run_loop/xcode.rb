@@ -24,6 +24,14 @@ module RunLoop
       to_s
     end
 
+    # Returns a version instance for Xcode 8.3 ; used to check for the
+    # availability of features and paths to various items on the filesystem
+    #
+    # @return [RunLoop::Version] 8.3
+    def v83
+      fetch_version(:v83)
+    end
+
     # Returns a version instance for Xcode 8.2 ; used to check for the
     # availability of features and paths to various items on the filesystem
     #
@@ -134,6 +142,13 @@ module RunLoop
     # @return [RunLoop::Version] 5.0
     def v50
       fetch_version(:v50)
+    end
+
+    # Is the active Xcode version 8.3 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 8.3
+    def version_gte_83?
+      version >= v83
     end
 
     # Is the active Xcode version 8.2 or above?
