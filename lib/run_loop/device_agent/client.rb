@@ -574,6 +574,26 @@ Query must contain at least one of these keys:
       end
 
       # @!visibility private
+      def dismiss_springboard_alert(button_title)
+        parameters = { :button_title => button_title }
+        request = request("dismiss-springboard-alert", parameters)
+        client = http_client(http_options)
+        response = client.post(request)
+        hash = expect_300_response(response)
+
+        if hash["error"]
+          raise RuntimeError, %Q[
+Could not dismiss SpringBoard alert by touching button with title '#{button_title}':
+
+#{hash["error"]}
+
+]
+        end
+        true
+      end
+
+
+      # @!visibility private
       # @see #query
       def query_for_coordinate(uiquery)
         element = wait_for_view(uiquery)
