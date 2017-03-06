@@ -29,10 +29,48 @@ describe RunLoop::Xcode do
       end
     end
 
-    it 'does not raise an error for valid keys' do
+    it 'does not raise an error for vaklid keys' do
       expect do
         xcode.send(:ensure_valid_version_key, :v70)
       end.not_to raise_error
+    end
+  end
+
+  context "#version" do
+    let(:xcodebuild_out) do
+      {
+        :out => %Q[
+Xcode 8.2.1
+Build version 8W132p
+],
+        :exit_status => 0,
+        :pid => 1
+      }
+    end
+
+    it "returns 0.0.0 when running on Test Cloud" do
+      expect(RunLoop::Environment).to receive(:xtc?).and_return(true)
+
+      expect(xcode.version).to be == RunLoop::Version.new("0.0.0")
+    end
+
+    it "returns 0.0.0 when xcrun xcodebuild has exit status non-zero" do
+      xcodebuild_out[:exit_status] = 1
+      expect(xcode).to receive(:run_shell_command).and_return(xcodebuild_out)
+
+      expect(xcode.version).to be == RunLoop::Version.new("0.0.0")
+    end
+
+    it "returns 0.0.0 when xcrun xcodebuild raises an error" do
+      expect(xcode).to receive(:run_shell_command).and_raise(RuntimeError)
+
+      expect(xcode.version).to be == RunLoop::Version.new("0.0.0")
+    end
+
+    it "returns Xcode version" do
+      expect(xcode).to receive(:run_shell_command).and_return(xcodebuild_out)
+
+      expect(xcode.version).to be == RunLoop::Version.new("8.2.1")
     end
   end
 
