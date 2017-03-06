@@ -1,5 +1,3 @@
-require 'open3'
-
 module RunLoop
 
   # A model of the active Xcode version.
@@ -12,7 +10,11 @@ module RunLoop
   # `xcode-select` or overridden using the `DEVELOPER_DIR`.
   class Xcode
 
+    require "run_loop/regex"
+    require "run_loop/shell"
+
     include RunLoop::Regex
+    include RunLoop::Shell
 
     # Returns a String representation.
     def to_s
@@ -249,12 +251,31 @@ module RunLoop
     # @return [RunLoop::Version] The current version of Xcode as reported by
     #  `xcrun xcodebuild -version`.
     def version
-      @xcode_version ||= lambda do
-        execute_command(['-version']) do |stdout, _, _|
-          version_string = stdout.read.chomp[VERSION_REGEX, 0]
-          RunLoop::Version.new(version_string)
+      @xcode_version ||= begin
+        if RunLoop::Environment.xtc?
+          RunLoop::Version.new("0.0.0")
+        else
+          version = RunLoop::Version.new("0.0.0")
+          begin
+            args = ["xcrun", "xcodebuild", "-version"]
+            hash = run_shell_command(args)
+            if hash[:exit_status] != 0
+              RunLoop.log_error("xcrun xcodebuild -version exited non-zero")
+            else
+              out = hash[:out]
+              version_string = out.chomp[VERSION_REGEX, 0]
+              version = RunLoop::Version.new(version_string)
+            end
+          rescue RuntimeError => e
+            RunLoop.log_error(%Q[
+Could not find Xcode version:
+
+  #{e.class}: #{e.message}
+])
+          end
+          version
         end
-      end.call
+      end
     end
 
     # Is this a beta version of Xcode?
@@ -345,12 +366,6 @@ $ man xcode-select
 
       unless string[/v\d{2}/, 0]
         raise "Expected version key '#{key}' to match vXX pattern"
-      end
-    end
-
-    def execute_command(args)
-      Open3.popen3('xcrun', 'xcodebuild', *args) do |_, stdout, stderr, wait_thr|
-        yield stdout, stderr, wait_thr
       end
     end
 
