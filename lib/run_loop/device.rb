@@ -658,7 +658,6 @@ failed with this output:
       waiter = RunLoop::ProcessWaiter.new(process_name)
       waiter.pids.any? do |pid|
         process_parent_is_launchd_sim?(pid)
-        #process_parent_is_current_xcode?(pid)
       end
     end
 

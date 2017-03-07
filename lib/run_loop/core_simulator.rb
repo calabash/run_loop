@@ -460,6 +460,7 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   def reset_app_sandbox
     return true if !app_is_installed?
 
+    RunLoop::CoreSimulator.quit_simulator
     RunLoop::CoreSimulator.wait_for_simulator_state(device, "Shutdown")
 
     reset_app_sandbox_internal

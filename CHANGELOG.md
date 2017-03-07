@@ -1,5 +1,16 @@
 ## Change Log
 
+### 2.3.1
+
+This release does not contain a new DeviceAgent stack.
+
+* Xcode#version returns 0.0.0 on XTC and on RuntimeErrors #606
+* CoreSim: quit simulator before resetting app sandbox #605
+* DeviceAgent::Client: skip ensure software keyboard check #604
+* Prepare for Xcode 8.3 support #603
+* Directory: rescue errors during skip check and File.size #598
+* Directory: rescue ENOENT errors during skip check #597
+
 ### 2.3.0
 
 This release contains a significant change - Simulators will not be

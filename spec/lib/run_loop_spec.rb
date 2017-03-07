@@ -49,7 +49,7 @@ describe RunLoop do
     context "not XTC" do
 
       before do
-        expect(RunLoop::Environment).to receive(:xtc?).and_return(false)
+        expect(RunLoop::Environment).to receive(:xtc?).at_least(:once).and_return(false)
       end
 
       context "Xcode >= 8" do
@@ -101,7 +101,7 @@ describe RunLoop do
     context "not XTC" do
 
       before do
-        expect(RunLoop::Environment).to receive(:xtc?).and_return(false)
+        expect(RunLoop::Environment).to receive(:xtc?).at_least(:once).and_return(false)
       end
 
       context ":automator defined" do

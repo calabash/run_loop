@@ -132,15 +132,15 @@ function dutchLocalizations() {
 }
 
 function dutch_BE_Localizations() {
-	return [
-		["Sta toe", /toegang tot je locatie toestaan terwijl je de app gebruikt/],
-		["Sta toe", /toegang tot je locatie toestaan, zelfs als je de app niet gebruikt/],
-		["OK", /wil toegang tot je contacten/],
-		["OK", /wil toegang tot je agenda/],
-		["OK", /wil toegang tot je herinneringen/],
-		["OK", /wil toegang tot je foto's/],
-		["OK", /wil toegang tot je bewegings- en fitnessactiviteit/]
-	];
+  return [
+    ["Sta toe", /toegang tot je locatie toestaan terwijl je de app gebruikt/],
+    ["Sta toe", /toegang tot je locatie toestaan, zelfs als je de app niet gebruikt/],
+    ["OK", /wil toegang tot je contacten/],
+    ["OK", /wil toegang tot je agenda/],
+    ["OK", /wil toegang tot je herinneringen/],
+    ["OK", /wil toegang tot je foto's/],
+    ["OK", /wil toegang tot je bewegings- en fitnessactiviteit/]
+  ];
 }
 
 function swedishLocalizations() {
