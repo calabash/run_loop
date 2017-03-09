@@ -43,7 +43,8 @@ function englishLocalizations() {
     ["OK", /Would Like to Access Your Motion & Fitness Activity/],
     ["OK", /Would Like Access to Twitter Accounts/],
     ["OK", /data available to nearby bluetooth devices/],
-    ["OK", /[Ww]ould [Ll]ike to [Ss]end [Yy]ou( Push)? Notifications/]
+    ["OK", /[Ww]ould [Ll]ike to [Ss]end [Yy]ou( Push)? Notifications/],
+    ["Allow", /Would Like to Add VPN Configurations/]
   ];
 }
 
