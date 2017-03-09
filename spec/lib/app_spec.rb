@@ -386,6 +386,7 @@ describe RunLoop::App do
     expect(app).to receive(:code_signing_asset?).with(path).and_return(false)
     expect(app).to receive(:core_data_asset?).with(path).and_return(false)
     expect(app).to receive(:font?).with(path).and_return(false)
+    expect(app).to receive(:build_artifact?).with(path).and_return(false)
 
     expect(app.send(:skip_executable_check?, path)).to be_falsey
   end
@@ -482,13 +483,23 @@ describe RunLoop::App do
   end
 
   describe "#font?" do
-    it "returns trues" do
+    it "returns true" do
       expect(app.send(:font?, "path/to/my.ttf")).to be_truthy
       expect(app.send(:font?, "path/to/my.otf")).to be_truthy
     end
 
     it "returns false" do
       expect(app.send(:font?, "path/to/my.file")).to be_falsey
+    end
+  end
+
+  describe "#build_artifact?" do
+    it "returns true for .xcconfig" do
+      expect(app.send(:build_artifact?, "path/to/my.xcconfig")).to be_truthy
+    end
+
+    it "returns false for other files" do
+      expect(app.send(:build_artifact?, "path/to/my.extension")).to be_falsey
     end
   end
 
