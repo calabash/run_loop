@@ -202,6 +202,20 @@ function portugueseBrazilLocalizations() {
   ];
 }
 
+function koreanLocalizations() {
+  return [
+    ["허용", /앱을 사용하는 동안 ‘Permissions’에서 사용자의 위치에 접근하도록 허용하겠습니까?/],
+    ["허용", /‘Permissions’을(를) 사용하지 않을 때에도 해당 앱이 사용자의 위치에 접근하도록 허용하곘습니까?/],
+    ["승인", /‘Permissions’이(가) 사용자의 연락처에 접근하려고 합니다/],
+    ["승인", /‘Permissions’이(가) 사용자의 캘린더에 접근하려고 합니다/],
+    ["승인", /‘Permissions’이(가) 사용자의 미리 알림에 접근하려고 합니다/],
+    ["승인", /‘Permissions’이(가) 사용자의 사진에 접근하려고 합니다/],
+    ["승인", /‘Permissions’이(가) 카메라에 접근하려고 합니다/],
+    ["승인", /‘Permissions’에서 Twitter 계정에 접근하려고 합니다./],
+    ["승인", /‘Permissions’이(가) 사용자의 동작 및 피트니스 활동에 접근하려고 합니다/]
+  ];
+}
+
 function localizations() {
   return [].concat(
      danishLocalizations(),
@@ -213,7 +227,8 @@ function localizations() {
      russianLocalizations(),
      spanishLocalizations(),
      frenchLocalizations(),
-     portugueseBrazilLocalizations()
+     portugueseBrazilLocalizations(),
+     koreanLocalizations()
   );
 }
 
@@ -271,4 +286,3 @@ function isPrivacyAlert(alert) {
   }
   return false;
 }
-
