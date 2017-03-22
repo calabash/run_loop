@@ -837,6 +837,20 @@ Timed out after #{timeout} seconds waiting for an alert to appear.
       end
 
       # @!visibility private
+      def wait_for_springboard_alert(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for a SpringBoard alert to appear.
+
+]
+        wait_for(message, options) do
+          springboard_alert_visible?
+        end
+      end
+
+      # @!visibility private
       def wait_for_no_alert(timeout=WAIT_DEFAULTS[:timeout])
         options = WAIT_DEFAULTS.dup
         options[:timeout] = timeout
@@ -848,6 +862,20 @@ Timed out after #{timeout} seconds waiting for an alert to disappear.
 
         wait_for(message, options) do
           !alert_visible?
+        end
+      end
+
+      # @!visibility private
+      def wait_for_no_springboard_alert(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for a SpringBoard alert to disappear.
+
+]
+        wait_for(message, options) do
+          !springboard_alert_visible?
         end
       end
 
