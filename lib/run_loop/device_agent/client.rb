@@ -564,8 +564,7 @@ Query must contain at least one of these keys:
         request = request("springboard-alert")
         client = http_client(http_options)
         response = client.get(request)
-        hash = expect_300_response(response)
-        hash["result"]
+        expect_300_response(response)
       end
 
       # @!visibility private
