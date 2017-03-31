@@ -1272,7 +1272,7 @@ PRIVATE
 
             RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
           end
-        rescue RunLoop::DeviceAgent::Client::HTTPError => e
+        rescue RunLoop::DeviceAgent::Client::HTTPError, HTTPClient::ReceiveTimeoutError => e
           RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e.message}")
         ensure
           if @launcher_pid
