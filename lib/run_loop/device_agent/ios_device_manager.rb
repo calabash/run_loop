@@ -109,7 +109,8 @@ Expected :device_agent_install_timeout key in options:
 ]
           end
 
-          options = {:log_cmd => true, :timeout => install_timeout}
+          shell_options = {:log_cmd => true, :timeout => install_timeout}
+
           args = [
             cmd, "install",
             "--device-id", device.udid,
@@ -122,7 +123,7 @@ Expected :device_agent_install_timeout key in options:
           end
 
           start = Time.now
-          hash = run_shell_command(args, options)
+          hash = run_shell_command(args, shell_options)
 
           if hash[:exit_status] != 0
             raise RuntimeError, %Q[
