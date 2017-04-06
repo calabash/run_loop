@@ -138,7 +138,11 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
 
         RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent");
 
-        args = ["start_test", "--device-id", device.udid]
+        cmd = "xcrun"
+        args = ["xcodebuild", "test-without-building",
+                "-xctestrun", path_to_xctestrun(device),
+                "-destination", "id=#{device.udid}",
+                "-derivedDataPath", derived_data_directory]
 
         log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
@@ -151,8 +155,6 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         options = {:out => log_file, :err => log_file}
         RunLoop.log_unix_cmd("#{cmd} #{args.join(" ")} >& #{log_file}")
 
-        # Gotta keep the ios_device_manager process alive or the connection
-        # to testmanagerd will fail.
         pid = Process.spawn(env, cmd, *args, options)
         Process.detach(pid)
 
@@ -196,6 +198,27 @@ iOSDeviceManager says:
         RunLoop::log_debug("Took #{Time.now - start} seconds to check if app was installed");
 
         hash[:exit_status] == 0
+      end
+
+      def path_to_xctestrun(device)
+        if device.physical_device?
+          File.join(runner.tester, "DeviceAgent-device.xctestrun")
+        else
+          template = File.join(runner.tester, "DeviceAgent-simulator-template.xctestrun")
+          path = File.join(RunLoop::DotDir.directory, "xcuitest", "DeviceAgent-simulator.xctestrun")
+          contents = File.read(template).force_encoding("UTF-8")
+          substituted = contents.gsub("TEST_HOST_PATH", runner.runner)
+          File.open(path, "w:UTF-8") do |file|
+            file.write(substituted)
+          end
+          path
+        end
+      end
+
+      def derived_data_directory
+        path = File.join(RunLoop::DotDir.directory, "xcuitest", "DerivedData")
+        FileUtils.mkdir_p(path) if !File.exist?(path)
+        path
       end
     end
   end
