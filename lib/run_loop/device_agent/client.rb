@@ -564,13 +564,45 @@ Query must contain at least one of these keys:
         request = request("springboard-alert")
         client = http_client(http_options)
         response = client.get(request)
-        hash = expect_300_response(response)
-        hash["result"]
+        expect_300_response(response)
       end
 
       # @!visibility private
       def springboard_alert_visible?
         !springboard_alert.empty?
+      end
+
+      # @!visibility private
+      def dismiss_springboard_alert(button_title)
+        parameters = { :button_title => button_title }
+        request = request("dismiss-springboard-alert", parameters)
+        client = http_client(http_options)
+        response = client.post(request)
+        hash = expect_300_response(response)
+
+        if hash["error"]
+          raise RuntimeError, %Q[
+Could not dismiss SpringBoard alert by touching button with title '#{button_title}':
+
+#{hash["error"]}
+
+]
+        end
+        true
+      end
+
+      # @!visibility private
+      def set_dismiss_springboard_alerts_automatically(true_or_false)
+        if ![true, false].include?(true_or_false)
+          raise ArgumentError, "Expected #{true_or_false} to be a boolean true or false"
+        end
+
+        parameters = { :dismiss_automatically => true_or_false }
+        request = request("set-dismiss-springboard-alerts-automatically", parameters)
+        client = http_client(http_options)
+        response = client.post(request)
+        hash = expect_300_response(response)
+        hash["is_dismissing_alerts_automatically"]
       end
 
       # @!visibility private
@@ -805,6 +837,20 @@ Timed out after #{timeout} seconds waiting for an alert to appear.
       end
 
       # @!visibility private
+      def wait_for_springboard_alert(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for a SpringBoard alert to appear.
+
+]
+        wait_for(message, options) do
+          springboard_alert_visible?
+        end
+      end
+
+      # @!visibility private
       def wait_for_no_alert(timeout=WAIT_DEFAULTS[:timeout])
         options = WAIT_DEFAULTS.dup
         options[:timeout] = timeout
@@ -816,6 +862,20 @@ Timed out after #{timeout} seconds waiting for an alert to disappear.
 
         wait_for(message, options) do
           !alert_visible?
+        end
+      end
+
+      # @!visibility private
+      def wait_for_no_springboard_alert(timeout=WAIT_DEFAULTS[:timeout])
+        options = WAIT_DEFAULTS.dup
+        options[:timeout] = timeout
+        message = %Q[
+
+Timed out after #{timeout} seconds waiting for a SpringBoard alert to disappear.
+
+]
+        wait_for(message, options) do
+          !springboard_alert_visible?
         end
       end
 
@@ -1212,7 +1272,7 @@ PRIVATE
 
             RunLoop.log_debug("Waited for #{Time.now - now} seconds for DeviceAgent to shutdown")
           end
-        rescue RunLoop::DeviceAgent::Client::HTTPError => e
+        rescue RunLoop::DeviceAgent::Client::HTTPError, HTTPClient::ReceiveTimeoutError => e
           RunLoop.log_debug("DeviceAgent-Runner shutdown error: #{e.message}")
         ensure
           if @launcher_pid

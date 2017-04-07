@@ -1,5 +1,56 @@
 ## Change Log
 
+### 2.4.0
+
+This release supports Xcode 8.3 and iOS 10.3.
+
+This release contains a new DeviceAgent stack.
+
+If you build run_loop from sources with bundler, you must run:
+
+```
+$ rake device_agent:expand
+```
+
+to get the new DeviceAgent stack.
+
+The iOSDeviceManager resigning algorithm has been improved and we
+expect this iOSDeviceManager to execute application lifecycle events
+faster.
+
+* DeviceAgent: replace start_test with xcodebuild test-without-building #613
+* API for managing SpringBoard alerts manually #611
+* Adds handling for Korean SpringBoard alerts. #610
+* JS: add VPN definition to on_alert #608
+
+#### DeviceAgent 1.1.1
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.1.1)
+
+* DeviceAgent.xctest bundle includes xctestrun files #214
+* Dismiss 'Open in' alerts automatically #212
+* Fix PT-br APNS SpringBoard alert localizations #211
+* Add Korean localizations for SpringBoard alerts #209
+* Adds handling for VPN configuration springboard alert. #208
+* Update for Xcode 8.3 #206
+* Allow users to interact with SpringBoard alerts and control whether or
+  not alerts are automatically dismissed #205
+* Server: disable screenshots on server start #204
+
+#### iOSDeviceManager 1.1.1
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/1.1.1
+
+* Simulator#launch: wait for required simulator sevices #131
+* Xcode 8.3 support #126
+* Add library version of iOSDeviceManager for interop w/ Test Recorder #120
+* Integration test using run_loop ruby API #110
+* implement ios-cli resigning algorithm and add CLI interface #108
+* Improve default device detection #104
+* Add support for app lifecycle events on .ipa archives #103
+* Allow positional argument for device ID #102
+* Stores identities rather than making multiple find-identity calls #101
+
 ### 2.3.1
 
 This release does not contain a new DeviceAgent stack.

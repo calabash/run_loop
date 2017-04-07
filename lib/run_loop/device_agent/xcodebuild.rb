@@ -75,16 +75,12 @@ Use the CBXWS environment variable to override the default.
         args = [
           "xcrun",
           "xcodebuild",
+          "-derivedDataPath", derived_data_directory,
           "-scheme", "AppStub",
           "-workspace", workspace,
           "-config", "Debug",
           "-destination",
           "id=#{device.udid}",
-          "CLANG_ENABLE_CODE_COVERAGE=YES",
-          "GCC_GENERATE_TEST_COVERAGE_FILES=NO",
-          "GCC_INSTRUMENT_PROGRAM_FLOW_ARCS=NO",
-          # Scheme setting.
-          "-enableCodeCoverage", "YES",
           "test"
         ]
 
@@ -112,6 +108,12 @@ Use the CBXWS environment variable to override the default.
         this_dir = File.expand_path(File.dirname(__FILE__))
         relative = File.expand_path(File.join(this_dir, "..", "..", "..", ".."))
         File.join(relative, "DeviceAgent.iOS/DeviceAgent.xcworkspace")
+      end
+
+      def derived_data_directory
+        path = File.join(Xcodebuild.dot_dir, "DerivedData")
+        FileUtils.mkdir_p(path) if !File.exist?(path)
+        path
       end
     end
   end

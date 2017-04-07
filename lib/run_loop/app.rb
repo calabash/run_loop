@@ -286,7 +286,8 @@ Bundle must:
         lproj_asset?(file) ||
         code_signing_asset?(file) ||
         core_data_asset?(file) ||
-        font?(file)
+        font?(file) ||
+        build_artifact?(file)
     end
 
     # @!visibility private
@@ -370,6 +371,11 @@ Bundle must:
       extension = File.extname(file)
 
       extension == ".ttf" || extension == ".otf"
+    end
+
+    # @!visibility private
+    def build_artifact?(file)
+      File.extname(file) == ".xcconfig"
     end
   end
 end

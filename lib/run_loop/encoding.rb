@@ -5,7 +5,7 @@ module RunLoop
     # Removes diacritic markers from string.
     #
     # The ruby Encoding tools cannot perform this action, they can only change
-    # convert one encodign to another by substituting characters.
+    # convert one encoding to another by substituting characters.
     #
     # In ruby 1.9.3 we would have used Iconv, but that does not exist in 2.0.
     #
