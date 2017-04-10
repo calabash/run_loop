@@ -70,7 +70,7 @@ describe RunLoop::DeviceAgent::Xcodebuild do
       end
     end
 
-    context "#derived_data_directory" do
+    context ".derived_data_directory" do
       before do
         FileUtils.mkdir_p(device_agent_dir)
       end
@@ -80,13 +80,13 @@ describe RunLoop::DeviceAgent::Xcodebuild do
       it "returns a path to existing DerivedData directory" do
         FileUtils.mkdir_p(path)
 
-        expect(xcodebuild.derived_data_directory).to be == path
+        expect(RunLoop::DeviceAgent::Xcodebuild.derived_data_directory).to be == path
       end
 
       it "creates a DerivedData directory if it does not exist and returns path" do
         FileUtils.rm_rf(path)
 
-        expect(xcodebuild.derived_data_directory).to be == path
+        expect(RunLoop::DeviceAgent::Xcodebuild.derived_data_directory).to be == path
         expect(File.exist?(path)).to be_truthy
       end
     end

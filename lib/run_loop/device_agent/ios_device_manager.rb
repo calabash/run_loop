@@ -142,7 +142,7 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         args = ["xcodebuild", "test-without-building",
                 "-xctestrun", path_to_xctestrun(device),
                 "-destination", "id=#{device.udid}",
-                "-derivedDataPath", derived_data_directory]
+                "-derivedDataPath", Xcodebuild.derived_data_directory]
 
         log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
@@ -213,12 +213,6 @@ iOSDeviceManager says:
           end
           path
         end
-      end
-
-      def derived_data_directory
-        path = File.join(RunLoop::DotDir.directory, "xcuitest", "DerivedData")
-        FileUtils.mkdir_p(path) if !File.exist?(path)
-        path
       end
     end
   end
