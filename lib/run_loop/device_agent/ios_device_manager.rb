@@ -75,10 +75,23 @@ but binary does not exist at that path.
       #
       # ~/.calabash/iOSDeviceManager/logs/current.log
       #
-      # There is still occasional output to ~/.run-loop.
+      # Starting in run-loop 2.4.0, iOSDeviceManager start_test was replaced
+      # by xcodebuild test-without-building.   This change causes a name
+      # conflict: there is already an xcodebuild launcher with a log file
+      # ~/.run-loop/DeviceAgent/xcodebuild.log.
+      #
+      # The original xcodebuild launcher requires access to the DeviceAgent
+      # Xcode project which is not yet available to the public.
+      #
+      # Using `current.log` seems to make sense because the file is recreated
+      # for every call to `#launch`.
       def self.log_file
-        path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
+        path = File.join(LauncherStrategy.dot_dir, "current.log")
         FileUtils.touch(path) if !File.exist?(path)
+        legacy_path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
+        if File.exist?(legacy_path)
+          FileUtils.rm_rf(legacy_path)
+        end
         path
       end
 
