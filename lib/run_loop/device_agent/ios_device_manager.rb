@@ -153,7 +153,7 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
 
         cmd = "xcrun"
         args = ["xcodebuild", "test-without-building",
-                "-xctestrun", path_to_xctestrun(device),
+                "-xctestrun", path_to_xctestrun,
                 "-destination", "id=#{device.udid}",
                 "-derivedDataPath", Xcodebuild.derived_data_directory]
 
@@ -213,12 +213,21 @@ iOSDeviceManager says:
         hash[:exit_status] == 0
       end
 
-      def path_to_xctestrun(device)
+      def path_to_xctestrun
         if device.physical_device?
-          File.join(runner.tester, "DeviceAgent-device.xctestrun")
+          path = File.join(runner.tester, "DeviceAgent-device.xctestrun")
+          if !File.exist?(path)
+            raise RuntimeError, %Q[
+Could not find an xctestrun file at path:
+
+#{path}
+
+]
+          end
+          path
         else
-          template = File.join(runner.tester, "DeviceAgent-simulator-template.xctestrun")
-          path = File.join(RunLoop::DotDir.directory, "xcuitest", "DeviceAgent-simulator.xctestrun")
+          template = path_to_xctestrun_template
+          path = File.join(IOSDeviceManager.dot_dir, "DeviceAgent-simulator.xctestrun")
           contents = File.read(template).force_encoding("UTF-8")
           substituted = contents.gsub("TEST_HOST_PATH", runner.runner)
           File.open(path, "w:UTF-8") do |file|
@@ -226,6 +235,23 @@ iOSDeviceManager says:
           end
           path
         end
+      end
+
+      def path_to_xctestrun_template
+        if device.physical_device?
+          raise(ArgumentError, "Physical devices do not require an xctestrun template")
+        end
+
+        template = File.join(runner.tester, "DeviceAgent-simulator-template.xctestrun")
+        if !File.exist?(template)
+          raise RuntimeError, %Q[
+Could not find an xctestrun template at path:
+
+#{template}
+
+]
+        end
+        template
       end
     end
   end
