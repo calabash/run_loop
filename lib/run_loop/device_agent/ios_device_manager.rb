@@ -75,10 +75,23 @@ but binary does not exist at that path.
       #
       # ~/.calabash/iOSDeviceManager/logs/current.log
       #
-      # There is still occasional output to ~/.run-loop.
+      # Starting in run-loop 2.4.0, iOSDeviceManager start_test was replaced
+      # by xcodebuild test-without-building.   This change causes a name
+      # conflict: there is already an xcodebuild launcher with a log file
+      # ~/.run-loop/DeviceAgent/xcodebuild.log.
+      #
+      # The original xcodebuild launcher requires access to the DeviceAgent
+      # Xcode project which is not yet available to the public.
+      #
+      # Using `current.log` seems to make sense because the file is recreated
+      # for every call to `#launch`.
       def self.log_file
-        path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
+        path = File.join(LauncherStrategy.dot_dir, "current.log")
         FileUtils.touch(path) if !File.exist?(path)
+        legacy_path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
+        if File.exist?(legacy_path)
+          FileUtils.rm_rf(legacy_path)
+        end
         path
       end
 
@@ -140,9 +153,9 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
 
         cmd = "xcrun"
         args = ["xcodebuild", "test-without-building",
-                "-xctestrun", path_to_xctestrun(device),
+                "-xctestrun", path_to_xctestrun,
                 "-destination", "id=#{device.udid}",
-                "-derivedDataPath", derived_data_directory]
+                "-derivedDataPath", Xcodebuild.derived_data_directory]
 
         log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
@@ -200,12 +213,21 @@ iOSDeviceManager says:
         hash[:exit_status] == 0
       end
 
-      def path_to_xctestrun(device)
+      def path_to_xctestrun
         if device.physical_device?
-          File.join(runner.tester, "DeviceAgent-device.xctestrun")
+          path = File.join(runner.tester, "DeviceAgent-device.xctestrun")
+          if !File.exist?(path)
+            raise RuntimeError, %Q[
+Could not find an xctestrun file at path:
+
+#{path}
+
+]
+          end
+          path
         else
-          template = File.join(runner.tester, "DeviceAgent-simulator-template.xctestrun")
-          path = File.join(RunLoop::DotDir.directory, "xcuitest", "DeviceAgent-simulator.xctestrun")
+          template = path_to_xctestrun_template
+          path = File.join(IOSDeviceManager.dot_dir, "DeviceAgent-simulator.xctestrun")
           contents = File.read(template).force_encoding("UTF-8")
           substituted = contents.gsub("TEST_HOST_PATH", runner.runner)
           File.open(path, "w:UTF-8") do |file|
@@ -215,10 +237,21 @@ iOSDeviceManager says:
         end
       end
 
-      def derived_data_directory
-        path = File.join(RunLoop::DotDir.directory, "xcuitest", "DerivedData")
-        FileUtils.mkdir_p(path) if !File.exist?(path)
-        path
+      def path_to_xctestrun_template
+        if device.physical_device?
+          raise(ArgumentError, "Physical devices do not require an xctestrun template")
+        end
+
+        template = File.join(runner.tester, "DeviceAgent-simulator-template.xctestrun")
+        if !File.exist?(template)
+          raise RuntimeError, %Q[
+Could not find an xctestrun template at path:
+
+#{template}
+
+]
+        end
+        template
       end
     end
   end

@@ -46,12 +46,17 @@ DeviceAgent is only available for iOS >= 9.0
 
       # @!visibility private
       def self.dot_dir
-        path = File.join(RunLoop::DotDir.directory, "xcuitest")
+        path = File.join(RunLoop::DotDir.directory, "DeviceAgent")
+        legacy_path = File.join(RunLoop::DotDir.directory, "xcuitest")
 
-        if !File.exist?(path)
-          FileUtils.mkdir_p(path)
+        if File.directory?(legacy_path)
+          FileUtils.cp_r(legacy_path, path)
+          FileUtils.rm_rf(legacy_path)
+        else
+          if !File.exist?(path)
+            FileUtils.mkdir_p(path)
+          end
         end
-
         path
       end
     end
