@@ -1,5 +1,12 @@
 ## Change Log
 
+### 2.4.1
+
+This release does not contain a new DeviceAgent stack.
+
+* Migrate ~/.run-loop/xcuittest to ~/.run-loop/DeviceAgent to ensure
+  xctestrun run exists #616
+
 ### 2.4.0
 
 This release supports Xcode 8.3 and iOS 10.3.

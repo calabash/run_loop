@@ -43,7 +43,7 @@ describe RunLoop::DeviceAgent::Xcodebuild do
 
   describe "file system" do
     let(:dot_dir) { File.expand_path(File.join("tmp", ".run-loop-xcuitest")) }
-    let(:xcuitest_dir) { File.join(dot_dir, "xcuitest") }
+    let(:device_agent_dir) { File.join(dot_dir, "DeviceAgent") }
 
     before do
       FileUtils.mkdir_p(dot_dir)
@@ -52,10 +52,10 @@ describe RunLoop::DeviceAgent::Xcodebuild do
 
     describe ".log_file" do
       before do
-        FileUtils.mkdir_p(xcuitest_dir)
+        FileUtils.mkdir_p(device_agent_dir)
       end
 
-      let(:path) { File.join(xcuitest_dir, "xcodebuild.log") }
+      let(:path) { File.join(device_agent_dir, "xcodebuild.log") }
 
       it "creates a file" do
         FileUtils.rm_rf(path)
@@ -70,23 +70,23 @@ describe RunLoop::DeviceAgent::Xcodebuild do
       end
     end
 
-    context "#derived_data_directory" do
+    context ".derived_data_directory" do
       before do
-        FileUtils.mkdir_p(xcuitest_dir)
+        FileUtils.mkdir_p(device_agent_dir)
       end
 
-      let(:path) { File.join(xcuitest_dir, "DerivedData") }
+      let(:path) { File.join(device_agent_dir, "DerivedData") }
 
       it "returns a path to existing DerivedData directory" do
         FileUtils.mkdir_p(path)
 
-        expect(xcodebuild.derived_data_directory).to be == path
+        expect(RunLoop::DeviceAgent::Xcodebuild.derived_data_directory).to be == path
       end
 
       it "creates a DerivedData directory if it does not exist and returns path" do
         FileUtils.rm_rf(path)
 
-        expect(xcodebuild.derived_data_directory).to be == path
+        expect(RunLoop::DeviceAgent::Xcodebuild.derived_data_directory).to be == path
         expect(File.exist?(path)).to be_truthy
       end
     end

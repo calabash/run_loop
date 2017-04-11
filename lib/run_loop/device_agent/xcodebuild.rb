@@ -15,6 +15,13 @@ module RunLoop
       end
 
       # @!visibility private
+      def self.derived_data_directory
+        path = File.join(Xcodebuild.dot_dir, "DerivedData")
+        FileUtils.mkdir_p(path) if !File.exist?(path)
+        path
+      end
+
+      # @!visibility private
       def to_s
         "#<Xcodebuild #{workspace}>"
       end
@@ -75,7 +82,7 @@ Use the CBXWS environment variable to override the default.
         args = [
           "xcrun",
           "xcodebuild",
-          "-derivedDataPath", derived_data_directory,
+          "-derivedDataPath", Xcodebuild.derived_data_directory,
           "-scheme", "AppStub",
           "-workspace", workspace,
           "-config", "Debug",
@@ -108,12 +115,6 @@ Use the CBXWS environment variable to override the default.
         this_dir = File.expand_path(File.dirname(__FILE__))
         relative = File.expand_path(File.join(this_dir, "..", "..", "..", ".."))
         File.join(relative, "DeviceAgent.iOS/DeviceAgent.xcworkspace")
-      end
-
-      def derived_data_directory
-        path = File.join(Xcodebuild.dot_dir, "DerivedData")
-        FileUtils.mkdir_p(path) if !File.exist?(path)
-        path
       end
     end
   end
