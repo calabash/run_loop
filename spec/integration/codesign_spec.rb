@@ -5,7 +5,8 @@ describe RunLoop::Codesign do
     ipa = RunLoop::Ipa.new(Resources.shared.ipa_path)
     ipa.send(:app).send(:path)
   end
-  let(:unsigned) { Resources.shared.app_bundle_path }
+
+  let(:unsigned) { Resources.shared.unsigned_app_bundle_path }
 
   describe ".distribution?" do
     it "true" do

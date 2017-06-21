@@ -89,6 +89,10 @@ class Resources
     @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke.app'))
   end
 
+  def unsigned_app_bundle_path
+    @unsigned_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'unsigned.app'))
+  end
+
   def ipa_path
     @ipa_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke.ipa'))
   end
