@@ -29,7 +29,7 @@ module RunLoop
     # Returns a version instance for Xcode 9.0; used to check for the
     # availability of features and paths to various items on the filesystem
     #
-    # @return [RunLoop::Version] 8.3
+    # @return [RunLoop::Version] 9.0
     def v90
       fetch_version(:v90)
     end
