@@ -274,6 +274,12 @@ describe RunLoop::Core do
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v83
       expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
+
+    it 'Xcode >= 9.0' do
+      expected = 'iPhone 7 (11.0)'
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v90
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
+    end
   end
 
   describe '.above_or_eql_version?' do

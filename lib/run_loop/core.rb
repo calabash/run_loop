@@ -320,7 +320,9 @@ Logfile: #{log_file}
     #  version.
     def self.default_simulator(xcode=RunLoop::Xcode.new)
 
-      if xcode.version_gte_83?
+      if xcode.version_gte_90?
+        "iPhone 7 (11.0)"
+      elsif xcode.version_gte_83?
         "iPhone 7 (10.3)"
       elsif xcode.version_gte_82?
         "iPhone 7 (10.2)"
