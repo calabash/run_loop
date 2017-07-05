@@ -1060,7 +1060,9 @@ describe RunLoop::CoreSimulator do
           core_sim.send(:reset_app_sandbox_internal_sdk_gte_8)
           after = Dir.glob("#{base_dir}/**/*").map { |elm| File.basename(elm) }
 
-          expect(after).to be == ['Preferences'] + uia_plists
+          expected = ['Preferences'] + uia_plists
+
+          expect(after.sort).to be == expected.sort
         end
       end
 
