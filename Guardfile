@@ -1,4 +1,9 @@
-notification :growl, sticky: false, priority: 0
+# Guard requires terminal-notifier-guard
+# https://github.com/Codaisseur/terminal-notifier-guard
+# TL;DR:
+# $ brew install terminal-notifier-guard
+notification :terminal_notifier, sticky: false, priority: 0 if `uname` =~ /Darwin/
+
 logger level: :info
 clearing :on
 
