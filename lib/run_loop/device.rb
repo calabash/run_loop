@@ -314,11 +314,29 @@ version: #{version}
     end
 
     # @!visibility private
-    def simulator_global_preferences_path
-      @simulator_global_preferences_path ||= lambda do
-        return nil if physical_device?
-        File.join(simulator_root_dir, "data/Library/Preferences/.GlobalPreferences.plist")
-      end.call
+    def simulator_global_preferences_path(timeout=10)
+      return nil if physical_device?
+
+      path = File.join(simulator_root_dir,
+                       "data/Library/Preferences/.GlobalPreferences.plist")
+
+      return path if File.exist?(path)
+
+      start = Time.now
+      while !File.exist?(path) && (start + timeout) < Time.now
+        sleep(1.0)
+      end
+
+      return path if File.exist?(path)
+
+      raise(RuntimeError, %Q[
+Timed out waiting for .GlobalPreferences.plist after #{Time.now - start} seconds.
+
+File does not exist at path:
+
+#{path}
+
+])
     end
 
     # @!visibility private
