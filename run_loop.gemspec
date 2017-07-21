@@ -17,8 +17,9 @@ vendor_licenses = Dir.glob("./vendor-licenses/*.*")
 Gem::Specification.new do |s|
   s.name        = 'run_loop'
 
-  s.version     = lambda do
-    file = File.join("lib", "run_loop", "version.rb")
+  s.version     = begin
+    file = "#{File.expand_path(File.join(File.dirname(__FILE__),
+                                      "lib", "run_loop", "version.rb"))}"
     m = Module.new
     m.module_eval IO.read(file).force_encoding("utf-8")
     version = m::RunLoop::VERSION
@@ -29,7 +30,7 @@ into a valid version, e.g. 1.2.3 or 1.2.3.pre10
 }
     end
     version
-  end.call
+  end
 
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Karl Krukow", "Joshua Moody"]
