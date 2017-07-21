@@ -738,6 +738,14 @@ Command had no output.
   end
 
   # @!visibility private
+  def device_agent_launched_by_xcode?(running_apps)
+    process_info = running_apps["XCTRunner"] || running_apps["DeviceAgent-Runner"]
+    return false if !process_info
+
+    process_info[:args][/CBX_LAUNCHED_BY_XCODE/]
+  end
+
+  # @!visibility private
   def running_apps_require_relaunch?
     running_apps = device.simulator_running_app_details
 
@@ -747,11 +755,9 @@ Command had no output.
     end
 
     # DeviceAgent is running, but it was launched by Xcode.
-    if running_apps["XCTRunner"]
-      if running_apps["XCTRunner"][:args][/CBX_LAUNCHED_BY_XCODE/]
-        RunLoop.log_debug("Simulator relaunch required: XCTRunner is controlled by Xcode")
-        return true
-      end
+    if device_agent_launched_by_xcode?(running_apps)
+      RunLoop.log_debug("Simulator relaunch required: XCTRunner is controlled by Xcode")
+      return true
     end
 
     # No app was passed to initializer.
