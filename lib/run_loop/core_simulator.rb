@@ -612,6 +612,13 @@ Command had no output.
     rescue => _
       RunLoop.log_debug("Could not put simulator into the background")
     end
+
+    script = "tell application \"System Events\" to tell process \"#{sim_name}\" to set visible to true"
+    begin
+      system("osascript",  "-e", script)
+    rescue => _
+      RunLoop.log_debug("Could not put simulator into the foreground")
+    end
   end
 
   # @!visibility private
