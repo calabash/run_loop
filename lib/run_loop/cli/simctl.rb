@@ -1,10 +1,12 @@
-require 'thor'
-require 'run_loop'
-require 'run_loop/cli/errors'
 
 module RunLoop
   module CLI
+
+    require 'thor'
     class Simctl < Thor
+
+      require 'run_loop'
+      require 'run_loop/cli/errors'
 
       attr_reader :simctl
 
@@ -184,6 +186,60 @@ module RunLoop
             end
           end
           core_sim.install
+        end
+      end
+
+      desc "erase <simulator>", "Erases the simulator"
+
+      method_option 'debug',
+                    :desc => 'Enable debug logging.',
+                    :aliases => '-v',
+                    :required => false,
+                    :default => false,
+                    :type => :boolean
+
+      def erase(simulator=nil)
+
+        debug = options[:debug]
+
+        RunLoop::Environment.with_debugging(debug) do
+          if !simulator
+            identifier = RunLoop::Core.default_simulator(xcode)
+          else
+            identifier = simulator
+          end
+
+          options = {simctl: simctl, xcode: xcode}
+          device = RunLoop::Device.device_with_identifier(identifier, options)
+
+          RunLoop::CoreSimulator.erase(device, options)
+        end
+      end
+
+      desc "launch <simulator>", "Launches the simulator"
+
+      method_option 'debug',
+                    :desc => 'Enable debug logging.',
+                    :aliases => '-v',
+                    :required => false,
+                    :default => false,
+                    :type => :boolean
+
+      def launch(simulator=nil)
+        debug = options[:debug]
+
+        RunLoop::Environment.with_debugging(debug) do
+          if !simulator
+            identifier = RunLoop::Core.default_simulator(xcode)
+          else
+            identifier = simulator
+          end
+
+          options = {simctl: simctl, xcode: xcode}
+          device = RunLoop::Device.device_with_identifier(identifier, options)
+
+          core_sim = RunLoop::CoreSimulator.new(device, nil)
+          core_sim.launch_simulator
         end
       end
 
