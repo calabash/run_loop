@@ -137,10 +137,7 @@ Expected :device_agent_install_timeout key in options:
           shell_options = {:log_cmd => true, :timeout => install_timeout}
 
           args = [
-            cmd, "install",
-            "--device-id", device.udid,
-            # -a <== --app-bundle (1.0.4) and --app-path (> 1.0.4)
-            "-a", runner.runner
+            cmd, "install", runner.runner, "--device-id", device.udid
           ]
 
           if code_sign_identity
@@ -244,9 +241,7 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
         args = [
-          cmd, "is_installed",
-          "--device-id", device.udid,
-          "--bundle-identifier", bundle_identifier
+          cmd, "is-installed", bundle_identifier, "--device-id", device.udid
         ]
 
         start = Time.now
