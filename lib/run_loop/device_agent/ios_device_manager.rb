@@ -100,6 +100,7 @@ but binary does not exist at that path.
       # @!visibility private
       def launch(options)
         code_sign_identity = options[:code_sign_identity]
+        provisioning_profile = options[:provisioning_profile]
         install_timeout = options[:device_agent_install_timeout]
 
         RunLoop::DeviceAgent::Frameworks.instance.install
@@ -142,6 +143,10 @@ Expected :device_agent_install_timeout key in options:
 
           if code_sign_identity
             args = args + ["--codesign-identity", code_sign_identity]
+          end
+
+          if provisioning_profile
+            args = args + ["--provisioning-profile", provisioning_profile]
           end
 
           start = Time.now
