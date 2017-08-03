@@ -108,22 +108,15 @@ but binary does not exist at that path.
 
         start = Time.now
         if device.simulator?
+          RunLoop::DeviceAgent::Xcodebuild.terminate_simulator_tests
+
           cbxapp = RunLoop::App.new(runner.runner)
           sim = CoreSimulator.new(device, cbxapp)
-
-          should_term_test = lambda do |process_description|
-            xcodebuild_destination_is_simulator?(process_description)
-          end
-          terminate_xcodebuild_test_processes(should_term_test)
 
           sim.install
           sim.launch_simulator
         else
-
-          should_term_test = lambda do |process_description|
-            xcodebuild_destination_is_same?(process_description)
-          end
-          terminate_xcodebuild_test_processes(should_term_test)
+          RunLoop::DeviceAgent::Xcodebuild.terminate_device_test(device.udid)
 
           if !install_timeout
             raise ArgumentError, %Q[
@@ -188,56 +181,6 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         Process.detach(pid)
 
         pid.to_i
-      end
-
-      def terminate_xcodebuild_test_processes(should_term_test)
-        options = { :timeout => 0.5, :raise_on_timeout => false }
-        pids = RunLoop::ProcessWaiter.new("xcodebuild", options).pids
-        pids.each do |pid|
-          if should_term_test.call(process_env(pid))
-            terminate_running_xcodebuild_process(pid)
-          end
-        end
-      end
-
-      def process_env(pid)
-        options = {:log_cmd => true}
-        args = ["ps", "-p", pid.to_s, "-wwwE"]
-        hash = run_shell_command(args, options)
-        hash[:out]
-      end
-
-      def xcodebuild_destination_is_simulator?(process_description)
-        id_part = process_description[/id=#{device.udid}/]
-        return false if !id_part || id_part == ""
-
-        tokens = id_part.split("=")
-        udid = tokens[1]
-        udid[RunLoop::Regex::DEVICE_UDID_REGEX, 0].nil?
-      end
-
-      def xcodebuild_destination_is_same?(process_description)
-        process_description[/id=#{device.udid}/]
-      end
-
-      def terminate_running_xcodebuild_process(pid)
-        term_options = { :timeout => 1.5 }
-        kill_options = { :timeout => 1.0 }
-
-        process_name = "xcodebuild test-without-building"
-
-        term = RunLoop::ProcessTerminator.new(pid.to_i,
-                                              "TERM",
-                                              process_name,
-                                              term_options)
-        if !term.kill_process
-          kill = RunLoop::ProcessTerminator.new(pid.to_i,
-                                                "KILL",
-                                                process_name,
-                                                kill_options)
-          kill.kill_process
-        end
-        sleep(1.0)
       end
 
       def app_installed?(bundle_identifier)
