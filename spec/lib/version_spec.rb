@@ -208,6 +208,14 @@ describe RunLoop::Version do
       a = RunLoop::Version.new('0.9.5.pre1')
       b = RunLoop::Version.new('0.9.5.pre2')
       expect(b > a).to be true
+
+      a = RunLoop::Version.new("8.0")
+      b = RunLoop::Version.new("9.0")
+      expect(a > b).to be false
+
+      a = RunLoop::Version.new("9.0")
+      b = RunLoop::Version.new("8.0")
+      expect(a > b).to be true
     end
   end
 
