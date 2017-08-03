@@ -132,6 +132,11 @@ module RunLoop
           code_sign_identity = RunLoop::Environment::code_sign_identity
         end
 
+        provisioning_profile = options[:provisioning_profile]
+        if !provisioning_profile
+          provisioning_profile = RunLoop::Environment::provisioning_profile
+        end
+
         install_timeout = options.fetch(:device_agent_install_timeout,
                                                      DEFAULTS[:device_agent_install_timeout])
         shutdown_device_agent_before_launch = options.fetch(:shutdown_device_agent_before_launch,
@@ -148,6 +153,7 @@ module RunLoop
 
         launcher_options = {
             code_sign_identity: code_sign_identity,
+            provisioning_profile: provisioning_profile,
             device_agent_install_timeout: install_timeout,
             shutdown_device_agent_before_launch: shutdown_device_agent_before_launch,
             terminate_aut_before_test: terminate_aut_before_test,
@@ -166,6 +172,7 @@ module RunLoop
             :app => bundle_id,
             :automator => :device_agent,
             :code_sign_identity => code_sign_identity,
+            :provisioning_profile => provisioning_profile,
             :launcher => cbx_launcher.name,
             :launcher_pid => xcuitest.launcher_pid,
             :launcher_options => xcuitest.launcher_options
