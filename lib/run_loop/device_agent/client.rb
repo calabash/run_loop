@@ -1308,10 +1308,6 @@ PRIVATE
               kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
               kill.kill_process
             end
-
-            if process_name == :xcodebuild
-              sleep(10)
-            end
           end
         end
         hash

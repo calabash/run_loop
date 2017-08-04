@@ -155,38 +155,4 @@ describe RunLoop::DeviceAgent::IOSDeviceManager do
       end
     end
   end
-
-  context "#xcodebuild_destination_is_simulator?" do
-    let(:idm) { RunLoop::DeviceAgent::IOSDeviceManager.new(simulator) }
-
-    it "returns false if process description does not contain id=<destination>" do
-      description = "does not contain 'id=' pattern"
-      expect(idm.xcodebuild_destination_is_simulator?(description)).to be_falsey
-    end
-
-    it "returns false if process description has a physical device destination" do
-      description = "xcodebuild id=#{device.udid}"
-      expect(idm.xcodebuild_destination_is_simulator?(description)).to be_falsey
-    end
-
-    it "returns true if process description is a simulator" do
-      description = "xcodebuild id=#{simulator.udid}"
-      expect(idm.xcodebuild_destination_is_simulator?(description)).to be_truthy
-    end
-  end
-
-  context "#xcodebuild_destination_is_same?" do
-    let(:idm) { RunLoop::DeviceAgent::IOSDeviceManager.new(device) }
-
-    it "returns false if the id=<destination> is not the same" do
-      description = "xcodebuild id=#{simulator.udid}"
-      expect(idm.xcodebuild_destination_is_same?(description)).to be_falsey
-    end
-
-    it "returns true if the id=<destination> is the same" do
-      description = "xcodebuild id=#{device.udid}"
-      expect(idm.xcodebuild_destination_is_same?(description)).to be_truthy
-    end
-  end
 end
-

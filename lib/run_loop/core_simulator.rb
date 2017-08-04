@@ -157,6 +157,8 @@ class RunLoop::CoreSimulator
   # @!visibility private
   # Quit any Simulator.app or iOS Simulator.app
   def self.quit_simulator
+    RunLoop::DeviceAgent::Xcodebuild.terminate_simulator_tests
+
     SIMULATOR_QUIT_PROCESSES.each do |process_details|
       process_name = process_details[0]
       send_term_first = process_details[1]
