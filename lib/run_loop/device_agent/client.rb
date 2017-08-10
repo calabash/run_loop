@@ -695,14 +695,13 @@ Could not dismiss SpringBoard alert by touching button with title '#{button_titl
       def rotate_home_button_to(position, sleep_for=1.0)
         orientation = normalize_orientation_position(position)
         parameters = {
-          :orientation => orientation
+          :orientation => orientation,
+          :seconds_to_sleep_after => sleep_for
         }
         request = request("rotate_home_button_to", parameters)
         client = http_client(http_options)
         response = client.post(request)
-        json = expect_300_response(response)
-        sleep(sleep_for)
-        json
+        expect_300_response(response)
       end
 
       # @!visibility private
