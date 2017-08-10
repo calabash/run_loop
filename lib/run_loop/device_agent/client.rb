@@ -705,6 +705,14 @@ Could not dismiss SpringBoard alert by touching button with title '#{button_titl
       end
 
       # @!visibility private
+      def orientations
+        request = request("orientations")
+        client = http_client(http_options)
+        response = client.get(request)
+        expect_300_response(response)
+      end
+
+      # @!visibility private
       def pan_between_coordinates(start_point, end_point, options={})
         default_options = {
           :num_fingers => 1,
