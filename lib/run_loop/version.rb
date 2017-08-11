@@ -102,7 +102,15 @@ module RunLoop
 
     # The hash method for this instance.
     def hash
-      to_s.hash
+      str = [major, minor, patch].map do |str|
+        str ? str : "0"
+      end.join(".")
+
+      if pre
+        str = "#{str}.#{pre}"
+      end
+
+      str.hash
     end
 
     # Compare this version to another for equality.

@@ -50,15 +50,21 @@ describe RunLoop::Version do
     end
 
     it '0.9' do
-      str = '0.9'
-      version = RunLoop::Version.new(str)
-      expect(str.hash).to be == version.hash
+      version = RunLoop::Version.new("0.9")
+      expect("0.9.0".hash).to be == version.hash
     end
 
     it '0' do
-      str = '0'
-      version = RunLoop::Version.new(str)
-      expect(str.hash).to be == version.hash
+      version = RunLoop::Version.new("0")
+      expect("0.0.0".hash).to be == version.hash
+    end
+
+    it "9 == 9.0 == 9.0.0" do
+      version = RunLoop::Version.new("9")
+      expect("9.0.0".hash).to be == version.hash
+
+      version = RunLoop::Version.new("9.0")
+      expect("9.0.0".hash).to be == version.hash
     end
   end
 
