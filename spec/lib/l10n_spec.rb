@@ -7,20 +7,28 @@ describe RunLoop::L10N do
     allow(l10n).to receive(:xcode).and_return(xcode)
   end
   describe '#uikit_bundle_l10n_path' do
-    it 'return value' do
-      if Resources.shared.core_simulator_env?
-        expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
-        stub_env('DEVELOPER_DIR', '/some/xcode/path')
+    it "returns a valid path for Xcode >= 9" do
+      expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
+      stub_env("DEVELOPER_DIR", "/some/xcode/path")
 
-        axbundle_path = RunLoop::L10N.const_get('UIKIT_AXBUNDLE_PATH_CORE_SIM')
-        expected = File.join('/some/xcode/path', axbundle_path)
-        expect(l10n.send(:uikit_bundle_l10n_path)).to be == expected
-      else
-        expect(l10n).to receive(:axbundle_path_for_sdk).at_least(:once).and_return 'path'
-        expect(File).to receive(:exist?).with('path').at_least(:once).and_return true
+      expect(xcode).to receive(:version_gte_90?).and_return(true)
 
-        expect(l10n.send(:uikit_bundle_l10n_path)).to be == 'path'
-      end
+      axbundle_path = RunLoop::L10N.const_get("UIKIT_AXBUNDLE_PATH_CORE_SIM_XCODE_9")
+      expected = File.join("/some/xcode/path", axbundle_path)
+
+      expect(l10n.send(:uikit_bundle_l10n_path)).to be == expected
+    end
+
+    it "returns a valid path for Xcode < 9" do
+      expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
+      stub_env("DEVELOPER_DIR", "/some/xcode/path")
+
+      expect(xcode).to receive(:version_gte_90?).and_return(false)
+
+      axbundle_path = RunLoop::L10N.const_get("UIKIT_AXBUNDLE_PATH_CORE_SIM")
+      expected = File.join("/some/xcode/path", axbundle_path)
+
+      expect(l10n.send(:uikit_bundle_l10n_path)).to be == expected
     end
   end
 
