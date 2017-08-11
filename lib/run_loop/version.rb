@@ -102,7 +102,15 @@ module RunLoop
 
     # The hash method for this instance.
     def hash
-      to_s.hash
+      str = [major, minor, patch].map do |str|
+        str ? str : "0"
+      end.join(".")
+
+      if pre
+        str = "#{str}.#{pre}"
+      end
+
+      str.hash
     end
 
     # Compare this version to another for equality.
@@ -161,12 +169,16 @@ module RunLoop
         return a.major.to_i > b.major.to_i ? 1 : -1
       end
 
-      if a.minor != b.minor
-        return a.minor.to_i > b.minor.to_i ? 1 : -1
+      a_minor = a.minor ? a.minor.to_i : 0
+      b_minor = b.minor ? b.minor.to_i : 0
+      if a_minor != b_minor
+        return a_minor > b_minor.to_i ? 1 : -1
       end
 
-      if a.patch != b.patch
-        return a.patch.to_i > b.patch.to_i ? 1 : -1
+      a_patch = a.patch ? a.patch.to_i : 0
+      b_patch = b.patch ? b.patch.to_i : 0
+      if a_patch != b_patch
+        return a_patch.to_i > b_patch.to_i ? 1 : -1
       end
 
       return -1 if a.pre && (!a.pre_version) && b.pre_version
