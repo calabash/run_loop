@@ -1,5 +1,65 @@
 ## Change Log
 
+### 2.5.0
+
+This release provide preliminary support testing with Xcode 9 against
+iOS 11 physical devices.  Testing against simulators is not yet
+supported.
+
+run-loop now responds to `PROVISIONING_PROFILE` environment variable.
+
+* DeviceAgent: update to DeviceAgent 1.1.3 #637
+* L10N: update path to UIKit.axbundle for Xcode 9 #636
+* Update equality rules for Version class #635
+* Respond to DeviceAgent iOS 11 changes to POST /rotate\_home\_button\_to #634
+* Better xcodebuild process management #633
+* Update to iOSDeviceManager 2.0 #632
+* CLI: add simctl erase and launch commands #631
+* Gem: fix reference to version.rb for bundler 1.15 #630
+* CoreSim: simulator does not steal focus when launching #629
+* CoreSimulator can handle Xcode 9 DeviceAgent name change #628
+* Device: wait for .GlobalPreferences.plist to exist #627
+* Xcodebuild: manage existing test-without-building processes #625
+* Initial Xcode 9/iOS 11 support #622
+* Option for DeviceAgent to terminate AUT if it is running when new test
+  session starts #620
+
+#### DeviceAgent 1.1.3
+
+This DeviceAgent was built with Xcode 8.3.3 on macOS Sierra.
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.1.3
+
+* Server: decrease default touch time to 0.1 #244
+* Update device rotation gesture and orientation reporting for iOS 11 #243
+* Server: Remove pre-launch is-installed check; does not work on iOS 11 #242
+* Xcode 9: text queries not forwarding to WebDriver attributes #241
+* Server: handle infinite and CGFloat max/min floating point values #240
+* Server: OR predicates not evaling correctly on web views - updated
+  tests; issue is not resolved #239
+* SpringBoard: add Hebrew and Italian SpringBoard alerts #238
+* Update CBXDevice for iPad Pro 10.5 and arm64 devices #236
+* Update build scripts to publish TestApp to test-cloud-test-apps #235
+
+#### iOSDeviceManager 2.0.0
+
+iOSDeviceManager 2.0 has improved code signing and preliminary support
+for Xcode 9.
+
+This iOSDeviceManager  was built with Xcode 8.3.3 on macOS Sierra.
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/2.0.0
+
+* Stabilize and improve the resigning integration tests #168
+* FBSimulatorControl includes ReturnAttributes key when inspecting
+  installed applications #163
+* Fetching applications before downloading app data prevents failures  #162
+* Xcode 9: can install provisioning profiles #161
+* Add app-info command #160
+* Fix file uploading when targeting physical devices #157
+* upload command writes upload path to stdout #155
+* CLI 2.0 #137
+
 ### 2.4.1
 
 This release does not contain a new DeviceAgent stack.
@@ -32,7 +92,7 @@ faster.
 
 #### DeviceAgent 1.1.1
 
-https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.1.1)
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.1.1
 
 * DeviceAgent.xctest bundle includes xctestrun files #214
 * Dismiss 'Open in' alerts automatically #212
