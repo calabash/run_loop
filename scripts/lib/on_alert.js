@@ -198,7 +198,8 @@ function portugueseBrazilLocalizations() {
     ["OK", /Deseja Ter Acesso às Suas Atividades de Movimento e Preparo Físico/],
     ["OK", /Deseja Ter Acesso às Contas do Twitter/],
     ["OK", /data available to nearby bluetooth devices/],
-    ["OK", /[Dd]eseja [Ee]nviar-lhe [Nn]otificações/]
+    ["OK", /[Dd]eseja [Ee]nviar-lhe [Nn]otificações/],
+    ["Permitir", /Deseja Enviar Notificações/]
   ];
 }
 

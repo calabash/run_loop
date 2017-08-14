@@ -157,6 +157,8 @@ class RunLoop::CoreSimulator
   # @!visibility private
   # Quit any Simulator.app or iOS Simulator.app
   def self.quit_simulator
+    RunLoop::DeviceAgent::Xcodebuild.terminate_simulator_tests
+
     SIMULATOR_QUIT_PROCESSES.each do |process_details|
       process_name = process_details[0]
       send_term_first = process_details[1]
@@ -374,6 +376,11 @@ class RunLoop::CoreSimulator
 
     options = { :timeout => 5, :raise_on_timeout => true }
     RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
+
+    # open -g no longer launches application in the background. We want the
+    # Simulator to open in the background because when it is opened in the
+    # foreground, it steals (key application) focus which is disruptive.
+    send_simulator_to_background
 
     if merged_options[:wait_for_stable]
       device.simulator_wait_for_stable_state
@@ -600,6 +607,23 @@ Command had no output.
   end
 
   # @!visibility private
+  def send_simulator_to_background
+    script = "tell application \"System Events\" to tell process \"#{sim_name}\" to set visible to false"
+    begin
+      system("osascript",  "-e", script)
+    rescue => _
+      RunLoop.log_debug("Could not put simulator into the background")
+    end
+
+    script = "tell application \"System Events\" to tell process \"#{sim_name}\" to set visible to true"
+    begin
+      system("osascript",  "-e", script)
+    rescue => _
+      RunLoop.log_debug("Could not put simulator into the foreground")
+    end
+  end
+
+  # @!visibility private
   def uninstall_app_with_simctl
     launch_simulator
 
@@ -738,6 +762,14 @@ Command had no output.
   end
 
   # @!visibility private
+  def device_agent_launched_by_xcode?(running_apps)
+    process_info = running_apps["XCTRunner"] || running_apps["DeviceAgent-Runner"]
+    return false if !process_info
+
+    process_info[:args][/CBX_LAUNCHED_BY_XCODE/]
+  end
+
+  # @!visibility private
   def running_apps_require_relaunch?
     running_apps = device.simulator_running_app_details
 
@@ -747,11 +779,9 @@ Command had no output.
     end
 
     # DeviceAgent is running, but it was launched by Xcode.
-    if running_apps["XCTRunner"]
-      if running_apps["XCTRunner"][:args][/CBX_LAUNCHED_BY_XCODE/]
-        RunLoop.log_debug("Simulator relaunch required: XCTRunner is controlled by Xcode")
-        return true
-      end
+    if device_agent_launched_by_xcode?(running_apps)
+      RunLoop.log_debug("Simulator relaunch required: XCTRunner is controlled by Xcode")
+      return true
     end
 
     # No app was passed to initializer.

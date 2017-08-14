@@ -323,14 +323,29 @@ describe RunLoop::Device do
     end
 
     describe "#simulator_global_preferences_path" do
-      it "is nil if a physical device" do
+      it "returns nil for physical devices" do
         expect(physical.simulator_global_preferences_path).to be_falsey
       end
 
-      it "is non-nil for simulators" do
+      it "raises an error after waiting for the plist to exist" do
+        path = File.join(simulator.simulator_root_dir,
+                         "data/Library/Preferences/.GlobalPreferences.plist")
+        expect(File).to receive(:exist?).with(path).at_least(:twice).and_return(false)
+
+        expect do
+          simulator.simulator_global_preferences_path(0.05)
+        end.to raise_error(RuntimeError,
+                           /Timed out waiting for .GlobalPreferences.plist/)
+      end
+
+      it "returns the path to the global plist" do
+        simulator = Resources.shared.default_simulator
+
         actual = simulator.simulator_global_preferences_path
-        expect(actual[/#{simulator.udid}/,0]).to be_truthy
-        expect(actual[/\.GlobalPreferences.plist/, 0]).to be_truthy
+
+        expect(actual[/.GlobalPreferences.plist/]).to be_truthy
+        expect(actual[/#{simulator.udid}/]).to be_truthy
+        expect(File.exist?(actual)).to be_truthy
       end
     end
   end
@@ -384,6 +399,7 @@ describe RunLoop::Device do
           :pid => 0
         }
         expect(device).to receive(:run_shell_command).and_return(hash)
+        expect(device).to receive(:simulator_global_preferences_path).and_return("")
 
         expect do
           device.simulator_set_language("en")

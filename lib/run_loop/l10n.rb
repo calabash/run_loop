@@ -18,6 +18,7 @@ module RunLoop
     end
 
     UIKIT_AXBUNDLE_PATH_CORE_SIM = 'Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle/'
+    UIKIT_AXBUNDLE_PATH_CORE_SIM_XCODE_9 = "Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/UIKit.axbundle"
 
     LANG_CODE_TO_LANG_NAME_MAP = {
           'en' => 'English',
@@ -70,7 +71,11 @@ module RunLoop
     end
 
     def uikit_bundle_l10n_path
-      File.join(xcode.developer_dir, UIKIT_AXBUNDLE_PATH_CORE_SIM)
+      if xcode.version_gte_90?
+        File.join(xcode.developer_dir, UIKIT_AXBUNDLE_PATH_CORE_SIM_XCODE_9)
+      else
+        File.join(xcode.developer_dir, UIKIT_AXBUNDLE_PATH_CORE_SIM)
+      end
     end
 
     def is_full_name?(two_letter_country_code)

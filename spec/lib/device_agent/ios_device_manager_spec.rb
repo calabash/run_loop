@@ -156,4 +156,3 @@ describe RunLoop::DeviceAgent::IOSDeviceManager do
     end
   end
 end
-

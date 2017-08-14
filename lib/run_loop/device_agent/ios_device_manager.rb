@@ -7,6 +7,8 @@ module RunLoop
     # A wrapper around the test-control binary.
     class IOSDeviceManager < RunLoop::DeviceAgent::LauncherStrategy
 
+      require "run_loop/regex"
+
       EXIT_CODES = {
         "0" => :success,
         "2" => :false
@@ -98,6 +100,7 @@ but binary does not exist at that path.
       # @!visibility private
       def launch(options)
         code_sign_identity = options[:code_sign_identity]
+        provisioning_profile = options[:provisioning_profile]
         install_timeout = options[:device_agent_install_timeout]
 
         RunLoop::DeviceAgent::Frameworks.instance.install
@@ -105,12 +108,15 @@ but binary does not exist at that path.
 
         start = Time.now
         if device.simulator?
-          cbxapp = RunLoop::App.new(runner.runner)
+          RunLoop::DeviceAgent::Xcodebuild.terminate_simulator_tests
 
+          cbxapp = RunLoop::App.new(runner.runner)
           sim = CoreSimulator.new(device, cbxapp)
+
           sim.install
           sim.launch_simulator
         else
+          RunLoop::DeviceAgent::Xcodebuild.terminate_device_test(device.udid)
 
           if !install_timeout
             raise ArgumentError, %Q[
@@ -125,14 +131,15 @@ Expected :device_agent_install_timeout key in options:
           shell_options = {:log_cmd => true, :timeout => install_timeout}
 
           args = [
-            cmd, "install",
-            "--device-id", device.udid,
-            # -a <== --app-bundle (1.0.4) and --app-path (> 1.0.4)
-            "-a", runner.runner
+            cmd, "install", runner.runner, "--device-id", device.udid
           ]
 
           if code_sign_identity
             args = args + ["--codesign-identity", code_sign_identity]
+          end
+
+          if provisioning_profile
+            args = args + ["--provisioning-profile", provisioning_profile]
           end
 
           start = Time.now
@@ -149,10 +156,11 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
           end
         end
 
-        RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent");
+        RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent")
 
         cmd = "xcrun"
-        args = ["xcodebuild", "test-without-building",
+        args = ["xcodebuild",
+                "test-without-building",
                 "-xctestrun", path_to_xctestrun,
                 "-destination", "id=#{device.udid}",
                 "-derivedDataPath", Xcodebuild.derived_data_directory]
@@ -162,6 +170,7 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         FileUtils.touch(log_file)
 
         env = {
+          # zsh support
           "CLOBBER" => "1"
         }
 
@@ -180,9 +189,7 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
         args = [
-          cmd, "is_installed",
-          "--device-id", device.udid,
-          "--bundle-identifier", bundle_identifier
+          cmd, "is-installed", bundle_identifier, "--device-id", device.udid
         ]
 
         start = Time.now

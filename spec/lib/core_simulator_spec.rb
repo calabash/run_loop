@@ -402,6 +402,34 @@ describe RunLoop::CoreSimulator do
       end
     end
 
+    context "#device_agent_launched_by_xcode?" do
+      it "returns false if DeviceAgent is not running" do
+        expect(core_sim.send(:device_agent_launched_by_xcode?, {})).to be_falsey
+      end
+
+      it "returns false if XCTRunner process was not launched by Xcode IDE" do
+        expect(core_sim.send(:device_agent_launched_by_xcode?,
+                             {"XCTRunner" => {args: ""}})).to be_falsey
+      end
+
+      it "returns false if DeviceAgent-Runner process was not launched by Xcode IDE" do
+        expect(core_sim.send(:device_agent_launched_by_xcode?,
+                             {"DeviceAgent-Runner" => {args: ""}})).to be_falsey
+      end
+
+      it "returns false if XCTRunner process was not launched by Xcode IDE" do
+        expect(core_sim.send(:device_agent_launched_by_xcode?,
+                             {"XCTRunner" => {args: "CBX_LAUNCHED_BY_XCODE"}})
+        ).to be_truthy
+      end
+
+      it "returns false if DeviceAgent-Runner process was not launched by Xcode IDE" do
+        expect(core_sim.send(:device_agent_launched_by_xcode?,
+                             {"DeviceAgent-Runner" => {args: "CBX_LAUNCHED_BY_XCODE"}})
+        ).to be_truthy
+      end
+    end
+
     context "#running_apps_require_relaunch?" do
       let (:running_apps) { { } }
       it "returns false if there are no running apps" do
@@ -1060,7 +1088,9 @@ describe RunLoop::CoreSimulator do
           core_sim.send(:reset_app_sandbox_internal_sdk_gte_8)
           after = Dir.glob("#{base_dir}/**/*").map { |elm| File.basename(elm) }
 
-          expect(after).to be == ['Preferences'] + uia_plists
+          expected = ['Preferences'] + uia_plists
+
+          expect(after.sort).to be == expected.sort
         end
       end
 

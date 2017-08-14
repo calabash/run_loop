@@ -356,11 +356,11 @@ describe RunLoop::App do
       FileUtils.cp(dylib, File.join(target, "CalSmoke.app"))
       app = RunLoop::App.new(File.join(target, "CalSmoke.app"))
 
-      actual = app.executables
+      actual = app.executables.sort
       expected = [
         File.join(app.path, app.executable_name),
         File.join(app.path, File.basename(dylib))
-      ]
+      ].sort
 
       expect(actual).to be == expected
     end

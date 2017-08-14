@@ -39,9 +39,19 @@ module RunLoop
         # Ignored in the XTC.
         # This key is subject to removal or changes
         :device_agent_install_timeout => RunLoop::Environment.ci? ? 240 : 120,
+
         # This value must always be false on the XTC.
         # This is should only be used by gem maintainers or very advanced users.
         :shutdown_device_agent_before_launch => false,
+
+        # This value controls whether or not DeviceAgent should terminate the
+        # the Application Under Test (AUT) when a new testing session is
+        # started.  The default behavior is to _not_ terminate the AUT if it
+        # is already running. If you want your next test to start with your
+        # application in a freshly launched state, set this option to true.
+        #
+        # If the AUT is not running, DeviceAgent performs no action.
+        :terminate_aut_before_test => false,
 
         # This value was derived empirically by typing hundreds of strings
         # using XCUIElement#typeText.  It corresponds to the DeviceAgent
@@ -122,10 +132,18 @@ module RunLoop
           code_sign_identity = RunLoop::Environment::code_sign_identity
         end
 
+        provisioning_profile = options[:provisioning_profile]
+        if !provisioning_profile
+          provisioning_profile = RunLoop::Environment::provisioning_profile
+        end
+
         install_timeout = options.fetch(:device_agent_install_timeout,
                                                      DEFAULTS[:device_agent_install_timeout])
-        shutdown_before_launch = options.fetch(:shutdown_device_agent_before_launch,
-                                               DEFAULTS[:shutdown_device_agent_before_launch])
+        shutdown_device_agent_before_launch = options.fetch(:shutdown_device_agent_before_launch,
+                                                            DEFAULTS[:shutdown_device_agent_before_launch])
+        terminate_aut_before_test = options.fetch(:terminate_aut_before_test,
+                                                   DEFAULTS[:terminate_aut_before_test])
+
         aut_args = options.fetch(:args, [])
         aut_env = options.fetch(:env, {})
 
@@ -135,8 +153,10 @@ module RunLoop
 
         launcher_options = {
             code_sign_identity: code_sign_identity,
+            provisioning_profile: provisioning_profile,
             device_agent_install_timeout: install_timeout,
-            shutdown_device_agent_before_launch: shutdown_before_launch,
+            shutdown_device_agent_before_launch: shutdown_device_agent_before_launch,
+            terminate_aut_before_test: terminate_aut_before_test,
             dylib_injection_details: dylib_injection_details,
             aut_args: aut_args,
             aut_env: aut_env
@@ -152,6 +172,7 @@ module RunLoop
             :app => bundle_id,
             :automator => :device_agent,
             :code_sign_identity => code_sign_identity,
+            :provisioning_profile => provisioning_profile,
             :launcher => cbx_launcher.name,
             :launcher_pid => xcuitest.launcher_pid,
             :launcher_options => xcuitest.launcher_options
@@ -674,14 +695,21 @@ Could not dismiss SpringBoard alert by touching button with title '#{button_titl
       def rotate_home_button_to(position, sleep_for=1.0)
         orientation = normalize_orientation_position(position)
         parameters = {
-          :orientation => orientation
+          :orientation => orientation,
+          :seconds_to_sleep_after => sleep_for
         }
         request = request("rotate_home_button_to", parameters)
         client = http_client(http_options)
         response = client.post(request)
-        json = expect_300_response(response)
-        sleep(sleep_for)
-        json
+        expect_300_response(response)
+      end
+
+      # @!visibility private
+      def orientations
+        request = request("orientations")
+        client = http_client(http_options)
+        response = client.get(request)
+        expect_300_response(response)
       end
 
       # @!visibility private
@@ -1287,10 +1315,6 @@ PRIVATE
               kill = RunLoop::ProcessTerminator.new(pid, "KILL", process_name, kill_options)
               kill.kill_process
             end
-
-            if process_name == :xcodebuild
-              sleep(10)
-            end
           end
         end
         hash
@@ -1420,13 +1444,16 @@ Please install it.
         # internal callers to do not.
         aut_args = launcher_options.fetch(:aut_args, [])
         aut_env = launcher_options.fetch(:aut_env, {})
+        terminate_aut = launcher_options.fetch(:terminate_aut_before_test, false)
+
         begin
           client = http_client(http_options)
           request = request("session",
                             {
                               :bundle_id => bundle_id,
                               :launchArgs => aut_args,
-                              :environment => aut_env
+                              :environment => aut_env,
+                              :terminate_aut_if_running => terminate_aut
                             })
           response = client.post(request)
           RunLoop.log_debug("Launched #{bundle_id} on #{device}")

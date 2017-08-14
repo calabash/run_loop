@@ -369,6 +369,25 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".provisioning_profile" do
+    it "returns the value" do
+      path = "path/to/provisioning/profile"
+      stub_env({"PROVISIONING_PROFILE" => path})
+
+      expect(RunLoop::Environment.provisioning_profile).to be == path
+    end
+
+    it "returns nil if value is the empty string" do
+      stub_env("PROVISIONING_PROFILE", "")
+      expect(RunLoop::Environment.provisioning_profile).to be == nil
+    end
+
+    it "returns nil if value is nil" do
+      stub_env({"PROVISIONING_PROFILE" => nil})
+      expect(RunLoop::Environment.provisioning_profile).to be == nil
+    end
+  end
+
   describe ".keychain" do
     it "returns value" do
       keychain = "/Users/maxmusterman/Library/Keychains/login.keychain"

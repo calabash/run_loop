@@ -89,6 +89,10 @@ class Resources
     @app_bundle_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke.app'))
   end
 
+  def unsigned_app_bundle_path
+    @unsigned_app_bundle_path ||= File.expand_path(File.join(resources_dir, 'unsigned.app'))
+  end
+
   def ipa_path
     @ipa_path ||= File.expand_path(File.join(resources_dir, 'CalSmoke.ipa'))
   end
@@ -200,9 +204,13 @@ class Resources
     end
   end
 
-  def random_simulator_device
+  def random_simulator_device(min_version=nil)
     simctl.simulators.shuffle.detect do |device|
-      device.name[/Resizable/,0] == nil
+      [
+        !device.name[/Resizable/],
+        !device.name[/rspec/],
+        min_version ? device.version >= min_version : true
+      ].all?
     end
   end
 
