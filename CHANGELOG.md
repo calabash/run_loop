@@ -1,5 +1,19 @@
 ## Change Log
 
+### 2.5.1
+
+This is patch release for Xcode 9 beta 6.
+
+* DeviceAgent: update to iOSDeviceManager 2.0.1 #639
+
+#### iOSDeviceManager 2.0.1
+
+* Terminate apps before uninstalling to prevent black
+  screen/unresponsive apps on physical devices #177
+* FBSimulatorControl: sync to 0.4.0 f7c5822 on Aug 18 2017 #176
+* CLI for uploading in entire xcappdata bundles #175
+* Fixes getting resources from args for install-app #172
+
 ### 2.5.0
 
 This release provide preliminary support testing with Xcode 9 against
