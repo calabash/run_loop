@@ -614,7 +614,9 @@ failed with this output:
     def simulator_required_child_processes
       @simulator_required_child_processes ||= begin
         required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
-        if xcode.version_gte_8? && version.major > 8
+        if xcode.version_gte_90?
+          required << "filecoordinationd"
+        elsif xcode.version_gte_8? && version.major > 8
           required << "medialibraryd"
         end
 
