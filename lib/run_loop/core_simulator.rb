@@ -517,16 +517,20 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
       # macOS is looking more like iOS.  Process names like 'mobileassetd' are
       # found in both operating systems.
 
-      killed = false
+      args = ["ps", "-o", "uid=", pid.to_s]
+      uid = RunLoop::Shell.run_shell_command(args)[:out].strip
+      if uid != "0"
+        killed = false
 
-      if send_term_first
-        term = RunLoop::ProcessTerminator.new(pid, 'TERM', process_name, term_options)
-        killed = term.kill_process
-      end
+        if send_term_first
+          term = RunLoop::ProcessTerminator.new(pid, 'TERM', process_name, term_options)
+          killed = term.kill_process
+        end
 
-      if !killed
-        term = RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
-        term.kill_process
+        if !killed
+          term = RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
+          term.kill_process
+        end
       end
     end
   end
