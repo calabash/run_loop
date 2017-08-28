@@ -25,12 +25,15 @@ describe RunLoop::Simctl do
 
   context ".valid_core_simulator_service?" do
     let(:args) { ["xcrun", "simctl", "help"] }
+    let(:options) { {timeout: 5 } }
     let(:hash) { { } }
 
     it "returns true if simctl help exits with 0 and a valid CoreSimulatorService is located" do
       hash[:exit_status] = 0
       hash[:out] = "Apple!!!"
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).and_return(hash)
+      expect(RunLoop::Shell).to(
+        receive(:run_shell_command).with(args, options).and_return(hash)
+      )
 
       actual = RunLoop::Simctl.valid_core_simulator_service?
       expect(actual).to be == true
@@ -38,7 +41,9 @@ describe RunLoop::Simctl do
 
     it "returns false if simctl help fails" do
       hash[:exit_status] = 1
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).and_return(hash)
+      expect(RunLoop::Shell).to(
+        receive(:run_shell_command).with(args, options).and_return(hash)
+      )
 
       actual = RunLoop::Simctl.valid_core_simulator_service?
       expect(actual).to be == false
@@ -48,14 +53,27 @@ describe RunLoop::Simctl do
       hash[:exit_status] = 0
       hash[:out] = "Failed to locate a valid instance of CoreSimulatorService"
 
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).and_return(hash)
+      expect(RunLoop::Shell).to(
+        receive(:run_shell_command).with(args, options).and_return(hash)
+      )
 
       actual = RunLoop::Simctl.valid_core_simulator_service?
       expect(actual).to be == false
     end
 
-    it "returns false if simctl help raises a shell error" do
-      expect(RunLoop::Shell).to receive(:run_shell_command).with(args).times.and_raise RunLoop::Shell::Error
+    it "returns false if simctl help raises a Shell error" do
+      expect(RunLoop::Shell).to(
+        receive(:run_shell_command).with(args, options).times.and_raise(RunLoop::Shell::Error)
+      )
+
+      actual = RunLoop::Simctl.valid_core_simulator_service?
+      expect(actual).to be == false
+    end
+
+    it "returns false if simctl help raises a Timeout error" do
+      expect(RunLoop::Shell).to(
+        receive(:run_shell_command).with(args, options).times.and_raise(RunLoop::Shell::TimeoutError)
+      )
 
       actual = RunLoop::Simctl.valid_core_simulator_service?
       expect(actual).to be == false
@@ -71,18 +89,18 @@ describe RunLoop::Simctl do
       expect(actual).to be == true
     end
 
-    it "returns true after 3 tries" do
+    it "returns true after 4 tries" do
       expect(RunLoop::Simctl).to(
-        receive(:valid_core_simulator_service?).and_return(false, false, true)
+        receive(:valid_core_simulator_service?).and_return(false, false, false, true)
       )
 
       actual = RunLoop::Simctl.ensure_valid_core_simulator_service
       expect(actual).to be == true
     end
 
-    it "returns false after 3 tries" do
+    it "returns false after 4 tries" do
       expect(RunLoop::Simctl).to(
-        receive(:valid_core_simulator_service?).and_return(false, false, false)
+        receive(:valid_core_simulator_service?).and_return(false, false, false, false)
       )
 
       actual = RunLoop::Simctl.ensure_valid_core_simulator_service
