@@ -114,7 +114,11 @@ class RunLoop::CoreSimulator
               # appear to influence the behavior of DeviceAgent.
               ["MobileSMSSpotlightImporter", false],
               ["UserEventAgent", false],
-              ["mobileassetd", false]
+              ["mobileassetd", false],
+              ["pkd", false],
+              ["KeychainSyncingOverIDSProxy", false],
+              ["CloudKeychainProxy", false],
+              ["aslmanager", false]
         ]
 
   # @!visibility private
