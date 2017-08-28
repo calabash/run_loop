@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.5.2
+
+This a patch release for Xcode 9 beta 6.  It includes iOSDeviceManger
+2.0.2, which contains a fix for loading Swift dylibs in Xcode 9.
+
 ### 2.5.1
 
 This is patch release for Xcode 9 beta 6.

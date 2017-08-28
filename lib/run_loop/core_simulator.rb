@@ -784,8 +784,12 @@ Command had no output.
       return true
     end
 
+    # Why?
     # No app was passed to initializer.
-    return true if app.nil?
+    if app.nil?
+      RunLoop.log_debug("Simulator relaunch required: no app was passed to CoreSimulator.new")
+      return true
+    end
 
     # AUT is running, but it was not launched by DeviceAgent.
     app_name = app.executable_name
