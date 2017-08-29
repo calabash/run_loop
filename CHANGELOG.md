@@ -1,5 +1,17 @@
 ## Change Log
 
+### 2.5.3
+
+This patch provides preliminary support for testing against iOS
+Simulators in Xcode 9 beta 6.
+
+* Xcode 9: ensure software keyboard will show #647
+* Xcode 9: update CoreSim.app\_installed? #646
+* Xcode 9/iOS 11: add new languages and locales #645
+* Simctl: can switch back to Xcode 8 after Xcode 9 is active #644
+* CoreSim: update list of managed simulator processes #643
+* Xcode 9: adjust the required processes for "wait for simulator stable" heuristic #642
+
 ### 2.5.2
 
 This a patch release for Xcode 9 beta 6.  It includes iOSDeviceManger
