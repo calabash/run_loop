@@ -39,9 +39,9 @@ module RunLoop
 
     # @!visibility private
     def self.ensure_valid_core_simulator_service
-      max_tries = 3
+      max_tries = 4
       valid = false
-      3.times do |try|
+      4.times do |try|
         valid = self.valid_core_simulator_service?
         break if valid
         RunLoop.log_debug("Invalid CoreSimulator service for active Xcode: try #{try + 1} of #{max_tries}")
@@ -54,11 +54,12 @@ module RunLoop
       require "run_loop/shell"
       args = ["xcrun", "simctl", "help"]
 
+      options = {timeout: 5 }
       begin
-        hash = Shell.run_shell_command(args)
+        hash = Shell.run_shell_command(args, options)
         hash[:exit_status] == 0 &&
           !hash[:out][/Failed to locate a valid instance of CoreSimulatorService/]
-      rescue RunLoop::Shell::Error => _
+      rescue RunLoop::Shell::TimeoutError, RunLoop::Shell::Error => _
         false
       end
     end
