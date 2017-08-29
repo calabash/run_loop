@@ -5,12 +5,16 @@ describe RunLoop::CoreSimulator do
   end
 
   it '.quit_simulator' do
-    expect(RunLoop::CoreSimulator).to receive(:term_or_kill).at_least(:once).and_return true
+    count = RunLoop::CoreSimulator::SIMULATOR_QUIT_PROCESSES.count
+    expect(RunLoop::CoreSimulator).to(
+      receive(:term_or_kill).exactly(count).times.and_return(true)
+    )
+
+    expect(RunLoop::DeviceAgent::Xcodebuild).to(
+      receive(:terminate_simulator_tests).and_call_original
+    )
 
     RunLoop::CoreSimulator.quit_simulator
-
-    waiter = RunLoop::ProcessWaiter.new("Simulator")
-    expect(waiter.running_process?).to be_falsey
   end
 
   it '.terminate_core_simulator_processes' do
