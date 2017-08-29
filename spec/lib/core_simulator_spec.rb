@@ -441,16 +441,6 @@ describe RunLoop::CoreSimulator do
         expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
       end
 
-      it "returns true if the simulator state is not 'Booted'" do
-        sim_details[:pid] = 1234
-        sim_details[:launched_by_run_loop] = true
-        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
-        expect(device).to receive(:update_simulator_state).and_return(true)
-        expect(device).to receive(:state).and_return("Anything but 'Booted'")
-
-        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
-      end
-
       it "returns true if the hardware keyboard is not connected" do
         sim_details[:pid] = 1234
         sim_details[:launched_by_run_loop] = true
@@ -462,10 +452,47 @@ describe RunLoop::CoreSimulator do
         expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
       end
 
+      it "returns true if the software keyboard is minimized (will not show)" do
+        sim_details[:pid] = 1234
+        sim_details[:launched_by_run_loop] = true
+        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(RunLoop::CoreSimulator).to(
+          receive(:hardware_keyboard_connected?).and_return(true)
+        )
+        expect(core_sim.device).to(
+          receive(:simulator_software_keyboard_will_show?).and_return(false)
+        )
+
+        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+      end
+
+      it "returns true if the simulator state is not 'Booted'" do
+        sim_details[:pid] = 1234
+        sim_details[:launched_by_run_loop] = true
+        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(RunLoop::CoreSimulator).to(
+          receive(:hardware_keyboard_connected?).and_return(true)
+        )
+        expect(core_sim.device).to(
+          receive(:simulator_software_keyboard_will_show?).and_return(true)
+        )
+        expect(device).to receive(:update_simulator_state).and_return(true)
+        expect(device).to receive(:state).and_return("Anything but 'Booted'")
+
+        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+      end
+
+
       it "returns false if the simulator state is 'Booted'" do
         sim_details[:pid] = 1234
         sim_details[:launched_by_run_loop] = true
         expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(RunLoop::CoreSimulator).to(
+          receive(:hardware_keyboard_connected?).and_return(true)
+        )
+        expect(core_sim.device).to(
+          receive(:simulator_software_keyboard_will_show?).and_return(true)
+        )
         expect(device).to receive(:update_simulator_state).and_return(true)
         expect(device).to receive(:state).and_return("Booted")
 

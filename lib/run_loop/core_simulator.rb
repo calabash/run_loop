@@ -397,6 +397,7 @@ class RunLoop::CoreSimulator
 
     RunLoop::CoreSimulator.quit_simulator
     RunLoop::CoreSimulator.ensure_hardware_keyboard_connected(pbuddy)
+    device.simulator_ensure_software_keyboard_will_show
 
     args = ['open', '-g', '-a', sim_app_path, '--args',
             '-CurrentDeviceUDID', device.udid, "LAUNCHED_BY_RUN_LOOP"]
@@ -786,9 +787,13 @@ Command had no output.
       return true
     end
 
-    # Software keyboard are not correct.
     if !RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
       RunLoop.log_debug("Simulator relaunch required: hardware keyboard not connected.")
+      return true
+    end
+
+    if !device.simulator_software_keyboard_will_show?
+      RunLoop.log_debug("Simulator relaunch required:  software keyboard is minimized")
       return true
     end
 
