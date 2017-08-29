@@ -382,13 +382,6 @@ $ bundle exec run-loop simctl manage-processes
 
     # @!visibility private
     #
-    # SimControl compatibility
-    def ensure_software_keyboard(device)
-      sim_control.ensure_software_keyboard(device)
-    end
-
-    # @!visibility private
-    #
     # TODO Make this private again; exposed for SimControl compatibility.
     def xcode
       @xcode ||= RunLoop::Xcode.new

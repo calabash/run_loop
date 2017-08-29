@@ -291,10 +291,21 @@ version: #{version}
 
     # @!visibility private
     def simulator_preferences_plist_path
-      @simulator_preferences_plist_path ||= lambda {
-        return nil if physical_device?
-        File.join(simulator_root_dir, 'data/Library/Preferences/com.apple.Preferences.plist')
-      }.call
+      return nil if physical_device?
+
+
+      directory = File.join(simulator_root_dir, "data", "Library", "Preferences")
+
+      if !File.exist?(directory)
+        FileUtils.mkdir_p(directory)
+      end
+
+      plist = File.join(directory, "com.apple.Preferences.plist")
+
+      if !File.exist?(plist)
+        pbuddy.create_plist(plist)
+      end
+      plist
     end
 
     # @!visibility private
@@ -530,6 +541,16 @@ failed with this output:
       end
 
       running_apps
+    end
+
+    def simulator_software_keyboard_will_show?
+      plist = simulator_preferences_plist_path
+      pbuddy.plist_read("AutomaticMinimizationEnabled", plist).to_i == 0
+    end
+
+    def simulator_ensure_software_keyboard_will_show
+      plist = simulator_preferences_plist_path
+      pbuddy.plist_set("AutomaticMinimizationEnabled", "integer", 0, plist)
     end
 
 =begin

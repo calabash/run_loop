@@ -138,12 +138,6 @@ describe RunLoop::Simctl do
         expect(simctl.ensure_accessibility(device)).to be == :true
       end
 
-      it "#ensure_software_keyboard" do
-        expect(sim_control).to receive(:ensure_software_keyboard).with(device).and_return(:true)
-
-        expect(simctl.ensure_software_keyboard(device)).to be == :true
-      end
-
       it "#xcode is a public method" do
         actual = simctl.xcode
         expect(actual).to be_a_kind_of(RunLoop::Xcode)

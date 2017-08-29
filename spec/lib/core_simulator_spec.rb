@@ -24,6 +24,62 @@ describe RunLoop::CoreSimulator do
     RunLoop::CoreSimulator.terminate_core_simulator_processes
   end
 
+  context "ensure simulator keyboard in a good state" do
+    let(:template) { Resources.shared.simulator_preferences_plist }
+    let(:prefs_dir) { File.join(Resources.shared.local_tmp_dir,
+                                "Library",
+                                "Preferences") }
+    let(:plist) { File.join(prefs_dir, "com.apple.iphonesimulator.plist") }
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+
+    before do
+      stub_const("RunLoop::CoreSimulator::PREFERENCES_PLIST", plist)
+      FileUtils.rm_rf(prefs_dir)
+      FileUtils.mkdir_p(prefs_dir)
+    end
+
+    context ".simulator_preferences_plist" do
+      it "returns a path to ~/Library/Preferences/com.apple.iphonesimulator.plist" do
+        FileUtils.cp(template, plist)
+
+        actual = RunLoop::CoreSimulator.simulator_preferences_plist(pbuddy)
+        expect(actual[/Library\/Preferences\/com\.apple\.iphonesimulator\.plist/]).to be_truthy
+      end
+
+      it "returns a path to com.apple.iphonesimulator.plist; creating file if necessary" do
+        actual = RunLoop::CoreSimulator.simulator_preferences_plist(pbuddy)
+        expect(actual[/Library\/Preferences\/com\.apple\.iphonesimulator\.plist/]).to be_truthy
+
+        expect(File.exist?(plist)).to be_truthy
+      end
+    end
+
+    context ".hardware_keyboard_connected?" do
+      it "returns true when hardware keyboard is connected" do
+        FileUtils.cp(template, plist)
+        actual = RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
+        expect(actual).to be == "false"
+      end
+
+      it "returns false when hardware keyboard is not connected" do
+        FileUtils.cp(template, plist)
+        plist = RunLoop::CoreSimulator.simulator_preferences_plist(pbuddy)
+        pbuddy.plist_set("ConnectHardwareKeyboard", "bool", true, plist)
+
+        actual = RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
+        expect(actual).to be == "true"
+      end
+    end
+
+    it ".ensure_hardware_keyboard_connected" do
+      FileUtils.cp(template, plist)
+
+      actual = RunLoop::CoreSimulator.ensure_hardware_keyboard_connected(pbuddy)
+      expect(actual).to be_truthy
+      expect(pbuddy.plist_read("ConnectHardwareKeyboard", plist)).to be == "true"
+    end
+  end
+
   describe ".erase" do
     let(:simctl) { Resources.shared.simctl }
     let(:options) { { :simctl => simctl, :timeout => 100 } }
@@ -385,20 +441,58 @@ describe RunLoop::CoreSimulator do
         expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
       end
 
+      it "returns true if the hardware keyboard is not connected" do
+        sim_details[:pid] = 1234
+        sim_details[:launched_by_run_loop] = true
+        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(RunLoop::CoreSimulator).to(
+          receive(:hardware_keyboard_connected?).and_return(false)
+        )
+
+        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+      end
+
+      it "returns true if the software keyboard is minimized (will not show)" do
+        sim_details[:pid] = 1234
+        sim_details[:launched_by_run_loop] = true
+        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(RunLoop::CoreSimulator).to(
+          receive(:hardware_keyboard_connected?).and_return(true)
+        )
+        expect(core_sim.device).to(
+          receive(:simulator_software_keyboard_will_show?).and_return(false)
+        )
+
+        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+      end
+
       it "returns true if the simulator state is not 'Booted'" do
         sim_details[:pid] = 1234
         sim_details[:launched_by_run_loop] = true
         expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(RunLoop::CoreSimulator).to(
+          receive(:hardware_keyboard_connected?).and_return(true)
+        )
+        expect(core_sim.device).to(
+          receive(:simulator_software_keyboard_will_show?).and_return(true)
+        )
         expect(device).to receive(:update_simulator_state).and_return(true)
         expect(device).to receive(:state).and_return("Anything but 'Booted'")
 
         expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
       end
 
+
       it "returns false if the simulator state is 'Booted'" do
         sim_details[:pid] = 1234
         sim_details[:launched_by_run_loop] = true
         expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(RunLoop::CoreSimulator).to(
+          receive(:hardware_keyboard_connected?).and_return(true)
+        )
+        expect(core_sim.device).to(
+          receive(:simulator_software_keyboard_will_show?).and_return(true)
+        )
         expect(device).to receive(:update_simulator_state).and_return(true)
         expect(device).to receive(:state).and_return("Booted")
 

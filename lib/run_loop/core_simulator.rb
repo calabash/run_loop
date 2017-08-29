@@ -55,6 +55,10 @@ class RunLoop::CoreSimulator
                                         "CoreSimulator",
                                         "Devices")
 
+  # @!visibility private
+  PREFERENCES_PLIST = File.join(RunLoop::Environment.user_home_directory,
+                                "Library", "Preferences",
+                                "com.apple.iphonesimulator.plist")
 
   # @!visibility private
   MANAGED_PROCESSES =
@@ -196,6 +200,32 @@ class RunLoop::CoreSimulator
       raise "Expected '#{target_state} but found '#{simulator.state}' after waiting."
     end
     in_state
+  end
+
+  # @!visibility private
+  #
+  # Per-user CoreSimulator preferences located in ~/Library/Preferences
+  def self.simulator_preferences_plist(pbuddy)
+    if !File.exist?(PREFERENCES_PLIST)
+      pbuddy.create_plist(PREFERENCES_PLIST)
+    end
+
+    PREFERENCES_PLIST
+  end
+
+  # @!visibility private
+  def self.hardware_keyboard_connected?(pbuddy)
+    plist = self.simulator_preferences_plist(pbuddy)
+    pbuddy.plist_read("ConnectHardwareKeyboard", plist)
+  end
+
+  # @!visibility private
+  #
+  # Connect the hardware keyboard so users can use the host machine keyboard
+  # to type text during testing.
+  def self.ensure_hardware_keyboard_connected(pbuddy)
+    plist = self.simulator_preferences_plist(pbuddy)
+    pbuddy.plist_set("ConnectHardwareKeyboard", "bool", true, plist)
   end
 
   # @!visibility private
@@ -366,6 +396,8 @@ class RunLoop::CoreSimulator
     end
 
     RunLoop::CoreSimulator.quit_simulator
+    RunLoop::CoreSimulator.ensure_hardware_keyboard_connected(pbuddy)
+    device.simulator_ensure_software_keyboard_will_show
 
     args = ['open', '-g', '-a', sim_app_path, '--args',
             '-CurrentDeviceUDID', device.udid, "LAUNCHED_BY_RUN_LOOP"]
@@ -755,8 +787,15 @@ Command had no output.
       return true
     end
 
-    # No device was passed to initializer.
-    return true if device.nil?
+    if !RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
+      RunLoop.log_debug("Simulator relaunch required: hardware keyboard not connected.")
+      return true
+    end
+
+    if !device.simulator_software_keyboard_will_show?
+      RunLoop.log_debug("Simulator relaunch required:  software keyboard is minimized")
+      return true
+    end
 
     # Simulator is running, run_loop launched it, but it is not Booted.
     device.update_simulator_state

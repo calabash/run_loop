@@ -825,11 +825,6 @@ $ xcrun instruments -s templates
       # https://github.com/calabash/run_loop/issues/167
       simctl.ensure_accessibility(device)
 
-      # @todo fix software_keyboard_enabled? so we don't have to quit the sim
-      # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
-      # https://github.com/calabash/run_loop/issues/168
-      simctl.ensure_software_keyboard(device)
-
       # Launches the simulator if the app is not installed.
       core_sim.install
 
