@@ -259,14 +259,33 @@ describe RunLoop::Device do
       end
     end
 
-    describe '#simulator_preferences_plist_path' do
-      it 'is nil if physical device' do
+    describe "#simulator_preferences_plist_path" do
+      it "returns nil if physical device" do
         expect(physical.simulator_preferences_plist_path).to be_falsey
       end
 
-      it 'is non nil if a simulator' do
-        expect(simulator.simulator_preferences_plist_path[/#{simulator.udid}/,0]).to be_truthy
-        expect(simulator.simulator_preferences_plist_path[/com.apple.Preferences.plist/,0]).to be_truthy
+      context "simulator" do
+        let(:root_dir) { File.join(Resources.shared.local_tmp_dir) }
+        let(:directory) { File.join(root_dir, "data", "Library", "Preferences") }
+        let(:plist) { File.join(directory, "com.apple.Preferences.plist") }
+        let(:template) { Resources.shared.plist_with_software_keyboard(true) }
+
+        before do
+          FileUtils.rm_rf(directory)
+          FileUtils.mkdir_p(directory)
+          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
+        end
+
+        it "returns path to plist" do
+          FileUtils.cp(template, plist)
+          expect(simulator.simulator_preferences_plist_path).to be == plist
+        end
+
+        it "returns path to plist; creates file if necessary" do
+          expect(File.exist?(plist)).to be_falsey
+          expect(simulator.simulator_preferences_plist_path).to be == plist
+          expect(File.exist?(plist)).to be_truthy
+        end
       end
     end
 
