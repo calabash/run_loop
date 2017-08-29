@@ -54,6 +54,23 @@ describe RunLoop::CoreSimulator do
       end
     end
 
+    context ".hardware_keyboard_connected?" do
+      it "returns true when hardware keyboard is connected" do
+        FileUtils.cp(template, plist)
+        actual = RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
+        expect(actual).to be == "false"
+      end
+
+      it "returns false when hardware keyboard is not connected" do
+        FileUtils.cp(template, plist)
+        plist = RunLoop::CoreSimulator.simulator_preferences_plist(pbuddy)
+        pbuddy.plist_set("ConnectHardwareKeyboard", "bool", true, plist)
+
+        actual = RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
+        expect(actual).to be == "true"
+      end
+    end
+
     it ".ensure_hardware_keyboard_connected" do
       FileUtils.cp(template, plist)
 
@@ -430,6 +447,17 @@ describe RunLoop::CoreSimulator do
         expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
         expect(device).to receive(:update_simulator_state).and_return(true)
         expect(device).to receive(:state).and_return("Anything but 'Booted'")
+
+        expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+      end
+
+      it "returns true if the hardware keyboard is not connected" do
+        sim_details[:pid] = 1234
+        sim_details[:launched_by_run_loop] = true
+        expect(core_sim).to receive(:running_simulator_details).and_return(sim_details)
+        expect(RunLoop::CoreSimulator).to(
+          receive(:hardware_keyboard_connected?).and_return(false)
+        )
 
         expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
       end

@@ -214,6 +214,12 @@ class RunLoop::CoreSimulator
   end
 
   # @!visibility private
+  def self.hardware_keyboard_connected?(pbuddy)
+    plist = self.simulator_preferences_plist(pbuddy)
+    pbuddy.plist_read("ConnectHardwareKeyboard", plist)
+  end
+
+  # @!visibility private
   #
   # Connect the hardware keyboard so users can use the host machine keyboard
   # to type text during testing.
@@ -390,6 +396,7 @@ class RunLoop::CoreSimulator
     end
 
     RunLoop::CoreSimulator.quit_simulator
+    RunLoop::CoreSimulator.ensure_hardware_keyboard_connected(pbuddy)
 
     args = ['open', '-g', '-a', sim_app_path, '--args',
             '-CurrentDeviceUDID', device.udid, "LAUNCHED_BY_RUN_LOOP"]
@@ -779,8 +786,11 @@ Command had no output.
       return true
     end
 
-    # No device was passed to initializer.
-    return true if device.nil?
+    # Software keyboard are not correct.
+    if !RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
+      RunLoop.log_debug("Simulator relaunch required: hardware keyboard not connected.")
+      return true
+    end
 
     # Simulator is running, run_loop launched it, but it is not Booted.
     device.update_simulator_state
