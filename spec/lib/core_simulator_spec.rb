@@ -24,6 +24,45 @@ describe RunLoop::CoreSimulator do
     RunLoop::CoreSimulator.terminate_core_simulator_processes
   end
 
+  context "ensure simulator keyboard in a good state" do
+    let(:template) { Resources.shared.simulator_preferences_plist }
+    let(:prefs_dir) { File.join(Resources.shared.local_tmp_dir,
+                                "Library",
+                                "Preferences") }
+    let(:plist) { File.join(prefs_dir, "com.apple.iphonesimulator.plist") }
+    let(:pbuddy) { RunLoop::PlistBuddy.new }
+
+    before do
+      stub_const("RunLoop::CoreSimulator::PREFERENCES_PLIST", plist)
+      FileUtils.rm_rf(prefs_dir)
+      FileUtils.mkdir_p(prefs_dir)
+    end
+
+    context ".simulator_preferences_plist" do
+      it "returns a path to ~/Library/Preferences/com.apple.iphonesimulator.plist" do
+        FileUtils.cp(template, plist)
+
+        actual = RunLoop::CoreSimulator.simulator_preferences_plist(pbuddy)
+        expect(actual[/Library\/Preferences\/com\.apple\.iphonesimulator\.plist/]).to be_truthy
+      end
+
+      it "returns a path to com.apple.iphonesimulator.plist; creating file if necessary" do
+        actual = RunLoop::CoreSimulator.simulator_preferences_plist(pbuddy)
+        expect(actual[/Library\/Preferences\/com\.apple\.iphonesimulator\.plist/]).to be_truthy
+
+        expect(File.exist?(plist)).to be_truthy
+      end
+    end
+
+    it ".ensure_hardware_keyboard_connected" do
+      FileUtils.cp(template, plist)
+
+      actual = RunLoop::CoreSimulator.ensure_hardware_keyboard_connected(pbuddy)
+      expect(actual).to be_truthy
+      expect(pbuddy.plist_read("ConnectHardwareKeyboard", plist)).to be == "true"
+    end
+  end
+
   describe ".erase" do
     let(:simctl) { Resources.shared.simctl }
     let(:options) { { :simctl => simctl, :timeout => 100 } }

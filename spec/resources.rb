@@ -77,6 +77,12 @@ class Resources
     end.call
   end
 
+  def simulator_preferences_plist
+    @simulator_preferences_plist ||= File.join(resources_dir,
+                                               "CoreSimulator",
+                                               "com.apple.iphonesimulator.plist")
+  end
+
   def infinite_run_loop_script
     @infinite_run_loop_script = File.expand_path(File.join(resources_dir, 'infinite_run_loop.js'))
   end
