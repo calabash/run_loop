@@ -1096,8 +1096,17 @@ Command had no output.
   # @!visibility private
   def self.system_applications_dir(xcode=RunLoop::Xcode.new)
     base_dir = xcode.developer_dir
-    sim_apps_dir = "Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"
-    File.expand_path(File.join(base_dir, sim_apps_dir))
+
+    if xcode.version_gte_90?
+      apps_dir = File.join("Platforms", "iPhoneOS.platform", "Developer",
+                           "Library", "CoreSimulator", "Profiles", "Runtimes",
+                           "iOS.simruntime", "Contents", "Resources",
+                           "RuntimeRoot", "Applications")
+    else
+      apps_dir = File.join("Platforms", "iPhoneSimulator.platform", "Developer",
+                           "SDKs", "iPhoneSimulator.sdk", "Applications")
+    end
+    File.expand_path(File.join(base_dir, apps_dir))
   end
 
   # @!visibility private
@@ -1106,7 +1115,19 @@ Command had no output.
 
     return false if !File.exist?(apps_dir)
 
-    black_list = ["Fitness.app", "Photo Booth.app", "ScreenSharingViewService.app"]
+    if xcode.version_gte_90?
+      black_list = [
+        "AirMusic.app", "AirPodcasts.app", "AppStore.app", "Calculator.app",
+        "CheckerBoard.app", "CTCarrierSpaceAuth.app", "Diagnostics.app",
+        "DiagnosticsService.app", "FaceTime.app", "Feedback Assistant iOS.app",
+        "FindMyFriends.app", "iBooks.app", "Magnifier.app", "MobileMail.app",
+        "MobileNotes.app", "Music.app", "Podcasts.app", "PreBoard.app",
+        "SoftwareUpdateUIService.app", "StoreDemoViewService.app", "TV.app",
+        "Videos.app"
+      ]
+    else
+      black_list = ["Fitness.app", "Photo Booth.app", "ScreenSharingViewService.app"]
+    end
 
     Dir.glob("#{apps_dir}/*.app").detect do |app_dir|
       basename = File.basename(app_dir)
