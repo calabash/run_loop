@@ -111,6 +111,35 @@ Encountered an error performing operation on plist:
       plist
     end
 
+    # Sends an arbitrary command (-c) to PlistBuddy.
+    #
+    # This class does not handle setting data, date, dictionary, or array
+    # or manipulating elements in existing array or dictionary types.  This
+    # method is an attempt to bridge this gap.
+    #
+    # When setting/adding bool, real, integer, string values, use #plist_set.
+    #
+    # For reading values, use #plist_read.
+    #
+    # @param [String] cmd The command passed to PlistBuddy with -c
+    # @param [String] file Path the plist file
+    # @param [Hash] opts options for controlling execution
+    # @option opts [Boolean] :verbose (false) controls log level
+    # @raise RuntimeError when running the command fails.
+    # @return Boolean, String Success and the output of running the command.
+    def run_command(cmd, file, opts={})
+      success, output = execute_plist_cmd(cmd, file, opts)
+      if !success
+        raise RuntimeError, %Q[
+Encountered an error performing operation on plist:
+
+#{plist_buddy} -c "#{cmd}" #{file}
+=> #{output}
+]
+      end
+      return success, output
+    end
+
     private
 
     # returns the path to the PlistBuddy executable

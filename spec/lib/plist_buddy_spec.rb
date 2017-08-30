@@ -16,6 +16,20 @@ describe RunLoop::PlistBuddy do
     expect(File.open(path).read).not_to be == ''
   end
 
+  context "#run_command" do
+    it "returns true and output if command is successful" do
+      success, output = pbuddy.run_command("Print :AXInspectorEnabled", path)
+
+      expect(success).to be_truthy
+      expect(output).to be == "false"
+    end
+    it "raises an error if command is not successful" do
+      expect do
+        pbuddy.run_command("Print :NoSuchKey", path)
+      end.to raise_error(RuntimeError, /Does Not Exist/)
+    end
+  end
+
   context "#ensure_plist" do
     let(:base_dir) { File.join(Resources.shared.local_tmp_dir, "PlistBuddy") }
     let(:directory) { File.join(base_dir, "A", "B") }
