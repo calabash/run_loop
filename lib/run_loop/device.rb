@@ -439,25 +439,14 @@ version: #{version}
 
       global_plist = simulator_global_preferences_path
 
-      cmd = [
-        "/usr/libexec/PlistBuddy",
-        "-c",
-        "Add :AppleLanguages:0 string '#{lang_code}'",
-        global_plist
-      ]
-
-      # RunLoop::PlistBuddy cannot add items to arrays.
-      hash = run_shell_command(cmd, {:log_cmd => true})
-
-      if hash[:exit_status] != 0
+      begin
+        pbuddy.unshift_array("AppleLanguages", "string", lang_code,
+                             global_plist)
+      rescue RuntimeError => e
         raise RuntimeError, %Q[
-Could not update the Simulator languages because this command:
+Could not update the Simulator languages.
 
-#{cmd.join(" ")}
-
-failed with this output:
-
-#{hash[:out]}
+#{e.message}
 
 ]
       end

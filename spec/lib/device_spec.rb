@@ -362,35 +362,44 @@ describe RunLoop::Device do
     end
   end
 
-  describe "#simulator_languages" do
+  context "Simulator Language" do
     let(:device) { RunLoop::Device.new("iPhone 5s", "8.3", "udid") }
+    let(:root_dir) do
+      File.join(Resources.shared.local_tmp_dir, "CoreSimulator", "Devices",
+                device.udid)
+    end
     let(:pbuddy) { RunLoop::PlistBuddy.new }
-    let(:plist) { "a.plist" }
     let(:out) { "Array {\n    en\n    en-US\n}" }
 
     before do
-      expect(device).to receive(:simulator_global_preferences_path).and_return(plist)
-      expect(device).to receive(:pbuddy).and_return(pbuddy)
+      FileUtils.rm_rf(root_dir)
+      FileUtils.mkdir_p(root_dir)
+      allow(device).to receive(:simulator_root_dir).and_return(root_dir)
+      allow(device).to receive(:pbuddy).and_return(pbuddy)
     end
 
-    it "returns a list of AppleLanguages from global plist" do
-      expect(pbuddy).to receive(:plist_read).with("AppleLanguages", plist).and_return(out)
+    context "#simulator_languages" do
+      let(:plist) { device.simulator_global_preferences_path }
 
-      expect(device.simulator_languages).to be == ["en", "en-US"]
+      it "returns a list of AppleLanguages from global plist" do
+        expect(pbuddy).to(
+          receive(:plist_read).with("AppleLanguages", plist).and_return(out)
+        )
+
+        expect(device.simulator_languages).to be == ["en", "en-US"]
+      end
+
+      it "catches errors and returns the string as an array" do
+        expect(pbuddy).to(
+          receive(:plist_read).with("AppleLanguages", plist).and_return(nil)
+        )
+
+        expect(device.simulator_languages).to be == [nil]
+      end
     end
 
-    it "catches errors and returns the string as an array" do
-      expect(pbuddy).to receive(:plist_read).with("AppleLanguages", plist).and_return(nil)
-
-      expect(device.simulator_languages).to be == [nil]
-    end
-  end
-
-  describe "#simulator_set_language" do
-    let(:device) { RunLoop::Device.new("iPhone 5s", "8.3", "udid") }
-
-    describe "raises errors" do
-      it "this is a physical device" do
+    context "#simulator_set_language" do
+      it "raises error when this is a physical device" do
         expect(device).to receive(:physical_device?).and_return(true)
 
         expect do
@@ -398,34 +407,27 @@ describe RunLoop::Device do
         end.to raise_error RuntimeError, /This method is for Simulators only/
       end
 
-      it "language code is invalid" do
+      it "raises error language code is invalid" do
         expect do
           device.simulator_set_language("invalid code")
         end.to raise_error ArgumentError, /is not valid for this device/
       end
 
-      it "run_shell_command fails" do
-        hash = {
-          :exit_status => 1,
-          :out => "Some error",
-          :pid => 0
-        }
-        expect(device).to receive(:run_shell_command).and_return(hash)
-        expect(device).to receive(:simulator_global_preferences_path).and_return("")
+      it "raises error when pbuddy#unshift_array fails" do
+        expect(pbuddy).to receive(:unshift_array).and_raise(RuntimeError)
 
         expect do
           device.simulator_set_language("en")
         end.to raise_error RuntimeError, /Could not update the Simulator languages/
       end
-    end
 
-    it "sets the language so it is _first_" do
-      plist = Resources.shared.global_preferences_plist
-      allow(device).to receive(:simulator_global_preferences_path).and_return(plist)
+      it "sets the language so it is _first_" do
+        actual = device.simulator_set_language("de")
+        expect(actual).to be == ["de"]
 
-      actual = device.simulator_set_language("en")
-
-      expect(actual).to be == ["en", "en-US"]
+        actual = device.simulator_set_language("en")
+        expect(actual).to be == ["en", "de"]
+      end
     end
   end
 
