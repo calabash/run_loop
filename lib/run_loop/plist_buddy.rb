@@ -1,3 +1,4 @@
+
 module RunLoop
   # A class for reading and writing property list values.
   #
@@ -5,6 +6,8 @@ module RunLoop
   # faults, it matches Boolean to a string type with 'true/false' values which
   # is problematic for our purposes.
   class PlistBuddy
+
+    require "fileutils"
 
     # Reads key from file and returns the result.
     # @param [String] key the key to inspect (may not be nil or empty)
@@ -83,6 +86,18 @@ module RunLoop
         file.puts '</plist>'
       end
       path
+    end
+
+    # Ensures a plist exists at path by creating necessary directories and
+    # creating an empty plist if none exists.
+    def ensure_plist(directory, name)
+      FileUtils.mkdir_p(directory) if !File.exist?(directory)
+
+      plist = File.join(directory, name)
+
+      create_plist(plist) if !File.exists?(plist)
+
+      plist
     end
 
     private

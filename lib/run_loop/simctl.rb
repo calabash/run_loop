@@ -24,7 +24,7 @@ module RunLoop
       "Shutdown" => 1,
       "Shutting Down" => 2,
       "Booted" => 3,
-      "Plist Missing" => -1
+      "Plist Missing Key" => -1
     }.freeze
 
     # @!visibility private
@@ -125,10 +125,11 @@ module RunLoop
     # @!visibility private
     def simulator_state_as_int(device)
       plist = device.simulator_device_plist
-      if File.exist?(plist)
+
+      if pbuddy.plist_key_exists?("state", plist)
         pbuddy.plist_read("state", plist).to_i
       else
-        SIM_STATES["Plist Missing"]
+        SIM_STATES["Plist Missing Key"]
       end
     end
 

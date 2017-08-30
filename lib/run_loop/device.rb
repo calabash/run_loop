@@ -275,79 +275,44 @@ version: #{version}
 
     # @!visibility private
     def simulator_root_dir
-      @simulator_root_dir ||= lambda {
-        return nil if physical_device?
-        File.join(CORE_SIMULATOR_DEVICE_DIR, udid)
-      }.call
+      return nil if physical_device?
+      @simulator_root_dir ||= File.join(CORE_SIMULATOR_DEVICE_DIR, udid)
     end
 
     # @!visibility private
     def simulator_accessibility_plist_path
-      @simulator_accessibility_plist_path ||= lambda {
-        return nil if physical_device?
-        File.join(simulator_root_dir, 'data/Library/Preferences/com.apple.Accessibility.plist')
-      }.call
+      return nil if physical_device?
+
+      directory = File.join(simulator_root_dir, "data", "Library", "Preferences")
+      pbuddy.ensure_plist(directory, "com.apple.Accessibility.plist")
     end
 
     # @!visibility private
     def simulator_preferences_plist_path
       return nil if physical_device?
 
-
       directory = File.join(simulator_root_dir, "data", "Library", "Preferences")
-
-      if !File.exist?(directory)
-        FileUtils.mkdir_p(directory)
-      end
-
-      plist = File.join(directory, "com.apple.Preferences.plist")
-
-      if !File.exist?(plist)
-        pbuddy.create_plist(plist)
-      end
-      plist
+      pbuddy.ensure_plist(directory, "com.apple.Preferences.plist")
     end
 
     # @!visibility private
     def simulator_log_file_path
-      @simulator_log_file_path ||= lambda {
-        return nil if physical_device?
-        File.join(CORE_SIMULATOR_LOGS_DIR, udid, 'system.log')
-      }.call
+      return nil if physical_device?
+      @simulator_log_file_path ||= File.join(CORE_SIMULATOR_LOGS_DIR, udid,
+                                             'system.log')
     end
 
     # @!visibility private
     def simulator_device_plist
-      @simulator_device_plist ||= lambda do
-        return nil if physical_device?
-        File.join(simulator_root_dir, 'device.plist')
-      end.call
+      return nil if physical_device?
+      pbuddy.ensure_plist(simulator_root_dir, "device.plist")
     end
 
     # @!visibility private
-    def simulator_global_preferences_path(timeout=10)
+    def simulator_global_preferences_path
       return nil if physical_device?
-
-      path = File.join(simulator_root_dir,
-                       "data/Library/Preferences/.GlobalPreferences.plist")
-
-      return path if File.exist?(path)
-
-      start = Time.now
-      while !File.exist?(path) && (start + timeout) < Time.now
-        sleep(1.0)
-      end
-
-      return path if File.exist?(path)
-
-      raise(RuntimeError, %Q[
-Timed out waiting for .GlobalPreferences.plist after #{Time.now - start} seconds.
-
-File does not exist at path:
-
-#{path}
-
-])
+      directory = File.join(simulator_root_dir, "data", "Library", "Preferences")
+      pbuddy.ensure_plist(directory, ".GlobalPreferences.plist")
     end
 
     # @!visibility private
