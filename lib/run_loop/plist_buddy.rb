@@ -8,6 +8,9 @@ module RunLoop
   class PlistBuddy
 
     require "fileutils"
+    require "run_loop/shell"
+
+    include RunLoop::Shell
 
     # Reads key from file and returns the result.
     # @param [String] key the key to inspect (may not be nil or empty)
@@ -21,11 +24,11 @@ module RunLoop
         raise(ArgumentError, "key '#{key}' must not be nil or empty")
       end
       cmd = build_plist_cmd(:print, {:key => key}, file)
-      res = execute_plist_cmd(cmd, opts)
-      if res == "Print: Entry, \":#{key}\", Does Not Exist"
+      success, output = execute_plist_cmd(cmd, file, opts)
+      if !success
         nil
       else
-        res
+        output
       end
     end
 
@@ -67,8 +70,16 @@ module RunLoop
         cmd = build_plist_cmd(:add, cmd_args, file)
       end
 
-      res = execute_plist_cmd(cmd, merged)
-      res == ''
+      success, output = execute_plist_cmd(cmd, file, merged)
+      if !success
+        raise RuntimeError, %Q[
+Encountered an error performing operation on plist:
+
+#{plist_buddy} -c "#{cmd}" #{file}
+=> #{output}
+]
+      end
+      success
     end
 
     # Creates an new empty plist at `path`.
@@ -116,24 +127,17 @@ module RunLoop
     # @return [Boolean,String] `true` if command was successful.  If :print'ing
     #  the result, the value of the key.  If there is an error, the output of
     #  stderr.
-    def execute_plist_cmd(cmd, opts={})
-      default_opts = {:verbose => false}
+    def execute_plist_cmd(cmd, file, opts={})
+      default_opts = {:verbose => false }
       merged = default_opts.merge(opts)
 
-      puts cmd if merged[:verbose]
+      merged[:log_cmd] = merged[:verbose]
 
-      res = nil
-      # noinspection RubyUnusedLocalVariable
-      Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
-        err = stderr.read
-        std = stdout.read
-        if not err.nil? and err != ''
-          res = err.chomp
-        else
-          res = std.chomp
-        end
-      end
-      res
+      args = [plist_buddy, "-c", cmd, file]
+
+      hash = run_shell_command(args, merged)
+
+      return hash[:exit_status] == 0, hash[:out]
     end
 
     # Composes a PlistBuddy command that can be executed as a shell command.
@@ -176,13 +180,13 @@ module RunLoop
           unless key
             raise(ArgumentError, ':key is a required key for :add command')
           end
-          cmd_part = "\"Add :#{key} #{value_type} #{value}\""
+          cmd_part = "Add :#{key} #{value_type} #{value}"
         when :print
           key = args_hash[:key]
           unless key
             raise(ArgumentError, ':key is a required key for :print command')
           end
-          cmd_part = "\"Print :#{key}\""
+          cmd_part = "Print :#{key}"
         when :set
           value = args_hash[:value]
           unless value
@@ -192,13 +196,13 @@ module RunLoop
           unless key
             raise(ArgumentError, ':key is a required key for :set command')
           end
-          cmd_part = "\"Set :#{key} #{value}\""
+          cmd_part = "Set :#{key} #{value}"
         else
           cmds = [:add, :print, :set]
           raise(ArgumentError, "expected '#{type}' to be one of '#{cmds}'")
       end
 
-      "#{plist_buddy} -c #{cmd_part} \"#{file}\""
+      cmd_part
     end
   end
 end

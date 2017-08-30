@@ -76,14 +76,14 @@ describe RunLoop::PlistBuddy do
     describe 'composing commands' do
       it 'print' do
         cmd = pbuddy.send(:build_plist_cmd, *[:print, {:key => 'foo'}, path])
-        expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Print :foo\" \"#{path}\""
+        expect(cmd).to be == "Print :foo"
       end
 
       it 'set' do
         cmd =  pbuddy.send(:build_plist_cmd, *[:set,
                                                {:key => 'foo', :value => 'bar'},
                                                path])
-        expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Set :foo bar\" \"#{path}\""
+        expect(cmd).to be == "Set :foo bar"
       end
 
       it 'add' do
@@ -92,7 +92,7 @@ describe RunLoop::PlistBuddy do
                                                         :value => 'bar',
                                                         :type => 'bool'
                                                   }, path])
-        expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Add :foo bool bar\" \"#{path}\""
+        expect(cmd).to be == "Add :foo bool bar"
       end
 
     end
