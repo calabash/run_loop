@@ -231,83 +231,103 @@ describe RunLoop::Device do
     end
   end
 
-  describe 'simulator files' do
-    let (:physical) {  RunLoop::Device.new('name',
-                                           '7.1.2',
-                                           '30c4b52a41d0f6c64a44bd01ff2966f03105de1e') }
-    let (:simulator) { RunLoop::Device.new('iPhone 5s',
-                                           '7.1.2',
-                                           '77DA3AC3-EB3E-4B24-B899-4A20E315C318', 'Shutdown') }
-    describe '#simulator_root_dir' do
-      it 'is nil if physical device' do
-        expect(physical.simulator_root_dir).to be_falsey
+  context "simulator files" do
+    let(:physical) do
+      RunLoop::Device.new("name", "7.1.2",
+                          "30c4b52a41d0f6c64a44bd01ff2966f03105de1e")
+    end
+
+    let (:simulator) do
+      RunLoop::Device.new("iPhone 5s", "7.1.2",
+                          "77DA3AC3-EB3E-4B24-B899-4A20E315C318", "Shutdown")
+    end
+
+    context "#simulator_root_dir" do
+      it "returns nil when physical device" do
+        expect(physical.simulator_root_dir).to be == nil
       end
 
-      it 'is non nil if a simulator' do
-        expect(simulator.simulator_root_dir[/#{simulator.udid}/,0]).to be_truthy
+      it "returns path to Library/Developer/CoreSimulator/<UDID>" do
+        expect(simulator.simulator_root_dir[/#{simulator.udid}/]).to be_truthy
       end
     end
 
-    describe '#simulator_accessibility_plist_path' do
-      it 'is nil if physical device' do
-        expect(physical.simulator_accessibility_plist_path).to be_falsey
+    context "#simulator_log_file_path" do
+      it "returns nil when physical device" do
+        expect(physical.simulator_log_file_path).to be == nil
       end
 
-      it 'is non nil if a simulator' do
-        expect(simulator.simulator_accessibility_plist_path[/#{simulator.udid}/,0]).to be_truthy
-        expect(simulator.simulator_accessibility_plist_path[/com.apple.Accessibility.plist/,0]).to be_truthy
+      it "returns path to Library/Logs/CoreSimulator/<UDID>/system.log" do
+        actual = simulator.simulator_log_file_path
+        expect(actual[/#{simulator.udid}/]).to be_truthy
+        expect(actual[/system.log/]).to be_truthy
       end
     end
 
-    describe "#simulator_preferences_plist_path" do
-      it "returns nil if physical device" do
-        expect(physical.simulator_preferences_plist_path).to be_falsey
+    context "simulator plists" do
+      let(:root_dir) do
+        File.join(Resources.shared.local_tmp_dir, "CoreSimulator", "Devices",
+                  simulator.udid)
       end
 
-      context "simulator" do
-        let(:root_dir) { File.join(Resources.shared.local_tmp_dir) }
-        let(:directory) { File.join(root_dir, "data", "Library", "Preferences") }
-        let(:plist) { File.join(directory, "com.apple.Preferences.plist") }
-        let(:template) { Resources.shared.plist_with_software_keyboard(true) }
+      before do
+        FileUtils.rm_rf(root_dir)
+        FileUtils.mkdir_p(root_dir)
+      end
 
-        before do
-          FileUtils.rm_rf(directory)
-          FileUtils.mkdir_p(directory)
+      context "#simulator_accessibility_plist_path" do
+        it "returns nil when physical device" do
+          expect(physical.simulator_accessibility_plist_path).to be == nil
+        end
+
+        it "returns path to Accessibility.plist when device is a simulator" do
           expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
-        end
 
-        it "returns path to plist" do
-          FileUtils.cp(template, plist)
-          expect(simulator.simulator_preferences_plist_path).to be == plist
-        end
+          actual = simulator.simulator_accessibility_plist_path
 
-        it "returns path to plist; creates file if necessary" do
-          expect(File.exist?(plist)).to be_falsey
-          expect(simulator.simulator_preferences_plist_path).to be == plist
-          expect(File.exist?(plist)).to be_truthy
+          expect(actual[/com.apple.Accessibility.plist/]).to be_truthy
         end
       end
-    end
 
-    describe '#simulator_log_file_path' do
-      it 'is nil if physical device' do
-        expect(physical.simulator_log_file_path).to be_falsey
+      context "#simulator_preferences_plist_path" do
+        it "returns nil if physical device" do
+          expect(physical.simulator_preferences_plist_path).to be == nil
+        end
+
+        it "returns path to Preference.plist when device is a simulator" do
+          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
+
+          actual = simulator.simulator_preferences_plist_path
+
+          expect(actual[/com.apple.Preferences.plist/]).to be_truthy
+        end
       end
 
-      it 'is non nil if a simulator' do
-        expect(simulator.simulator_log_file_path[/#{simulator.udid}/,0]).to be_truthy
-        expect(simulator.simulator_log_file_path[/system.log/,0]).to be_truthy
-      end
-    end
+      context "#simulator_device_plist" do
+        it "returns nil physical device" do
+          expect(physical.simulator_device_plist).to be == nil
+        end
 
-    describe '#simulator_device_plist' do
-      it 'is nil if a physical device' do
-        expect(physical.simulator_device_plist).to be_falsey
+        it "returns path to device.plist when device is a simulator" do
+          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
+
+          actual = simulator.simulator_device_plist
+          expect(actual[/device.plist/]).to be_truthy
+        end
       end
 
-      it 'is non-nil for simulators' do
-        actual = simulator.simulator_device_plist
-        expect(actual[/#{simulator.udid}\/device.plist/, 0]).to be_truthy
+      context "#simulator_global_preferences_path" do
+        it "returns nil for physical devices" do
+          expect(physical.simulator_global_preferences_path).to be == nil
+        end
+
+        it "returns path to the .GlobalPreferences.plist when simulator" do
+          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
+
+          actual = simulator.simulator_global_preferences_path
+
+          expect(actual[/.GlobalPreferences.plist/]).to be_truthy
+        end
       end
     end
 
@@ -338,33 +358,6 @@ describe RunLoop::Device do
 
        actual = simulator.send(:simulator_is_ipad?)
        expect(actual).to be_truthy
-      end
-    end
-
-    describe "#simulator_global_preferences_path" do
-      it "returns nil for physical devices" do
-        expect(physical.simulator_global_preferences_path).to be_falsey
-      end
-
-      it "raises an error after waiting for the plist to exist" do
-        path = File.join(simulator.simulator_root_dir,
-                         "data/Library/Preferences/.GlobalPreferences.plist")
-        expect(File).to receive(:exist?).with(path).at_least(:twice).and_return(false)
-
-        expect do
-          simulator.simulator_global_preferences_path(0.05)
-        end.to raise_error(RuntimeError,
-                           /Timed out waiting for .GlobalPreferences.plist/)
-      end
-
-      it "returns the path to the global plist" do
-        simulator = Resources.shared.default_simulator
-
-        actual = simulator.simulator_global_preferences_path
-
-        expect(actual[/.GlobalPreferences.plist/]).to be_truthy
-        expect(actual[/#{simulator.udid}/]).to be_truthy
-        expect(File.exist?(actual)).to be_truthy
       end
     end
   end
