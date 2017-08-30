@@ -16,6 +16,42 @@ describe RunLoop::PlistBuddy do
     expect(File.open(path).read).not_to be == ''
   end
 
+  context "#ensure_plist" do
+    let(:base_dir) { File.join(Resources.shared.local_tmp_dir, "PlistBuddy") }
+    let(:directory) { File.join(base_dir, "A", "B") }
+    let(:name) { "com.example.MyApp.plist" }
+    let(:plist) { File.join(directory, name) }
+
+    before do
+      FileUtils.rm_rf(base_dir)
+      FileUtils.mkdir_p(base_dir)
+    end
+
+    it "returns a path to an existing plist" do
+      FileUtils.mkdir_p(directory)
+      FileUtils.touch(plist)
+
+      expect(FileUtils).not_to receive(:mkdir_p).with(directory)
+      expect(pbuddy).not_to receive(:create_plist)
+      expect(pbuddy.ensure_plist(directory, name)).to be == plist
+    end
+
+    it "returns a path to an empty plist if one does not already exist" do
+      FileUtils.mkdir_p(directory)
+
+      expect(FileUtils).not_to receive(:mkdir_p).with(directory)
+      expect(pbuddy).to receive(:create_plist).with(plist)
+      expect(pbuddy.ensure_plist(directory, name)).to be == plist
+    end
+
+    it "returns a path to an empty plist after creating any necessary directories" do
+      expect(FileUtils).to receive(:mkdir_p).with(directory)
+      expect(pbuddy).to receive(:create_plist).with(plist)
+
+      expect(pbuddy.ensure_plist(directory, name)).to be == plist
+    end
+  end
+
   describe '#build_plist_cmd' do
     describe 'raises errors' do
       it 'if file does not exist' do
