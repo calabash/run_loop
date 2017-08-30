@@ -55,6 +55,10 @@ class RunLoop::CoreSimulator
                                         "CoreSimulator",
                                         "Devices")
 
+  # @!visibility private
+  PREFERENCES_PLIST = File.join(RunLoop::Environment.user_home_directory,
+                                "Library", "Preferences",
+                                "com.apple.iphonesimulator.plist")
 
   # @!visibility private
   MANAGED_PROCESSES =
@@ -114,7 +118,11 @@ class RunLoop::CoreSimulator
               # appear to influence the behavior of DeviceAgent.
               ["MobileSMSSpotlightImporter", false],
               ["UserEventAgent", false],
-              ["mobileassetd", false]
+              ["mobileassetd", false],
+              ["pkd", false],
+              ["KeychainSyncingOverIDSProxy", false],
+              ["CloudKeychainProxy", false],
+              ["aslmanager", false]
         ]
 
   # @!visibility private
@@ -192,6 +200,32 @@ class RunLoop::CoreSimulator
       raise "Expected '#{target_state} but found '#{simulator.state}' after waiting."
     end
     in_state
+  end
+
+  # @!visibility private
+  #
+  # Per-user CoreSimulator preferences located in ~/Library/Preferences
+  def self.simulator_preferences_plist(pbuddy)
+    if !File.exist?(PREFERENCES_PLIST)
+      pbuddy.create_plist(PREFERENCES_PLIST)
+    end
+
+    PREFERENCES_PLIST
+  end
+
+  # @!visibility private
+  def self.hardware_keyboard_connected?(pbuddy)
+    plist = self.simulator_preferences_plist(pbuddy)
+    pbuddy.plist_read("ConnectHardwareKeyboard", plist)
+  end
+
+  # @!visibility private
+  #
+  # Connect the hardware keyboard so users can use the host machine keyboard
+  # to type text during testing.
+  def self.ensure_hardware_keyboard_connected(pbuddy)
+    plist = self.simulator_preferences_plist(pbuddy)
+    pbuddy.plist_set("ConnectHardwareKeyboard", "bool", true, plist)
   end
 
   # @!visibility private
@@ -362,6 +396,8 @@ class RunLoop::CoreSimulator
     end
 
     RunLoop::CoreSimulator.quit_simulator
+    RunLoop::CoreSimulator.ensure_hardware_keyboard_connected(pbuddy)
+    device.simulator_ensure_software_keyboard_will_show
 
     args = ['open', '-g', '-a', sim_app_path, '--args',
             '-CurrentDeviceUDID', device.udid, "LAUNCHED_BY_RUN_LOOP"]
@@ -517,16 +553,20 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
       # macOS is looking more like iOS.  Process names like 'mobileassetd' are
       # found in both operating systems.
 
-      killed = false
+      args = ["ps", "-o", "uid=", pid.to_s]
+      uid = RunLoop::Shell.run_shell_command(args)[:out].strip
+      if uid != "0"
+        killed = false
 
-      if send_term_first
-        term = RunLoop::ProcessTerminator.new(pid, 'TERM', process_name, term_options)
-        killed = term.kill_process
-      end
+        if send_term_first
+          term = RunLoop::ProcessTerminator.new(pid, 'TERM', process_name, term_options)
+          killed = term.kill_process
+        end
 
-      if !killed
-        term = RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
-        term.kill_process
+        if !killed
+          term = RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
+          term.kill_process
+        end
       end
     end
   end
@@ -747,8 +787,15 @@ Command had no output.
       return true
     end
 
-    # No device was passed to initializer.
-    return true if device.nil?
+    if !RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
+      RunLoop.log_debug("Simulator relaunch required: hardware keyboard not connected.")
+      return true
+    end
+
+    if !device.simulator_software_keyboard_will_show?
+      RunLoop.log_debug("Simulator relaunch required:  software keyboard is minimized")
+      return true
+    end
 
     # Simulator is running, run_loop launched it, but it is not Booted.
     device.update_simulator_state
@@ -1088,8 +1135,17 @@ Command had no output.
   # @!visibility private
   def self.system_applications_dir(xcode=RunLoop::Xcode.new)
     base_dir = xcode.developer_dir
-    sim_apps_dir = "Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"
-    File.expand_path(File.join(base_dir, sim_apps_dir))
+
+    if xcode.version_gte_90?
+      apps_dir = File.join("Platforms", "iPhoneOS.platform", "Developer",
+                           "Library", "CoreSimulator", "Profiles", "Runtimes",
+                           "iOS.simruntime", "Contents", "Resources",
+                           "RuntimeRoot", "Applications")
+    else
+      apps_dir = File.join("Platforms", "iPhoneSimulator.platform", "Developer",
+                           "SDKs", "iPhoneSimulator.sdk", "Applications")
+    end
+    File.expand_path(File.join(base_dir, apps_dir))
   end
 
   # @!visibility private
@@ -1098,7 +1154,19 @@ Command had no output.
 
     return false if !File.exist?(apps_dir)
 
-    black_list = ["Fitness.app", "Photo Booth.app", "ScreenSharingViewService.app"]
+    if xcode.version_gte_90?
+      black_list = [
+        "AirMusic.app", "AirPodcasts.app", "AppStore.app", "Calculator.app",
+        "CheckerBoard.app", "CTCarrierSpaceAuth.app", "Diagnostics.app",
+        "DiagnosticsService.app", "FaceTime.app", "Feedback Assistant iOS.app",
+        "FindMyFriends.app", "iBooks.app", "Magnifier.app", "MobileMail.app",
+        "MobileNotes.app", "Music.app", "Podcasts.app", "PreBoard.app",
+        "SoftwareUpdateUIService.app", "StoreDemoViewService.app", "TV.app",
+        "Videos.app"
+      ]
+    else
+      black_list = ["Fitness.app", "Photo Booth.app", "ScreenSharingViewService.app"]
+    end
 
     Dir.glob("#{apps_dir}/*.app").detect do |app_dir|
       basename = File.basename(app_dir)

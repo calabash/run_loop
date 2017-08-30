@@ -291,10 +291,21 @@ version: #{version}
 
     # @!visibility private
     def simulator_preferences_plist_path
-      @simulator_preferences_plist_path ||= lambda {
-        return nil if physical_device?
-        File.join(simulator_root_dir, 'data/Library/Preferences/com.apple.Preferences.plist')
-      }.call
+      return nil if physical_device?
+
+
+      directory = File.join(simulator_root_dir, "data", "Library", "Preferences")
+
+      if !File.exist?(directory)
+        FileUtils.mkdir_p(directory)
+      end
+
+      plist = File.join(directory, "com.apple.Preferences.plist")
+
+      if !File.exist?(plist)
+        pbuddy.create_plist(plist)
+      end
+      plist
     end
 
     # @!visibility private
@@ -532,6 +543,16 @@ failed with this output:
       running_apps
     end
 
+    def simulator_software_keyboard_will_show?
+      plist = simulator_preferences_plist_path
+      pbuddy.plist_read("AutomaticMinimizationEnabled", plist).to_i == 0
+    end
+
+    def simulator_ensure_software_keyboard_will_show
+      plist = simulator_preferences_plist_path
+      pbuddy.plist_set("AutomaticMinimizationEnabled", "integer", 0, plist)
+    end
+
 =begin
   PRIVATE METHODS
 =end
@@ -614,7 +635,9 @@ failed with this output:
     def simulator_required_child_processes
       @simulator_required_child_processes ||= begin
         required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
-        if xcode.version_gte_8? && version.major > 8
+        if xcode.version_gte_90?
+          required << "filecoordinationd"
+        elsif xcode.version_gte_8? && version.major > 8
           required << "medialibraryd"
         end
 
