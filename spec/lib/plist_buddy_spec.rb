@@ -44,7 +44,9 @@ describe RunLoop::PlistBuddy do
       end
 
       it 'set' do
-        cmd =  pbuddy.send(:build_plist_cmd, *[:set, {:key => 'foo', :value => 'bar'}, path])
+        cmd =  pbuddy.send(:build_plist_cmd, *[:set,
+                                               {:key => 'foo', :value => 'bar'},
+                                               path])
         expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Set :foo bar\" \"#{path}\""
       end
 
@@ -66,7 +68,9 @@ describe RunLoop::PlistBuddy do
 
       context 'read' do
         it 'returns value for keys that exist' do
-          expect(pbuddy.plist_read(hash[:inspector_showing], path, opts)).to be == 'false'
+          expect(
+            pbuddy.plist_read(hash[:inspector_showing], path, opts)
+          ).to be == 'false'
         end
 
         it 'returns nil when reading non-existing key' do
@@ -76,12 +80,18 @@ describe RunLoop::PlistBuddy do
 
       context 'write' do
         it 'sets value for existing key' do
-          expect(pbuddy.plist_set(hash[:inspector_showing], 'bool', 'true', path, opts)).to be == true
-          expect(pbuddy.plist_read(hash[:inspector_showing], path, opts)).to be == 'true'
+          expect(pbuddy.plist_set(hash[:inspector_showing],
+                                  'bool', 'true', path, opts)
+          ).to be == true
+          expect(
+            pbuddy.plist_read(hash[:inspector_showing], path, opts)
+          ).to be == 'true'
         end
 
         it 'creates value for new key' do
-          expect(pbuddy.plist_set('FOO', 'bool', 'true', path, opts)).to be == true
+          expect(
+            pbuddy.plist_set('FOO', 'bool', 'true', path, opts)
+          ).to be == true
           expect(pbuddy.plist_read('FOO', path, opts)).to be == 'true'
         end
       end
