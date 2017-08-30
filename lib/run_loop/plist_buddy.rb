@@ -140,6 +140,37 @@ Encountered an error performing operation on plist:
       return success, output
     end
 
+    # Add value to the head of an array type.
+    #
+    # @param [String] key The plist key
+    # @param [String] type any allowed plist type
+    # @param [Object] value the value to add
+    # @param [String] path the plist path
+    # @param [Hash] opts options for controlling execution
+    # @option opts [Boolean] :verbose (false) controls log level
+    # @raise RuntimeError when running the command fails.
+    # @raise RuntimeError if attempt to push value onto non-array container.
+    def unshift_array(key, type, value, path, opts={})
+      if !plist_key_exists?(key, path)
+        run_command("Add :#{key} array", path, opts)
+      else
+        key_type = plist_read(key, path).split(" ")[0]
+        if key_type != "Array"
+          raise RuntimeError, %Q[
+Could not push #{value} onto array:
+  Expected:  key #{key} be of type Array
+     Found:  had type #{key_type}
+
+in plist:
+
+  #{path}
+]
+        end
+      end
+
+      run_command("Add :#{key}:0 #{type} #{value}", path, opts)
+    end
+
     private
 
     # returns the path to the PlistBuddy executable

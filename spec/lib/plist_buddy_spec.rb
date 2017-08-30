@@ -30,6 +30,39 @@ describe RunLoop::PlistBuddy do
     end
   end
 
+  context "#unshift_array" do
+    it "creates an array for key and adds the value" do
+      pbuddy.unshift_array("Languages", "string", "de", path)
+
+      value = pbuddy.plist_read("Languages", path)
+      expect(value[/Array/]).to be_truthy
+
+      expect(pbuddy.plist_read("Languages:0", path)).to be == "de"
+    end
+
+    it "raises an error if key exists, but is not of type Array" do
+      pbuddy.run_command("Add :Languages dict", path)
+      pbuddy.run_command("Add :Languages:0 string en", path)
+
+      expect do
+        pbuddy.unshift_array("Languages", "string", "de", path)
+      end.to raise_error(RuntimeError, /Found:  had type Dict/)
+    end
+
+    it "pushes the value into the first position of the array" do
+      pbuddy.run_command("Add :Languages array", path)
+      pbuddy.run_command("Add :Languages:0 string en", path)
+
+      pbuddy.unshift_array("Languages", "string", "de", path)
+
+      value = pbuddy.plist_read("Languages", path)
+      expect(value[/Array/]).to be_truthy
+
+      expect(pbuddy.plist_read("Languages:0", path)).to be == "de"
+      expect(pbuddy.plist_read("Languages:1", path)).to be == "en"
+    end
+  end
+
   context "#ensure_plist" do
     let(:base_dir) { File.join(Resources.shared.local_tmp_dir, "PlistBuddy") }
     let(:directory) { File.join(base_dir, "A", "B") }
