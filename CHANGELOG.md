@@ -1,5 +1,15 @@
 ## Change Log
 
+### 2.5.4
+
+This patch improves support for testing against iOS Simulators in Xcode
+9 beta 6.  Please note that until Xcode 9 GM, support is preliminary and
+the next Xcode 9 beta may break existing tests.
+
+* Device: use PlistBuddy#unshift\_array to set Simulator language #651
+* PlistBuddy can run arbitrary commands and push new values onto arrays #650
+* Device: ensure simulator plist paths exist #649
+
 ### 2.5.3
 
 This patch provides preliminary support for testing against iOS
