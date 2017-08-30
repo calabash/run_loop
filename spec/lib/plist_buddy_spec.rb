@@ -16,6 +16,53 @@ describe RunLoop::PlistBuddy do
     expect(File.open(path).read).not_to be == ''
   end
 
+  context "#run_command" do
+    it "returns true and output if command is successful" do
+      success, output = pbuddy.run_command("Print :AXInspectorEnabled", path)
+
+      expect(success).to be_truthy
+      expect(output).to be == "false"
+    end
+    it "raises an error if command is not successful" do
+      expect do
+        pbuddy.run_command("Print :NoSuchKey", path)
+      end.to raise_error(RuntimeError, /Does Not Exist/)
+    end
+  end
+
+  context "#unshift_array" do
+    it "creates an array for key and adds the value" do
+      pbuddy.unshift_array("Languages", "string", "de", path)
+
+      value = pbuddy.plist_read("Languages", path)
+      expect(value[/Array/]).to be_truthy
+
+      expect(pbuddy.plist_read("Languages:0", path)).to be == "de"
+    end
+
+    it "raises an error if key exists, but is not of type Array" do
+      pbuddy.run_command("Add :Languages dict", path)
+      pbuddy.run_command("Add :Languages:0 string en", path)
+
+      expect do
+        pbuddy.unshift_array("Languages", "string", "de", path)
+      end.to raise_error(RuntimeError, /Found:  had type Dict/)
+    end
+
+    it "pushes the value into the first position of the array" do
+      pbuddy.run_command("Add :Languages array", path)
+      pbuddy.run_command("Add :Languages:0 string en", path)
+
+      pbuddy.unshift_array("Languages", "string", "de", path)
+
+      value = pbuddy.plist_read("Languages", path)
+      expect(value[/Array/]).to be_truthy
+
+      expect(pbuddy.plist_read("Languages:0", path)).to be == "de"
+      expect(pbuddy.plist_read("Languages:1", path)).to be == "en"
+    end
+  end
+
   context "#ensure_plist" do
     let(:base_dir) { File.join(Resources.shared.local_tmp_dir, "PlistBuddy") }
     let(:directory) { File.join(base_dir, "A", "B") }
@@ -76,14 +123,14 @@ describe RunLoop::PlistBuddy do
     describe 'composing commands' do
       it 'print' do
         cmd = pbuddy.send(:build_plist_cmd, *[:print, {:key => 'foo'}, path])
-        expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Print :foo\" \"#{path}\""
+        expect(cmd).to be == "Print :foo"
       end
 
       it 'set' do
         cmd =  pbuddy.send(:build_plist_cmd, *[:set,
                                                {:key => 'foo', :value => 'bar'},
                                                path])
-        expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Set :foo bar\" \"#{path}\""
+        expect(cmd).to be == "Set :foo bar"
       end
 
       it 'add' do
@@ -92,7 +139,7 @@ describe RunLoop::PlistBuddy do
                                                         :value => 'bar',
                                                         :type => 'bool'
                                                   }, path])
-        expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Add :foo bool bar\" \"#{path}\""
+        expect(cmd).to be == "Add :foo bool bar"
       end
 
     end
