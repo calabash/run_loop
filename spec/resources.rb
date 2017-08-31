@@ -276,12 +276,13 @@ class Resources
   end
 
   def plist_template
-     @plist_template ||= File.expand_path(File.join(resources_dir, 'plist-buddy/com.example.plist'))
+     @plist_template ||= File.join(resources_dir, "plist-buddy",
+                                   "com.example.plist")
   end
 
   def plist_for_testing
-    dir = Dir.mktmpdir
-    path = File.join(dir, 'com.testing.plist')
+    path = File.join(local_tmp_dir, 'com.testing.plist')
+    FileUtils.rm_f(path) if File.exist?(path)
     FileUtils.cp(plist_template, path)
     path
   end

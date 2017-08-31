@@ -16,6 +16,89 @@ describe RunLoop::PlistBuddy do
     expect(File.open(path).read).not_to be == ''
   end
 
+  context "#run_command" do
+    it "returns true and output if command is successful" do
+      success, output = pbuddy.run_command("Print :AXInspectorEnabled", path)
+
+      expect(success).to be_truthy
+      expect(output).to be == "false"
+    end
+    it "raises an error if command is not successful" do
+      expect do
+        pbuddy.run_command("Print :NoSuchKey", path)
+      end.to raise_error(RuntimeError, /Does Not Exist/)
+    end
+  end
+
+  context "#unshift_array" do
+    it "creates an array for key and adds the value" do
+      pbuddy.unshift_array("Languages", "string", "de", path)
+
+      value = pbuddy.plist_read("Languages", path)
+      expect(value[/Array/]).to be_truthy
+
+      expect(pbuddy.plist_read("Languages:0", path)).to be == "de"
+    end
+
+    it "raises an error if key exists, but is not of type Array" do
+      pbuddy.run_command("Add :Languages dict", path)
+      pbuddy.run_command("Add :Languages:0 string en", path)
+
+      expect do
+        pbuddy.unshift_array("Languages", "string", "de", path)
+      end.to raise_error(RuntimeError, /Found:  had type Dict/)
+    end
+
+    it "pushes the value into the first position of the array" do
+      pbuddy.run_command("Add :Languages array", path)
+      pbuddy.run_command("Add :Languages:0 string en", path)
+
+      pbuddy.unshift_array("Languages", "string", "de", path)
+
+      value = pbuddy.plist_read("Languages", path)
+      expect(value[/Array/]).to be_truthy
+
+      expect(pbuddy.plist_read("Languages:0", path)).to be == "de"
+      expect(pbuddy.plist_read("Languages:1", path)).to be == "en"
+    end
+  end
+
+  context "#ensure_plist" do
+    let(:base_dir) { File.join(Resources.shared.local_tmp_dir, "PlistBuddy") }
+    let(:directory) { File.join(base_dir, "A", "B") }
+    let(:name) { "com.example.MyApp.plist" }
+    let(:plist) { File.join(directory, name) }
+
+    before do
+      FileUtils.rm_rf(base_dir)
+      FileUtils.mkdir_p(base_dir)
+    end
+
+    it "returns a path to an existing plist" do
+      FileUtils.mkdir_p(directory)
+      FileUtils.touch(plist)
+
+      expect(FileUtils).not_to receive(:mkdir_p).with(directory)
+      expect(pbuddy).not_to receive(:create_plist)
+      expect(pbuddy.ensure_plist(directory, name)).to be == plist
+    end
+
+    it "returns a path to an empty plist if one does not already exist" do
+      FileUtils.mkdir_p(directory)
+
+      expect(FileUtils).not_to receive(:mkdir_p).with(directory)
+      expect(pbuddy).to receive(:create_plist).with(plist)
+      expect(pbuddy.ensure_plist(directory, name)).to be == plist
+    end
+
+    it "returns a path to an empty plist after creating any necessary directories" do
+      expect(FileUtils).to receive(:mkdir_p).with(directory)
+      expect(pbuddy).to receive(:create_plist).with(plist)
+
+      expect(pbuddy.ensure_plist(directory, name)).to be == plist
+    end
+  end
+
   describe '#build_plist_cmd' do
     describe 'raises errors' do
       it 'if file does not exist' do
@@ -40,12 +123,14 @@ describe RunLoop::PlistBuddy do
     describe 'composing commands' do
       it 'print' do
         cmd = pbuddy.send(:build_plist_cmd, *[:print, {:key => 'foo'}, path])
-        expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Print :foo\" \"#{path}\""
+        expect(cmd).to be == "Print :foo"
       end
 
       it 'set' do
-        cmd =  pbuddy.send(:build_plist_cmd, *[:set, {:key => 'foo', :value => 'bar'}, path])
-        expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Set :foo bar\" \"#{path}\""
+        cmd =  pbuddy.send(:build_plist_cmd, *[:set,
+                                               {:key => 'foo', :value => 'bar'},
+                                               path])
+        expect(cmd).to be == "Set :foo bar"
       end
 
       it 'add' do
@@ -54,7 +139,7 @@ describe RunLoop::PlistBuddy do
                                                         :value => 'bar',
                                                         :type => 'bool'
                                                   }, path])
-        expect(cmd).to be == "/usr/libexec/PlistBuddy -c \"Add :foo bool bar\" \"#{path}\""
+        expect(cmd).to be == "Add :foo bool bar"
       end
 
     end
@@ -66,7 +151,9 @@ describe RunLoop::PlistBuddy do
 
       context 'read' do
         it 'returns value for keys that exist' do
-          expect(pbuddy.plist_read(hash[:inspector_showing], path, opts)).to be == 'false'
+          expect(
+            pbuddy.plist_read(hash[:inspector_showing], path, opts)
+          ).to be == 'false'
         end
 
         it 'returns nil when reading non-existing key' do
@@ -76,12 +163,18 @@ describe RunLoop::PlistBuddy do
 
       context 'write' do
         it 'sets value for existing key' do
-          expect(pbuddy.plist_set(hash[:inspector_showing], 'bool', 'true', path, opts)).to be == true
-          expect(pbuddy.plist_read(hash[:inspector_showing], path, opts)).to be == 'true'
+          expect(pbuddy.plist_set(hash[:inspector_showing],
+                                  'bool', 'true', path, opts)
+          ).to be == true
+          expect(
+            pbuddy.plist_read(hash[:inspector_showing], path, opts)
+          ).to be == 'true'
         end
 
         it 'creates value for new key' do
-          expect(pbuddy.plist_set('FOO', 'bool', 'true', path, opts)).to be == true
+          expect(
+            pbuddy.plist_set('FOO', 'bool', 'true', path, opts)
+          ).to be == true
           expect(pbuddy.plist_read('FOO', path, opts)).to be == 'true'
         end
       end

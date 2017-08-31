@@ -112,8 +112,12 @@ describe RunLoop::CoreSimulator do
   end
 
   it ".set_language" do
+    RunLoop::CoreSimulator.erase(simulator)
     actual = RunLoop::CoreSimulator.set_language(simulator, "en")
     expect(actual.first).to be == "en"
+
+    actual = RunLoop::CoreSimulator.set_language(simulator, "de")
+    expect(actual.first).to be == "de"
   end
 
   context ".app_installed?" do

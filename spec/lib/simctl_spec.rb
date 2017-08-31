@@ -215,7 +215,7 @@ describe RunLoop::Simctl do
         expect(simctl.send(:string_for_sim_state, 1)).to be == "Shutdown"
         expect(simctl.send(:string_for_sim_state, 2)).to be == "Shutting Down"
         expect(simctl.send(:string_for_sim_state, 3)).to be == "Booted"
-        expect(simctl.send(:string_for_sim_state, -1)).to be == "Plist Missing"
+        expect(simctl.send(:string_for_sim_state, -1)).to be == "Plist Missing Key"
       end
 
       it "raises an error for invalid states" do
@@ -228,21 +228,27 @@ describe RunLoop::Simctl do
     context "#simulator_state_as_int" do
       it "returns the numeric state of the simulator by asking the sim plist" do
         plist = device.simulator_device_plist
-        expect(File).to receive(:exist?).with(plist).and_return(true)
-
         pbuddy = RunLoop::PlistBuddy.new
-        expect(simctl).to receive(:pbuddy).and_return(pbuddy)
+
+        expect(simctl).to receive(:pbuddy).at_least(:once).and_return(pbuddy)
+        expect(pbuddy).to(
+          receive(:plist_key_exists?).with("state", plist).and_return(true)
+        )
         expect(pbuddy).to receive(:plist_read).and_return("10")
 
         expect(simctl.simulator_state_as_int(device)).to be == 10
       end
 
-      it "returns the Plist Missing state (-1) if the plist is missing" do
+      it "returns the Plist Missing Key state (-1) state key is missing" do
         plist = device.simulator_device_plist
-        expect(File).to receive(:exist?).with(plist).and_return(false)
+        pbuddy = RunLoop::PlistBuddy.new
 
-        expected = RunLoop::Simctl::SIM_STATES["Plist Missing"]
+        expect(simctl).to receive(:pbuddy).and_return(pbuddy)
+        expect(pbuddy).to(
+          receive(:plist_key_exists?).with("state", plist).and_return(false)
+        )
 
+        expected = RunLoop::Simctl::SIM_STATES["Plist Missing Key"]
         expect(simctl.simulator_state_as_int(device)).to be == expected
       end
     end
