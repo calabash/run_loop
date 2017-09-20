@@ -1,5 +1,21 @@
 ## Change Log
 
+### 2.6.0
+
+Support for testing with Xcode 9 and iOS 11.
+
+#### DeviceAgent 1.2.0
+
+* Xcode 9: redirect simulator logs to ~/Library/CoreSimulator/<UDID>/system.log #247 @JoeSSS
+* Server: XCUIApplication cannot be first responder #246
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.2.0
+
+#### iOSDeviceManager 2.1.0
+
+https://github.com/calabash/FBSimulatorControl/releases/tag/0.4.0-2017.08.18-patch-CoreSim-linking
+
+
 ### 2.5.4
 
 This patch improves support for testing against iOS Simulators in Xcode
