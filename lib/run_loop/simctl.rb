@@ -21,6 +21,7 @@ module RunLoop
 
     # @!visibility private
     SIM_STATES = {
+      "Creating" => 0,
       "Shutdown" => 1,
       "Shutting Down" => 2,
       "Booted" => 3,

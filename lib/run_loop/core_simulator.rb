@@ -400,7 +400,9 @@ class RunLoop::CoreSimulator
     device.simulator_ensure_software_keyboard_will_show
 
     args = ['open', '-g', '-a', sim_app_path, '--args',
-            '-CurrentDeviceUDID', device.udid, "LAUNCHED_BY_RUN_LOOP"]
+            '-CurrentDeviceUDID', device.udid,
+            "-ConnectHardwareKeyboard", "0",
+            "LAUNCHED_BY_RUN_LOOP"]
 
     RunLoop.log_debug("Launching #{device} with:")
     RunLoop.log_unix_cmd("xcrun #{args.join(' ')}")
