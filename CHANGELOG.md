@@ -1,5 +1,21 @@
 ## Change Log
 
+### 2.6.1
+
+* CoreSim: disable hardward keyboard at launch 243ee0a
+
+#### DeviceAgent 1.2.1
+
+* Server: handle 3 button SpringBoard location alert #249
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.2.1
+
+#### iOSDeviceManager 2.1.1
+
+No changes applicable to run-loop.
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/2.1.1
+
 ### 2.6.0
 
 Support for testing with Xcode 9 and iOS 11.
@@ -13,8 +29,9 @@ https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.2.0
 
 #### iOSDeviceManager 2.1.0
 
-https://github.com/calabash/FBSimulatorControl/releases/tag/0.4.0-2017.08.18-patch-CoreSim-linking
+No changes applicable to run-loop.
 
+https://github.com/calabash/iOSDeviceManager/releases/tag/2.1.0
 
 ### 2.5.4
 
