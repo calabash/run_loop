@@ -212,6 +212,7 @@ describe RunLoop::Simctl do
 
     context "#string_for_sim_state" do
       it "returns a string for valid states" do
+        expect(simctl.send(:string_for_sim_state, 0)).to be == "Creating"
         expect(simctl.send(:string_for_sim_state, 1)).to be == "Shutdown"
         expect(simctl.send(:string_for_sim_state, 2)).to be == "Shutting Down"
         expect(simctl.send(:string_for_sim_state, 3)).to be == "Booted"
@@ -220,7 +221,7 @@ describe RunLoop::Simctl do
 
       it "raises an error for invalid states" do
         expect do
-          simctl.send(:string_for_sim_state, 0)
+          simctl.send(:string_for_sim_state, 4)
         end.to raise_error ArgumentError, /Could not find state for/
       end
     end
