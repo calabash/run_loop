@@ -102,7 +102,8 @@ describe RunLoop::DylibInjector do
         }
 
         expect(lldb).to receive(:inject_dylib).with(3).exactly(5).times.and_return false
-        expect(lldb).to receive(:sleep).with(2).exactly(5).times.and_return true
+        # First sleep is the arbitrary delay.
+        expect(lldb).to receive(:sleep).exactly(6).times.and_return true
 
         expect do
           lldb.retriable_inject_dylib(options)
@@ -115,7 +116,8 @@ describe RunLoop::DylibInjector do
         timeout = RunLoop::DylibInjector::RETRY_OPTIONS[:timeout]
 
         expect(lldb).to receive(:inject_dylib).with(timeout).exactly(tries).times.and_return false
-        expect(lldb).to receive(:sleep).with(interval).exactly(tries).times.and_return true
+        # First sleep is the arbitrary delay.
+        expect(lldb).to receive(:sleep).exactly(tries + 1).times.and_return true
 
         expect do
           lldb.retriable_inject_dylib
