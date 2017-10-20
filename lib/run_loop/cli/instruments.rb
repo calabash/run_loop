@@ -26,6 +26,11 @@ module RunLoop
 
 
       def quit
+        if RunLoop::Xcode.new.version_gte_8?
+          puts "instruments quit with Xcode 8 is not supported"
+          exit 1
+        end
+
         signal = options[:signal]
         ENV['DEBUG'] = '1' if options[:debug]
         instruments = RunLoop::Instruments.new
@@ -94,6 +99,10 @@ module RunLoop
                     :type => :boolean
 
       def launch
+        if RunLoop::Xcode.new.version_gte_8?
+          puts "Launching applications with Xcode 8 is not supported"
+          exit 1
+        end
 
         debug = options[:debug]
         original_value = ENV['DEBUG']

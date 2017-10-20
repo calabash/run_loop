@@ -38,9 +38,10 @@ describe RunLoop::DeviceAgent::LauncherStrategy do
     end
   end
 
-  describe "file system" do
+  context ".dot_dir" do
     let(:dot_dir) { File.expand_path(File.join("tmp", ".run-loop-xcuitest")) }
     let(:xcuitest_dir) { File.join(dot_dir, "xcuitest") }
+    let(:device_agent_dir) { File.join(dot_dir, "DeviceAgent") }
 
     before do
       FileUtils.mkdir_p(dot_dir)
@@ -48,19 +49,36 @@ describe RunLoop::DeviceAgent::LauncherStrategy do
     end
 
     describe ".dot_dir" do
-      it "creates a directory" do
+      it "returns a path to .run-loop/DeviceAgent directory after creating it" do
         FileUtils.rm_rf(dot_dir)
 
         actual = RunLoop::DeviceAgent::Xcodebuild.send(:dot_dir)
-        expect(actual).to be == xcuitest_dir
+        expect(actual).to be == device_agent_dir
         expect(File.directory?(actual)).to be_truthy
       end
 
-      it "returns a path" do
-        FileUtils.mkdir_p(xcuitest_dir)
+      it "returns a path to existing .run-loop/DeviceAgent directory" do
+        FileUtils.mkdir_p(device_agent_dir)
 
         actual = RunLoop::DeviceAgent::Xcodebuild.send(:dot_dir)
-        expect(actual).to be == xcuitest_dir
+        expect(actual).to be == device_agent_dir
+      end
+
+      it "returns a path to .run-loop/DeviceAgent directory after migrating legacy xcuitest directory" do
+        FileUtils.rm_rf(dot_dir)
+        FileUtils.mkdir_p(xcuitest_dir)
+        FileUtils.mkdir_p(File.join(xcuitest_dir, "a"))
+        FileUtils.mkdir_p(File.join(xcuitest_dir, "b"))
+        FileUtils.touch(File.join(xcuitest_dir, "file.txt"))
+
+        actual = RunLoop::DeviceAgent::Xcodebuild.send(:dot_dir)
+        expect(actual).to be == device_agent_dir
+        expect(File.directory?(actual)).to be_truthy
+        expect(File.directory?(xcuitest_dir)).to be_falsey
+
+        expect(File.directory?(File.join(device_agent_dir, "a"))).to be_truthy
+        expect(File.directory?(File.join(device_agent_dir, "b"))).to be_truthy
+        expect(File.exist?(File.join(device_agent_dir, "file.txt"))).to be_truthy
       end
     end
   end

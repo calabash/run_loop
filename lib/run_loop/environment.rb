@@ -162,9 +162,19 @@ module RunLoop
       end
     end
 
-    # Returns the value of CODESIGN_IDENTITY
+    # Returns the value of CODE_SIGN_IDENTITY
     def self.code_sign_identity
       value = ENV["CODE_SIGN_IDENTITY"]
+      if !value || value == ""
+        nil
+      else
+        value
+      end
+    end
+
+    # Returns the value of PROVISIONING_PROFILE
+    def self.provisioning_profile
+      value = ENV["PROVISIONING_PROFILE"]
       if !value || value == ""
         nil
       else

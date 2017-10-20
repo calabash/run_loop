@@ -8,7 +8,6 @@ bash_scripts = ["scripts/udidetect",
 plists = Dir.glob('plists/**/*.plist')
 
 device_agent = ["lib/run_loop/device_agent/bin/iOSDeviceManager",
-                "lib/run_loop/device_agent/bin/CLI.json",
                 "lib/run_loop/device_agent/app/DeviceAgent-Runner.app.zip",
                 "lib/run_loop/device_agent/ipa/DeviceAgent-Runner.app.zip",
                 "lib/run_loop/device_agent/Frameworks.zip"]
@@ -18,8 +17,9 @@ vendor_licenses = Dir.glob("./vendor-licenses/*.*")
 Gem::Specification.new do |s|
   s.name        = 'run_loop'
 
-  s.version     = lambda do
-    file = File.join("lib", "run_loop", "version.rb")
+  s.version     = begin
+    file = "#{File.expand_path(File.join(File.dirname(__FILE__),
+                                      "lib", "run_loop", "version.rb"))}"
     m = Module.new
     m.module_eval IO.read(file).force_encoding("utf-8")
     version = m::RunLoop::VERSION
@@ -30,7 +30,7 @@ into a valid version, e.g. 1.2.3 or 1.2.3.pre10
 }
     end
     version
-  end.call
+  end
 
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Karl Krukow", "Joshua Moody"]
@@ -60,10 +60,10 @@ tools like instruments and simctl.}
   s.add_development_dependency('rspec', '~> 3.0')
   s.add_development_dependency('rake', '~> 10.3')
   s.add_development_dependency('guard-rspec', '~> 4.3')
+  s.add_development_dependency('terminal-notifier-guard', '~> 1.7')
   s.add_development_dependency('guard-bundler', '~> 2.0')
   # Pin to 3.0.6; >= 3.1.0 requires ruby 2.2. This is guard dependency.
   s.add_development_dependency("listen", "3.0.6")
-  s.add_development_dependency('growl', '~> 1.0')
   s.add_development_dependency('stub_env', '>= 1.0.1', '< 2.0')
   s.add_development_dependency('pry')
   s.add_development_dependency('pry-nav')

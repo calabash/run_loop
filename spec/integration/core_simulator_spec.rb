@@ -1,7 +1,5 @@
 describe RunLoop::CoreSimulator do
-  let(:simulator) do
-    Resources.shared.simctl.simulators.sample
-  end
+  let(:simulator) { Resources.shared.default_simulator }
 
   let(:app) { RunLoop::App.new(Resources.shared.cal_app_bundle_path) }
   let(:xcrun) { RunLoop::Xcrun.new }
@@ -11,6 +9,7 @@ describe RunLoop::CoreSimulator do
   end
 
   before do
+    RunLoop::CoreSimulator.quit_simulator
     allow(RunLoop::Environment).to receive(:debug?).and_return true
   end
 
@@ -39,45 +38,38 @@ describe RunLoop::CoreSimulator do
     it 'can launch the simulator' do
       expect(core_sim.launch_simulator).to be_truthy
 
-      pid = RunLoop::CoreSimulator.simulator_pid
-      running = core_sim.send(:running_simulator_pid)
+      pid = core_sim.send(:running_simulator_details)[:pid]
 
-      expect(pid).to be == running
+      expect(pid).to be_truthy
     end
 
     it 'does not relaunch if the simulator is already running' do
       core_sim.launch_simulator
 
+      pid = core_sim.send(:running_simulator_details)[:pid]
       expect(Process).not_to receive(:spawn)
 
       core_sim.launch_simulator
 
-      pid = RunLoop::CoreSimulator.simulator_pid
-      running = core_sim.send(:running_simulator_pid)
-
-      expect(pid).to be == running
+      expect(core_sim.send(:running_simulator_details)[:pid]).to be == pid
     end
 
     it 'quits the simulator if it is not the same' do
       core_sim.launch_simulator
 
-      running = core_sim.send(:running_simulator_pid)
-      RunLoop::CoreSimulator.class_variable_set(:@@simulator_pid, running - 1)
-
+      expect(core_sim).to receive(:running_simulator_details).and_return({:pid => 1})
       expect(Process).to receive(:spawn).and_call_original
 
       core_sim.launch_simulator
-
-      pid = RunLoop::CoreSimulator.simulator_pid
-      running = core_sim.send(:running_simulator_pid)
-      expect(pid).to be == running
     end
   end
 
   describe "#launch" do
     before do
       opts = RunLoop::CoreSimulator::DEFAULT_OPTIONS
-      Resources.shared.simctl.erase(simulator, opts[:launch_app_timeout], opts[:wait_for_state_timeout])
+      Resources.shared.simctl.erase(simulator,
+                                    opts[:launch_app_timeout],
+                                    opts[:wait_for_state_timeout])
     end
 
     it "launches the app" do
@@ -90,10 +82,6 @@ describe RunLoop::CoreSimulator do
       RunLoop::CoreSimulator.quit_simulator
 
       expect(core_sim.launch).to be_truthy
-
-      pid = RunLoop::CoreSimulator.simulator_pid
-      running = core_sim.send(:running_simulator_pid)
-      expect(pid).to be == running
     end
   end
 
@@ -124,8 +112,12 @@ describe RunLoop::CoreSimulator do
   end
 
   it ".set_language" do
+    RunLoop::CoreSimulator.erase(simulator)
     actual = RunLoop::CoreSimulator.set_language(simulator, "en")
     expect(actual.first).to be == "en"
+
+    actual = RunLoop::CoreSimulator.set_language(simulator, "de")
+    expect(actual.first).to be == "de"
   end
 
   context ".app_installed?" do
@@ -139,5 +131,30 @@ describe RunLoop::CoreSimulator do
       expect(actual).to be_falsey
     end
   end
-end
 
+  context "#simulator_state_requires_relaunch?" do
+    let (:sim_details) { {} }
+
+    before do
+      RunLoop::CoreSimulator.quit_simulator
+    end
+
+    it "returns true if the simulator is not running" do
+      RunLoop::CoreSimulator.quit_simulator
+      expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+    end
+
+    it "returns true if the simulator was not launched by run_loop" do
+      args = ['open', '-g', '-a', core_sim.send(:sim_app_path)]
+      pid = Process.spawn('xcrun', *args)
+      Process.detach(pid)
+
+      options = { :timeout => 5, :raise_on_timeout => true }
+      RunLoop::ProcessWaiter.new(core_sim.send(:sim_name), options).wait_for_any
+
+      core_sim.device.simulator_wait_for_stable_state
+
+      expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
+    end
+  end
+end

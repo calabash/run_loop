@@ -43,7 +43,7 @@ module RunLoop
   # cyan
   def self.log_unix_cmd(msg)
     if RunLoop::Environment.debug?
-      puts Color.cyan("EXEC: #{msg}") if msg
+      puts Color.cyan("SHELL: #{msg}") if msg
     end
   end
 

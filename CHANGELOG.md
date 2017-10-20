@@ -1,11 +1,386 @@
 ## Change Log
 
+### 2.6.1
+
+* CoreSim: disable hardward keyboard at launch 243ee0a
+
+#### DeviceAgent 1.2.1
+
+* Server: handle 3 button SpringBoard location alert #249
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.2.1
+
+#### iOSDeviceManager 2.1.1
+
+No changes applicable to run-loop.
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/2.1.1
+
+### 2.6.0
+
+Support for testing with Xcode 9 and iOS 11.
+
+#### DeviceAgent 1.2.0
+
+* Xcode 9: redirect simulator logs to ~/Library/CoreSimulator/<UDID>/system.log #247 @JoeSSS
+* Server: XCUIApplication cannot be first responder #246
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.2.0
+
+#### iOSDeviceManager 2.1.0
+
+No changes applicable to run-loop.
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/2.1.0
+
+### 2.5.4
+
+This patch improves support for testing against iOS Simulators in Xcode
+9 beta 6.  Please note that until Xcode 9 GM, support is preliminary and
+the next Xcode 9 beta may break existing tests.
+
+* Device: use PlistBuddy#unshift\_array to set Simulator language #651
+* PlistBuddy can run arbitrary commands and push new values onto arrays #650
+* Device: ensure simulator plist paths exist #649
+
+### 2.5.3
+
+This patch provides preliminary support for testing against iOS
+Simulators in Xcode 9 beta 6.
+
+* Xcode 9: ensure software keyboard will show #647
+* Xcode 9: update CoreSim.app\_installed? #646
+* Xcode 9/iOS 11: add new languages and locales #645
+* Simctl: can switch back to Xcode 8 after Xcode 9 is active #644
+* CoreSim: update list of managed simulator processes #643
+* Xcode 9: adjust the required processes for "wait for simulator stable" heuristic #642
+
+### 2.5.2
+
+This a patch release for Xcode 9 beta 6.  It includes iOSDeviceManger
+2.0.2, which contains a fix for loading Swift dylibs in Xcode 9.
+
+### 2.5.1
+
+This is patch release for Xcode 9 beta 6.
+
+* DeviceAgent: update to iOSDeviceManager 2.0.1 #639
+
+#### iOSDeviceManager 2.0.1
+
+* Terminate apps before uninstalling to prevent black
+  screen/unresponsive apps on physical devices #177
+* FBSimulatorControl: sync to 0.4.0 f7c5822 on Aug 18 2017 #176
+* CLI for uploading in entire xcappdata bundles #175
+* Fixes getting resources from args for install-app #172
+
+### 2.5.0
+
+This release provide preliminary support testing with Xcode 9 against
+iOS 11 physical devices.  Testing against simulators is not yet
+supported.
+
+run-loop now responds to `PROVISIONING_PROFILE` environment variable.
+
+* DeviceAgent: update to DeviceAgent 1.1.3 #637
+* L10N: update path to UIKit.axbundle for Xcode 9 #636
+* Update equality rules for Version class #635
+* Respond to DeviceAgent iOS 11 changes to POST /rotate\_home\_button\_to #634
+* Better xcodebuild process management #633
+* Update to iOSDeviceManager 2.0 #632
+* CLI: add simctl erase and launch commands #631
+* Gem: fix reference to version.rb for bundler 1.15 #630
+* CoreSim: simulator does not steal focus when launching #629
+* CoreSimulator can handle Xcode 9 DeviceAgent name change #628
+* Device: wait for .GlobalPreferences.plist to exist #627
+* Xcodebuild: manage existing test-without-building processes #625
+* Initial Xcode 9/iOS 11 support #622
+* Option for DeviceAgent to terminate AUT if it is running when new test
+  session starts #620
+
+#### DeviceAgent 1.1.3
+
+This DeviceAgent was built with Xcode 8.3.3 on macOS Sierra.
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.1.3
+
+* Server: decrease default touch time to 0.1 #244
+* Update device rotation gesture and orientation reporting for iOS 11 #243
+* Server: Remove pre-launch is-installed check; does not work on iOS 11 #242
+* Xcode 9: text queries not forwarding to WebDriver attributes #241
+* Server: handle infinite and CGFloat max/min floating point values #240
+* Server: OR predicates not evaling correctly on web views - updated
+  tests; issue is not resolved #239
+* SpringBoard: add Hebrew and Italian SpringBoard alerts #238
+* Update CBXDevice for iPad Pro 10.5 and arm64 devices #236
+* Update build scripts to publish TestApp to test-cloud-test-apps #235
+
+#### iOSDeviceManager 2.0.0
+
+iOSDeviceManager 2.0 has improved code signing and preliminary support
+for Xcode 9.
+
+This iOSDeviceManager  was built with Xcode 8.3.3 on macOS Sierra.
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/2.0.0
+
+* Stabilize and improve the resigning integration tests #168
+* FBSimulatorControl includes ReturnAttributes key when inspecting
+  installed applications #163
+* Fetching applications before downloading app data prevents failures  #162
+* Xcode 9: can install provisioning profiles #161
+* Add app-info command #160
+* Fix file uploading when targeting physical devices #157
+* upload command writes upload path to stdout #155
+* CLI 2.0 #137
+
+### 2.4.1
+
+This release does not contain a new DeviceAgent stack.
+
+* Migrate ~/.run-loop/xcuittest to ~/.run-loop/DeviceAgent to ensure
+  xctestrun run exists #616
+
+### 2.4.0
+
+This release supports Xcode 8.3 and iOS 10.3.
+
+This release contains a new DeviceAgent stack.
+
+If you build run_loop from sources with bundler, you must run:
+
+```
+$ rake device_agent:expand
+```
+
+to get the new DeviceAgent stack.
+
+The iOSDeviceManager resigning algorithm has been improved and we
+expect this iOSDeviceManager to execute application lifecycle events
+faster.
+
+* DeviceAgent: replace start_test with xcodebuild test-without-building #613
+* API for managing SpringBoard alerts manually #611
+* Adds handling for Korean SpringBoard alerts. #610
+* JS: add VPN definition to on_alert #608
+
+#### DeviceAgent 1.1.1
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.1.1
+
+* DeviceAgent.xctest bundle includes xctestrun files #214
+* Dismiss 'Open in' alerts automatically #212
+* Fix PT-br APNS SpringBoard alert localizations #211
+* Add Korean localizations for SpringBoard alerts #209
+* Adds handling for VPN configuration springboard alert. #208
+* Update for Xcode 8.3 #206
+* Allow users to interact with SpringBoard alerts and control whether or
+  not alerts are automatically dismissed #205
+* Server: disable screenshots on server start #204
+
+#### iOSDeviceManager 1.1.1
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/1.1.1
+
+* Simulator#launch: wait for required simulator sevices #131
+* Xcode 8.3 support #126
+* Add library version of iOSDeviceManager for interop w/ Test Recorder #120
+* Integration test using run_loop ruby API #110
+* implement ios-cli resigning algorithm and add CLI interface #108
+* Improve default device detection #104
+* Add support for app lifecycle events on .ipa archives #103
+* Allow positional argument for device ID #102
+* Stores identities rather than making multiple find-identity calls #101
+
+### 2.3.1
+
+This release does not contain a new DeviceAgent stack.
+
+* Xcode#version returns 0.0.0 on XTC and on RuntimeErrors #606
+* CoreSim: quit simulator before resetting app sandbox #605
+* DeviceAgent::Client: skip ensure software keyboard check #604
+* Prepare for Xcode 8.3 support #603
+* Directory: rescue errors during skip check and File.size #598
+* Directory: rescue ENOENT errors during skip check #597
+
+### 2.3.0
+
+This release contains a significant change - Simulators will not be
+automatically be relaunched whenever
+`Calabash::Cucumber::Launcher#relaunch` is called.  Instead, run-loop
+will try to keep the simulator running as long as it appears to be
+health.  This change is only for DeviceAgent test runs.  Tests that use
+UIAutomation will continue to relaunch the simulator.
+
+If you are on macOS Sierra or using Xcode >= 8.0, you are running
+against DeviceAgent.  UIAutomation is only used on El Cap with Xcode <
+8.0 and iOS < 10.
+
+If your tests need the simulator to relaunch every time
+`Launcher#relaunch` is called, you can pass the new `:relaunch_simulator =>
+true` option.  This option is provided for backward compatibility.
+
+* Improve Device#simulator\_wait\_for\_stable\_state for iOS <= 8 and iOS >=  10.1 #594
+* CoreSimulator manages more processes for Xcode 8 and Sierra #593
+* Stabilize integration tests for Xcode 8.2 #592
+* Allow user to force simulator relaunch when running with DeviceAgent #591
+* CoreSimulator relaunches the simulator if app state is not acceptable #590
+* Use iOSDeviceManager arguments that are 1.0.4 and 1.0.5 compatible #589
+* DA:Client: use a separate timeout for entering text #588
+* DeviceAgent#Client: check if running DeviceAgent is stale #587
+* Decouple simulator wait for stable state and CoreSim install and uninstall #586
+* Add nl\_BE and Swedish localizations for privacy alerts #585
+* Update iOSDeviceManager arguments for 1.0.5 #584
+* Device: improve the wait-for-simulator-stable algorithm #582
+* ProcessWaiter: improve process detection #581
+* CoreSim: quit simulator only when necessary #580
+* DeviceAgent::Client: check simulator/application architecture compatibility #579
+* Stabilize integration tests for Xcode 8 #578
+* OSS: update vendor licenses #576
+
+#### DeviceAgent 1.0.6
+
+DeviceAgent 1.0.5 was skipped.
+
+Built from tag [1.0.6](https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.0.6)
+
+* Add mach clock and a simple waiter #202
+* SpringBoard#queryForAlert: skip\_waitForQuiescence check #201
+* Increase touch duration to 0.2 to match XCUITest #198
+* Use CocoaLumberjack for logging #197
+* Update CocoaLumberjack to 3.0.0 #196
+* TestApp: update to calabash.framework 0.20.4 #194
+* Improve hitpoint and visibility calculation #193
+* Fix text entry for i386/armv7 devices #192
+* Dismiss SpringBoard alerts by touching alert buttons with coordinates #191
+* SpringBoard: ask UIApplication for SpringBoard alert before making an expensive XCUITest query #190
+* POST /session raises when app is not installed and when app fails to launch #189
+
+#### iOSDeviceManager 1.0.4
+
+iOSDeviceManager is unchanged for this version.  See the 2.2.4 release
+notes below for details about the iOSDeviceManager 1.0.4 release.
+
+### 2.2.4
+
+DeviceAgent 1.0.4 can dismiss SpringBoard alerts in any orientation.
+
+* DeviceAgent: no longer requires CLI.json #574
+
+#### DeviceAgent 1.0.4
+
+Built from tag [1.0.4](https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.0.4)
+
+DeviceAgent can dismiss SpringBoard alerts in any orientation.
+
+* Replace NSRunLoop runUntilDate: with CFRunLoopRunInMode to avoid
+  unreliable NSDate behaviors #187
+* SpringBoard: use XCUIElement#tap to dismiss alerts #186
+* DeviceAgent: generate and distribute a dSYM #185
+
+#### iOSDeviceManager 1.0.4
+
+FBSimulatorControl was not updated.  See the 1.0.3 notes for details.
+
+* Remove DeviceAgent.iOS.Deployment #99
+* CLI.json is no longer necessary for the iOSDeviceManager binary #96
+
+Built from tag [1.0.4](https://github.com/calabash/iOSDeviceManager/releases/tag/1.0.4)
+
+### 2.2.3
+
+* Update to DeviceAgent stack to 1.0.3 #572
+* CODE\_SIGN\_IDENTITY is not longer required #570
+* Increase DeviceAgent timeouts #569
+* DA:Client: launch AUT with args and environment #567
+* run-loop simctl tail shows all simulator logs #566
+* App: fix TrueType font extension to avoid otool failures #565
+* Added pt-BR translations for permissions alerts #563 @oscartanner
+* Support Xcode 8.2 #561
+* Turns enter text input parameter to string for numeric keyboards #560
+* Gem: patch awesome\_print for BasicObject #559
+
+#### DeviceAgent 1.0.3
+
+Built from tag [1.0.3](https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.0.3)
+
+* Add iTunes and Apple Music SpringBoard alerts #183
+* Add UITextView to TestApp #181
+* Use Testmanagerd `XCT_sendString` to enter text except on i386/armv7 devices #178
+* Fixes if statement in querying delete key for clear text #177
+* Add GET environment and arguments #176
+* Update SpringBoard alert definitions for iOS 10 #175
+* clear\_text should tap keyboard delete key #170
+
+DeviceAgent now dismisses the following US English SpringBoard alerts:
+
+* Sign In to iTunes
+* Access Apple Music And Your Media
+* Health Access
+* Enable Dictation
+* pt\_BR localizations - thanks @oscartanner
+
+#### iOSDeviceManager 1.0.3
+
+Built from tag [1.0.3](https://github.com/calabash/iOSDeviceManager/releases/tag/1.0.3)
+
+Includes [facebook/FBSimulatorControl 0.2.2 @
+f0cc887](https://github.com/calabash/FBSimulatorControl/commit/f0cc8874a9fc1474e278db7571f8c35b9f88a354).
+
+The corresponding calabash/FBSimulatorControl tag is
+[fb-0.2.2-at-f0cc887](https://github.com/calabash/FBSimulatorControl/releases/tag/fb-0.2.2-at-f0cc887-iOSDeviceManager-1.0.3)
+
+* Match array-based entitlements with * and <TEAM ID>. #95
+* FB Frameworks 0.2.2 with Sierra + Xcode >= 8.1 support #94
+* Fix timeout by using mach\_absolute\_time() #93
+* Fix ShasumProvider generating strings with missing characters. #92
+* Upload files to application's data container #91
+* Update to Facebook frameworks to 0.2.2 #89
+* Use CocoaLumberjack provided by FBSimulatorControl #85
+* Fix cannot find XCTBootstrap.framework compile time errors #83
+* Simplify how we get the common name for a certificate #82
+* Use CommonCrypto to get SHA1 instead of shelling out #80
+
+### 2.2.2
+
+The DeviceAgent stack contains fixes for:
+
+* Fixes for pan gesture
+* Code signing improvements
+
+#### run-loop
+
+* DA:Client: increase timeouts for enter text calls #557
+* Forward launch options to CoreSimulator #556 @MortenGregersen
+* Gem: update the DeviceAgent stack to 1.0.2 #554
+* Adds clear text for device agent #551 (not public yet)
+* DeviceAgent::Client: add support for query("\*") and query("all \*") #550
+* DeviceAgent::Client: enter text without keyboard check #548
+
+#### DeviceAgent 1.0.2
+
+**20fbc23ece073e5beea611a4aafae436ad78e54b**
+
+* Drag avoid inertia #167
+* Fix drag repetitions and correct duration from first point #164
+* Touch: increase touch duration by 0.01 #161
+
+#### iOSDeviceManager
+
+**cd24f2078ddac8a6435c819b8b980023636d6108**
+
+* Sign sim app bundles with the ad hoc signature '-' #63
+* Make entitlement match robust to different entitlement formats #58
+* Find usable codesign identity when not specified #53
+
 ### 2.2.1
 
 The DeviceAgent stack contains fixes for:
 
 * iOSDeviceManager crashes during DeviceAgent install (resigning)
 * entering text causes app crashes
+
+#### RunLoop
 
 * DeviceAgent: update stack to 1.0.1 #545
 * Support for Xcode 8.1 #543 @ark-konopacki

@@ -320,7 +320,15 @@ Logfile: #{log_file}
     #  version.
     def self.default_simulator(xcode=RunLoop::Xcode.new)
 
-      if xcode.version_gte_81?
+      if xcode.version_gte_91?
+        "iPhone 7 (11.1)"
+      elsif xcode.version_gte_90?
+        "iPhone 7 (11.0)"
+      elsif xcode.version_gte_83?
+        "iPhone 7 (10.3)"
+      elsif xcode.version_gte_82?
+        "iPhone 7 (10.2)"
+      elsif xcode.version_gte_81?
         "iPhone 7 (10.1)"
       elsif xcode.version_gte_8?
         "iPhone 7 (10.0)"
@@ -805,8 +813,8 @@ $ xcrun instruments -s templates
       # Validate the architecture.
       self.expect_simulator_compatible_arch(device, app)
 
-      # Quits the simulator.
-      core_sim = RunLoop::CoreSimulator.new(device, app, :xcode => xcode)
+      RunLoop::CoreSimulator.quit_simulator
+      core_sim = RunLoop::CoreSimulator.new(device, app, xcode: xcode)
 
       # Calabash 0.x can only reset the app sandbox (true/false).
       # Calabash 2.x has advanced reset options.
@@ -814,17 +822,10 @@ $ xcrun instruments -s templates
         core_sim.reset_app_sandbox
       end
 
-      # Will quit the simulator if it is running.
       # @todo fix accessibility_enabled? so we don't have to quit the sim
       # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
       # https://github.com/calabash/run_loop/issues/167
       simctl.ensure_accessibility(device)
-
-      # Will quit the simulator if it is running.
-      # @todo fix software_keyboard_enabled? so we don't have to quit the sim
-      # SimControl#software_keyboard_enabled? is always false during Core#prepare_simulator
-      # https://github.com/calabash/run_loop/issues/168
-      simctl.ensure_software_keyboard(device)
 
       # Launches the simulator if the app is not installed.
       core_sim.install

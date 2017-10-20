@@ -7,6 +7,8 @@ module RunLoop
     # A wrapper around the test-control binary.
     class IOSDeviceManager < RunLoop::DeviceAgent::LauncherStrategy
 
+      require "run_loop/regex"
+
       EXIT_CODES = {
         "0" => :success,
         "2" => :false
@@ -67,15 +69,38 @@ but binary does not exist at that path.
       end
 
       # @!visibility private
+      #
+      # In earlier implementations, the ios-device-manager.log was located in
+      # ~/.run-loop/xcuitest/ios-device-manager.log
+      #
+      # Now iOSDeviceManager logs almost everything to a fixed location.
+      #
+      # ~/.calabash/iOSDeviceManager/logs/current.log
+      #
+      # Starting in run-loop 2.4.0, iOSDeviceManager start_test was replaced
+      # by xcodebuild test-without-building.   This change causes a name
+      # conflict: there is already an xcodebuild launcher with a log file
+      # ~/.run-loop/DeviceAgent/xcodebuild.log.
+      #
+      # The original xcodebuild launcher requires access to the DeviceAgent
+      # Xcode project which is not yet available to the public.
+      #
+      # Using `current.log` seems to make sense because the file is recreated
+      # for every call to `#launch`.
       def self.log_file
-        path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
+        path = File.join(LauncherStrategy.dot_dir, "current.log")
         FileUtils.touch(path) if !File.exist?(path)
+        legacy_path = File.join(LauncherStrategy.dot_dir, "ios-device-manager.log")
+        if File.exist?(legacy_path)
+          FileUtils.rm_rf(legacy_path)
+        end
         path
       end
 
       # @!visibility private
       def launch(options)
         code_sign_identity = options[:code_sign_identity]
+        provisioning_profile = options[:provisioning_profile]
         install_timeout = options[:device_agent_install_timeout]
 
         RunLoop::DeviceAgent::Frameworks.instance.install
@@ -83,13 +108,15 @@ but binary does not exist at that path.
 
         start = Time.now
         if device.simulator?
-          cbxapp = RunLoop::App.new(runner.runner)
+          RunLoop::DeviceAgent::Xcodebuild.terminate_simulator_tests
 
-          # Quits the simulator if CoreSimulator is not already in control of it.
-          sim = CoreSimulator.new(device, cbxapp, {:quit_sim_on_init => false})
+          cbxapp = RunLoop::App.new(runner.runner)
+          sim = CoreSimulator.new(device, cbxapp)
+
           sim.install
           sim.launch_simulator
         else
+          RunLoop::DeviceAgent::Xcodebuild.terminate_device_test(device.udid)
 
           if !install_timeout
             raise ArgumentError, %Q[
@@ -101,27 +128,22 @@ Expected :device_agent_install_timeout key in options:
 ]
           end
 
-          if !code_sign_identity
-            raise ArgumentError, %Q[
-Targeting a physical devices requires a code signing identity.
+          shell_options = {:log_cmd => true, :timeout => install_timeout}
 
-Rerun your test with:
-
-$ CODE_SIGN_IDENTITY="iPhone Developer: Your Name (ABCDEF1234)" cucumber
-
-]
-          end
-
-          options = {:log_cmd => true, :timeout => install_timeout}
           args = [
-            cmd, "install",
-            "--device-id", device.udid,
-            "--app-bundle", runner.runner,
-            "--codesign-identity", code_sign_identity
+            cmd, "install", runner.runner, "--device-id", device.udid
           ]
 
+          if code_sign_identity
+            args = args + ["--codesign-identity", code_sign_identity]
+          end
+
+          if provisioning_profile
+            args = args + ["--provisioning-profile", provisioning_profile]
+          end
+
           start = Time.now
-          hash = run_shell_command(args, options)
+          hash = run_shell_command(args, shell_options)
 
           if hash[:exit_status] != 0
             raise RuntimeError, %Q[
@@ -134,23 +156,27 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
           end
         end
 
-        RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent");
+        RunLoop::log_debug("Took #{Time.now - start} seconds to install DeviceAgent")
 
-        args = ["start_test", "--device-id", device.udid]
+        cmd = "xcrun"
+        args = ["xcodebuild",
+                "test-without-building",
+                "-xctestrun", path_to_xctestrun,
+                "-destination", "id=#{device.udid}",
+                "-derivedDataPath", Xcodebuild.derived_data_directory]
 
         log_file = IOSDeviceManager.log_file
         FileUtils.rm_rf(log_file)
         FileUtils.touch(log_file)
 
         env = {
+          # zsh support
           "CLOBBER" => "1"
         }
 
         options = {:out => log_file, :err => log_file}
         RunLoop.log_unix_cmd("#{cmd} #{args.join(" ")} >& #{log_file}")
 
-        # Gotta keep the ios_device_manager process alive or the connection
-        # to testmanagerd will fail.
         pid = Process.spawn(env, cmd, *args, options)
         Process.detach(pid)
 
@@ -163,9 +189,7 @@ Could not install #{runner.runner}.  iOSDeviceManager says:
         cmd = RunLoop::DeviceAgent::IOSDeviceManager.ios_device_manager
 
         args = [
-          cmd, "is_installed",
-          "--device-id", device.udid,
-          "--bundle-identifier", bundle_identifier
+          cmd, "is-installed", bundle_identifier, "--device-id", device.udid
         ]
 
         start = Time.now
@@ -194,6 +218,47 @@ iOSDeviceManager says:
         RunLoop::log_debug("Took #{Time.now - start} seconds to check if app was installed");
 
         hash[:exit_status] == 0
+      end
+
+      def path_to_xctestrun
+        if device.physical_device?
+          path = File.join(runner.tester, "DeviceAgent-device.xctestrun")
+          if !File.exist?(path)
+            raise RuntimeError, %Q[
+Could not find an xctestrun file at path:
+
+#{path}
+
+]
+          end
+          path
+        else
+          template = path_to_xctestrun_template
+          path = File.join(IOSDeviceManager.dot_dir, "DeviceAgent-simulator.xctestrun")
+          contents = File.read(template).force_encoding("UTF-8")
+          substituted = contents.gsub("TEST_HOST_PATH", runner.runner)
+          File.open(path, "w:UTF-8") do |file|
+            file.write(substituted)
+          end
+          path
+        end
+      end
+
+      def path_to_xctestrun_template
+        if device.physical_device?
+          raise(ArgumentError, "Physical devices do not require an xctestrun template")
+        end
+
+        template = File.join(runner.tester, "DeviceAgent-simulator-template.xctestrun")
+        if !File.exist?(template)
+          raise RuntimeError, %Q[
+Could not find an xctestrun template at path:
+
+#{template}
+
+]
+        end
+        template
       end
     end
   end

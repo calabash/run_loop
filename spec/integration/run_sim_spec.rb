@@ -1,5 +1,10 @@
 describe RunLoop do
 
+  before do
+    allow(RunLoop::Environment).to receive(:debug?).and_return(true)
+    RunLoop::CoreSimulator.quit_simulator
+  end
+
   describe 'run on simulator' do
     it "Xcode #{Resources.shared.current_xcode_version}" do
       options =

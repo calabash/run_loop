@@ -124,16 +124,9 @@ Could not find repo #{name}.  Checked these two directories:
 
 To specify a non-standard location for these repositories, use:
 
-*  FBSIMCONTROL_PATH=path/to/FBSimulatorControl
 *   DEVICEAGENT_PATH=path/to/DeviceAgent.iOS
 * IOS_DEVICE_MANAGER=path/to/iOSDeviceManager
 ]
-  end
-
-  def fbsimctl
-    path = ENV["FBSIMCTL"] || expect_path_to_repo("FBSimulatorControl")
-    log_info "Using FBSIMCONTROL_PATH=#{path}"
-    path
   end
 
   def device_agent
@@ -203,14 +196,71 @@ target = #{target}
     end
   end
 
+  def ensure_valid_core_simulator_service
+    max_tries = 3
+    valid = false
+    3.times do |try|
+      valid = valid_core_simulator_service?
+      break if valid
+      log_info("Invalid CoreSimulator service for active Xcode: try #{try + 1} of #{max_tries}")
+    end
+    if valid
+      log_info("CoreSimulatorService is valid")
+    else
+      puts "CoreSimulatorService is invalid, try running again."
+      exit 1
+    end
+  end
+
+  def valid_core_simulator_service?
+    require "run_loop/shell"
+    args = ["xcrun", "simctl", "help"]
+
+    begin
+      hash = RunLoop::Shell.run_shell_command(args)
+      hash[:exit_status] == 0 &&
+        !hash[:out][/Failed to locate a valid instance of CoreSimulatorService/]
+    rescue RunLoop::Shell::Error => _
+      false
+    end
+  end
+
+  def create_calabash_keychain
+    require "run_loop/environment"
+    path = File.join(RunLoop::Environment.user_home_directory,
+                     ".calabash", "calabash-codesign")
+    if File.exist?(path)
+      Dir.chdir(path) do
+        args = ["apple/create-keychain.sh"]
+        hash = RunLoop::Shell.run_shell_command(args)
+        if hash[:exit_status] != 0
+          raise %Q[
+Failed to create the codesigning keychain:
+
+#{hash[:out]}
+
+]
+        else
+          log_info("Created the Calabash.keychain")
+        end
+      end
+    else
+     log_info("Cannot create the Calabash.keychain")
+    end
+  end
+
   task :build do
     banner("Building")
 
     # Memoize base target directory
     device_agent_dir
 
-    env = {"DEVICEAGENT_PATH" => device_agent,
-           "FBSIMCONTROL_PATH" => fbsimctl}
+    ensure_valid_core_simulator_service
+
+    create_calabash_keychain
+
+    env = {"DEVICEAGENT_PATH" => device_agent}
+
     Dir.chdir(ios_device_manager) do
       result = system(env, "make", "dependencies")
       if !result
@@ -222,8 +272,6 @@ target = #{target}
       Dir.chdir(File.join("Distribution", "dependencies")) do
         ditto(File.join("bin", "iOSDeviceManager"), bin)
         log_info("Installed #{bin}")
-        ditto(File.join("bin", "CLI.json"), cli_json)
-        log_info("Installed #{cli_json}")
         ditto_zip("Frameworks", frameworks_zip)
         log_info("Installed #{frameworks_zip}")
         ditto_zip(File.join("app", "DeviceAgent-Runner.app"), app_zip)
@@ -275,7 +323,7 @@ target = #{target}
     end
   end
 
-  desc "Roll back changes to DeviceAgent stack"
+  desc "Roll back changes to DeviceAgent binaries; does not touch client.rb"
   task :checkout do
     banner("Git Checkout")
     checkout(bin)

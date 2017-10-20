@@ -50,15 +50,21 @@ describe RunLoop::Version do
     end
 
     it '0.9' do
-      str = '0.9'
-      version = RunLoop::Version.new(str)
-      expect(str.hash).to be == version.hash
+      version = RunLoop::Version.new("0.9")
+      expect("0.9.0".hash).to be == version.hash
     end
 
     it '0' do
-      str = '0'
-      version = RunLoop::Version.new(str)
-      expect(str.hash).to be == version.hash
+      version = RunLoop::Version.new("0")
+      expect("0.0.0".hash).to be == version.hash
+    end
+
+    it "9 == 9.0 == 9.0.0" do
+      version = RunLoop::Version.new("9")
+      expect("9.0.0".hash).to be == version.hash
+
+      version = RunLoop::Version.new("9.0")
+      expect("9.0.0".hash).to be == version.hash
     end
   end
 
@@ -136,6 +142,17 @@ describe RunLoop::Version do
       b = RunLoop::Version.new('0.9.5.pre1')
       expect(a == b).to be false
 
+      a = RunLoop::Version.new("9.0.0")
+      b = RunLoop::Version.new("9")
+      expect(b == a).to be true
+
+      a = RunLoop::Version.new("9")
+      b = RunLoop::Version.new("9.0")
+      expect(b == a).to be true
+
+      a = RunLoop::Version.new("9.0.0")
+      b = RunLoop::Version.new("9.0")
+      expect(b == a).to be true
     end
   end
 
@@ -208,6 +225,14 @@ describe RunLoop::Version do
       a = RunLoop::Version.new('0.9.5.pre1')
       b = RunLoop::Version.new('0.9.5.pre2')
       expect(b > a).to be true
+
+      a = RunLoop::Version.new("8.0")
+      b = RunLoop::Version.new("9.0")
+      expect(a > b).to be false
+
+      a = RunLoop::Version.new("9.0")
+      b = RunLoop::Version.new("8.0")
+      expect(a > b).to be true
     end
   end
 
@@ -218,15 +243,39 @@ describe RunLoop::Version do
       expect(a <= b).to be true
       a = RunLoop::Version.new('0.9.5')
       expect(a <= b).to be true
+
+      a = RunLoop::Version.new("9.0.0")
+      b = RunLoop::Version.new("9")
+      expect(b <= a).to be true
+
+      a = RunLoop::Version.new("9.0")
+      b = RunLoop::Version.new("9")
+      expect(b <= a).to be true
+
+      a = RunLoop::Version.new("9.0.0")
+      b = RunLoop::Version.new("9.0")
+      expect(b <= a).to be true
     end
   end
 
   describe '>=' do
-    it 'tests less-than or equal' do
+    it 'tests greater-than or equal' do
       a = RunLoop::Version.new('0.9.4')
       b = RunLoop::Version.new('0.9.5')
       expect(b >= a).to be true
       a = RunLoop::Version.new('0.9.5')
+      expect(b >= a).to be true
+
+      a = RunLoop::Version.new("9.0.0")
+      b = RunLoop::Version.new("9")
+      expect(b >= a).to be true
+
+      a = RunLoop::Version.new("9.0")
+      b = RunLoop::Version.new("9")
+      expect(b >= a).to be true
+
+      a = RunLoop::Version.new("9.0.0")
+      b = RunLoop::Version.new("9.0")
       expect(b >= a).to be true
     end
   end

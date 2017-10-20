@@ -21,10 +21,11 @@ module RunLoop
 
     # @!visibility private
     SIM_STATES = {
+      "Creating" => 0,
       "Shutdown" => 1,
       "Shutting Down" => 2,
       "Booted" => 3,
-      "Plist Missing" => -1
+      "Plist Missing Key" => -1
     }.freeze
 
     # @!visibility private
@@ -39,9 +40,9 @@ module RunLoop
 
     # @!visibility private
     def self.ensure_valid_core_simulator_service
-      max_tries = 3
+      max_tries = 4
       valid = false
-      3.times do |try|
+      4.times do |try|
         valid = self.valid_core_simulator_service?
         break if valid
         RunLoop.log_debug("Invalid CoreSimulator service for active Xcode: try #{try + 1} of #{max_tries}")
@@ -54,11 +55,12 @@ module RunLoop
       require "run_loop/shell"
       args = ["xcrun", "simctl", "help"]
 
+      options = {timeout: 5 }
       begin
-        hash = Shell.run_shell_command(args)
+        hash = Shell.run_shell_command(args, options)
         hash[:exit_status] == 0 &&
           !hash[:out][/Failed to locate a valid instance of CoreSimulatorService/]
-      rescue RunLoop::Shell::Error => _
+      rescue RunLoop::Shell::TimeoutError, RunLoop::Shell::Error => _
         false
       end
     end
@@ -124,10 +126,11 @@ module RunLoop
     # @!visibility private
     def simulator_state_as_int(device)
       plist = device.simulator_device_plist
-      if File.exist?(plist)
+
+      if pbuddy.plist_key_exists?("state", plist)
         pbuddy.plist_read("state", plist).to_i
       else
-        SIM_STATES["Plist Missing"]
+        SIM_STATES["Plist Missing Key"]
       end
     end
 
@@ -288,12 +291,12 @@ $ bundle exec run-loop simctl manage-processes
 
     # @!visibility private
     #
-    # Launches the app on on the device.
+    # Removes the application from the device.
     #
     # Caller is responsible for the following:
     #
     # 1. Launching the simulator.
-    # 2. That the application is installed; simctl uninstall will fail if app
+    # 2. Verifying that the application is installed; simctl uninstall will fail if app
     #    is installed.
     #
     # No checks are made.
@@ -377,13 +380,6 @@ $ bundle exec run-loop simctl manage-processes
     # SimControl compatibility
     def ensure_accessibility(device)
       sim_control.ensure_accessibility(device)
-    end
-
-    # @!visibility private
-    #
-    # SimControl compatibility
-    def ensure_software_keyboard(device)
-      sim_control.ensure_software_keyboard(device)
     end
 
     # @!visibility private

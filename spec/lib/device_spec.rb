@@ -3,9 +3,9 @@ describe RunLoop::Device do
   describe "SIM_STABLE_STATE_OPTIONS" do
     it ":timeout" do
       if RunLoop::Environment.ci?
-        expected = 120
+        expected = 240
       else
-        expected = 30
+        expected = 120
       end
 
       actual = RunLoop::Device::SIM_STABLE_STATE_OPTIONS[:timeout]
@@ -231,64 +231,103 @@ describe RunLoop::Device do
     end
   end
 
-  describe 'simulator files' do
-    let (:physical) {  RunLoop::Device.new('name',
-                                           '7.1.2',
-                                           '30c4b52a41d0f6c64a44bd01ff2966f03105de1e') }
-    let (:simulator) { RunLoop::Device.new('iPhone 5s',
-                                           '7.1.2',
-                                           '77DA3AC3-EB3E-4B24-B899-4A20E315C318', 'Shutdown') }
-    describe '#simulator_root_dir' do
-      it 'is nil if physical device' do
-        expect(physical.simulator_root_dir).to be_falsey
+  context "simulator files" do
+    let(:physical) do
+      RunLoop::Device.new("name", "7.1.2",
+                          "30c4b52a41d0f6c64a44bd01ff2966f03105de1e")
+    end
+
+    let (:simulator) do
+      RunLoop::Device.new("iPhone 5s", "7.1.2",
+                          "77DA3AC3-EB3E-4B24-B899-4A20E315C318", "Shutdown")
+    end
+
+    context "#simulator_root_dir" do
+      it "returns nil when physical device" do
+        expect(physical.simulator_root_dir).to be == nil
       end
 
-      it 'is non nil if a simulator' do
-        expect(simulator.simulator_root_dir[/#{simulator.udid}/,0]).to be_truthy
+      it "returns path to Library/Developer/CoreSimulator/<UDID>" do
+        expect(simulator.simulator_root_dir[/#{simulator.udid}/]).to be_truthy
       end
     end
 
-    describe '#simulator_accessibility_plist_path' do
-      it 'is nil if physical device' do
-        expect(physical.simulator_accessibility_plist_path).to be_falsey
+    context "#simulator_log_file_path" do
+      it "returns nil when physical device" do
+        expect(physical.simulator_log_file_path).to be == nil
       end
 
-      it 'is non nil if a simulator' do
-        expect(simulator.simulator_accessibility_plist_path[/#{simulator.udid}/,0]).to be_truthy
-        expect(simulator.simulator_accessibility_plist_path[/com.apple.Accessibility.plist/,0]).to be_truthy
-      end
-    end
-
-    describe '#simulator_preferences_plist_path' do
-      it 'is nil if physical device' do
-        expect(physical.simulator_preferences_plist_path).to be_falsey
-      end
-
-      it 'is non nil if a simulator' do
-        expect(simulator.simulator_preferences_plist_path[/#{simulator.udid}/,0]).to be_truthy
-        expect(simulator.simulator_preferences_plist_path[/com.apple.Preferences.plist/,0]).to be_truthy
+      it "returns path to Library/Logs/CoreSimulator/<UDID>/system.log" do
+        actual = simulator.simulator_log_file_path
+        expect(actual[/#{simulator.udid}/]).to be_truthy
+        expect(actual[/system.log/]).to be_truthy
       end
     end
 
-    describe '#simulator_log_file_path' do
-      it 'is nil if physical device' do
-        expect(physical.simulator_log_file_path).to be_falsey
+    context "simulator plists" do
+      let(:root_dir) do
+        File.join(Resources.shared.local_tmp_dir, "CoreSimulator", "Devices",
+                  simulator.udid)
       end
 
-      it 'is non nil if a simulator' do
-        expect(simulator.simulator_log_file_path[/#{simulator.udid}/,0]).to be_truthy
-        expect(simulator.simulator_log_file_path[/system.log/,0]).to be_truthy
-      end
-    end
-
-    describe '#simulator_device_plist' do
-      it 'is nil if a physical device' do
-        expect(physical.simulator_device_plist).to be_falsey
+      before do
+        FileUtils.rm_rf(root_dir)
+        FileUtils.mkdir_p(root_dir)
       end
 
-      it 'is non-nil for simulators' do
-        actual = simulator.simulator_device_plist
-        expect(actual[/#{simulator.udid}\/device.plist/, 0]).to be_truthy
+      context "#simulator_accessibility_plist_path" do
+        it "returns nil when physical device" do
+          expect(physical.simulator_accessibility_plist_path).to be == nil
+        end
+
+        it "returns path to Accessibility.plist when device is a simulator" do
+          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
+
+          actual = simulator.simulator_accessibility_plist_path
+
+          expect(actual[/com.apple.Accessibility.plist/]).to be_truthy
+        end
+      end
+
+      context "#simulator_preferences_plist_path" do
+        it "returns nil if physical device" do
+          expect(physical.simulator_preferences_plist_path).to be == nil
+        end
+
+        it "returns path to Preference.plist when device is a simulator" do
+          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
+
+          actual = simulator.simulator_preferences_plist_path
+
+          expect(actual[/com.apple.Preferences.plist/]).to be_truthy
+        end
+      end
+
+      context "#simulator_device_plist" do
+        it "returns nil physical device" do
+          expect(physical.simulator_device_plist).to be == nil
+        end
+
+        it "returns path to device.plist when device is a simulator" do
+          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
+
+          actual = simulator.simulator_device_plist
+          expect(actual[/device.plist/]).to be_truthy
+        end
+      end
+
+      context "#simulator_global_preferences_path" do
+        it "returns nil for physical devices" do
+          expect(physical.simulator_global_preferences_path).to be == nil
+        end
+
+        it "returns path to the .GlobalPreferences.plist when simulator" do
+          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
+
+          actual = simulator.simulator_global_preferences_path
+
+          expect(actual[/.GlobalPreferences.plist/]).to be_truthy
+        end
       end
     end
 
@@ -321,49 +360,46 @@ describe RunLoop::Device do
        expect(actual).to be_truthy
       end
     end
-
-    describe "#simulator_global_preferences_path" do
-      it "is nil if a physical device" do
-        expect(physical.simulator_global_preferences_path).to be_falsey
-      end
-
-      it "is non-nil for simulators" do
-        actual = simulator.simulator_global_preferences_path
-        expect(actual[/#{simulator.udid}/,0]).to be_truthy
-        expect(actual[/\.GlobalPreferences.plist/, 0]).to be_truthy
-      end
-    end
   end
 
-  describe "#simulator_languages" do
+  context "Simulator Language" do
     let(:device) { RunLoop::Device.new("iPhone 5s", "8.3", "udid") }
+    let(:root_dir) do
+      File.join(Resources.shared.local_tmp_dir, "CoreSimulator", "Devices",
+                device.udid)
+    end
     let(:pbuddy) { RunLoop::PlistBuddy.new }
-    let(:plist) { "a.plist" }
     let(:out) { "Array {\n    en\n    en-US\n}" }
 
     before do
-      expect(device).to receive(:simulator_global_preferences_path).and_return(plist)
-      expect(device).to receive(:pbuddy).and_return(pbuddy)
+      FileUtils.rm_rf(root_dir)
+      FileUtils.mkdir_p(root_dir)
+      allow(device).to receive(:simulator_root_dir).and_return(root_dir)
+      allow(device).to receive(:pbuddy).and_return(pbuddy)
     end
 
-    it "returns a list of AppleLanguages from global plist" do
-      expect(pbuddy).to receive(:plist_read).with("AppleLanguages", plist).and_return(out)
+    context "#simulator_languages" do
+      let(:plist) { device.simulator_global_preferences_path }
 
-      expect(device.simulator_languages).to be == ["en", "en-US"]
+      it "returns a list of AppleLanguages from global plist" do
+        expect(pbuddy).to(
+          receive(:plist_read).with("AppleLanguages", plist).and_return(out)
+        )
+
+        expect(device.simulator_languages).to be == ["en", "en-US"]
+      end
+
+      it "catches errors and returns the string as an array" do
+        expect(pbuddy).to(
+          receive(:plist_read).with("AppleLanguages", plist).and_return(nil)
+        )
+
+        expect(device.simulator_languages).to be == [nil]
+      end
     end
 
-    it "catches errors and returns the string as an array" do
-      expect(pbuddy).to receive(:plist_read).with("AppleLanguages", plist).and_return(nil)
-
-      expect(device.simulator_languages).to be == [nil]
-    end
-  end
-
-  describe "#simulator_set_language" do
-    let(:device) { RunLoop::Device.new("iPhone 5s", "8.3", "udid") }
-
-    describe "raises errors" do
-      it "this is a physical device" do
+    context "#simulator_set_language" do
+      it "raises error when this is a physical device" do
         expect(device).to receive(:physical_device?).and_return(true)
 
         expect do
@@ -371,33 +407,27 @@ describe RunLoop::Device do
         end.to raise_error RuntimeError, /This method is for Simulators only/
       end
 
-      it "language code is invalid" do
+      it "raises error language code is invalid" do
         expect do
           device.simulator_set_language("invalid code")
         end.to raise_error ArgumentError, /is not valid for this device/
       end
 
-      it "run_shell_command fails" do
-        hash = {
-          :exit_status => 1,
-          :out => "Some error",
-          :pid => 0
-        }
-        expect(device).to receive(:run_shell_command).and_return(hash)
+      it "raises error when pbuddy#unshift_array fails" do
+        expect(pbuddy).to receive(:unshift_array).and_raise(RuntimeError)
 
         expect do
           device.simulator_set_language("en")
         end.to raise_error RuntimeError, /Could not update the Simulator languages/
       end
-    end
 
-    it "sets the language so it is _first_" do
-      plist = Resources.shared.global_preferences_plist
-      allow(device).to receive(:simulator_global_preferences_path).and_return(plist)
+      it "sets the language so it is _first_" do
+        actual = device.simulator_set_language("de")
+        expect(actual).to be == ["de"]
 
-      actual = device.simulator_set_language("en")
-
-      expect(actual).to be == ["en", "en-US"]
+        actual = device.simulator_set_language("en")
+        expect(actual).to be == ["en", "de"]
+      end
     end
   end
 
@@ -502,6 +532,47 @@ describe RunLoop::Device do
           expect(actual.to_s).to be == "0c3115eb0d6c2d05a964415fada251e49f9bebe3cfa76a9c38d56648783c92d6"
         end
       end
+    end
+  end
+
+  context "software keyboard will show" do
+    let(:keyboard_enabled) { Resources.shared.plist_with_software_keyboard(true) }
+    let(:keyboard_not_enabled) { Resources.shared.plist_with_software_keyboard(false) }
+    let(:simulator) { RunLoop::Device.new("denis", "9.0", "udid") }
+
+    context "#simulator_software_keyboard_will_show?" do
+      it "returns true if Preferences.plist:AutomaticMinimizationEnabled is 0" do
+        expect(simulator).to(
+          receive(:simulator_preferences_plist_path).and_return(keyboard_enabled)
+        )
+
+        expect(simulator.simulator_software_keyboard_will_show?).to be == true
+      end
+
+      it "returns false if Preferences.plist:AutomaticMinimizationEnabled is not 0" do
+        expect(simulator).to(
+          receive(:simulator_preferences_plist_path).and_return(keyboard_not_enabled)
+        )
+
+        expect(simulator.simulator_software_keyboard_will_show?).to be == false
+      end
+    end
+
+    it "#simulator_ensure_software_keyboard_will_show" do
+      plist = File.join(Resources.shared.local_tmp_dir, "Preferences.plist")
+      FileUtils.rm_rf(plist)
+      FileUtils.cp(keyboard_not_enabled, plist)
+
+      expect(simulator).to(
+        receive(:simulator_preferences_plist_path).at_least(:once).and_return(plist)
+      )
+
+      expect(simulator.simulator_software_keyboard_will_show?).to be == false
+
+      actual = simulator.simulator_ensure_software_keyboard_will_show
+      expect(actual).to be_truthy
+
+      expect(simulator.simulator_software_keyboard_will_show?).to be == true
     end
   end
 

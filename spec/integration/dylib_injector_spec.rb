@@ -2,7 +2,7 @@ if Resources.shared.core_simulator_env?
 
   describe RunLoop::DylibInjector do
 
-    let(:device) { Resources.shared.random_simulator_device }
+    let(:device) { Resources.shared.default_simulator }
     let(:app_bundle) { Resources.shared.app_bundle_path }
     let(:app) { RunLoop::App.new(app_bundle) }
     let(:core_sim) { RunLoop::CoreSimulator.new(device, app) }
@@ -10,7 +10,7 @@ if Resources.shared.core_simulator_env?
     let(:injector) { RunLoop::DylibInjector.new(app.executable_name, dylib) }
 
     before do
-      stub_env({'DEBUG' => '1'})
+      allow(RunLoop::Environment).to receive(:debug?).and_return(true)
       RunLoop::CoreSimulator.quit_simulator
     end
 
@@ -22,4 +22,3 @@ if Resources.shared.core_simulator_env?
     end
   end
 end
-

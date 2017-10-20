@@ -15,6 +15,13 @@ module RunLoop
       end
 
       # @!visibility private
+      def self.derived_data_directory
+        path = File.join(Xcodebuild.dot_dir, "DerivedData")
+        FileUtils.mkdir_p(path) if !File.exist?(path)
+        path
+      end
+
+      # @!visibility private
       def to_s
         "#<Xcodebuild #{workspace}>"
       end
@@ -75,16 +82,12 @@ Use the CBXWS environment variable to override the default.
         args = [
           "xcrun",
           "xcodebuild",
+          "-derivedDataPath", Xcodebuild.derived_data_directory,
           "-scheme", "AppStub",
           "-workspace", workspace,
           "-config", "Debug",
           "-destination",
           "id=#{device.udid}",
-          "CLANG_ENABLE_CODE_COVERAGE=YES",
-          "GCC_GENERATE_TEST_COVERAGE_FILES=NO",
-          "GCC_INSTRUMENT_PROGRAM_FLOW_ARCS=NO",
-          # Scheme setting.
-          "-enableCodeCoverage", "YES",
           "test"
         ]
 
@@ -113,7 +116,69 @@ Use the CBXWS environment variable to override the default.
         relative = File.expand_path(File.join(this_dir, "..", "..", "..", ".."))
         File.join(relative, "DeviceAgent.iOS/DeviceAgent.xcworkspace")
       end
+
+      # @visibility private
+      def self.terminate_simulator_tests
+        should_term_test = lambda do |process_description|
+          xcodebuild_destination_is_simulator?(process_description)
+        end
+
+        self.terminate_xcodebuild_test_processes(should_term_test)
+      end
+
+      # @visibility private
+      def self.terminate_device_test(udid)
+        should_term_test = lambda do |process_description|
+          process_description[/id=#{udid}/]
+        end
+        self.terminate_xcodebuild_test_processes(should_term_test)
+      end
+
+      # @visibility private
+      def self.terminate_xcodebuild_test_processes(should_term_test)
+        options = { :timeout => 0.5, :raise_on_timeout => false }
+        pids = RunLoop::ProcessWaiter.new("xcodebuild", options).pids
+        pids.each do |pid|
+          if should_term_test.call(process_env(pid))
+            RunLoop.log_debug("Will terminate xcodebuild process: #{pid}")
+            terminate_xcodebuild_test_process(pid)
+          end
+        end
+      end
+
+      # @visibility private
+      def self.terminate_xcodebuild_test_process(pid)
+        term_options = { :timeout => 1.5 }
+        kill_options = { :timeout => 1.0 }
+
+        process_name = "xcodebuild test-without-building"
+
+        term = RunLoop::ProcessTerminator.new(pid.to_i,
+                                              "TERM",
+                                              process_name,
+                                              term_options)
+        if !term.kill_process
+          kill = RunLoop::ProcessTerminator.new(pid.to_i,
+                                                "KILL",
+                                                process_name,
+                                                kill_options)
+          kill.kill_process
+        end
+        sleep(1.0)
+      end
+
+      # @visibility private
+      def self.xcodebuild_destination_is_simulator?(process_description)
+        process_description[/-destination id=#{RunLoop::Regex::CORE_SIMULATOR_UDID_REGEX}/]
+      end
+
+      # @visibility private
+      def self.process_env(pid)
+        options = {:log_cmd => true}
+        args = ["ps", "-p", pid.to_s, "-wwwE"]
+        hash = RunLoop::Shell.run_shell_command(args, options)
+        hash[:out]
+      end
     end
   end
 end
-

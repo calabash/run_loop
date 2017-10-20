@@ -43,7 +43,8 @@ function englishLocalizations() {
     ["OK", /Would Like to Access Your Motion & Fitness Activity/],
     ["OK", /Would Like Access to Twitter Accounts/],
     ["OK", /data available to nearby bluetooth devices/],
-    ["OK", /[Ww]ould [Ll]ike to [Ss]end [Yy]ou( Push)? Notifications/]
+    ["OK", /[Ww]ould [Ll]ike to [Ss]end [Yy]ou( Push)? Notifications/],
+    ["Allow", /Would Like to Add VPN Configurations/]
   ];
 }
 
@@ -131,6 +132,35 @@ function dutchLocalizations() {
   ];
 }
 
+function dutch_BE_Localizations() {
+  return [
+    ["Sta toe", /toegang tot je locatie toestaan terwijl je de app gebruikt/],
+    ["Sta toe", /toegang tot je locatie toestaan, zelfs als je de app niet gebruikt/],
+    ["OK", /wil toegang tot je contacten/],
+    ["OK", /wil toegang tot je agenda/],
+    ["OK", /wil toegang tot je herinneringen/],
+    ["OK", /wil toegang tot je foto's/],
+    ["OK", /wil toegang tot je bewegings- en fitnessactiviteit/]
+  ];
+}
+
+function swedishLocalizations() {
+  return [
+    ["Tillåt", /att se din platsinfo när du använder appen/],
+    ["Tillåt", /att se din platsinfo även när du inte använder appen/],
+    ["Tillåt", /även ser din platsinfo när du inte använder appen/],
+    ["OK", /begär åtkomst till dina kontakter/],
+    ["OK", /begär åtkomst till din kalender/],
+    ["OK", /begär åtkomst till dina påminnelser/],
+    ["OK", /begär åtkomst till dina bilder/],
+    ["OK", /vill komma åt dina Twitter-konton/],
+    ["OK", /begär åtkomst till mikrofonen/],
+    ["OK", /begär åtkomst till din rörelse- och träningsaktivitet/],
+    ["OK", /begär åtkomst till kameran/],
+    ["OK", /vill skicka notiser till dig/]
+  ];
+}
+
 function russianLocalizations() {
   return [
     // Location
@@ -155,15 +185,53 @@ function frenchLocalizations() {
   ];
 }
 
+function portugueseBrazilLocalizations() {
+  return [
+    ["Permitir", /acesso à sua localização/],
+    ["Permitir", /acesso à sua localização/],
+    ["OK", /Deseja Ter Acesso às Suas Fotos/],
+    ["OK", /Deseja Ter Acesso aos Seus Contatos/],
+    ["OK", /Acesso ao Seu Calendário/],
+    ["OK", /Deseja Ter Acesso aos Seus Lembretes/],
+    ["OK", /Would Like to Access Your Motion Activity/],
+    ["OK", /Deseja Ter Acesso à Câmera/],
+    ["OK", /Deseja Ter Acesso às Suas Atividades de Movimento e Preparo Físico/],
+    ["OK", /Deseja Ter Acesso às Contas do Twitter/],
+    ["OK", /data available to nearby bluetooth devices/],
+    ["OK", /[Dd]eseja [Ee]nviar-lhe [Nn]otificações/],
+    ["Permitir", /Deseja Enviar Notificações/]
+  ];
+}
+
+function koreanLocalizations() {
+  return [
+    ["허용", /에서 사용자의 위치에 접근하도록 허용하겠습니까/],
+    ["허용", /을(를) 사용하지 않을 때에도 해당 앱이 사용자의 위치에 접근하도록 허용하곘습니까/],
+    ["승인", /이(가) 사용자의 연락처에 접근하려고 합니다/],
+    ["승인", /이(가) 사용자의 캘린더에 접근하려고 합니다/],
+    ["승인", /이(가) 사용자의 미리 알림에 접근하려고 합니다/],
+    ["승인", /이(가) 사용자의 사진에 접근하려고 합니다/],
+    ["승인", /이(가) 카메라에 접근하려고 합니다/],
+    ["승인", /에서 Twitter 계정에 접근하려고 합니다/],
+    ["승인", /이(가) 사용자의 동작 및 피트니스 활동에 접근하려고 합니다/],
+    ["승인", "이(가) 마이크에 접근하려고 합니다"],
+    ["허용", "에서 알림을 보내고자 합니다"]
+  ];
+}
+
 function localizations() {
   return [].concat(
      danishLocalizations(),
      dutchLocalizations(),
+     dutch_BE_Localizations(),
+     swedishLocalizations(),
      englishLocalizations(),
      germanLocalizations(),
      russianLocalizations(),
      spanishLocalizations(),
-     frenchLocalizations()
+     frenchLocalizations(),
+     portugueseBrazilLocalizations(),
+     koreanLocalizations()
   );
 }
 
@@ -207,8 +275,8 @@ function isPrivacyAlert(alert) {
   // $ APP_LANG="nl" APP_LOCALE="nl" be cucumber -t @supported -p macmini
 
   // This is very slow, so only do this if you are trying to capture regexes.
-  //var buttonNames = findAlertButtonNames(alert);
-  //Log.output({"alert":{"title":title, "buttons":buttonNames, "capture":"YES"}});
+  // var buttonNames = findAlertButtonNames(alert);
+  // Log.output({"alert":{"title":title, "buttons":buttonNames, "capture":"YES"}});
 
   var answer;
   var expression;
@@ -221,4 +289,3 @@ function isPrivacyAlert(alert) {
   }
   return false;
 }
-
