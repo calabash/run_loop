@@ -17,7 +17,7 @@ rvm:
 notifications:
   email:
     recipients:
-      - joshuajmoody@gmail.com
+      - josmoo@microsoft.com
     on_success: change
     on_failure: always
   slack:
