@@ -163,6 +163,18 @@ module RunLoop
     #   compare Version.new(0.9.0),  Version.new(0.9.0)  =>  0
     #
     # @return [Integer] an integer `(-1, 1)`
+    def <=> (other)
+      Version.compare(self, other)
+    end
+
+    # Compare version `a` to version `b`.
+    #
+    # @example
+    #   compare Version.new(0.10.0), Version.new(0.9.0)  =>  1
+    #   compare Version.new(0.9.0),  Version.new(0.10.0) => -1
+    #   compare Version.new(0.9.0),  Version.new(0.9.0)  =>  0
+    #
+    # @return [Integer] an integer `(-1, 1)`
     def self.compare(a, b)
 
       if a.major != b.major
