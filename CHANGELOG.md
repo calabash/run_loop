@@ -1,5 +1,21 @@
 ## Change Log
 
+### 2.6.2
+
+* Support Xcode 9.2 and iOSDeviceManager 2.1.2 #660
+* DylibInjector: user can add delay before injecting #659
+* Xcode: add support for 9.1 #658
+* Updated XCUIElementType documentation #656
+* HTTP: client retries on unreachable host #655
+
+#### iOSDeviceManager 2.1.2
+
+* Update FBSimulatorControl frameworks to fix various Xcode > 9.0 problems #191
+* CLI: remove start-test command and sources #190
+* CLI: commands for decoding xctestconfiguration files #189
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/2.1.2
+
 ### 2.6.1
 
 * CoreSim: disable hardward keyboard at launch 243ee0a

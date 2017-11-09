@@ -26,6 +26,25 @@ module RunLoop
       :timeout => RunLoop::Environment.ci? ? 40 : 20
     }
 
+    # Options for controlling dylib injection
+    #
+    # You can override these values if they do not work in your environment.
+    #
+    # For cucumber users, the best place to override would be in your
+    # features/support/env.rb.
+    #
+    # For example:
+    #
+    # RunLoop::DylibInjector::OPTIONS[:injection_delay] = 10.0
+    OPTIONS = {
+      # Starting in Xcode 9, some apps need additional time to launch
+      # completely.
+      #
+      # If lldb interupts the app before it can accept a 'dlopen' command,
+      # the app will never finish launching - even on a retry.
+      injection_delay: RunLoop::Environment.ci? ? 1.0 : 5.0
+    }
+
     # Extracts the value of :inject_dylib from options Hash.
     # @param options [Hash] arguments passed to {RunLoop.run}
     # @return [String, nil] If the options contains :inject_dylibs and it is a
@@ -125,6 +144,10 @@ Expected :inject_dylib to be a path to a dylib, but found '#{inject_dylib}'
     end
 
     def retriable_inject_dylib(options={})
+      delay = OPTIONS[:injection_delay]
+      RunLoop.log_debug("Delaying dylib injection by #{delay} seconds to allow app to finish launching")
+      sleep(delay)
+
       merged_options = RETRY_OPTIONS.merge(options)
 
       tries = merged_options[:tries]

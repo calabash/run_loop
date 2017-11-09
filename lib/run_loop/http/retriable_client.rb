@@ -26,6 +26,8 @@ module RunLoop
           Errno::ECONNABORTED,
           # The foreign function call call timed out
           #Errno::ETIMEDOUT
+
+          Errno::EHOSTUNREACH
         ]
 
       # @!visibility private

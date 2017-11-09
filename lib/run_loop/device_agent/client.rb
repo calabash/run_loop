@@ -506,7 +506,7 @@ INSTANCE METHODS
       # ]
       # ```
       #
-      # @see http://masilotti.com/xctest-documentation/Constants/XCUIElementType.html
+      # @see https://developer.apple.com/documentation/xctest/xcuielementtype
       # @param [Hash] uiquery A hash describing the query.
       # @return [Array<Hash>] An array of elements matching the `uiquery`.
       def query(uiquery)

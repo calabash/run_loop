@@ -1,5 +1,5 @@
 module RunLoop
-  VERSION = "2.6.1"
+  VERSION = "2.6.2"
 
   # A model of a software release version that can be used to compare two versions.
   #
@@ -153,6 +153,18 @@ module RunLoop
     # @return [Boolean] true if this Version is greater-than or equal `other`
     def >= (other)
       Version.compare(self, other) >= 0
+    end
+
+    # Compare version `a` to version `b`.
+    #
+    # @example
+    #   compare Version.new(0.10.0), Version.new(0.9.0)  =>  1
+    #   compare Version.new(0.9.0),  Version.new(0.10.0) => -1
+    #   compare Version.new(0.9.0),  Version.new(0.9.0)  =>  0
+    #
+    # @return [Integer] an integer `(-1, 1)`
+    def <=> (other)
+      Version.compare(self, other)
     end
 
     # Compare version `a` to version `b`.
