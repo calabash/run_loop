@@ -139,7 +139,7 @@ Expected :device_agent_install_timeout key in options:
           end
 
           if provisioning_profile
-            args = args + ["--provisioning-profile", provisioning_profile]
+            args = args + ["--profile-path", provisioning_profile]
           end
 
           start = Time.now
