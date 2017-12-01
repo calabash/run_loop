@@ -286,6 +286,10 @@ INSTANCE METHODS
         to_s
       end
 
+      def launcher_options!(new_options)
+        @launcher_options = new_options.dup
+      end
+
       # @!visibility private
       def launch
         start = Time.now
