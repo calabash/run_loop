@@ -1248,6 +1248,17 @@ PRIVATE
         expect_300_response(response)["pid"]
       end
 
+      # @!visibility private
+      def app_running?(bundle_identifier)
+        process_pid(bundle_identifier) != "0"
+      end
+
+      # @!visibility private
+      def terminate_app(bundle_identifier, strategy=nil)
+        request = request("terminate", { bundleID: bundle_identifier,
+                                         strategy: strategy})
+        client = http_client(http_options)
+        response = client.post(request)
         expect_300_response(response)
       end
 
