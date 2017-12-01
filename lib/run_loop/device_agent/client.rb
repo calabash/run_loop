@@ -1241,11 +1241,13 @@ PRIVATE
       end
 
       # @!visibility private
-      def server_pid
-        options = http_options
-        request = request("pid")
-        client = http_client(options)
-        response = client.get(request)
+      def process_pid(bundle_identifier)
+        request = request("pid", { bundleID: bundle_identifier })
+        client = http_client(http_options)
+        response = client.post(request)
+        expect_300_response(response)["pid"]
+      end
+
         expect_300_response(response)
       end
 
