@@ -286,6 +286,10 @@ INSTANCE METHODS
         to_s
       end
 
+      def launcher_options!(new_options)
+        @launcher_options = new_options.dup
+      end
+
       # @!visibility private
       def launch
         start = Time.now
@@ -1237,11 +1241,24 @@ PRIVATE
       end
 
       # @!visibility private
-      def server_pid
-        options = http_options
-        request = request("pid")
-        client = http_client(options)
-        response = client.get(request)
+      def process_pid(bundle_identifier)
+        request = request("pid", { bundleID: bundle_identifier })
+        client = http_client(http_options)
+        response = client.post(request)
+        expect_300_response(response)["pid"]
+      end
+
+      # @!visibility private
+      def app_running?(bundle_identifier)
+        process_pid(bundle_identifier) != "0"
+      end
+
+      # @!visibility private
+      def terminate_app(bundle_identifier, strategy=nil)
+        request = request("terminate", { bundleID: bundle_identifier,
+                                         strategy: strategy})
+        client = http_client(http_options)
+        response = client.post(request)
         expect_300_response(response)
       end
 
