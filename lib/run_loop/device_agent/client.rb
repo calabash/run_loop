@@ -1273,14 +1273,10 @@ PRIVATE
 
       # @!visibility private
       def session_delete
-        if RunLoop::Environment.xtc?
-          RunLoop.log_error("Calling shutdown on the XTC is not supported.")
-          return
-        end
-
         # https://xamarin.atlassian.net/browse/TCFW-255
         # httpclient is unable to send a valid DELETE
-        args = ["curl", "-s", "-X", "DELETE", %Q[#{url}#{versioned_route("session")}]]
+        args = ["curl", "--insecure", "--silent", "--request", "DELETE",
+                %Q[#{url}#{versioned_route("session")}]]
 
         begin
           hash = run_shell_command(args, {:log_cmd => true, :timeout => 10})
@@ -1299,6 +1295,7 @@ If the body empty, the DeviceAgent has probably crashed.
           end
         rescue Shell::TimeoutError => _
           RunLoop.log_debug("Timed out calling DELETE session/ after 10 seconds")
+          {}
         end
       end
 
