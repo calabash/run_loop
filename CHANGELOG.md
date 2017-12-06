@@ -1,5 +1,19 @@
 ## Change Log
 
+### 2.6.3
+
+* DeviceAgent: improve support for inspecting app state and terminating apps #663
+
+#### DeviceAgent 1.2.2
+
+* Use XCUIApplication#terminate to terminate applications #256
+* Server: XCUIElement with type Any may or may not respond to WebDriver methods #255
+* Add iOS 11 'would like to add to your photos' SpringBoard alert #254
+* SB: add camera alert for iOS 11 de #252
+* Server: update CBXDevice with iPhone 8 and 10 models #251
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.2.2
+
 ### 2.6.2
 
 * Support Xcode 9.2 and iOSDeviceManager 2.1.2 #660

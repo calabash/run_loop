@@ -58,8 +58,10 @@ module RunLoop
       options = {timeout: 5 }
       begin
         hash = Shell.run_shell_command(args, options)
-        hash[:exit_status] == 0 &&
-          !hash[:out][/Failed to locate a valid instance of CoreSimulatorService/]
+        return false if hash[:exit_status] != 0
+        return false if hash[:out][/Failed to locate a valid instance of CoreSimulatorService/]
+        return false if hash[:out][/CoreSimulatorService connection became invalid/]
+        true
       rescue RunLoop::Shell::TimeoutError, RunLoop::Shell::Error => _
         false
       end
