@@ -720,7 +720,9 @@ Could not dismiss SpringBoard alert by touching button with title '#{button_titl
       def pan_between_coordinates(start_point, end_point, options={})
         default_options = {
           :num_fingers => 1,
-          :duration => 0.5
+          :duration => 0.5,
+          # How long the first touch needs to activate or grab the element.
+          :first_touch_hold_duration => 0.0
         }
 
         merged_options = default_options.merge(options)

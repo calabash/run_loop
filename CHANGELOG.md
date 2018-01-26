@@ -1,5 +1,18 @@
 ## Change Log
 
+### 2.6.4
+
+This release contains an update to DeviceAgent to help support
+drag-and-drop on iOS 11.
+
+#### DeviceAgent 1.2.3
+
+* Xcode: target + script for running XCUITests against arbitrary.app #260
+* Server: drag-n-drop can start with a touch-and-hold #259
+* TestApp: update URLs to calabash-ci.xyz domain #258
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.2.3
+
 ### 2.6.3
 
 * DeviceAgent: improve support for inspecting app state and terminating apps #663
