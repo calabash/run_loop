@@ -12,7 +12,7 @@ describe RunLoop::Device do
   end
 
   context "#simulator_running_app_details" do
-    it "detects the XCTRunner, AUT, and other apps" do
+    it "detects the -Runner, AUT, and other apps" do
       core_sim.install
 
       aut_args = ["ARG0", "YES", "ARG1", "NO", "ARG_EXISTS"]
@@ -35,15 +35,21 @@ describe RunLoop::Device do
       running_apps = device.simulator_running_app_details
       expect(running_apps.count).to be >= 2
 
-      expect(running_apps["XCTRunner"]).to be_truthy
-      expect(running_apps["XCTRunner"][:args]).not_to be == ""
+      if Resources.shared.xcode.version_gte_90?
+        runner_name = "DeviceAgent-Runner"
+      else
+        runner_name = "XTCRunner"
+      end
+
+      expect(running_apps[runner_name]).to be_truthy
+      expect(running_apps[runner_name][:args]).not_to be == ""
       expect(running_apps[aut.executable_name]).to be_truthy
       actual = running_apps[aut.executable_name][:args]
       expect(actual).to be == aut_args.join(" ")
 
       client.launch_other_app("com.apple.Preferences")
-
       running_apps = device.simulator_running_app_details
+
       expect(running_apps["Preferences"]).to be_truthy
     end
   end
