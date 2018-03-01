@@ -55,17 +55,16 @@ describe "Simulator/Binary Compatibility Check" do
   end
 
   it "raises an error if app contains only x86_64 slices but simulator is i386" do
-    ipad2 = simctl.simulators.find do |device|
-      device.name == "iPad 2" &&
-        device.version >= RunLoop::Version.new("9.0")
+    i368sim = simctl.simulators.find do |device|
+      device.instruction_set == 'i386' && device.version >= RunLoop::Version.new('9.0')
     end
 
-    expect(ipad2).not_to be == nil
-    RunLoop::CoreSimulator.erase(ipad2)
+    expect(i368sim).not_to be == nil
+    RunLoop::CoreSimulator.erase(i368sim)
     options =
       {
         :app => Resources.shared.app_bundle_path_x86_64,
-        :device_target => ipad2.udid,
+        :device_target => i368sim.udid,
         :simctl => simctl
       }
 
