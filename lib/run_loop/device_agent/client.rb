@@ -1265,6 +1265,38 @@ PRIVATE
       end
 
       # @!visibility private
+      def app_state(bundle_identifier)
+        request = request("pid", { bundleID: bundle_identifier })
+        client = http_client(http_options)
+        response = client.post(request)
+        expect_300_response(response)["state_string"]
+      end
+
+      # @!visibility private
+      def send_app_to_background(bundle_identifier, options={})
+        state = app_state(bundle_identifier)
+
+        if state != "foreground"
+          raise(RuntimeError, %Q[
+
+Expected '#{bundle_identifier}' to be in the foreground, but found '#{state}'"
+
+])
+
+        else
+          parameters = {
+            # How long to touch the home bottom.
+            duration: 0.001
+          }.merge(options)
+
+          request = request("home", parameters)
+          client = http_client(http_options)
+          response = client.post(request)
+          expect_300_response(response)["state_string"]
+        end
+      end
+
+      # @!visibility private
       def session_identifier
         options = http_options
         request = request("sessionIdentifier")
