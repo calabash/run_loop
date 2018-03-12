@@ -131,6 +131,8 @@ class RunLoop::CoreSimulator
   # as testing proceeds and can cause instability.
   def self.terminate_core_simulator_processes
 
+    start = Time.now
+
     self.quit_simulator
 
     MANAGED_PROCESSES.each do |process_name|
@@ -161,6 +163,24 @@ class RunLoop::CoreSimulator
       RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options).kill_process
     end
 
+    RunLoop::ProcessWaiter.pgrep_f("CoreSimulator").each do |pid|
+      args = ["ps", "-o", "uid=", pid.to_s]
+      uid = RunLoop::Shell.run_shell_command(args)[:out].strip
+      process_name = File.basename(ps_name_fn.call(pid))
+      if uid != "0"
+
+        term = RunLoop::ProcessTerminator.new(pid, 'TERM', process_name, term_options)
+        killed = term.kill_process
+
+        if !killed
+          term = RunLoop::ProcessTerminator.new(pid, 'KILL', process_name, kill_options)
+          term.kill_process
+        end
+      end
+    end
+
+    elapsed = Time.now - start
+    RunLoop.log_debug("Took #{elapsed} to terminate CoreSimulator Services")
   end
 
   # @!visibility private
