@@ -148,7 +148,8 @@ class RunLoop::CoreSimulator
       end
     end
 
-    kill_options = { :timeout => 0.5 }
+    term_options = { :timeout => 0.1 }
+    kill_options = { :timeout => 0.0 }
 
     RunLoop::ProcessWaiter.pgrep_f("launchd_sim").each do |pid|
       process_name = ps_name_fn.call(pid)
@@ -543,7 +544,7 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   # Send 'TERM' then 'KILL' to allow processes to quit cleanly.
   def self.term_or_kill(process_name, send_term_first)
     term_options = { :timeout => 0.5 }
-    kill_options = { :timeout => 0.5 }
+    kill_options = { :timeout => 0.0 }
 
     RunLoop::ProcessWaiter.new(process_name).pids.each do |pid|
 
