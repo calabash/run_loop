@@ -402,6 +402,7 @@ class RunLoop::CoreSimulator
     args = ['open', '-g', '-a', sim_app_path, '--args',
             '-CurrentDeviceUDID', device.udid,
             "-ConnectHardwareKeyboard", "0",
+            "-DeviceBootTimeout", "120",
             "LAUNCHED_BY_RUN_LOOP"]
 
     RunLoop.log_debug("Launching #{device} with:")
