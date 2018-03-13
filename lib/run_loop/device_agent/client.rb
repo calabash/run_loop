@@ -809,6 +809,13 @@ Could not dismiss SpringBoard alert by touching button with title '#{button_titl
         json
       end
 
+      def element_types
+        request = request("element-types")
+        client = http_client(http_options)
+        response = client.get(request)
+        expect_300_response(response)["types"]
+      end
+
       # TODO: animation model
       def wait_for_animations
         sleep(0.5)
