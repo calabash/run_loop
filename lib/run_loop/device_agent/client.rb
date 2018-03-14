@@ -1412,7 +1412,7 @@ If the body empty, the DeviceAgent has probably crashed.
         return false if !running?
 
         version_info = server_version
-        running_version_timestamp = version_info[:bundle_version].to_i
+        running_version_timestamp = version_info["bundle_version"].to_i
 
         app = RunLoop::App.new(cbx_launcher.runner.runner)
         plist_buddy = RunLoop::PlistBuddy.new
