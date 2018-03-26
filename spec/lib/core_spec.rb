@@ -276,20 +276,26 @@ describe RunLoop::Core do
     end
 
     it 'Xcode >= 9.0' do
-      expected = 'iPhone 7 (11.0)'
+      expected = 'iPhone 8 (11.0)'
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v90
       expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
     it 'Xcode >= 9.1' do
-      expected = 'iPhone 7 (11.1)'
+      expected = 'iPhone 8 (11.1)'
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v91
       expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
 
     it 'Xcode >= 9.2' do
-      expected = 'iPhone 7 (11.2)'
+      expected = 'iPhone 8 (11.2)'
       expect(xcode).to receive(:version).at_least(:once).and_return xcode.v92
+      expect(RunLoop::Core.default_simulator(xcode)).to be == expected
+    end
+
+    it 'Xcode >= 9.3' do
+      expected = 'iPhone 8 (11.3)'
+      expect(xcode).to receive(:version).at_least(:once).and_return xcode.v93
       expect(RunLoop::Core.default_simulator(xcode)).to be == expected
     end
   end

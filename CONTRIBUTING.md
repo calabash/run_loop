@@ -54,7 +54,7 @@ The release pull request ***must*** be made against the _master_ branch.
 
 Be sure to check CI.
 
-* https://travis-ci.org/calabash/run\_loop
+* https://travis-ci.org/calabash/run_loop
 * http://ci.endoftheworl.de:8080/ # Briar jobs.
 
 ```
