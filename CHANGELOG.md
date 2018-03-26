@@ -1,5 +1,37 @@
 ## Change Log
 
+### 2.6.5
+
+This release contains support a new DeviceAgent and iOSDeviceManager
+for Xcode 9.3 support - built with Xcode 9.3 beta 4.
+
+* Gem: add Xcode 9.3 support #667
+* add Russian translations for SpringBoard alerts (UIAutomation) #669
+* Improve CoreSimulator Services process management #670
+* Add element_types method to DeviceAgent client #671
+
+#### DeviceAgent 1.2.3
+
+* added Russian SpringBoard alerts localizations (DeviceAgent) #271
+* OSS: changes for MSFT open source review #275
+
+Also includes support dismissing "is not Activated" alerts for iOS >= 10
+in US English and Dutch locales.
+
+Built from the /develop branch:
+
+* https://github.com/calabash/DeviceAgent.iOS/commit/ab996d6b4ec9ecf217bdd67d9f3c58d2ff7ba30b
+
+#### iOSDeviceManager 3.0.0
+
+* Ask if app is installed only once during app installation #193
+* Xcode 9.3 and iOS 11.3 support #199
+* Replace install --update-app with --force flag and fix behavior #200
+
+Built from the /develop branch:
+
+* https://github.com/calabash/iOSDeviceManager/commit/f3f1f90fe3026191406cadaf3325f4c0936fc789
+
 ### 2.6.4
 
 This release contains an update to DeviceAgent to help support
