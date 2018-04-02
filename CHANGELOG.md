@@ -1,5 +1,27 @@
 ## Change Log
 
+### 2.6.6
+
+This release contains DeviceAgent 1.2.4 and iOSDeviceManager 3.0.0.
+
+#### DeviceAgent 1.2.4
+
+* added Russian SpringBoard alerts localizations (DeviceAgent) #271
+* OSS: changes for MSFT open source review #275
+
+Also includes support dismissing "is not Activated" alerts for iOS >= 10
+in US English and Dutch locales.
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.2.4
+
+#### iOSDeviceManager 3.0.0
+
+* Ask if app is installed only once during app installation #193
+* Xcode 9.3 and iOS 11.3 support #199
+* Replace install --update-app with --force flag and fix behavior #200
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.0.0
+
 ### 2.6.5
 
 This release contains support a new DeviceAgent and iOSDeviceManager
