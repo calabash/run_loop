@@ -2,6 +2,20 @@ module RunLoop
   # A model of the an .ipa - a application binary for iOS devices.
   class Ipa
 
+    require "run_loop/shell"
+
+    # Return true if the path_to_ipa to a zip archive
+    def self.is_zip_archive?(path_to_ipa)
+      hash = RunLoop::Shell.run_shell_command(["file", path_to_ipa],
+                                              {log_cmd: true})
+      hash[:out][/Zip archive data/]
+    end
+
+    # Return true if the path_to_ipa is probably an .ipa
+    def self.is_ipa?(path_to_ipa)
+      path_to_ipa.end_with?('.ipa') || RunLoop::Ipa.is_zip_archive?(path_to_ipa)
+    end
+
     # The path to this .ipa.
     # @!attribute [r] path
     # @return [String] A path to this .ipa.
@@ -13,12 +27,12 @@ module RunLoop
     # @raise [RuntimeError] If the file does not exist.
     # @raise [RuntimeError] If the file does not end in .ipa.
     def initialize(path_to_ipa)
-      unless File.exist? path_to_ipa
+      if !File.exist? path_to_ipa
         raise "Expected an ipa at '#{path_to_ipa}'"
       end
 
-      unless path_to_ipa.end_with?('.ipa')
-        raise "Expected '#{path_to_ipa}' to be an .ipa"
+      if !RunLoop::Ipa.is_ipa?(path_to_ipa)
+        raise "Expected '#{path_to_ipa}' have extension .ipa or be a zip archive"
       end
       @path = path_to_ipa
     end

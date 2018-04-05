@@ -1,26 +1,42 @@
 describe RunLoop::Ipa do
 
   let(:ipa_path) { Resources.shared.cal_ipa_path  }
-
   let(:ipa) { RunLoop::Ipa.new(ipa_path) }
 
-  describe '.new' do
-    describe 'raises an exception' do
-      it 'when the path does not exist' do
-        expect {
-          RunLoop::Ipa.new('/path/does/not/exist')
-        }.to raise_error(RuntimeError)
-      end
+  context ".is_zip_archive?" do
+    it "returns true when the file at path is zip archive" do
+      hash = {out: "Zip archive data"}
+      expect(RunLoop::Shell).to receive(:run_shell_command).and_return(hash)
 
-      it 'when the path does not end in .ipa' do
-        expect(File).to receive(:exist?).with('/path/foo.app').and_return(true)
-        expect {
-          RunLoop::Ipa.new('/path/foo.app')
-        }.to raise_error(RuntimeError)
-      end
+      expect(RunLoop::Ipa.is_zip_archive?("path/to/app")).to be_truthy
     end
 
-    it 'sets the path' do
+    it "returns false when the file at path is not a zip archive" do
+      hash = {out: "Regular file"}
+      expect(RunLoop::Shell).to receive(:run_shell_command).and_return(hash)
+
+      expect(RunLoop::Ipa.is_zip_archive?("path/to/app")).to be_falsey
+    end
+  end
+
+  context ".new" do
+    it "raises an error when the path does not exist" do
+      expect do
+        RunLoop::Ipa.new('/path/does/not/exist')
+      end.to raise_error(RuntimeError)
+    end
+
+    it "raise an error when the file at path is not an ipa" do
+      path = "path/foo.app"
+      expect(RunLoop::Ipa).to receive(:is_ipa?).with(path).and_return(false)
+      expect(File).to receive(:exist?).with(path).and_return(true)
+
+      expect do
+        RunLoop::Ipa.new(path)
+      end.to raise_error(RuntimeError)
+    end
+
+    it "sets the path" do
       expect(ipa.path).to be == ipa_path
     end
   end
