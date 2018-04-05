@@ -150,7 +150,7 @@ describe RunLoop::Device do
     end
   end
 
-  context '#device?' do
+  context '#physical_device?' do
     subject { device.physical_device? }
     context 'is a physical device' do
       let(:device) { RunLoop::Device.new('name', '7.1.2', '30c4b52a41d0f6c64a44bd01ff2966f03105de1e', 'Shutdown') }
@@ -160,6 +160,79 @@ describe RunLoop::Device do
     context 'is not a physical device' do
       let(:device) {  RunLoop::Device.new('name', '7.1.2', '77DA3AC3-EB3E-4B24-B899-4A20E315C318', 'Shutdown') }
       it { is_expected.to be == false }
+    end
+  end
+
+  context "#compatible_with_xcode_version?" do
+    let(:device) do
+      RunLoop::Device.new("name", "7.1.2",
+                          "77DA3AC3-EB3E-4B24-B899-4A20E315C318",
+                          "Shutdown")
+    end
+
+    it "returns true if iOS version is compatible with Xcode version" do
+      device_version = RunLoop::Version.new("11.2")
+      expect(device).to receive(:version).at_least(:once).and_return(device_version)
+
+      xcode_version = RunLoop::Version.new("9.2")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_truthy
+
+      xcode_version = RunLoop::Version.new("10.0")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_truthy
+
+      xcode_version = RunLoop::Version.new("12.0")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_truthy
+
+    end
+
+    it "returns false if simulator iOS version is too low for Xcode version" do
+      expect(device).to receive(:physical_device?).at_least(:once).and_return(false)
+      device_version = RunLoop::Version.new("7.2")
+      expect(device).to receive(:version).at_least(:once).and_return(device_version)
+
+      xcode_version = RunLoop::Version.new("9.0")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
+    end
+
+    it "returns true if physical device iOS version was ever supported by the Xcode version" do
+      # There is no known lower bound for support
+      expect(device).to receive(:physical_device?).at_least(:once).and_return(true)
+      device_version = RunLoop::Version.new("7.2")
+      expect(device).to receive(:version).at_least(:once).and_return(device_version)
+
+      xcode_version = RunLoop::Version.new("9.0")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_truthy
+    end
+
+    it "returns false if iOS version is too high for the Xcode version" do
+      device_version = RunLoop::Version.new("11.2")
+      expect(device).to receive(:version).at_least(:once).and_return(device_version)
+
+      xcode_version = RunLoop::Version.new("8.0")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
+
+      xcode_version = RunLoop::Version.new("9.0")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
+
+      xcode_version = RunLoop::Version.new("9.1")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
+    end
+
+    it "returns false if iOS Simulator version is too low for the Xcode version" do
+      device_version = RunLoop::Version.new("7.2")
+      expect(device).to receive(:version).at_least(:once).and_return(device_version)
+
+      xcode_version = RunLoop::Version.new("10.0")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
+
+      xcode_version = RunLoop::Version.new("9.0")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
+
+      xcode_version = RunLoop::Version.new("9.1")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
+
+      xcode_version = RunLoop::Version.new("9.2")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
     end
   end
 
