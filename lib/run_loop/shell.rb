@@ -63,10 +63,9 @@ IO.popen requires all arguments to be Strings.
       RunLoop.log_unix_cmd(cmd) if merged_options[:log_cmd]
 
       hash = {}
+      shell_start_time = Time.now
 
       begin
-
-        start_time = Time.now
         command_output = CommandRunner.run(args, timeout: timeout)
 
         out = ensure_command_output_utf8(command_output[:out], cmd)
@@ -83,7 +82,7 @@ IO.popen requires all arguments to be Strings.
       rescue RunLoop::Encoding::UTF8Error => e
         raise e
       rescue => e
-        elapsed = "%0.2f" % (Time.now - start_time)
+        elapsed = "%0.2f" % (Time.now - shell_start_time)
         raise Error,
 %Q{Encountered an error after #{elapsed} seconds:
 
@@ -93,14 +92,14 @@ executing this command:
 
 #{cmd}
 }
+      ensure
+        hash[:seconds_elapsed] = Time.now - shell_start_time
       end
 
-      now = Time.now
-
       if hash[:exit_status].nil?
-        elapsed = "%0.2f" % (now - start_time)
+        elapsed = "%0.2f" % (hash[:seconds_elapsed])
 
-        if timeout_exceeded?(start_time, timeout)
+        if timeout_exceeded?(shell_start_time, timeout)
           raise TimeoutError,
 %Q[
 Timed out after #{elapsed} seconds executing
@@ -123,7 +122,6 @@ The command generated this output:
 
         end
       end
-
       hash
     end
 
@@ -134,4 +132,3 @@ The command generated this output:
     end
   end
 end
-
