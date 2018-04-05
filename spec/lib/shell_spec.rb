@@ -26,6 +26,7 @@ describe RunLoop::Shell do
       actual = RunLoop::Shell.run_shell_command(args)
       expect(actual[:exit_status]).to be == 0
       expect(actual[:out]).to be == "Hello"
+      expect(actual[:seconds_elapsed]).to be_truthy
     end
   end
 
@@ -100,6 +101,7 @@ describe RunLoop::Shell do
         expect(hash[:out]).to be == "mocked"
         expect(hash[:pid]).to be == 3030
         expect(hash[:exit_status]).to be == 256
+        expect(hash[:seconds_elapsed]).to be_truthy
       end
     end
   end
@@ -125,7 +127,6 @@ describe RunLoop::Shell do
 
       expect(object.send(:timeout_exceeded?, start_time, timeout)).to be_falsey
     end
-
   end
 end
 
