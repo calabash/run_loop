@@ -29,6 +29,7 @@ describe RunLoop::PhysicalDevice::IOSDeviceManager do
               device_str = %Q['#{device.name} (#{device.version.to_s})']
 
               # Run these tests
+              let(:ipa) { RunLoop::Ipa.new(Resources.shared.ipa_path) }
 
               context "#app_installed?" do
                 it "returns true if app is installed on #{device_str}" do
@@ -42,6 +43,13 @@ describe RunLoop::PhysicalDevice::IOSDeviceManager do
                 end
               end
 
+              context "#install_app" do
+                it "installs the app or ipa on the device" do
+                  idm = RunLoop::PhysicalDevice::IOSDeviceManager.new(device)
+                  actual = idm.install_app(ipa)
+                  expect(actual[/Installed #{ipa.bundle_identifier}/]).to be_truthy
+                end
+              end
             end
           end
         end

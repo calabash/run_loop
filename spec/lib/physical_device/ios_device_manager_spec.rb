@@ -7,6 +7,12 @@ describe RunLoop::PhysicalDevice::IOSDeviceManager do
   let(:ipa) { RunLoop::Ipa.new(Resources.shared.ipa_path) }
   let(:app) { RunLoop::App.new(Resources.shared.app_bundle_path) }
   let(:shell_options) { {log_cmd: true } }
+  let(:install_options) do
+    options = shell_options.dup
+    options[timeout] =
+      RunLoop::PhysicalDevice::IOSDeviceManager::DEFAULT_OPTIONS[:install_timeout]
+    options
+  end
   let(:executable) { "path/to/iOSDeviceManager" }
 
   context ".new" do
@@ -106,6 +112,118 @@ describe RunLoop::PhysicalDevice::IOSDeviceManager do
       end.to raise_error(RuntimeError,
                          /error checking if app is installed on device/)
 
+    end
+  end
+
+  context "#install_app_internal" do
+    let(:install_options) do
+      options = shell_options.dup
+      options[:timeout] = RunLoop::PhysicalDevice::IOSDeviceManager::DEFAULTS[:install_timeout]
+      options
+    end
+
+    let(:hash) { {out: "output of install command", exit_status: 0} }
+
+    before do
+      expect(RunLoop::PhysicalDevice::IOSDeviceManager).to(
+        receive(:executable_path).and_return(executable)
+      )
+    end
+
+    it "can install a RunLoop::App" do
+      args = [executable, "install", app.path, "-d", device.udid]
+      expect(idm).to(
+        receive(:run_shell_command).with(args, install_options).and_return(hash)
+      )
+
+      expect(idm.send(:install_app_internal, app)).to be == hash[:out]
+    end
+
+    it "can install a RunLoop::Ipa" do
+      args = [executable, "install", ipa.path, "-d", device.udid]
+      expect(idm).to(
+        receive(:run_shell_command).with(args, install_options).and_return(hash)
+      )
+
+      expect(idm.send(:install_app_internal, ipa)).to be == hash[:out]
+    end
+
+    it "can add a --codesign-identity if one is defined in the environment" do
+      expect(RunLoop::Environment).to receive(:code_sign_identity).and_return("me")
+      args = [executable, "install", app.path, "-d", device.udid, "-c", "me"]
+
+      expect(idm).to(
+        receive(:run_shell_command).with(args, install_options).and_return(hash)
+      )
+
+      expect(idm.send(:install_app_internal, app)).to be == hash[:out]
+    end
+
+    it "can add a --provisioning-profile if one is defined in the environment" do
+      expect(RunLoop::Environment).to receive(:provisioning_profile).and_return("profile")
+      args = [executable, "install", app.path, "-d", device.udid, "-p", "profile"]
+
+      expect(idm).to(
+        receive(:run_shell_command).with(args, install_options).and_return(hash)
+      )
+
+      expect(idm.send(:install_app_internal, app)).to be == hash[:out]
+    end
+
+    it "can add a profile and identity if they are defined in the environment" do
+      expect(RunLoop::Environment).to receive(:provisioning_profile).and_return("profile")
+      expect(RunLoop::Environment).to receive(:code_sign_identity).and_return("me")
+      args = [
+        executable, "install", app.path, "-d", device.udid, "-c", "me", "-p", "profile"
+      ]
+
+      expect(idm).to(
+        receive(:run_shell_command).with(args, install_options).and_return(hash)
+      )
+
+      expect(idm.send(:install_app_internal, app)).to be == hash[:out]
+    end
+
+    it "can append additional arguments" do
+      args = [executable, "install", app.path, "-d", device.udid, "--force"]
+
+      expect(idm).to(
+        receive(:run_shell_command).with(args, install_options).and_return(hash)
+      )
+
+      expect(idm.send(:install_app_internal, app, ["--force"])).to be == hash[:out]
+    end
+
+    it "can raise errors when install fails" do
+      hash[:exit_status] = 1
+      args = [executable, "install", app.path, "-d", device.udid]
+
+      expect(idm).to(
+        receive(:run_shell_command).with(args, install_options).and_return(hash)
+      )
+
+      expect do
+         idm.send(:install_app_internal, app)
+      end.to raise_error(RunLoop::PhysicalDevice::InstallError,
+                         /Could not install app on device/)
+    end
+  end
+
+  context "#install_app" do
+    it "calls #install_app_internal with --force flag" do
+      app = "path/to/my.app"
+      expect(idm).to receive(:install_app_internal).with(app, ["--force"]).and_return(true)
+
+      expect(idm.install_app(app)).to be_truthy
+    end
+  end
+
+  context "#ensure_newest_installed" do
+    it "calls #install_app_internal without the --force flag" do
+      app = "path/to/my.app"
+      expect(idm).to receive(:install_app_internal).with(app).and_return(true)
+
+      expect(idm.ensure_newest_installed(app)).to be_truthy
     end
   end
 end
