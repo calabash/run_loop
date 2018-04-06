@@ -87,19 +87,16 @@ exit status: #{hash[:exit_status]}
         install_app_internal(app_or_ipa)
       end
 
-        app = app_or_ipa
-        if is_ipa?(app)
-          app = app_or_ipa.app
-        end
-
-        if !app_installed?(app.bundle_id)
+      def uninstall_app(app_or_ipa)
+        bundle_identifier = app_or_ipa.bundle_identifier
+        if !app_installed?(bundle_identifier)
           return :was_not_installed
         end
 
         args = [
           IOSDeviceManager.executable_path,
           "uninstall",
-          app.path,
+          bundle_identifier,
           "-d", device.udid
         ]
 
@@ -108,9 +105,12 @@ exit status: #{hash[:exit_status]}
 
         raise_error_on_failure(
           UninstallError,
-          "Could not install app on device",
-          app, device, hash
+          "Could not remove app from device",
+          app_or_ipa, device, hash
         )
+        hash[:out]
+      end
+
       end
 
       def uninstall_app(bundle_id)

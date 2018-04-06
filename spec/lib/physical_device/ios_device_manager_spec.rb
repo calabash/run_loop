@@ -226,4 +226,65 @@ describe RunLoop::PhysicalDevice::IOSDeviceManager do
       expect(idm.ensure_newest_installed(app)).to be_truthy
     end
   end
+
+  context "#uninstall_app" do
+    let(:hash) { {out: "output of uninstall command", exit_status: 0} }
+
+    before do
+      allow(RunLoop::PhysicalDevice::IOSDeviceManager).to(
+        receive(:executable_path).and_return(executable)
+      )
+    end
+
+    it "returns :was_not_installed when app is not installed" do
+      expect(idm).to(
+        receive(:app_installed?).with(app.bundle_identifier).and_return(false)
+      )
+
+      expect(idm.uninstall_app(app)).to be == :was_not_installed
+    end
+
+    it "returns output of command when app is uninstalled" do
+      expect(idm).to(
+        receive(:app_installed?).with(app.bundle_identifier).and_return(true)
+      )
+
+      args = [executable, "uninstall", app.bundle_identifier, "-d", device.udid]
+      expect(idm).to(
+        receive(:run_shell_command).with(args, shell_options).and_return(hash)
+      )
+
+      expect(idm.uninstall_app(app)).to be == hash[:out]
+    end
+
+    it "returns output of command when ipa is uninstalled" do
+      expect(idm).to(
+        receive(:app_installed?).with(ipa.bundle_identifier).and_return(true)
+      )
+
+      args = [executable, "uninstall", ipa.bundle_identifier, "-d", device.udid]
+      expect(idm).to(
+        receive(:run_shell_command).with(args, shell_options).and_return(hash)
+      )
+
+      expect(idm.uninstall_app(ipa)).to be == hash[:out]
+    end
+
+    it "raises an error when the uninstall fails" do
+      expect(idm).to(
+        receive(:app_installed?).with(app.bundle_identifier).and_return(true)
+      )
+
+      hash[:exit_status] = 1
+      args = [executable, "uninstall", app.bundle_identifier, "-d", device.udid]
+      expect(idm).to(
+        receive(:run_shell_command).with(args, shell_options).and_return(hash)
+      )
+
+      expect do
+        idm.uninstall_app(app)
+      end.to raise_error(RunLoop::PhysicalDevice::UninstallError,
+                         /Could not remove app from device/)
+    end
+  end
 end

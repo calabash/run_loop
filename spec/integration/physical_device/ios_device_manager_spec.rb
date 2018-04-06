@@ -43,11 +43,16 @@ describe RunLoop::PhysicalDevice::IOSDeviceManager do
                 end
               end
 
-              context "#install_app" do
-                it "installs the app or ipa on the device" do
+              context "install, uninstall, and is installed" do
+                it "can perform life cycle actions on #{device_str}" do
                   idm = RunLoop::PhysicalDevice::IOSDeviceManager.new(device)
                   actual = idm.install_app(ipa)
                   expect(actual[/Installed #{ipa.bundle_identifier}/]).to be_truthy
+
+                  expect(idm.app_installed?(ipa)).to be_truthy
+
+                  actual = idm.uninstall_app(ipa)
+                  expect(actual).to be == ""
                 end
               end
             end
