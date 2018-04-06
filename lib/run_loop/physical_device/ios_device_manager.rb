@@ -5,6 +5,11 @@ module RunLoop
     require "run_loop/physical_device/life_cycle"
     class IOSDeviceManager < RunLoop::PhysicalDevice::LifeCycle
 
+      require "run_loop/device_agent/frameworks"
+      require "run_loop/device_agent/ios_device_manager"
+
+      NOT_INSTALLED_EXIT_CODE = 2
+
       # Is the tool installed?
       def self.tool_is_installed?
         File.exist?(IOSDeviceManager.executable_path)
@@ -22,19 +27,52 @@ module RunLoop
         RunLoop::DeviceAgent::Frameworks.instance.install
       end
 
-      def app_installed?(bundle_id)
+      def raise_error_on_failure(error_klass, message, app, device, hash)
+        if hash[:exit_status] == 0
+          true
+        else
+          raise error_klass, %Q[
+          #{message}
+
+        app: #{app}
+     device: #{device}
+exit status: #{hash[:exit_status]}
+
+          #{hash[:out]}
+
+]
+        end
+      end
+
+      def app_installed?(app)
+        bundle_id = app
+        if is_ipa?(app) || is_app?(app)
+          bundle_id = app.bundle_identifier
+        end
+
         args = [
           IOSDeviceManager.executable_path,
-          "is_installed",
-          "-d", device.udid,
-          "-b", bundle_id
+          "is-installed",
+          bundle_id,
+          "-d", device.udid
         ]
 
         options = { :log_cmd => true }
         hash = run_shell_command(args, options)
 
-        # TODO: error reporting
-        hash[:exit_status] == 0
+        exit_status = hash[:exit_status]
+
+        if exit_status != 0 && exit_status != NOT_INSTALLED_EXIT_CODE
+          raise_error_on_failure(
+            RuntimeError,
+            "Encountered an error checking if app is installed on device",
+            app, device, hash
+          )
+        else
+          RunLoop::log_debug("Took #{hash[:seconds_elapsed]} seconds to check " +
+                               "app was installed")
+          hash[:exit_status] == 0
+        end
       end
 
       def install_app(app_or_ipa)
