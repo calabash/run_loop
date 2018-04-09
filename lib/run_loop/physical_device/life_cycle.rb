@@ -8,6 +8,9 @@ module RunLoop
     # Raised when uninstall fails.
     class UninstallError < RuntimeError; end
 
+    # Raised when clear app data fails
+    class ResetAppSandboxError < RuntimeError; end
+
     # Raised when tool cannot perform task.
     class NotImplementedError < StandardError; end
 
@@ -65,37 +68,31 @@ must be a physical device.]
 
       # Is the app installed?
       #
-      # @param [String] bundle_id The CFBundleIdentifier of an app.
+      # @param [RunLoop::Ipa, RunLoop::App, String] app an App, Ipa, or a bundle
+      #  identifier.
       # @return [Boolean] true or false
-      def app_installed?(bundle_id)
+      def app_installed?(app)
         abstract_method!
       end
 
       # Install the app or ipa.
       #
       # If the app is already installed, it will be reinstalled from disk;
-      # no version check is performed.
+      # no version check is performed.  This is a force reinstall.
       #
       # App data is never preserved.  If you want to preserve the app data,
       # call `ensure_newest_installed`.
       #
-      # Possible return values:
-      #
-      # * :reinstalled => app was installed, but app data was not preserved.
-      # * :installed => app was not installed.
-      #
-      # @param [RunLoop::Ipa, RunLoop::App] app_or_ipa The ipa to install.
-      #   The caller is responsible for validating the ipa for the device by
-      #   checking that the codesign and instruction set is correct.
+      # @param [RunLoop::Ipa, RunLoop::App] app The ipa to install.
       #
       # @raise [InstallError] If app was not installed.
       #
-      # @return [Symbol] A keyword describing the action that was performed.
-      def install_app(app_or_ipa)
+      # @return [Boolean] true or false
+      def install_app(app)
         abstract_method!
       end
 
-      # Uninstall the app with bundle_id.
+      # Uninstall the app.
       #
       # App data is never preserved.  If you want to install a new version of
       # an app and preserve app data (upgrade testing), call
@@ -103,16 +100,12 @@ must be a physical device.]
       #
       # Possible return values:
       #
-      # * :nothing => app was not installed
-      # * :uninstall => app was uninstalled
-      #
-      # @param [String] bundle_id The CFBundleIdentifier of an app.
+      # @param [RunLoop::Ipa, RunLoop::App] app the App or Ipa
       #
       # @raise [UninstallError] If the app cannot be uninstalled, usually
       #   because it is a system app.
-      #
-      # @return [Symbol] A keyword that describes what action was performed.
-      def uninstall_app(bundle_id)
+      # @return [String] Output from the shell command
+      def uninstall_app(app)
         abstract_method!
       end
 
@@ -124,26 +117,15 @@ must be a physical device.]
       # the CFBundleShortVersionString.  If either are different, then the
       # app should be reinstalled.
       #
-      # If possible, the app data should be preserved across reinstallation.
+      # If possible, the app data should be preserved across re-installation.
       #
-      # Possible return values:
-      #
-      # * :nothing => app was already installed and versions matched.
-      # * :upgraded => app was stale; newer version from disk was installed and
-      #                app data was preserved.
-      # * :reinstalled => app was stale; newer version from disk was installed,
-      #                   but app data was not preserved.
-      # * :installed => app was not installed.
-      #
-      # @param [RunLoop::Ipa, RunLoop::App] app_or_ipa The ipa to install.
-      #   The caller is responsible for validating the ipa for the device by
-      #   checking that the codesign and instruction set is correct.
+      # @param [RunLoop::Ipa, RunLoop::App] app The App or Ipa to install.
       #
       # @raise [InstallError] If the app could not be installed.
       # @raise [UninstallError] If the app could not be uninstalled.
       #
-      # @return [Symbol] A keyword that describes the action that was taken.
-      def ensure_newest_installed(app_or_ipa)
+      # @return [String] Output from the shell command
+      def ensure_newest_installed(app)
         abstract_method!
       end
 
@@ -153,12 +135,10 @@ must be a physical device.]
       # the CFBundleShortVersionString. If either are different, then this
       # method returns false.
       #
-      # @param [RunLoop::Ipa, RunLoop::App] app_or_ipa The ipa to install.
-      #   The caller is responsible for validating the ipa for the device by
-      #   checking that the codesign and instruction set is correct.
+      # @param [RunLoop::Ipa, RunLoop::App] app The Ipa or App to install.
       #
       # @raise [RuntimeError] If app is not already installed.
-      def installed_app_same_as?(app_or_ipa)
+      def installed_app_same_as?(app)
         abstract_method!
       end
 
@@ -176,11 +156,11 @@ must be a physical device.]
       #
       # Does not clear Keychain.  Use the Calabash iOS Keychain API.
       #
-      # @param [String] bundle_id The CFBundleIdentifier of an app.
+      # @param [RunLoop::Ipa, RunLoop::App] app The App or Ipa
       #
       # @raise [RunLoop::PhysicalDevice::NotImplementedError] If this tool
-      #   cannot reset the app sandbox without unintalling the app.
-      def reset_app_sandbox(bundle_id)
+      #   cannot reset the app sandbox without uninstalling the app.
+      def reset_app_sandbox(app)
         abstract_method!
       end
 
@@ -190,7 +170,9 @@ must be a physical device.]
       end
 
       # Is the app or ipa compatible with the architecture of the device?
-      def app_has_compatible_architecture?(app_or_ipa)
+      #
+      # @param [RunLoop::Ipa, RunLoop::App] app The App or Ipa
+      def app_has_compatible_architecture?(app)
         abstract_method!
       end
 
@@ -199,7 +181,7 @@ must be a physical device.]
         abstract_method!
       end
 
-      # Return false if the device is an iPad.
+      # Return true if the device is an iPad.
       def ipad?
         abstract_method!
       end
@@ -209,7 +191,7 @@ must be a physical device.]
         abstract_method!
       end
 
-      # Sideload data into the app's sandbox.
+      # Side-load data into the app's sandbox.
       #
       # These directories exist in the application sandbox.
       #
