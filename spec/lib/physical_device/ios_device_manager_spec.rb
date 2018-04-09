@@ -287,4 +287,10 @@ describe RunLoop::PhysicalDevice::IOSDeviceManager do
                          /Could not remove app from device/)
     end
   end
+
+  context "#can_clear_app_data?" do
+    it "returns true" do
+      expect(idm.can_reset_app_sandbox?).to be_truthy
+    end
+  end
 end

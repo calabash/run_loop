@@ -43,7 +43,7 @@ describe RunLoop::PhysicalDevice::IOSDeviceManager do
                 end
               end
 
-              context "install, uninstall, and is installed" do
+              context "install, is installed, clear app data, and uninstall" do
                 it "can perform life cycle actions on #{device_str}" do
                   idm = RunLoop::PhysicalDevice::IOSDeviceManager.new(device)
                   actual = idm.install_app(ipa)
@@ -51,8 +51,9 @@ describe RunLoop::PhysicalDevice::IOSDeviceManager do
 
                   expect(idm.app_installed?(ipa)).to be_truthy
 
-                  actual = idm.uninstall_app(ipa)
-                  expect(actual).to be == ""
+                  expect(idm.reset_app_sandbox(ipa)).to be_truthy
+
+                  expect(idm.uninstall_app(ipa)).to be_truthy
                 end
               end
             end

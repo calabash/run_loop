@@ -5,6 +5,8 @@ module RunLoop
     require "run_loop/physical_device/life_cycle"
     class IOSDeviceManager < RunLoop::PhysicalDevice::LifeCycle
 
+      require "fileutils"
+      require "run_loop/dot_dir"
       require "run_loop/device_agent/frameworks"
       require "run_loop/device_agent/ios_device_manager"
 
@@ -111,11 +113,27 @@ exit status: #{hash[:exit_status]}
         hash[:out]
       end
 
+      def can_reset_app_sandbox?
+        true
       end
 
-      def uninstall_app(bundle_id)
-        return true if !app_installed?(bundle_id)
+      def reset_app_sandbox(app_or_ipa)
+        args = [IOSDeviceManager.executable_path,
+                "clear-app-data",
+                app_or_ipa.path,
+                device.udid]
 
+        options = { :log_cmd => true }
+        hash = run_shell_command(args, options)
+
+        raise_error_on_failure(
+          ResetAppSandboxError,
+          "Could not clear app data",
+          app_or_ipa, device, hash
+        )
+
+        hash[:out]
+      end
 
 =begin
 Private Methods
