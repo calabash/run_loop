@@ -39,7 +39,7 @@ into a valid version, e.g. 1.2.3 or 1.2.3.pre10
   s.summary     = %q{The bridge between Calabash iOS and Xcode command-line
 tools like instruments and simctl.}
   s.files = ruby_files + java_scripts + bash_scripts + plists + device_agent +
-  ["LICENSE"] + vendor_licenses
+  ["LICENSE", "ThirdPartyNotices.txt"] + vendor_licenses
   s.require_paths = ['lib']
   s.licenses    = ['MIT']
   s.executables = 'run-loop'
