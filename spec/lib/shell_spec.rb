@@ -104,6 +104,18 @@ describe RunLoop::Shell do
         expect(hash[:seconds_elapsed]).to be_truthy
       end
     end
+
+    it "responds to :environment option" do
+      hash = object.run_shell_command(["grep", "responds to :environment",
+                                       __FILE__])
+      expect(hash[:out][/responds to :environment/]).to be_truthy
+
+      environment = {"GREP_OPTIONS" => "-v"}
+      hash = object.run_shell_command(["grep", "responds to :environment",
+                                       __FILE__],
+                                      {environment: environment})
+      expect(hash[:out][/responds to :environment/]).to be_falsey
+    end
   end
 
   context "#timeout_exceeded?" do

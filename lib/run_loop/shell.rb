@@ -65,8 +65,12 @@ IO.popen requires all arguments to be Strings.
       hash = {}
       shell_start_time = Time.now
 
+      environment = options.fetch(:environment, {})
+
       begin
-        command_output = CommandRunner.run(args, timeout: timeout)
+        command_output = CommandRunner.run(args,
+                                           timeout: timeout,
+                                           environment: environment)
 
         out = ensure_command_output_utf8(command_output[:out], cmd)
         process_status = command_output[:status]
