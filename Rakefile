@@ -130,15 +130,19 @@ To specify a non-standard location for these repositories, use:
   end
 
   def device_agent
-    path = ENV["DEVICE_AGENT"] || expect_path_to_repo("DeviceAgent.iOS")
-    log_info "Using DEVICEAGENT_PATH=#{path}"
-    path
+    @device_agent_path ||= lambda do
+      path = ENV["DEVICE_AGENT"] || expect_path_to_repo("DeviceAgent.iOS")
+      log_info "Using DEVICEAGENT_PATH=#{path}"
+      path
+    end.call
   end
 
   def ios_device_manager
-    path = ENV["IOS_DEVICE_MANAGER"] || expect_path_to_repo("iOSDeviceManager")
-    log_info "Using iOSDeviceManager=#{path}"
-    path
+    @ios_device_manager_path ||= lambda do
+      path = ENV["IOS_DEVICE_MANAGER"] || expect_path_to_repo("iOSDeviceManager")
+      log_info "Using iOSDeviceManager=#{path}"
+      @ios_device_manager_path = path
+    end.call
   end
 
   def ditto(source, target)
@@ -153,6 +157,7 @@ source = #{source}
 target = #{target}
 ]
     else
+      log_info "Installed #{source} to #{target}"
     end
   end
 
@@ -168,6 +173,8 @@ target = #{target}
 source = #{source}
 target = #{target}
       ]
+    else
+      log_info "Installed #{source} to #{target}"
     end
   end
 
@@ -181,7 +188,7 @@ target = #{target}
       raise %Q[Could not unzip:
 source = #{source}
 target = #{target}
-      ]
+]
     end
   end
 
@@ -259,26 +266,42 @@ Failed to create the codesigning keychain:
 
     create_calabash_keychain
 
-    env = {"DEVICEAGENT_PATH" => device_agent}
-
     Dir.chdir(ios_device_manager) do
-      result = system(env, "make", "dependencies")
+      result = system("make", "build")
       if !result
-        raise "Could not build DeviceAgent dependencies."
+        raise "Could not build iOSDeviceManager"
       end
 
-      banner("Installing to run_loop")
+      banner("Installing iOSDeviceManager to run_loop")
 
-      Dir.chdir(File.join("Distribution", "dependencies")) do
-        ditto(File.join("bin", "iOSDeviceManager"), bin)
-        log_info("Installed #{bin}")
-        ditto_zip("Frameworks", frameworks_zip)
-        log_info("Installed #{frameworks_zip}")
-        ditto_zip(File.join("app", "DeviceAgent-Runner.app"), app_zip)
-        log_info("Installed #{app_zip}")
-        ditto_zip(File.join("ipa", "DeviceAgent-Runner.app"), ipa_zip)
-        log_info("Installed #{ipa_zip}")
+      ditto(File.join("Products", "iOSDeviceManager"), bin)
+      ditto(File.join(".", "LICENSE"),
+            File.expand_path(File.join(bin, "..", "iOSDeviceManager.LICENSE")))
+      ditto_zip("Frameworks", frameworks_zip)
+    end
+
+    Dir.chdir(device_agent) do
+      result = system("make", "ipa-agent")
+      if !result
+        raise "Could not build DeviceAgent-runner.app for physical devices"
       end
+
+      result = system("make", "app-agent")
+      if !result
+        raise "Could not build DeviceAgent-runner.app for iOS Simulators"
+      end
+
+      banner("Installing DeviceAgent to run_loop")
+
+      ditto_zip(
+        File.join("Products", "app", "DeviceAgent", "DeviceAgent-Runner.app"),
+        app_zip
+      )
+
+      ditto_zip(
+        File.join("Products", "ipa", "DeviceAgent", "DeviceAgent-Runner.app"),
+        ipa_zip
+      )
     end
   end
 

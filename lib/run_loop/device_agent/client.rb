@@ -125,6 +125,15 @@ module RunLoop
           core_sim.install
         end
 
+        if !RunLoop::Environment.xtc?
+          if device.physical_device? && app
+            if reset_options
+              idm = RunLoop::PhysicalDevice::IOSDeviceManager.new(device)
+              idm.reset_app_sandbox(app)
+            end
+          end
+        end
+
         cbx_launcher = Client.detect_cbx_launcher(merged_options, device)
 
         code_sign_identity = options[:code_sign_identity]
