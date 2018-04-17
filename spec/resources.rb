@@ -515,15 +515,11 @@ class Resources
     # udid.
     devices = instruments.physical_devices
     if idevice_id_available?
-      white_list = device_ids_from_idevice_id
-      devices.select do |device|
-        white_list.include?(device.udid) &&
-          # Ignore duplicates; usually means the device is linked via wifi
-          # and usb
-          white_list.count(device.udid) == 1 &&
-          # Instruments will return all connected devices, even those not
-          # compatible with the active Xcode
-          device.compatible_with_xcode_version?(xcode_version)
+      white_list = `#{idevice_id_bin_path} -l`.strip.split("\n")
+      devices.select do | device |
+        [white_list.include?(device.udid),
+         white_list.count(device.udid) == 1,
+         device.compatible_with_xcode_version?(instruments.xcode.version)].all?
       end
     else
       devices
