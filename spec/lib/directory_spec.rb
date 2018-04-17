@@ -81,7 +81,7 @@ describe RunLoop::Directory do
         options = { :handle_errors_by => :logging }
 
         error = RuntimeError.new("My runtime error")
-        expect(File).to receive(:read).with(path).and_raise error
+        expect(File).to receive(:read).with(path, {mode: "rb"}).and_raise error
 
         out = Kernel.capture_stdout do
           RunLoop::Directory.directory_digest(tmp_dir, options)
@@ -99,7 +99,7 @@ describe RunLoop::Directory do
         options = { :handle_errors_by => :ignoring }
 
         error = RuntimeError.new("My runtime error")
-        expect(File).to receive(:read).with(path).and_raise error
+        expect(File).to receive(:read).with(path, {mode: "rb"}).and_raise error
 
         out = Kernel.capture_stdout do
           RunLoop::Directory.directory_digest(tmp_dir, options)
@@ -112,7 +112,7 @@ describe RunLoop::Directory do
         options = { :handle_errors_by => :raising }
 
         error = RuntimeError.new("My runtime error")
-        expect(File).to receive(:read).with(path).and_raise error
+        expect(File).to receive(:read).with(path, {mode: "rb"}).and_raise error
 
         expect do
           RunLoop::Directory.directory_digest(tmp_dir, options)
@@ -121,7 +121,7 @@ describe RunLoop::Directory do
 
       it "the default behavior is to raise" do
         error = RuntimeError.new("My runtime error")
-        expect(File).to receive(:read).with(path).and_raise error
+        expect(File).to receive(:read).with(path, {mode: "rb"}).and_raise error
 
         expect do
           RunLoop::Directory.directory_digest(tmp_dir)

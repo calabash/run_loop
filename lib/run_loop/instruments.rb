@@ -218,8 +218,12 @@ module RunLoop
           udid = line[DEVICE_UDID_REGEX, 0]
           if udid
             version = line[VERSION_REGEX, 0]
-            name = line.split('(').first.strip
-            RunLoop::Device.new(name, version, udid)
+            if version
+              name = line.split('(').first.strip
+              if name
+                RunLoop::Device.new(name, version, udid)
+              end
+            end
           else
             nil
           end

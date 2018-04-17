@@ -228,6 +228,32 @@ version: #{version}
       !physical_device?
     end
 
+    # Is the iOS version installed on this device compatible with an Xcode
+    # version?
+    def compatible_with_xcode_version?(xcode_version)
+      ios_version = version
+
+      if ios_version.major < (xcode_version.major + 2)
+        if physical_device?
+          return true
+        else
+          # iOS 8 simulators are available in Xcode 9
+          # iOS 7 simulators are not available in Xcode 9
+          if ios_version.major <= (xcode_version.major - 2)
+            return false
+          else
+            return true
+          end
+        end
+      end
+
+      if ios_version.major == (xcode_version.major + 2)
+        return ios_version.minor <= xcode_version.minor
+      end
+
+      false
+    end
+
     # Return the instruction set for this device.
     #
     # **Simulator**

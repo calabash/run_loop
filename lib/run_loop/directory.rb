@@ -52,7 +52,7 @@ found '#{handle_errors_by}'
         raise ArgumentError, "Expected '#{path}' to be a directory"
       end
 
-      entries = self.recursive_glob_for_entries(path)
+      entries = self.recursive_glob_for_entries(path).sort
 
       if entries.empty?
         raise ArgumentError, "Expected a non-empty dir at '#{path}' found '#{entries}'"
@@ -60,11 +60,16 @@ found '#{handle_errors_by}'
 
       debug = RunLoop::Environment.debug?
 
-      sha = OpenSSL::Digest::SHA256.new
-      entries.each do |file|
-        unless self.skip_file?(file, 'SHA1', debug)
+      file_shas = []
+      cumulative = OpenSSL::Digest::SHA256.new
+      entries.each do |path|
+        if !self.skip_file?(path, "SHA256", debug)
           begin
-            sha << File.read(file)
+            file_sha = OpenSSL::Digest::SHA256.new
+            contents = File.read(path, {mode: "rb"})
+            file_sha << contents
+            cumulative << contents
+            file_shas << [file_sha.hexdigest]
           rescue => e
             case handle_errors_by
             when :logging
@@ -75,7 +80,7 @@ found '#{handle_errors_by}'
 
 while trying to find the SHA of this file:
 
-         #{file}
+         #{path}
 
 This is not a fatal error; it can be ignored.
 }
@@ -90,7 +95,13 @@ This is not a fatal error; it can be ignored.
           end
         end
       end
-      sha.hexdigest
+      digest_of_digests = OpenSSL::Digest::SHA256.new
+      digest_of_digests << file_shas.join("\n")
+      # We have at least one example where the cumulative digest has an
+      # unexpected value when computing the digest of an installed .app on an
+      # iOS Simulator.  I want return the cumulative.hexdigest in case there is
+      # a client (end user) who is using this method.
+      return digest_of_digests.hexdigest, cumulative.hexdigest
     end
 
     def self.size(path, format)
