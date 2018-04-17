@@ -1,5 +1,21 @@
 ## Change Log
 
+### 2.7.0
+
+This release contains DeviceAgent 1.2.4 and iOSDeviceManager 3.1.0.
+
+* Dir#digest: change how cumulative digest is computed #683
+* Shell#run_shell_command responds to :environment option #682
+* iOSDeviceManager partially implements PhysicalDevice::LifeCycle interface #681
+* Add support for Xcode 9.4 #680
+
+#### iOSDeviceManager 3.1.0
+
+* Fixed is-installed command simulator bug #206
+* Add clear-app-data and download-xcappdata commands #203
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.1.0
+
 ### 2.6.6
 
 This release contains DeviceAgent 1.2.4 and iOSDeviceManager 3.0.0.
