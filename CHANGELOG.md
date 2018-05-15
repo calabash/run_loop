@@ -1,5 +1,26 @@
 ## Change Log
 
+### 2.7.1
+
+Built with Xcode 9.4 beta 2
+
+#### DeviceAgent 1.2.4
+
+* Server: add Apple Music en and ru alerts #277
+
+Built from the /develop branch:
+
+* https://github.com/calabash/DeviceAgent.iOS/commit/e729d78793d5a206d81013644346c9f33bab1944
+
+#### iOSDeviceManager 3.1.0
+
+* Frameworks: update frameworks #210
+* Commands: add erase simulator command #209
+
+Built from the /develop branch:
+
+* https://github.com/calabash/iOSDeviceManager/commit/1e34858496ad693a21e3d99bfc3b064e6b4d21cf
+
 ### 2.7.0
 
 This release contains DeviceAgent 1.2.4 and iOSDeviceManager 3.1.0.
