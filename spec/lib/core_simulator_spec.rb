@@ -1311,6 +1311,12 @@ describe RunLoop::CoreSimulator do
 
       Resources.shared.alt_xcode_install_paths.each do |path|
         it "#{path}" do
+          # On jenkins machine we have macOS 10.12.6 installed
+          # Xcode >= 9.3 requires at least macOS 10.13
+          # so we skip these tests for now
+          if !ENV["JENKINS_HOME"].nil? && !path[/9\.[3-9]/].nil?
+            skip "Can't test against Xcode >= 9.3 on CI machine with macOS 10.12.6"
+          end
           Resources.shared.with_developer_dir(path) do
             path = core_sim.send(:sim_app_path)
             expect(path).not_to be == nil
