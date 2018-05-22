@@ -6,7 +6,7 @@ source bin/log.sh
 
 function ensure_valid_core_sim_service {
   info "Ensuring there is a valid CoreSimulatorService"
-	for try in {1..4}; do
+  for try in {1..4}; do
     local valid=$(valid_core_sim_service)
     if [ "${valid}" = "false" ]; then
       info "Trying again to ensure valid CoreSimulatorService"
@@ -15,7 +15,7 @@ function ensure_valid_core_sim_service {
       info "CoreSimulatorService is valid"
       break
     fi
-	done
+  done
 }
 
 function valid_core_sim_service {
