@@ -424,6 +424,9 @@ class RunLoop::CoreSimulator
             '-CurrentDeviceUDID', device.udid,
             "-ConnectHardwareKeyboard", "0",
             "-DeviceBootTimeout", "120",
+            # Yes, this is the argument even though it is not spelled correctly
+            "-DetatchOnAppQuit", "0",
+            "-DetachOnWindowClose", "0",
             "LAUNCHED_BY_RUN_LOOP"]
 
     RunLoop.log_debug("Launching #{device} with:")
