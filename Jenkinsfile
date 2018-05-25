@@ -50,7 +50,7 @@ pipeline {
             sh 'scripts/ci/jenkins/simctl.sh'
           }
         }
-        
+
         stage('bundle update') {
           steps {
             sh 'rbenv exec bundle update'
