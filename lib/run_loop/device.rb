@@ -392,6 +392,7 @@ version: #{version}
         RunLoop.log_debug("Waited for #{elapsed} seconds for simulator to stabilize")
       else
         RunLoop.log_debug("Timed out after #{timeout} seconds waiting for simulator to stabilize")
+        RunLoop.log_debug("These simulator processes did not start: #{required.join(",")}")
       end
     end
 
@@ -613,11 +614,17 @@ Could not update the Simulator languages.
 
     # @!visibility private
     def simulator_required_child_processes
+      # required: ["SimulatorBridge", "medialibraryd"]
       @simulator_required_child_processes ||= begin
-        required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
+        if xcode.version_gte_83? && version.major > 10
+          required = ["backboardd", "installd", "SpringBoard", "suggestd"]
+        else
+          required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
+        end
+
         if xcode.version_gte_90?
           required << "filecoordinationd"
-        elsif xcode.version_gte_8? && version.major > 8
+        elsif xcode.version_gte_8? && (version.major > 8 && version.major < 11)
           required << "medialibraryd"
         end
 
