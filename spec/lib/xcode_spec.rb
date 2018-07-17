@@ -124,7 +124,7 @@ Build version 8W132p
     end
 
     it "false" do
-      expect(xcode).to receive(:version).and_return xcode.v10
+      expect(xcode).to receive(:version).and_return xcode.v94
 
       expect(xcode.version_gte_10?).to be_falsey
     end
