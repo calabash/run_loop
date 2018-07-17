@@ -122,7 +122,13 @@ class RunLoop::CoreSimulator
               ["pkd", false],
               ["KeychainSyncingOverIDSProxy", false],
               ["CloudKeychainProxy", false],
-              ["aslmanager", false]
+              ["aslmanager", false],
+
+              # Processes from Xcode 10
+              ["diagnosticd", false],
+              ["syslogd", false],
+              ["mobiletimerd", false],
+              ["carkitd", false]
         ]
 
   # @!visibility private
