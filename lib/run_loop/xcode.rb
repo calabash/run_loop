@@ -442,7 +442,7 @@ $ man xcode-select
 
       string = key.to_s
       string[0] = ''
-      version_string = string.split(/(?!^)/).join('.')
+      version_string = string.split(/^(10)*|(?!^)/).reject(&:empty?).join('.')
       version = RunLoop::Version.new(version_string)
       xcode_versions[key] = version
       version
