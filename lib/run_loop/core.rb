@@ -319,46 +319,20 @@ Logfile: #{log_file}
     # @param [RunLoop::Xcode] xcode Used to detect the current xcode
     #  version.
     def self.default_simulator(xcode=RunLoop::Xcode.new)
+      version = xcode.version
+      xcode_major = version.major
+      xcode_minor = version.minor
+      major = xcode_major + 2
+      minor = xcode_minor
 
-      if xcode.version_gte_10?
-        "iPhone 8 (12.0)"
-      elsif xcode.version_gte_94?
-        "iPhone 8 (11.4)"
-      elsif xcode.version_gte_93?
-        "iPhone 8 (11.3)"
-      elsif xcode.version_gte_92?
-        "iPhone 8 (11.2)"
-      elsif xcode.version_gte_91?
-        "iPhone 8 (11.1)"
-      elsif xcode.version_gte_90?
-        "iPhone 8 (11.0)"
-      elsif xcode.version_gte_83?
-        "iPhone 7 (10.3)"
-      elsif xcode.version_gte_82?
-        "iPhone 7 (10.2)"
-      elsif xcode.version_gte_81?
-        "iPhone 7 (10.1)"
-      elsif xcode.version_gte_8?
-        "iPhone 7 (10.0)"
-      elsif xcode.version_gte_73?
-        "iPhone 6s (9.3)"
-      elsif xcode.version_gte_72?
-        "iPhone 6s (9.2)"
-      elsif xcode.version_gte_71?
-        "iPhone 6s (9.1)"
-      elsif xcode.version_gte_7?
-        "iPhone 5s (9.0)"
-      elsif xcode.version_gte_64?
-        "iPhone 5s (8.4 Simulator)"
-      elsif xcode.version_gte_63?
-        "iPhone 5s (8.3 Simulator)"
-      elsif xcode.version_gte_62?
-        "iPhone 5s (8.2 Simulator)"
-      elsif xcode.version_gte_61?
-        "iPhone 5s (8.1 Simulator)"
+      # Early major Xcode beta releases do not have new hardware model numbers
+      if xcode.beta? && xcode_major == 10
+        model = xcode_major - 2
       else
-        "iPhone 5s (8.0 Simulator)"
+        model = xcode_major - 1
       end
+
+      "iPhone #{model} (#{major}.#{minor})"
     end
 
     def self.create_uia_pipe(repl_path)
