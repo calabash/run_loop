@@ -101,17 +101,15 @@ module RunLoop
       default_options = {
         :simctl => RunLoop::Simctl.new,
         :instruments => RunLoop::Instruments.new,
-        :xcode => RunLoop::Xcode.new
       }
 
       merged_options = default_options.merge(options)
 
       instruments = merged_options[:instruments]
       simctl = merged_options[:simctl]
-      xcode = merged_options[:xcode]
 
       simulator = simctl.simulators.detect do |sim|
-        sim.instruments_identifier(xcode) == udid_or_name ||
+        sim.instruments_identifier == udid_or_name ||
               sim.udid == udid_or_name
       end
 
@@ -185,21 +183,16 @@ module RunLoop
     # @return [String] An instruments-ready device identifier.
     # @raise [RuntimeError] If trying to obtain a instruments-ready identifier
     #  for a simulator when Xcode < 6.
-    def instruments_identifier(xcode)
+    def instruments_identifier(xcode=nil)
+      if xcode
+        RunLoop.deprecated("3.0.0",
+                           "instruments_identifier no longer takes an argument")
+      end
       if physical_device?
         udid
       else
-        if version == RunLoop::Version.new('7.0.3')
-          version_part = version.to_s
-        else
-          version_part = "#{version.major}.#{version.minor}"
-        end
-
-        if xcode.version_gte_7?
-          "#{name} (#{version_part})"
-        else
-          "#{name} (#{version_part} Simulator)"
-        end
+        version_part = "#{version.major}.#{version.minor}"
+        "#{name} (#{version_part})"
       end
     end
 

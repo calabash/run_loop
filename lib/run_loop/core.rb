@@ -604,24 +604,20 @@ $ xcrun instruments -s templates
     # @todo sim_control argument is no longer necessary and can be removed.
     def self.simulator_target?(run_options, sim_control=nil)
       # TODO Enable deprecation warning
-      # RunLoop.deprecated("2.1.0", "No replacement")
+      RunLoop.deprecated("2.1.0", "No replacement")
       value = run_options[:device_target]
 
       # Match the behavior of udid_and_bundle_for_launcher.
       return true if value.nil? or value == ''
-
-      # 5.1 <= Xcode < 7.0
-      return true if value.downcase.include?('simulator')
 
       # Not a physical device.
       return false if value[DEVICE_UDID_REGEX, 0] != nil
 
       # Check for named simulators and Xcode >= 7.0 simulators.
       simctl = run_options[:sim_control] || run_options[:simctl] || RunLoop::Simctl.new
-      xcode = run_options[:xcode] || RunLoop::Xcode.new
       simulator = simctl.simulators.find do |sim|
         [
-          sim.instruments_identifier(xcode) == value,
+          sim.instruments_identifier == value,
           sim.udid == value,
           sim.name == value
         ].any?

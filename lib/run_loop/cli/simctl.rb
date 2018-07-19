@@ -250,7 +250,7 @@ module RunLoop
           if device_from_options.nil?
             default_name = RunLoop::Core.default_simulator
             device = simulators.find do |sim|
-              sim.instruments_identifier(xcode) == default_name
+              sim.instruments_identifier == default_name
             end
 
             if device.nil?
@@ -260,7 +260,7 @@ module RunLoop
           else
             device = simulators.find do |sim|
               sim.udid == device_from_options ||
-                    sim.instruments_identifier(xcode) == device_from_options
+                    sim.instruments_identifier == device_from_options
             end
 
             if device.nil?

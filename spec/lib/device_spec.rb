@@ -123,7 +123,7 @@ describe RunLoop::Device do
 
       it 'find by name' do
         expect(simctl).to receive(:simulators).and_return([device])
-        identifier = device.instruments_identifier(xcode)
+        identifier = device.instruments_identifier
 
         actual = RunLoop::Device.device_with_identifier(identifier, options)
         expect(actual).to be_a_kind_of RunLoop::Device
@@ -238,7 +238,7 @@ describe RunLoop::Device do
 
   describe '#instruments_identifier' do
 
-    subject { device.instruments_identifier(xcode) }
+    subject { device.instruments_identifier }
 
     let(:xcode) { RunLoop::Xcode.new }
 
