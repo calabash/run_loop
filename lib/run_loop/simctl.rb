@@ -377,24 +377,15 @@ $ bundle exec run-loop simctl manage-processes
       true
     end
 
-    # @!visibility private
-    #
-    # SimControl compatibility
-    def ensure_accessibility(device)
-      sim_control.ensure_accessibility(device)
-    end
-
-    # @!visibility private
-    #
-    # TODO Make this private again; exposed for SimControl compatibility.
-    def xcode
-      @xcode ||= RunLoop::Xcode.new
-    end
-
     private
 
     # @!visibility private
     attr_reader :ios_devices, :tvos_devices, :watchos_devices, :pbuddy
+
+    # @!visibility private
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
 
     # @!visibility private
     def pbuddy
@@ -563,13 +554,6 @@ is not an iOS, tvOS, or watchOS device"
     # @!visibility private
     def xcrun
       @xcrun ||= RunLoop::Xcrun.new
-    end
-
-    # @!visibility private
-    # Support for Xcode < 7 when trying to collect simulators.  Xcode 7 allows
-    # a --json option which is much easier to parse.
-    def sim_control
-      @sim_control ||= RunLoop::SimControl.new
     end
   end
 end

@@ -830,11 +830,6 @@ $ xcrun instruments -s templates
         core_sim.reset_app_sandbox
       end
 
-      # @todo fix accessibility_enabled? so we don't have to quit the sim
-      # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
-      # https://github.com/calabash/run_loop/issues/167
-      simctl.ensure_accessibility(device)
-
       # Launches the simulator if the app is not installed.
       core_sim.install
 

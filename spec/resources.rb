@@ -43,10 +43,6 @@ class Resources
     @instruments ||= RunLoop::Instruments.new
   end
 
-  def sim_control
-    @sim_control ||= RunLoop::SimControl.new
-  end
-
   def simctl
     @simctl ||= RunLoop::Simctl.new
   end

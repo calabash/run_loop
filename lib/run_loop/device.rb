@@ -94,10 +94,8 @@ module RunLoop
     # @return [RunLoop::Device] A device that matches `udid_or_name`.
     # @raise [ArgumentError] If no matching device can be found.
     def self.device_with_identifier(udid_or_name, options={})
-      if options.is_a?(RunLoop::SimControl)
-        raise ArgumentError, %q[Support for the 'sim_control' argument has been
-removed (1.5.0).  It has been replaced by an options hash with two keys:
-:simctl and :instruments. Please update your sources.))]
+      if options[:xcode]
+        RunLoop.log_warn("device_with_identifier no longer uses :xcode option")
       end
 
       default_options = {

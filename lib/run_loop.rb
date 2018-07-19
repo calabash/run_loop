@@ -34,7 +34,6 @@ require "run_loop/detect_aut/errors"
 require "run_loop/detect_aut/xamarin_studio"
 require "run_loop/detect_aut/xcode"
 require "run_loop/detect_aut/detect"
-require 'run_loop/sim_control'
 require 'run_loop/device'
 require 'run_loop/instruments'
 require 'run_loop/lipo'
