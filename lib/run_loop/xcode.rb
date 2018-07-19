@@ -30,8 +30,8 @@ module RunLoop
     # availability of features and paths to various items on the filesystem
     #
     # @return [RunLoop::Version] 10.0
-    def v10
-      fetch_version(:v10)
+    def v100
+      fetch_version(:v100)
     end
 
     # Returns a version instance for Xcode 9.4; used to check for the
@@ -106,99 +106,11 @@ module RunLoop
       fetch_version(:v80)
     end
 
-    # Returns a version instance for `Xcode 7.3`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 7.3
-    def v73
-      fetch_version(:v73)
-    end
-
-    # Returns a version instance for `Xcode 7.2`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 7.2
-    def v72
-      fetch_version(:v72)
-    end
-
-    # Returns a version instance for `Xcode 7.1`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 7.1
-    def v71
-      fetch_version(:v71)
-    end
-
-    # Returns a version instance for `Xcode 7.0`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 7.0
-    def v70
-      fetch_version(:v70)
-    end
-
-    # Returns a version instance for `Xcode 6.4`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 6.4
-    def v64
-      fetch_version(:v64)
-    end
-
-    # Returns a version instance for `Xcode 6.3`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 6.3
-    def v63
-      fetch_version(:v63)
-    end
-
-    # Returns a version instance for `Xcode 6.2`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 6.2
-    def v62
-      fetch_version(:v62)
-    end
-
-    # Returns a version instance for `Xcode 6.1`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 6.1
-    def v61
-      fetch_version(:v61)
-    end
-
-    # Returns a version instance for `Xcode 6.0`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 6.0
-    def v60
-      fetch_version(:v60)
-    end
-
-    # Returns a version instance for `Xcode 5.1`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 5.1
-    def v51
-      fetch_version(:v51)
-    end
-
-    # Returns a version instance for `Xcode 5.0`; used to check for the
-    # availability of features and paths to various items on the filesystem.
-    #
-    # @return [RunLoop::Version] 5.0
-    def v50
-      fetch_version(:v50)
-    end
-
     # Is the active Xcode version 10.0 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 10.0
-    def version_gte_10?
-      version >= v10
+    def version_gte_100?
+      version >= v100
     end
 
     # Is the active Xcode version 9.4 or above?
@@ -262,78 +174,6 @@ module RunLoop
     # @return [Boolean] `true` if the current Xcode version is >= 8.0
     def version_gte_8?
       version >= v80
-    end
-
-    # Is the active Xcode version 7.3 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 7.3
-    def version_gte_73?
-      version >= v73
-    end
-
-    # Is the active Xcode version 7.2 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 7.2
-    def version_gte_72?
-      version >= v72
-    end
-
-    # Is the active Xcode version 7.1 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 7.1
-    def version_gte_71?
-      version >= v71
-    end
-
-    # Is the active Xcode version 7 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 7.0
-    def version_gte_7?
-      version >= v70
-    end
-
-    # Is the active Xcode version 6.4 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.4
-    def version_gte_64?
-      version >= v64
-    end
-
-    # Is the active Xcode version 6.3 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.3
-    def version_gte_63?
-      version >= v63
-    end
-
-    # Is the active Xcode version 6.2 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.2
-    def version_gte_62?
-      version >= v62
-    end
-
-    # Is the active Xcode version 6.1 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.1
-    def version_gte_61?
-      version >= v61
-    end
-
-    # Is the active Xcode version 6 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 6.0
-    def version_gte_6?
-      version >= v60
-    end
-
-    # @deprecated 2.1.0
-    # Is the active Xcode version 5.1 or above?
-    #
-    # @return [Boolean] `true` if the current Xcode version is >= 5.1
-    def version_gte_51?
-      #RunLoop.deprecated("2.1.0", "No replacement")
-      version >= v51
     end
 
     # Returns the current version of Xcode.
@@ -450,19 +290,31 @@ $ man xcode-select
 
     def ensure_valid_version_key(key)
       string = key.to_s
-      if string.length != 3
-        raise "Expected version key '#{key}' to have exactly 3 characters"
+
+      if !string.start_with?("v")
+        raise "Expected version key to start with 'v'"
       end
 
-      unless string[/v\d{2}/, 0]
-        raise "Expected version key '#{key}' to match vXX pattern"
+      if string.start_with?("v10")
+        expected_length = 4
+        regex = /v\d{3}/
+      else
+        expected_length = 3
+        regex = /v\d{2}/
+      end
+
+      if string.length != expected_length
+        raise "Expected version key '#{key}' to be exactly #{expected_length} chars long"
+      end
+
+      if !string[regex]
+        raise "Expected version key '#{key}' to match this pattern: #{regex}"
       end
     end
 
     def xcode_select_path
-      Open3.popen3('xcode-select', '--print-path') do |_, stdout, _, _|
-        stdout.read.chomp
-      end
+      hash = run_shell_command(["xcode-select", "--print-path"], {log_cmd: true})
+      hash[:out].chomp
     end
   end
 end

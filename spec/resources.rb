@@ -35,10 +35,6 @@ class Resources
     @xcode ||= RunLoop::Xcode.new
   end
 
-  def core_simulator_env?
-    xcode.version_gte_6?
-  end
-
   def instruments
     @instruments ||= RunLoop::Instruments.new
   end

@@ -113,7 +113,6 @@ module RunLoop
     # @param [RunLoop::Device] device The device under test.
     # @return [String] The path to the .app bundle if it exists; nil otherwise.
     def app_container(device, bundle_id)
-      return nil if !xcode.version_gte_7?
       cmd = ["simctl", "get_app_container", device.udid, bundle_id]
       hash = shell_out_with_xcrun(cmd, DEFAULTS)
 
@@ -421,14 +420,6 @@ $ bundle exec run-loop simctl manage-processes
     # `@watchos_devices`.  Callers should check for existing devices to avoid
     # the overhead of calling `simctl list devices --json`.
     def fetch_devices!
-      if !xcode.version_gte_7?
-        return {
-          :ios => sim_control.simulators,
-          :tvos => [],
-          :watchos => []
-        }
-      end
-
       @ios_devices = []
       @tvos_devices = []
       @watchos_devices = []

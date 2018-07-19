@@ -609,13 +609,7 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   # @return [String] A String suitable for searching for a pid, quitting, or
   #  launching the current simulator.
   def sim_name
-    @sim_name ||= begin
-      if xcode.version_gte_7?
-        "Simulator"
-      else
-        "iOS Simulator"
-      end
-    end
+    @sim_name ||= "Simulator"
   end
 
   # @!visibility private

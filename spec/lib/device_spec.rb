@@ -247,35 +247,9 @@ describe RunLoop::Device do
       it { is_expected.to be == 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d' }
     end
 
-    describe 'simulator' do
-      describe 'Xcode > 7.0' do
-        before { expect(xcode).to receive(:version_gte_7?).and_return true }
-        context 'with Major.Minor SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', '14A15E35-C568-4775-9480-4FC0C2648236', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (8.1)' }
-        end
-
-        context 'with Major.Minor.Patch SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', '14A15E35-C568-4775-9480-4FC0C2648236', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (7.0.3)' }
-        end
-      end
-
-      describe '6.0 <= Xcode < 7.0' do
-        before do
-          expect(xcode).to receive(:version_gte_7?).and_return false
-        end
-
-        context 'with Major.Minor SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (8.1 Simulator)' }
-        end
-
-        context 'with Major.Minor.Patch SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (7.0.3 Simulator)' }
-        end
-      end
+     context 'simulator' do
+       let(:device) { RunLoop::Device.new('iPhone X', '10.2', '<udid>', 'Shutdown') }
+       it { is_expected.to be == "iPhone X (10.2)" }
     end
   end
 
