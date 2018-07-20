@@ -191,7 +191,12 @@ module RunLoop
       if physical_device?
         udid
       else
-        version_part = "#{version.major}.#{version.minor}"
+        if version.patch
+          version_part = "#{version.major}.#{version.minor}.#{version.patch}"
+        else
+          version_part = "#{version.major}.#{version.minor}"
+        end
+
         "#{name} (#{version_part})"
       end
     end

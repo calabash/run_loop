@@ -247,9 +247,14 @@ describe RunLoop::Device do
       it { is_expected.to be == 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d' }
     end
 
-     context 'simulator' do
-       let(:device) { RunLoop::Device.new('iPhone X', '10.2', '<udid>', 'Shutdown') }
-       it { is_expected.to be == "iPhone X (10.2)" }
+    context 'simulator with major.minor version' do
+      let(:device) { RunLoop::Device.new('iPhone X', '10.2', '<udid>', 'Shutdown') }
+      it { is_expected.to be == "iPhone X (10.2)" }
+    end
+
+    context 'simulator with major.minor.path version' do
+      let(:device) { RunLoop::Device.new('iPhone X', '10.2.1', '<udid>', 'Shutdown') }
+      it { is_expected.to be == "iPhone X (10.2.1)" }
     end
   end
 
