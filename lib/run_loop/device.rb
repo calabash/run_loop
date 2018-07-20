@@ -109,8 +109,8 @@ module RunLoop
       simctl = merged_options[:simctl]
 
       simulator = simctl.simulators.detect do |sim|
-        sim.instruments_identifier == udid_or_name ||
-              sim.udid == udid_or_name
+        sim.udid == udid_or_name ||
+          sim.simulator_instruments_identifier_same_as?(udid_or_name)
       end
 
       return simulator if !simulator.nil?
@@ -123,6 +123,22 @@ module RunLoop
       return physical_device if !physical_device.nil?
 
       raise ArgumentError, "Could not find a device with a UDID or name matching '#{udid_or_name}'"
+    end
+
+    # iPhone 8 10.3.1 is the same as iPhone 10.3 when comparing identifiers
+    def simulator_instruments_identifier_same_as?(identifier)
+      instruments_id = instruments_identifier
+      return true if instruments_id == identifier
+
+      model_part = identifier.split(" (").first
+      return false if model_part != name
+
+      version_part = RunLoop::Version.new(identifier[RunLoop::Regex::VERSION_REGEX])
+
+      return false if version.major != version_part.major
+      return false if version.minor != version_part.minor
+
+      true
     end
 
     # @!visibility private

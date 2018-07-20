@@ -70,6 +70,37 @@ describe RunLoop::Device do
     end
   end
 
+  context "#simulator_instruments_identifier_same_as?" do
+    let(:device) { RunLoop::Device.new("iPhone 8",
+                                       "11.0.1",
+                                       'CE5BA25E-9434-475A-8947-ECC3918E64E3') }
+
+    it "returns true if sim identifier is == arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone 8 (11.0.1)")
+      expect(actual).to be true
+    end
+
+    it "returns true if model number and the major.minor part of id is == arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone 8 (11.0)")
+      expect(actual).to be true
+    end
+
+    it "returns false if model number does not match arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone X (11.0.1)")
+      expect(actual).to be false
+    end
+
+    it "returns false if major part of id does not match arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone 8 (12.0.1)")
+      expect(actual).to be false
+    end
+
+    it "returns false if minor part of id does not match arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone 8 (12.1.1)")
+      expect(actual).to be false
+    end
+  end
+
   describe '.device_with_identifier' do
     let(:simctl) { RunLoop::Simctl.new }
     let(:instruments) { RunLoop::Instruments.new }
