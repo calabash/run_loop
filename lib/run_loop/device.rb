@@ -612,7 +612,9 @@ Could not update the Simulator languages.
     def simulator_required_child_processes
       # required: ["SimulatorBridge", "medialibraryd"]
       @simulator_required_child_processes ||= begin
-        if xcode.version_gte_83? && version.major > 10
+        if xcode.version_gte_100?
+          required = ["backboardd", "installd", "SpringBoard"]
+        elsif xcode.version_gte_83? && version.major > 10
           required = ["backboardd", "installd", "SpringBoard", "suggestd"]
         else
           required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
