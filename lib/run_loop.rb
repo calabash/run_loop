@@ -201,43 +201,6 @@ Please quit the Instruments.app and try again.)
     FileUtils.cp(pngs, dest) if pngs and pngs.length > 0
   end
 
-  # @!visibility private
-  #
-  # @deprecated since 2.1.2
-  def self.default_script_for_uia_strategy(uia_strategy)
-    self.deprecated("2.1.2", "Replaced by methods in RunLoop::Core")
-    case uia_strategy
-      when :preferences
-        Core.script_for_key(:run_loop_fast_uia)
-      when :host
-        Core.script_for_key(:run_loop_host)
-      when :shared_element
-        Core.script_for_key(:run_loop_shared_element)
-      else
-        Core.script_for_key(:run_loop_basic)
-    end
-  end
-
-  # @!visibility private
-  #
-  # @deprecated since 2.1.2
-  def self.validate_script(script)
-    self.deprecated("2.1.2", "Replaced by methods in RunLoop::Core")
-    if script.is_a?(String)
-      unless File.exist?(script)
-        raise "Unable to find file: #{script}"
-      end
-    elsif script.is_a?(Symbol)
-      script = Core.script_for_key(script)
-      unless script
-        raise "Unknown script for symbol: #{script}. Options: #{Core::SCRIPTS.keys.join(', ')}"
-      end
-    else
-      raise "Script must be a symbol or path: #{script}"
-    end
-    script
-  end
-
   def self.log_info(*args)
     RunLoop::Logging.log_info(*args)
   end

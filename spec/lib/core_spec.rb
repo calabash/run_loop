@@ -110,22 +110,6 @@ describe RunLoop::Core do
     end
   end
 
-  describe '.above_or_eql_version?' do
-    subject(:a) { RunLoop::Version.new('5.1.1') }
-    subject(:b) { RunLoop::Version.new('6.0') }
-    describe 'returns correct value when' do
-      it 'both args are RunLoop::Version' do
-        expect(RunLoop::Core.above_or_eql_version? a, b).to be false
-        expect(RunLoop::Core.above_or_eql_version? b, a).to be true
-      end
-
-      it 'both args are Strings' do
-        expect(RunLoop::Core.above_or_eql_version? a.to_s, b.to_s).to be false
-        expect(RunLoop::Core.above_or_eql_version? b.to_s, a.to_s).to be true
-      end
-    end
-  end
-
   describe '.log_run_loop_options' do
     let(:options) {
       {
