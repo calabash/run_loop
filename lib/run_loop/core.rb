@@ -319,46 +319,20 @@ Logfile: #{log_file}
     # @param [RunLoop::Xcode] xcode Used to detect the current xcode
     #  version.
     def self.default_simulator(xcode=RunLoop::Xcode.new)
+      version = xcode.version
+      xcode_major = version.major
+      xcode_minor = version.minor
+      major = xcode_major + 2
+      minor = xcode_minor
 
-      if xcode.version_gte_10?
-        "iPhone 8 (12.0)"
-      elsif xcode.version_gte_94?
-        "iPhone 8 (11.4)"
-      elsif xcode.version_gte_93?
-        "iPhone 8 (11.3)"
-      elsif xcode.version_gte_92?
-        "iPhone 8 (11.2)"
-      elsif xcode.version_gte_91?
-        "iPhone 8 (11.1)"
-      elsif xcode.version_gte_90?
-        "iPhone 8 (11.0)"
-      elsif xcode.version_gte_83?
-        "iPhone 7 (10.3)"
-      elsif xcode.version_gte_82?
-        "iPhone 7 (10.2)"
-      elsif xcode.version_gte_81?
-        "iPhone 7 (10.1)"
-      elsif xcode.version_gte_8?
-        "iPhone 7 (10.0)"
-      elsif xcode.version_gte_73?
-        "iPhone 6s (9.3)"
-      elsif xcode.version_gte_72?
-        "iPhone 6s (9.2)"
-      elsif xcode.version_gte_71?
-        "iPhone 6s (9.1)"
-      elsif xcode.version_gte_7?
-        "iPhone 5s (9.0)"
-      elsif xcode.version_gte_64?
-        "iPhone 5s (8.4 Simulator)"
-      elsif xcode.version_gte_63?
-        "iPhone 5s (8.3 Simulator)"
-      elsif xcode.version_gte_62?
-        "iPhone 5s (8.2 Simulator)"
-      elsif xcode.version_gte_61?
-        "iPhone 5s (8.1 Simulator)"
+      # Early major Xcode beta releases do not have new hardware model numbers
+      if xcode.beta? && xcode_major == 10
+        model = xcode_major - 2
       else
-        "iPhone 5s (8.0 Simulator)"
+        model = xcode_major - 1
       end
+
+      "iPhone #{model} (#{major}.#{minor})"
     end
 
     def self.create_uia_pipe(repl_path)
@@ -576,123 +550,8 @@ $ xcrun instruments -s templates
 ])
     end
 
-    # @deprecated 2.1.0
-    # Replaced with Device.detect_physical_device_on_usb
-    def self.detect_connected_device
-      begin
-        Timeout::timeout(1, RunLoop::TimeoutError) do
-          return `#{File.join(SCRIPTS_PATH, 'udidetect')}`.chomp
-        end
-      rescue RunLoop::TimeoutError => _
-        `killall udidetect &> /dev/null`
-      end
-      nil
-    end
-
-    # @deprecated 2.1.0
-    # @!visibility private
-    # Are we targeting a simulator?
-    #
-    # @note  The behavior of this method is different than the corresponding
-    #   method in Calabash::Cucumber::Launcher method.  If
-    #   `:device_target => {nil | ''}`, then the calabash-ios method returns
-    #   _false_.  I am basing run-loop's behavior off the behavior in
-    #   `self.udid_and_bundle_for_launcher`
-    #
-    # @see {Core::RunLoop.udid_and_bundle_for_launcher}
-    #
-    # @todo sim_control argument is no longer necessary and can be removed.
-    def self.simulator_target?(run_options, sim_control=nil)
-      # TODO Enable deprecation warning
-      # RunLoop.deprecated("2.1.0", "No replacement")
-      value = run_options[:device_target]
-
-      # Match the behavior of udid_and_bundle_for_launcher.
-      return true if value.nil? or value == ''
-
-      # 5.1 <= Xcode < 7.0
-      return true if value.downcase.include?('simulator')
-
-      # Not a physical device.
-      return false if value[DEVICE_UDID_REGEX, 0] != nil
-
-      # Check for named simulators and Xcode >= 7.0 simulators.
-      simctl = run_options[:sim_control] || run_options[:simctl] || RunLoop::Simctl.new
-      xcode = run_options[:xcode] || RunLoop::Xcode.new
-      simulator = simctl.simulators.find do |sim|
-        [
-          sim.instruments_identifier(xcode) == value,
-          sim.udid == value,
-          sim.name == value
-        ].any?
-      end
-      !simulator.nil?
-    end
-
-    # @!visibility private
-    # @deprecated 2.1.0
-    #
-    # Do not call this method.
-    def self.udid_and_bundle_for_launcher(device_target, options, simctl=RunLoop::Simctl.new)
-      RunLoop.deprecated("2.1.0", "No replacement")
-      xcode = RunLoop::Xcode.new
-
-      bundle_dir_or_bundle_id = options[:app] || RunLoop::Environment.bundle_id || RunLoop::Environment.path_to_app_bundle
-
-      unless bundle_dir_or_bundle_id
-        raise 'key :app or environment variable APP_BUNDLE_PATH, BUNDLE_ID or APP must be specified as path to app bundle (simulator) or bundle id (device)'
-      end
-
-      if device_target.nil? || device_target.empty? || device_target == 'simulator'
-        device_target = self.default_simulator(xcode)
-      end
-      udid = device_target
-
-      unless self.simulator_target?(options)
-        bundle_dir_or_bundle_id = options[:bundle_id] if options[:bundle_id]
-      end
-      return udid, bundle_dir_or_bundle_id
-    end
-
-    # @deprecated 1.0.5
-    def self.ensure_instruments_not_running!
-      RunLoop::Instruments.new.kill_instruments
-    end
-
     def self.instruments_running?
       RunLoop::Instruments.new.instruments_running?
-    end
-
-    # @deprecated 1.0.5
-    def self.instruments_pids
-      RunLoop::Instruments.new.instruments_pids
-    end
-
-    # @deprecated 1.0.0 replaced with Xctools#version
-    def self.xcode_version(xcode=RunLoop::Xcode.new)
-      xcode.version
-    end
-
-    # @deprecated since 1.0.0
-    # still used extensively in calabash-ios launcher
-    def self.above_or_eql_version?(target_version, xcode_version)
-      if target_version.is_a?(RunLoop::Version)
-        target = target_version
-      else
-        target = RunLoop::Version.new(target_version)
-      end
-
-      if xcode_version.is_a?(RunLoop::Version)
-        xcode = xcode_version
-      else
-        xcode = RunLoop::Version.new(xcode_version)
-      end
-      target >= xcode
-    end
-
-    # @deprecated 1.0.5
-    def self.pids_for_run_loop(run_loop, &block)
-      RunLoop::Instruments.new.instruments_pids(&block)
     end
 
     private
@@ -829,11 +688,6 @@ $ xcrun instruments -s templates
       if reset_options
         core_sim.reset_app_sandbox
       end
-
-      # @todo fix accessibility_enabled? so we don't have to quit the sim
-      # SimControl#accessibility_enabled? is always false during Core#prepare_simulator
-      # https://github.com/calabash/run_loop/issues/167
-      simctl.ensure_accessibility(device)
 
       # Launches the simulator if the app is not installed.
       core_sim.install

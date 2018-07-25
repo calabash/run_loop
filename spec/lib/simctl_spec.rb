@@ -36,7 +36,7 @@ describe RunLoop::Simctl do
       )
 
       actual = RunLoop::Simctl.valid_core_simulator_service?
-      expect(actual).to be == true
+      expect(actual).to be true
     end
 
     it "returns false if simctl help fails" do
@@ -46,7 +46,7 @@ describe RunLoop::Simctl do
       )
 
       actual = RunLoop::Simctl.valid_core_simulator_service?
-      expect(actual).to be == false
+      expect(actual).to be false
     end
 
     it "returns false if CoreSimulatorService is invalid" do
@@ -58,7 +58,7 @@ describe RunLoop::Simctl do
       )
 
       actual = RunLoop::Simctl.valid_core_simulator_service?
-      expect(actual).to be == false
+      expect(actual).to be false
     end
 
     it "returns false if simctl help raises a Shell error" do
@@ -67,7 +67,7 @@ describe RunLoop::Simctl do
       )
 
       actual = RunLoop::Simctl.valid_core_simulator_service?
-      expect(actual).to be == false
+      expect(actual).to be false
     end
 
     it "returns false if simctl help raises a Timeout error" do
@@ -76,7 +76,7 @@ describe RunLoop::Simctl do
       )
 
       actual = RunLoop::Simctl.valid_core_simulator_service?
-      expect(actual).to be == false
+      expect(actual).to be false
     end
   end
 
@@ -86,7 +86,7 @@ describe RunLoop::Simctl do
       expect(RunLoop::Simctl).to receive(:valid_core_simulator_service?).and_return(true)
 
       actual = RunLoop::Simctl.ensure_valid_core_simulator_service
-      expect(actual).to be == true
+      expect(actual).to be true
     end
 
     it "returns true after 4 tries" do
@@ -95,7 +95,7 @@ describe RunLoop::Simctl do
       )
 
       actual = RunLoop::Simctl.ensure_valid_core_simulator_service
-      expect(actual).to be == true
+      expect(actual).to be true
     end
 
     it "returns false after 4 tries" do
@@ -104,7 +104,7 @@ describe RunLoop::Simctl do
       )
 
       actual = RunLoop::Simctl.ensure_valid_core_simulator_service
-      expect(actual).to be == false
+      expect(actual).to be false
     end
   end
 
@@ -124,25 +124,6 @@ describe RunLoop::Simctl do
 
     before do
       allow(RunLoop::Simctl).to receive(:ensure_valid_core_simulator_service).and_return(true)
-    end
-
-    describe "Compatibility with SimControl" do
-
-      before do
-        allow(simctl).to receive(:sim_control).and_return(sim_control)
-      end
-
-      it "#ensure_accessibility" do
-        expect(sim_control).to receive(:ensure_accessibility).with(device).and_return(:true)
-
-        expect(simctl.ensure_accessibility(device)).to be == :true
-      end
-
-      it "#xcode is a public method" do
-        actual = simctl.xcode
-        expect(actual).to be_a_kind_of(RunLoop::Xcode)
-        expect(simctl.instance_variable_get(:@xcode)).to be == actual
-      end
     end
 
     describe "#simulators" do
@@ -176,31 +157,15 @@ describe RunLoop::Simctl do
         }
       end
 
-      before do
-        expect(simctl).to receive(:xcode).and_return(xcode)
+      it "app is installed" do
+        expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, defaults).and_return(hash)
+
+        expect(simctl.app_container(device, bundle_id)).to be == hash[:out].strip
       end
 
-      describe "Xcode >= 7" do
-        before do
-          expect(xcode).to receive(:version_gte_7?).and_return(true)
-        end
-
-        it "app is installed" do
-          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, defaults).and_return(hash)
-
-          expect(simctl.app_container(device, bundle_id)).to be == hash[:out].strip
-        end
-
-        it "app is not installed" do
-          hash[:exit_status] = 1
-          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, defaults).and_return(hash)
-          expect(simctl.app_container(device, bundle_id)).to be == nil
-        end
-      end
-
-      it "Xcode < 7" do
-        expect(xcode).to receive(:version_gte_7?).and_return(false)
-
+      it "app is not installed" do
+        hash[:exit_status] = 1
+        expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, defaults).and_return(hash)
         expect(simctl.app_container(device, bundle_id)).to be == nil
       end
     end
@@ -410,7 +375,6 @@ describe RunLoop::Simctl do
       end
     end
 
-
     describe "#fetch_devices!" do
       let(:cmd) { ["simctl", "list", "devices", "--json"]  }
       let(:hash) do
@@ -426,50 +390,33 @@ describe RunLoop::Simctl do
         allow(simctl).to receive(:xcode).and_return(xcode)
       end
 
-      describe "Xcode >= 7" do
-        before do
-          expect(xcode).to receive(:version_gte_7?).and_return(true)
-        end
+      it "non-zero exit status" do
+        hash[:exit_status] = 1
+        hash[:out] = "An error message"
+        expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
 
-        it "non-zero exit status" do
-          hash[:exit_status] = 1
-          hash[:out] = "An error message"
-          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
-
-          expect do
-            simctl.send(:fetch_devices!)
-          end.to raise_error RuntimeError, /simctl exited 1/
-        end
-
-        it "returns a hash of iOS, tvOS, and watchOS devices" do
-          # Clears existing values
-          simctl.instance_variable_set(:@ios_devices, [:ios])
-          simctl.instance_variable_set(:@tvos_devices, [:tvos])
-          simctl.instance_variable_set(:@watchos_devices, [:watchos])
-
-          hash[:out] = RunLoop::RSpec::Simctl::SIMCTL_DEVICE_JSON_XCODE7
-          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
-
-          actual = simctl.send(:fetch_devices!)
-          expect(actual[:ios].include?(:ios)).to be_falsey
-          expect(actual[:tvos].include?(:tvos)).to be_falsey
-          expect(actual[:watchos].include?(:watchos)).to be_falsey
-
-          expect(actual[:ios].count).to be == 79
-          expect(actual[:tvos].count).to be == 3
-          expect(actual[:watchos].count).to be == 8
-        end
+        expect do
+          simctl.send(:fetch_devices!)
+        end.to raise_error RuntimeError, /simctl exited 1/
       end
 
-      it "Xcode < 7" do
-        expect(xcode).to receive(:version_gte_7?).and_return(false)
-        expect(simctl).to receive(:sim_control).and_return(sim_control)
-        expect(sim_control).to receive(:simulators).and_return(["a", "b", "c"])
+      it "returns a hash of iOS, tvOS, and watchOS devices" do
+        # Clears existing values
+        simctl.instance_variable_set(:@ios_devices, [:ios])
+        simctl.instance_variable_set(:@tvos_devices, [:tvos])
+        simctl.instance_variable_set(:@watchos_devices, [:watchos])
+
+        hash[:out] = RunLoop::RSpec::Simctl::SIMCTL_DEVICE_JSON_XCODE7
+        expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
 
         actual = simctl.send(:fetch_devices!)
-        expect(actual[:ios]).to be == ["a", "b", "c"]
-        expect(actual[:tvos]).to be == []
-        expect(actual[:watchos]).to be == []
+        expect(actual[:ios].include?(:ios)).to be_falsey
+        expect(actual[:tvos].include?(:tvos)).to be_falsey
+        expect(actual[:watchos].include?(:watchos)).to be_falsey
+
+        expect(actual[:ios].count).to be == 79
+        expect(actual[:tvos].count).to be == 3
+        expect(actual[:watchos].count).to be == 8
       end
     end
 
@@ -487,12 +434,6 @@ describe RunLoop::Simctl do
       actual = simctl.send(:xcrun)
       expect(actual).to be_a_kind_of(RunLoop::Xcrun)
       expect(simctl.instance_variable_get(:@xcrun)).to be == actual
-    end
-
-    it "#sim_control" do
-      actual = simctl.send(:sim_control)
-      expect(actual).to be_a_kind_of(RunLoop::SimControl)
-      expect(simctl.instance_variable_get(:@sim_control)).to be == actual
     end
 
     describe "#json_to_hash" do

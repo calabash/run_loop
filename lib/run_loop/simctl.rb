@@ -113,7 +113,6 @@ module RunLoop
     # @param [RunLoop::Device] device The device under test.
     # @return [String] The path to the .app bundle if it exists; nil otherwise.
     def app_container(device, bundle_id)
-      return nil if !xcode.version_gte_7?
       cmd = ["simctl", "get_app_container", device.udid, bundle_id]
       hash = shell_out_with_xcrun(cmd, DEFAULTS)
 
@@ -377,24 +376,15 @@ $ bundle exec run-loop simctl manage-processes
       true
     end
 
-    # @!visibility private
-    #
-    # SimControl compatibility
-    def ensure_accessibility(device)
-      sim_control.ensure_accessibility(device)
-    end
-
-    # @!visibility private
-    #
-    # TODO Make this private again; exposed for SimControl compatibility.
-    def xcode
-      @xcode ||= RunLoop::Xcode.new
-    end
-
     private
 
     # @!visibility private
     attr_reader :ios_devices, :tvos_devices, :watchos_devices, :pbuddy
+
+    # @!visibility private
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
 
     # @!visibility private
     def pbuddy
@@ -430,14 +420,6 @@ $ bundle exec run-loop simctl manage-processes
     # `@watchos_devices`.  Callers should check for existing devices to avoid
     # the overhead of calling `simctl list devices --json`.
     def fetch_devices!
-      if !xcode.version_gte_7?
-        return {
-          :ios => sim_control.simulators,
-          :tvos => [],
-          :watchos => []
-        }
-      end
-
       @ios_devices = []
       @tvos_devices = []
       @watchos_devices = []
@@ -563,13 +545,6 @@ is not an iOS, tvOS, or watchOS device"
     # @!visibility private
     def xcrun
       @xcrun ||= RunLoop::Xcrun.new
-    end
-
-    # @!visibility private
-    # Support for Xcode < 7 when trying to collect simulators.  Xcode 7 allows
-    # a --json option which is much easier to parse.
-    def sim_control
-      @sim_control ||= RunLoop::SimControl.new
     end
   end
 end

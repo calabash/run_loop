@@ -35,16 +35,8 @@ class Resources
     @xcode ||= RunLoop::Xcode.new
   end
 
-  def core_simulator_env?
-    xcode.version_gte_6?
-  end
-
   def instruments
     @instruments ||= RunLoop::Instruments.new
-  end
-
-  def sim_control
-    @sim_control ||= RunLoop::SimControl.new
   end
 
   def simctl

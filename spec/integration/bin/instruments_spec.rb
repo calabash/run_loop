@@ -40,68 +40,6 @@ describe RunLoop::CLI::Instruments do
                                     {:exit_on_nonzero_status => false})).to be == 0
         end
       end
-
-      context "launch" do
-        it "can launch an application on a simulator" do
-          cmd =
-            [
-              'run-loop instruments launch',
-              "--app #{Resources.shared.cal_app_bundle_path}"
-            ].join(' ')
-
-
-          expect(Luffa.unix_command(cmd,  {:exit_on_nonzero_status => false})).to be == 0
-        end
-
-        describe 'launching different simulators' do
-          let(:instruments) { RunLoop::Instruments.new }
-          let(:xcode) { instruments.xcode }
-
-          it 'iOS >= 9' do
-
-            sampled = instruments.simulators.select do |device|
-              device.version >= RunLoop::Version.new('9.0')
-            end.sample
-
-            if sampled.nil?
-              Luffa.log_warn("Skipping test: no iOS Simulators >= 8.0 found")
-            else
-              simulator = sampled.instruments_identifier(xcode)
-              cmd =
-                [
-                  'run-loop instruments launch',
-                  "--app #{Resources.shared.cal_app_bundle_path}",
-                  "--device \"#{simulator}\""
-                ].join(' ')
-
-              expect(Luffa.unix_command(cmd,  {:exit_on_nonzero_status => false})).to be == 0
-            end
-          end
-
-          it '8.0 <= iOS < 9.0' do
-
-            sampled = instruments.simulators.select do |device|
-              device.version >= RunLoop::Version.new('8.0') &&
-                device.version < RunLoop::Version.new('9.0') &&
-                device.name[/Resizable/, 0].nil?
-            end.sample
-
-            if sampled.nil?
-              Luffa.log_warn("Skipping test: no 8.0 <= iOS Simulators < 9.0 found")
-            else
-              simulator = sampled.instruments_identifier(xcode)
-              cmd =
-                [
-                  'run-loop instruments launch',
-                  "--app #{Resources.shared.cal_app_bundle_path}",
-                  "--device \"#{simulator}\""
-                ].join(' ')
-
-              expect(Luffa.unix_command(cmd,  {:exit_on_nonzero_status => false})).to be == 0
-            end
-          end
-        end
-      end
     end
   end
 end
