@@ -3,7 +3,7 @@
 pipeline {
   agent { label 'master' }
   environment {
-    DEVELOPER_DIR = '/Xcode/9.2/Xcode.app/Contents/Developer'
+    DEVELOPER_DIR = '/Xcode/9.4.1/Xcode.app/Contents/Developer'
 
     SLACK_COLOR_DANGER  = '#E01563'
     SLACK_COLOR_INFO    = '#6ECADC'
@@ -15,6 +15,7 @@ pipeline {
     disableConcurrentBuilds()
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '10'))
+    timeout(time: 60, unit: 'MINUTES')
   }
   stages {
     stage('announce') {
@@ -68,7 +69,7 @@ pipeline {
       parallel {
         stage('integration') {
           steps {
-            sh 'scripts/ci/jenkins/test/integration.sh'
+            sh 'gtimeout --foreground --signal SIGKILL 30m scripts/ci/jenkins/test/integration.sh'
           }
         }
         stage('cli') {
