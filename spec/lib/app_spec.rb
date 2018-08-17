@@ -208,6 +208,19 @@ describe RunLoop::App do
     end
   end
 
+  context "#calabash_server_id" do
+    it "returns fingerprint of the embedded server" do
+      app = RunLoop::App.new(Resources.shared.cal_app_bundle_path)
+      actual = app.calabash_server_id
+      expect(actual[/[a-f0-9]{40}(-dirty)?/]).to be_truthy
+    end
+
+    it "returns nil if there is no embedded server" do
+      app = RunLoop::App.new(Resources.shared.app_bundle_path)
+      expect(app.calabash_server_id).to be == nil
+    end
+  end
+
   describe "#marketing_version" do
     let(:pbuddy) { RunLoop::PlistBuddy.new }
     let(:args) { ["CFBundleShortVersionString", app.info_plist_path] }

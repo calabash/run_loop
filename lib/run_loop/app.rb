@@ -129,6 +129,14 @@ Bundle must:
     end
 
     # @!visibility private
+    # Return the fingerprint of the linked server
+    def calabash_server_id
+      name = plist_buddy.plist_read("CFBundleExecutable", info_plist_path)
+      app_executable = File.join(self.path, name)
+      strings(app_executable).server_id
+    end
+
+    # @!visibility private
     def codesign_info
       RunLoop::Codesign.info(path)
     end
