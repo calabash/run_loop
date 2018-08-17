@@ -234,8 +234,13 @@ target = #{target}
 
   def create_calabash_keychain
     require "run_loop/environment"
-    path = File.join(RunLoop::Environment.user_home_directory,
-                     ".calabash", "calabash-codesign")
+    path = File.join("..", "calabash-codesign")
+
+    if !File.exist?(path)
+      path = File.join(RunLoop::Environment.user_home_directory,
+                       ".calabash", "calabash-codesign")
+    end
+
     if File.exist?(path)
       Dir.chdir(path) do
         args = ["apple/create-keychain.sh"]
