@@ -226,7 +226,7 @@ class Resources
 
   def xcode_install_paths
     @xcode_install_paths ||= begin
-      min_xcode_version = RunLoop::Version.new("8.3.3")
+      min_xcode_version = RunLoop::Version.new("9.4.1")
       Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
         xcode_version = path[VERSION_REGEX, 0]
 
@@ -241,7 +241,7 @@ class Resources
 
   def alt_xcode_install_paths
     @alt_xcode_install_paths ||= lambda {
-      min_xcode_version = RunLoop::Version.new("8.3.3")
+      min_xcode_version = RunLoop::Version.new("9.4.1")
       Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
         xcode_version = path[VERSION_REGEX, 0]
 
