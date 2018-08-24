@@ -207,6 +207,41 @@ $ bundle exec run-loop simctl manage-processes
       in_state
     end
 
+    def boot(device)
+      if simulator_state_as_int(device) == SIM_STATES["Booted"]
+        RunLoop.log_debug("Simulator is already shutdown")
+        true
+      else
+        cmd = ["simctl", "boot", device.udid]
+        hash = shell_out_with_xcrun(cmd, DEFAULTS)
+
+        exit_status = hash[:exit_status]
+        if exit_status != 0
+          if simulator_state_as_int(device) == SIM_STATES["Booted"]
+            RunLoop.log_debug("simctl boot called when state is 'Booted'; ignoring error")
+          else
+            raise RuntimeError,
+                  %Q[Could not boot the simulator:
+
+  command: xcrun #{cmd.join(" ")}
+simulator: #{device}
+
+#{hash[:out]}
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
+
+]
+          end
+        end
+        true
+      end
+    end
+
+
     # @!visibility private
     # Erases the simulator.
     #
