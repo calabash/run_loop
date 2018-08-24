@@ -241,6 +241,14 @@ $ bundle exec run-loop simctl manage-processes
       end
     end
 
+    # @!visibility private
+    def reboot(device)
+      shutdown(device)
+      wait_for_shutdown(device, DEFAULTS[:timeout], 1.0)
+      boot(device)
+      require "run_loop/core_simulator"
+      RunLoop::CoreSimulator.wait_for_simulator_state(device, "Booted")
+    end
 
     # @!visibility private
     # Erases the simulator.
@@ -269,7 +277,7 @@ $ bundle exec run-loop simctl manage-processes
   command: xcrun #{cmd.join(" ")}
 simulator: #{device}
 
-              #{hash[:out]}
+{hash[:out]}
 
 This usually means your CoreSimulator processes need to be restarted.
 
@@ -366,6 +374,17 @@ $ bundle exec run-loop simctl manage-processes
 
 ]
       end
+
+      app_container = app_container(device, app.bundle_identifier)
+      if app_container
+        RunLoop.log_debug("After install, app container exists")
+        RunLoop.log_debug("Rebooting the device")
+        reboot(device)
+        if app_container(device, app.bundle_identifier)
+          raise "simctl uninstall succeeded, but simctl says app is still installed"
+        end
+      end
+
       true
     end
 

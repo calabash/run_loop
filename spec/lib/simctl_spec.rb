@@ -342,17 +342,40 @@ describe RunLoop::Simctl do
       context "#uninstall" do
         let(:cmd) { ["simctl", "uninstall", device.udid, app.bundle_identifier] }
 
-        it "returns true if simctl uninstall completes with exit status 0" do
+        it "returns true if simctl uninstall completes and there is no app container" do
           expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:app_container).and_return(nil)
 
           expect(simctl.uninstall(device, app, 10))
         end
+
+        it "returns true if simctl uninstall completes and app_container exists" do
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:app_container).and_return("path/to/container")
+          expect(simctl).to receive(:reboot).and_return(nil)
+          expect(simctl).to receive(:app_container).and_return(nil)
+
+          expect(simctl.uninstall(device, app, 10))
+        end
+
         it "raises error if simctl uninstall completes with non-zero exit status" do
           hash[:exit_status] = 1
           expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
           expect do
             expect(simctl.uninstall(device, app, 10))
           end.to raise_error RuntimeError, /Could not uninstall app from simulator/
+        end
+
+        it "raises error if reboot does not update uninstall status" do
+          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
+          expect(simctl).to receive(:app_container).and_return("path/to/container")
+          expect(simctl).to receive(:reboot).and_return(nil)
+          expect(simctl).to receive(:app_container).and_return("path/to/container")
+
+          expect do
+            expect(simctl.uninstall(device, app, 10))
+          end.to raise_error RuntimeError,
+                             /simctl uninstall succeeded, but simctl says app is still installed/
         end
       end
 
