@@ -207,6 +207,48 @@ $ bundle exec run-loop simctl manage-processes
       in_state
     end
 
+    def boot(device)
+      if simulator_state_as_int(device) == SIM_STATES["Booted"]
+        RunLoop.log_debug("Simulator is already Booted")
+        true
+      else
+        cmd = ["simctl", "boot", device.udid]
+        hash = shell_out_with_xcrun(cmd, DEFAULTS)
+
+        exit_status = hash[:exit_status]
+        if exit_status != 0
+          if simulator_state_as_int(device) == SIM_STATES["Booted"]
+            RunLoop.log_debug("simctl boot called when state is 'Booted'; ignoring error")
+          else
+            raise RuntimeError,
+%Q[Could not boot the simulator:
+
+  command: xcrun #{cmd.join(" ")}
+simulator: #{device}
+    state: #{device.state}
+
+#{hash[:out]}
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
+
+]
+          end
+        end
+        true
+      end
+    end
+
+    # @!visibility private
+    def reboot(device)
+      shutdown(device)
+      wait_for_shutdown(device, DEFAULTS[:timeout], 1.0)
+      boot(device)
+    end
+
     # @!visibility private
     # Erases the simulator.
     #
@@ -234,7 +276,7 @@ $ bundle exec run-loop simctl manage-processes
   command: xcrun #{cmd.join(" ")}
 simulator: #{device}
 
-              #{hash[:out]}
+{hash[:out]}
 
 This usually means your CoreSimulator processes need to be restarted.
 
@@ -331,6 +373,23 @@ $ bundle exec run-loop simctl manage-processes
 
 ]
       end
+
+      app_container = app_container(device, app.bundle_identifier)
+      if app_container
+        RunLoop.log_debug("After install, simctl thinks app container exists")
+        if File.exist?(app_container)
+          RunLoop.log_debug("App container _does_ exist on disk; deleting it")
+          FileUtils.rm_rf(app_container)
+        else
+          RunLoop.log_debug("App container does _not_ exist on disk")
+        end
+        RunLoop.log_debug("Rebooting the device")
+        reboot(device)
+        if app_container(device, app.bundle_identifier)
+          raise "simctl uninstall succeeded, but simctl says app is still installed"
+        end
+      end
+
       true
     end
 

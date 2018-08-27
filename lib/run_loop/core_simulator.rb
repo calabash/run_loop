@@ -527,7 +527,12 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
 
   # Is this app installed?
   def app_is_installed?
-    !installed_app_bundle_dir.nil?
+    if installed_app_bundle_dir ||
+      simctl.app_container(device, app.bundle_identifier)
+      true
+    else
+      false
+    end
   end
 
   # Resets the app sandbox.

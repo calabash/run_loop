@@ -843,15 +843,23 @@ describe RunLoop::CoreSimulator do
 
       describe '#app_is_installed?' do
         it 'returns false when app is not installed' do
-          expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
+          expect(core_sim).to receive(:installed_app_bundle_dir).and_return(nil)
+          expect(core_sim.simctl).to receive(:app_container).and_return(nil)
 
-          expect(core_sim.app_is_installed?).to be == false
+          expect(core_sim.app_is_installed?).to be false
         end
 
-        it 'returns true when app is installed' do
-          expect(core_sim).to receive(:installed_app_bundle_dir).and_return '/'
+        it 'returns true when there is an app container on disk' do
+          expect(core_sim).to receive(:installed_app_bundle_dir).and_return('/')
 
-          expect(core_sim.app_is_installed?).to be == true
+          expect(core_sim.app_is_installed?).to be true
+        end
+
+        it 'returns true when simctl reports that there is an app container' do
+          expect(core_sim).to receive(:installed_app_bundle_dir).and_return(nil)
+          expect(core_sim.simctl).to receive(:app_container).and_return("/")
+
+          expect(core_sim.app_is_installed?).to be true
         end
       end
     end

@@ -16,7 +16,21 @@ module RunLoop
       @path = File.expand_path(app_bundle_path)
 
       if !App.valid?(app_bundle_path)
-        raise ArgumentError,
+        if App.cached_app_on_simulator?(app_bundle_path)
+          raise RuntimeError, %Q{
+App is "cached" on the simulator.
+
+#{app_bundle_path}
+
+This can happen if there was an incomplete install or uninstall.
+
+Try manually deleting the application data container and relaunching the simulator.
+
+$ rm -r #{File.dirname(app_bundle_path)}
+$ run-loop simctl manage-processes
+}
+        else
+          raise ArgumentError,
 %Q{App does not exist at path or is not an app bundle.
 
 #{app_bundle_path}
@@ -28,6 +42,7 @@ Bundle must:
 3. contain an Info.plist,
 4. and the app binary (CFBundleExecutable) must exist
 }
+        end
       end
     end
 
@@ -69,6 +84,19 @@ Bundle must:
       return false if !self.info_plist_exist?(app_bundle_path)
       return false if !self.executable_file_exist?(app_bundle_path)
       true
+    end
+
+    # @!visibility private
+    #
+    # Starting in Xcode 10 betas, this can happen if there was an incomplete
+    # install or uninstall.
+    def self.cached_app_on_simulator?(app_bundle_path)
+      return false if Dir[File.join(app_bundle_path, "**/*")].length != 2
+      return false if !app_bundle_path[RunLoop::Regex::CORE_SIMULATOR_UDID_REGEX]
+      [File.join(app_bundle_path, "Info.plist"),
+       File.join(app_bundle_path, "Icon.png")].all? do |file|
+        File.exist?(file)
+      end
     end
 
     # Returns the Info.plist path.
