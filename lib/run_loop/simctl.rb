@@ -209,7 +209,7 @@ $ bundle exec run-loop simctl manage-processes
 
     def boot(device)
       if simulator_state_as_int(device) == SIM_STATES["Booted"]
-        RunLoop.log_debug("Simulator is already shutdown")
+        RunLoop.log_debug("Simulator is already Booted")
         true
       else
         cmd = ["simctl", "boot", device.udid]
@@ -221,10 +221,11 @@ $ bundle exec run-loop simctl manage-processes
             RunLoop.log_debug("simctl boot called when state is 'Booted'; ignoring error")
           else
             raise RuntimeError,
-                  %Q[Could not boot the simulator:
+%Q[Could not boot the simulator:
 
   command: xcrun #{cmd.join(" ")}
 simulator: #{device}
+    state: #{device.state}
 
 #{hash[:out]}
 
@@ -246,8 +247,6 @@ $ bundle exec run-loop simctl manage-processes
       shutdown(device)
       wait_for_shutdown(device, DEFAULTS[:timeout], 1.0)
       boot(device)
-      require "run_loop/core_simulator"
-      RunLoop::CoreSimulator.wait_for_simulator_state(device, "Booted")
     end
 
     # @!visibility private
@@ -377,7 +376,13 @@ $ bundle exec run-loop simctl manage-processes
 
       app_container = app_container(device, app.bundle_identifier)
       if app_container
-        RunLoop.log_debug("After install, app container exists")
+        RunLoop.log_debug("After install, simctl thinks app container exists")
+        if File.exist?(app_container)
+          RunLoop.log_debug("App container _does_ exist on disk; deleting it")
+          FileUtils.rm_rf(app_container)
+        else
+          RunLoop.log_debug("App container does _not_ exist on disk")
+        end
         RunLoop.log_debug("Rebooting the device")
         reboot(device)
         if app_container(device, app.bundle_identifier)
