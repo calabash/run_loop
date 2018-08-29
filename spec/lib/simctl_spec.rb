@@ -380,20 +380,103 @@ describe RunLoop::Simctl do
       end
 
       context "#install" do
+
+        before do
+          allow_any_instance_of(Object).to receive(:sleep).and_return(true)
+        end
+
         let(:cmd) { ["simctl", "install", device.udid, app.path] }
 
         it "returns true if simctl install completes with exit status 0" do
-          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
+          expect(simctl).to(
+            receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
+          )
 
-          expect(simctl.install(device, app, 10))
+          expect(simctl.install(device, app, 10)).to be true
         end
 
-        it "raises error if simctl install completes with non-zero exit status" do
-          hash[:exit_status] = 1
-          expect(simctl).to receive(:shell_out_with_xcrun).with(cmd, options).and_return(hash)
-          expect do
-            expect(simctl.install(device, app, 10))
-          end.to raise_error RuntimeError, /Could not install app on simulator/
+        context "retrying on 'could not be installed at this time' error" do
+          let (:retry_hash) do
+            {
+              exit_status: 1,
+              out: "details\nThis app could not be installed at this time\ndetails"
+            }
+          end
+
+          let (:success_hash) do
+            {
+              exit_status: 0,
+              out: ""
+            }
+          end
+
+          let(:other_failure_hash) do
+            {
+              exit_status: 1,
+              out: "Other failure"
+            }
+          end
+
+          it "raises error install fails with 'at this time' 5 times" do
+            expect(simctl).to(
+              receive(
+                :shell_out_with_xcrun
+              ).with(cmd, options).exactly(5).times.and_return(retry_hash)
+            )
+
+            expect do
+              expect(simctl.install(device, app, 10))
+            end.to raise_error RuntimeError, /Could not install app on simulator/
+          end
+
+          it "raises error if install fails immediately with a different error" do
+            expect(simctl).to(
+              receive(
+                :shell_out_with_xcrun
+              ).with(cmd, options).and_return(other_failure_hash)
+            )
+
+            expect do
+              expect(simctl.install(device, app, 10))
+            end.to raise_error RuntimeError, /Could not install app on simulator/
+          end
+
+          it "raises error if install fails immediately with a different error" do
+            expect(simctl).to(
+              receive(
+                :shell_out_with_xcrun
+              ).with(cmd, options).and_return(other_failure_hash)
+            )
+
+            expect do
+              expect(simctl.install(device, app, 10))
+            end.to raise_error RuntimeError, /Could not install app on simulator/
+          end
+
+          it "raises error if install fails during retries with a different error" do
+            expect(simctl).to(
+              receive(
+                :shell_out_with_xcrun
+              ).with(cmd, options).and_return(*[retry_hash,
+                                                retry_hash,
+                                                other_failure_hash])
+            )
+
+            expect do
+              expect(simctl.install(device, app, 10))
+            end.to raise_error RuntimeError, /Could not install app on simulator/
+          end
+          it "returns true if a retry is successful" do
+            expect(simctl).to(
+              receive(
+                :shell_out_with_xcrun
+              ).with(cmd, options).and_return(*[retry_hash,
+                                                retry_hash,
+                                                success_hash])
+            )
+
+            expect(simctl.install(device, app, 10)).to be true
+          end
         end
       end
     end
