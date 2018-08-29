@@ -247,6 +247,7 @@ $ bundle exec run-loop simctl manage-processes
       shutdown(device)
       wait_for_shutdown(device, DEFAULTS[:timeout], 1.0)
       boot(device)
+      device.simulator_wait_for_stable_state
     end
 
     # @!visibility private
