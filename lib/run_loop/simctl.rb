@@ -266,6 +266,10 @@ $ bundle exec run-loop simctl manage-processes
       shutdown(device)
       wait_for_shutdown(device, wait_timeout, wait_delay)
 
+      # TODO: when we encounter a "data couldn't be removed because you don't
+      # have permission to access it" error" it is possible we can ignore the
+      # error.
+
       cmd = ["simctl", "erase", device.udid]
       hash = shell_out_with_xcrun(cmd, DEFAULTS)
 
