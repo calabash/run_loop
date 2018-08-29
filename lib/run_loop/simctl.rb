@@ -151,8 +151,8 @@ module RunLoop
 
         exit_status = hash[:exit_status]
         if exit_status != 0
-
-          if simulator_state_as_int(device) == SIM_STATES["Shutdown"]
+          if simulator_state_as_int(device) == SIM_STATES["Shutdown"] ||
+            hash[:out][/Unable to shutdown device in current state: Shutdown/]
             RunLoop.log_debug("simctl shutdown called when state is 'Shutdown'; ignoring error")
           else
             raise RuntimeError,
