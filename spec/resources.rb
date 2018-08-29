@@ -1,6 +1,7 @@
-require 'singleton'
 
 class Resources
+
+  require 'singleton'
 
   include RunLoop::Regex
   include Singleton
