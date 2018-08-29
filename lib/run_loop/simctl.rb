@@ -416,11 +416,32 @@ $ bundle exec run-loop simctl manage-processes
       options = DEFAULTS.dup
       options[:timeout] = timeout
 
-      hash = shell_out_with_xcrun(cmd, options)
+      success = false
+      tries = 5
+      hash = nil
+      tries.times do |try|
+        hash = shell_out_with_xcrun(cmd, options)
+        exit_status = hash[:exit_status]
+        if exit_status == 0
+          RunLoop.log_debug("Successful install on #{try + 1} of #{tries} attempts")
+          success = true
+          break
+        else
+          out = hash[:out]
+          if out[/This app could not be installed at this time/]
+            RunLoop.log_debug("Install failed on attempt #{try + 1} of #{tries}")
+            sleep(1.0)
+          else
+            # Any other error, fail.
+            success = false
+            break
+          end
+        end
+      end
 
-      exit_status = hash[:exit_status]
-      if exit_status != 0
-        raise RuntimeError,
+      return true if success
+
+      raise RuntimeError,
 %Q[Could not install app on simulator:
 
   command: xcrun #{cmd.join(" ")}
@@ -436,8 +457,6 @@ You can restart the CoreSimulator processes with this command:
 $ bundle exec run-loop simctl manage-processes
 
 ]
-      end
-      true
     end
 
     private
