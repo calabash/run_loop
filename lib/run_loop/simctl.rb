@@ -381,7 +381,7 @@ $ bundle exec run-loop simctl manage-processes
 
       app_container = app_container(device, app.bundle_identifier)
       if app_container
-        RunLoop.log_debug("After install, simctl thinks app container exists")
+        RunLoop.log_debug("After uninstall, simctl thinks app container exists")
         if File.exist?(app_container)
           RunLoop.log_debug("App container _does_ exist on disk; deleting it")
           FileUtils.rm_rf(app_container)
