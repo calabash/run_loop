@@ -281,7 +281,7 @@ $ bundle exec run-loop simctl manage-processes
   command: xcrun #{cmd.join(" ")}
 simulator: #{device}
 
-{hash[:out]}
+#{hash[:out]}
 
 This usually means your CoreSimulator processes need to be restarted.
 
