@@ -10,11 +10,20 @@ describe RunLoop::App do
     end
 
     it "raises an error if app bundle path is not valid" do
-      expect(RunLoop::App).to receive(:valid?).and_return(false)
+      expect do
+        RunLoop::App.new("path/does/not/exist")
+      end.to raise_error(ArgumentError,
+                         /App does not exist at path or is not an app bundle/)
+    end
+
+    it "raises an error if app bundle is 'cached'" do
+      expect(RunLoop::App).to receive(:cached_app_on_simulator?).and_return(true)
 
       expect do
-        expect(RunLoop::App.new("path/does/not/exist"))
-      end.to raise_error ArgumentError, /App does not exist at path or is not an app bundle/
+        RunLoop::App.new(File.join(Resources.shared.resources_dir,
+                                         "CachedSimApp.app"))
+      end.to raise_error(RuntimeError,
+                         /there was an incomplete install or uninstall/)
     end
   end
 
@@ -136,6 +145,40 @@ describe RunLoop::App do
     end
   end
 
+  context ".cached_app_on_simulator?" do
+    it "returns true if the .app bundle is sparse and installed on a simulator" do
+      tmpdir = File.join(Resources.shared.local_tmp_dir, "rspec", "app-tests",
+                         "81B79FDC-CAD7-4B0E-9704-9FBC31D56F51")
+      FileUtils.rm_rf(tmpdir)
+      FileUtils.mkdir_p(tmpdir)
+
+      app = File.join(tmpdir, "CachedSimApp.app")
+      FileUtils.cp_r(File.join(Resources.shared.resources_dir, "CachedSimApp.app"),
+                     app)
+      expect(RunLoop::App.cached_app_on_simulator?(app)).to be true
+
+      FileUtils.rm_rf(tmpdir)
+    end
+
+    it "returns false if the .app bundle is not installed a simulator" do
+      app = Resources.shared.app_bundle_path
+      expect(RunLoop::App.cached_app_on_simulator?(app)).to be false
+    end
+
+    it "returns false if the .app bundle contains any other files" do
+      tmpdir = File.join(Resources.shared.local_tmp_dir, "rspec", "app-tests",
+                         "81B79FDC-CAD7-4B0E-9704-9FBC31D56F51")
+      FileUtils.rm_rf(tmpdir)
+      FileUtils.mkdir_p(tmpdir)
+
+      app = File.join(tmpdir, "CalSmoke.app")
+      FileUtils.cp_r(Resources.shared.app_bundle_path, app)
+      expect(RunLoop::App.cached_app_on_simulator?(app)).to be false
+
+      FileUtils.rm_rf(tmpdir)
+    end
+  end
+
   it '#info_plist_path' do
     actual = app.info_plist_path
     expected = File.join(Resources.shared.app_bundle_path, "Info.plist")
@@ -205,6 +248,19 @@ describe RunLoop::App do
         app = RunLoop::App.new(path)
         expect(app.calabash_server_version).to be_nil
       end
+    end
+  end
+
+  context "#calabash_server_id" do
+    it "returns fingerprint of the embedded server" do
+      app = RunLoop::App.new(Resources.shared.cal_app_bundle_path)
+      actual = app.calabash_server_id
+      expect(actual[/[a-f0-9]{40}(-dirty)?/]).to be_truthy
+    end
+
+    it "returns nil if there is no embedded server" do
+      app = RunLoop::App.new(Resources.shared.app_bundle_path)
+      expect(app.calabash_server_id).to be == nil
     end
   end
 

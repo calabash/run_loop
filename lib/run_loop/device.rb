@@ -94,27 +94,23 @@ module RunLoop
     # @return [RunLoop::Device] A device that matches `udid_or_name`.
     # @raise [ArgumentError] If no matching device can be found.
     def self.device_with_identifier(udid_or_name, options={})
-      if options.is_a?(RunLoop::SimControl)
-        raise ArgumentError, %q[Support for the 'sim_control' argument has been
-removed (1.5.0).  It has been replaced by an options hash with two keys:
-:simctl and :instruments. Please update your sources.))]
+      if options[:xcode]
+        RunLoop.log_warn("device_with_identifier no longer uses :xcode option")
       end
 
       default_options = {
         :simctl => RunLoop::Simctl.new,
         :instruments => RunLoop::Instruments.new,
-        :xcode => RunLoop::Xcode.new
       }
 
       merged_options = default_options.merge(options)
 
       instruments = merged_options[:instruments]
       simctl = merged_options[:simctl]
-      xcode = merged_options[:xcode]
 
       simulator = simctl.simulators.detect do |sim|
-        sim.instruments_identifier(xcode) == udid_or_name ||
-              sim.udid == udid_or_name
+        sim.udid == udid_or_name ||
+          sim.simulator_instruments_identifier_same_as?(udid_or_name)
       end
 
       return simulator if !simulator.nil?
@@ -127,6 +123,22 @@ removed (1.5.0).  It has been replaced by an options hash with two keys:
       return physical_device if !physical_device.nil?
 
       raise ArgumentError, "Could not find a device with a UDID or name matching '#{udid_or_name}'"
+    end
+
+    # iPhone 8 10.3.1 is the same as iPhone 10.3 when comparing identifiers
+    def simulator_instruments_identifier_same_as?(identifier)
+      instruments_id = instruments_identifier
+      return true if instruments_id == identifier
+
+      model_part = identifier.split(" (").first
+      return false if model_part != name
+
+      version_part = RunLoop::Version.new(identifier[RunLoop::Regex::VERSION_REGEX])
+
+      return false if version.major != version_part.major
+      return false if version.minor != version_part.minor
+
+      true
     end
 
     # @!visibility private
@@ -187,21 +199,21 @@ removed (1.5.0).  It has been replaced by an options hash with two keys:
     # @return [String] An instruments-ready device identifier.
     # @raise [RuntimeError] If trying to obtain a instruments-ready identifier
     #  for a simulator when Xcode < 6.
-    def instruments_identifier(xcode)
+    def instruments_identifier(xcode=nil)
+      if xcode
+        RunLoop.deprecated("3.0.0",
+                           "instruments_identifier no longer takes an argument")
+      end
       if physical_device?
         udid
       else
-        if version == RunLoop::Version.new('7.0.3')
-          version_part = version.to_s
+        if version.patch
+          version_part = "#{version.major}.#{version.minor}.#{version.patch}"
         else
           version_part = "#{version.major}.#{version.minor}"
         end
 
-        if xcode.version_gte_7?
-          "#{name} (#{version_part})"
-        else
-          "#{name} (#{version_part} Simulator)"
-        end
+        "#{name} (#{version_part})"
       end
     end
 
@@ -392,6 +404,7 @@ version: #{version}
         RunLoop.log_debug("Waited for #{elapsed} seconds for simulator to stabilize")
       else
         RunLoop.log_debug("Timed out after #{timeout} seconds waiting for simulator to stabilize")
+        RunLoop.log_debug("These simulator processes did not start: #{required.join(",")}")
       end
     end
 
@@ -613,11 +626,19 @@ Could not update the Simulator languages.
 
     # @!visibility private
     def simulator_required_child_processes
+      # required: ["SimulatorBridge", "medialibraryd"]
       @simulator_required_child_processes ||= begin
-        required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
+        if xcode.version_gte_100?
+          required = ["backboardd", "installd", "SpringBoard"]
+        elsif xcode.version_gte_83? && version.major > 10
+          required = ["backboardd", "installd", "SpringBoard", "suggestd"]
+        else
+          required = ["backboardd", "installd", "SimulatorBridge", "SpringBoard"]
+        end
+
         if xcode.version_gte_90?
           required << "filecoordinationd"
-        elsif xcode.version_gte_8? && version.major > 8
+        elsif xcode.version_gte_8? && (version.major > 8 && version.major < 11)
           required << "medialibraryd"
         end
 

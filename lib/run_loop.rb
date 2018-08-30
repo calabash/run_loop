@@ -34,7 +34,6 @@ require "run_loop/detect_aut/errors"
 require "run_loop/detect_aut/xamarin_studio"
 require "run_loop/detect_aut/xcode"
 require "run_loop/detect_aut/detect"
-require 'run_loop/sim_control'
 require 'run_loop/device'
 require 'run_loop/instruments'
 require 'run_loop/lipo'
@@ -200,43 +199,6 @@ Please quit the Instruments.app and try again.)
       pngs = []
     end
     FileUtils.cp(pngs, dest) if pngs and pngs.length > 0
-  end
-
-  # @!visibility private
-  #
-  # @deprecated since 2.1.2
-  def self.default_script_for_uia_strategy(uia_strategy)
-    self.deprecated("2.1.2", "Replaced by methods in RunLoop::Core")
-    case uia_strategy
-      when :preferences
-        Core.script_for_key(:run_loop_fast_uia)
-      when :host
-        Core.script_for_key(:run_loop_host)
-      when :shared_element
-        Core.script_for_key(:run_loop_shared_element)
-      else
-        Core.script_for_key(:run_loop_basic)
-    end
-  end
-
-  # @!visibility private
-  #
-  # @deprecated since 2.1.2
-  def self.validate_script(script)
-    self.deprecated("2.1.2", "Replaced by methods in RunLoop::Core")
-    if script.is_a?(String)
-      unless File.exist?(script)
-        raise "Unable to find file: #{script}"
-      end
-    elsif script.is_a?(Symbol)
-      script = Core.script_for_key(script)
-      unless script
-        raise "Unknown script for symbol: #{script}. Options: #{Core::SCRIPTS.keys.join(', ')}"
-      end
-    else
-      raise "Script must be a symbol or path: #{script}"
-    end
-    script
   end
 
   def self.log_info(*args)

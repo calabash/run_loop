@@ -1,5 +1,37 @@
 ## Change Log
 
+### 3.0.0
+
+Built with Xcode 10 beta 6
+
+* Simctl: retry app install on 'could not install app at this time' error #694
+* App#calabash\_server\_id: extract fingerprint of embedded server #692
+* Remove support for legacy Xcode toolchains #691
+* Lib: add Xcode 10 support #690
+* Improve simulator "wait for stable" heuristic #689
+
+#### DeviceAgent 1.2.6
+
+Provide support for Xcode 10 beta 6.
+
+* Improve query speed by loading BootstrapInject.dylib into AUT #282
+* remove simulator log redirect #285
+* SpringBoard: update Italian localizations #287
+* Support for Xcode 10 beta 6 #291
+
+* https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.2.6
+
+#### iOSDeviceManager 3.2.0
+
+This release provides support for Xcode 10 beta 6.
+
+* Shell: all NSTask executed with timeout #219
+* Fix simulator-by-alias/name algorithm #225
+* Codesign is timing out on low resource machines #226
+* Stablize Simulator app life cycle events for Xcode 10 beta 6 #228
+
+* https://github.com/calabash/iOSDeviceManager/releases/tag/3.2.0
+
 ### 2.7.1
 
 Built with Xcode 9.4 beta 2

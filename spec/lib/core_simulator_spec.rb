@@ -843,15 +843,23 @@ describe RunLoop::CoreSimulator do
 
       describe '#app_is_installed?' do
         it 'returns false when app is not installed' do
-          expect(core_sim).to receive(:installed_app_bundle_dir).and_return nil
+          expect(core_sim).to receive(:installed_app_bundle_dir).and_return(nil)
+          expect(core_sim.simctl).to receive(:app_container).and_return(nil)
 
-          expect(core_sim.app_is_installed?).to be == false
+          expect(core_sim.app_is_installed?).to be false
         end
 
-        it 'returns true when app is installed' do
-          expect(core_sim).to receive(:installed_app_bundle_dir).and_return '/'
+        it 'returns true when there is an app container on disk' do
+          expect(core_sim).to receive(:installed_app_bundle_dir).and_return('/')
 
-          expect(core_sim.app_is_installed?).to be == true
+          expect(core_sim.app_is_installed?).to be true
+        end
+
+        it 'returns true when simctl reports that there is an app container' do
+          expect(core_sim).to receive(:installed_app_bundle_dir).and_return(nil)
+          expect(core_sim.simctl).to receive(:app_container).and_return("/")
+
+          expect(core_sim.app_is_installed?).to be true
         end
       end
     end
@@ -1269,54 +1277,15 @@ describe RunLoop::CoreSimulator do
 
     describe '#sim_name' do
       it 'Xcode >= 7.0' do
-        expect(core_sim.xcode).to receive(:version_gte_7?).and_return true
         expect(core_sim.send(:sim_name)).to be == 'Simulator'
-      end
-
-      it '6.0 <= Xcode < 7.0' do
-        expect(core_sim.xcode).to receive(:version_gte_7?).and_return false
-        expect(core_sim.send(:sim_name)).to be == 'iOS Simulator'
       end
     end
 
     describe '#sim_app_path' do
-      describe 'per version' do
-        before do
-          expect(core_sim.xcode).to receive(:developer_dir).and_return('/Xcode')
-        end
-
-        it 'Xcode >= 7.0' do
-          expect(core_sim.xcode).to receive(:version_gte_7?).and_return true
-          expected = '/Xcode/Applications/Simulator.app'
-
-          expect(core_sim.send(:sim_app_path)).to be == expected
-          expect(core_sim.instance_variable_get(:@sim_app_path)).to be == expected
-          expect(core_sim.send(:sim_app_path)).to be == expected
-        end
-
-        it '6.0 <= Xcode < 7.0' do
-          expect(core_sim.xcode).to receive(:version_gte_7?).and_return false
-
-          expected = '/Xcode/Applications/iOS Simulator.app'
-          expect(core_sim.send(:sim_app_path)).to be == expected
-          expect(core_sim.instance_variable_get(:@sim_app_path)).to be == expected
-          expect(core_sim.send(:sim_app_path)).to be == expected
-        end
-      end
-
-      it 'returns a path that exists' do
-        path = core_sim.send(:sim_app_path)
-        expect(File.exist?(path)).to be == true
-      end
-
-      Resources.shared.alt_xcode_install_paths.each do |path|
-        it "#{path}" do
-          Resources.shared.with_developer_dir(path) do
-            path = core_sim.send(:sim_app_path)
-            expect(path).not_to be == nil
-            expect(File.exist?(path)).to be_truthy
-          end
-        end
+      it "returns 'Simulator'" do
+        expect(core_sim.xcode).to receive(:developer_dir).and_return('/Xcode')
+        expected = '/Xcode/Applications/Simulator.app'
+        expect(core_sim.send(:sim_app_path)).to be == expected
       end
     end
   end

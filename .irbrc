@@ -77,7 +77,7 @@ def default_sim
   @default_sim ||= begin
     name = RunLoop::Core.default_simulator(xcode)
     simctl.simulators.find do |sim|
-      sim.instruments_identifier(xcode) == name
+      sim.instruments_identifier == name
     end
   end
 end

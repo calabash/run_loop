@@ -77,6 +77,9 @@ $ git pull
 $ gem update --system
 $ rake release
 
+$ git tag -a 1.5.0 -m"release/1.5.0"
+$ git push origin 1.5.0
+
 $ git co develop
 $ git merge --no-ff release/1.5.0
 $ git push

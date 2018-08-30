@@ -70,6 +70,37 @@ describe RunLoop::Device do
     end
   end
 
+  context "#simulator_instruments_identifier_same_as?" do
+    let(:device) { RunLoop::Device.new("iPhone 8",
+                                       "11.0.1",
+                                       'CE5BA25E-9434-475A-8947-ECC3918E64E3') }
+
+    it "returns true if sim identifier is == arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone 8 (11.0.1)")
+      expect(actual).to be true
+    end
+
+    it "returns true if model number and the major.minor part of id is == arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone 8 (11.0)")
+      expect(actual).to be true
+    end
+
+    it "returns false if model number does not match arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone X (11.0.1)")
+      expect(actual).to be false
+    end
+
+    it "returns false if major part of id does not match arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone 8 (12.0.1)")
+      expect(actual).to be false
+    end
+
+    it "returns false if minor part of id does not match arg" do
+      actual = device.simulator_instruments_identifier_same_as?("iPhone 8 (12.1.1)")
+      expect(actual).to be false
+    end
+  end
+
   describe '.device_with_identifier' do
     let(:simctl) { RunLoop::Simctl.new }
     let(:instruments) { RunLoop::Instruments.new }
@@ -123,7 +154,7 @@ describe RunLoop::Device do
 
       it 'find by name' do
         expect(simctl).to receive(:simulators).and_return([device])
-        identifier = device.instruments_identifier(xcode)
+        identifier = device.instruments_identifier
 
         actual = RunLoop::Device.device_with_identifier(identifier, options)
         expect(actual).to be_a_kind_of RunLoop::Device
@@ -238,7 +269,7 @@ describe RunLoop::Device do
 
   describe '#instruments_identifier' do
 
-    subject { device.instruments_identifier(xcode) }
+    subject { device.instruments_identifier }
 
     let(:xcode) { RunLoop::Xcode.new }
 
@@ -247,35 +278,14 @@ describe RunLoop::Device do
       it { is_expected.to be == 'e60ef9ae876ab4a218ee966d0525c9fb79e5606d' }
     end
 
-    describe 'simulator' do
-      describe 'Xcode > 7.0' do
-        before { expect(xcode).to receive(:version_gte_7?).and_return true }
-        context 'with Major.Minor SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', '14A15E35-C568-4775-9480-4FC0C2648236', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (8.1)' }
-        end
+    context 'simulator with major.minor version' do
+      let(:device) { RunLoop::Device.new('iPhone X', '10.2', '<udid>', 'Shutdown') }
+      it { is_expected.to be == "iPhone X (10.2)" }
+    end
 
-        context 'with Major.Minor.Patch SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', '14A15E35-C568-4775-9480-4FC0C2648236', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (7.0.3)' }
-        end
-      end
-
-      describe '6.0 <= Xcode < 7.0' do
-        before do
-          expect(xcode).to receive(:version_gte_7?).and_return false
-        end
-
-        context 'with Major.Minor SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '8.1.1', 'not a device udid', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (8.1 Simulator)' }
-        end
-
-        context 'with Major.Minor.Patch SDK version' do
-          let(:device) { RunLoop::Device.new('Form Factor', '7.0.3', 'not a device udid', 'Shutdown') }
-          it { is_expected.to be == 'Form Factor (7.0.3 Simulator)' }
-        end
-      end
+    context 'simulator with major.minor.path version' do
+      let(:device) { RunLoop::Device.new('iPhone X', '10.2.1', '<udid>', 'Shutdown') }
+      it { is_expected.to be == "iPhone X (10.2.1)" }
     end
   end
 

@@ -1,6 +1,7 @@
-require 'singleton'
 
 class Resources
+
+  require 'singleton'
 
   include RunLoop::Regex
   include Singleton
@@ -35,16 +36,8 @@ class Resources
     @xcode ||= RunLoop::Xcode.new
   end
 
-  def core_simulator_env?
-    xcode.version_gte_6?
-  end
-
   def instruments
     @instruments ||= RunLoop::Instruments.new
-  end
-
-  def sim_control
-    @sim_control ||= RunLoop::SimControl.new
   end
 
   def simctl
@@ -234,7 +227,7 @@ class Resources
 
   def xcode_install_paths
     @xcode_install_paths ||= begin
-      min_xcode_version = RunLoop::Version.new("8.3.3")
+      min_xcode_version = RunLoop::Version.new("9.4.1")
       Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
         xcode_version = path[VERSION_REGEX, 0]
 
@@ -249,7 +242,7 @@ class Resources
 
   def alt_xcode_install_paths
     @alt_xcode_install_paths ||= lambda {
-      min_xcode_version = RunLoop::Version.new("8.3.3")
+      min_xcode_version = RunLoop::Version.new("9.4.1")
       Dir.glob('/Xcode/*/*.app/Contents/Developer').map do |path|
         xcode_version = path[VERSION_REGEX, 0]
 

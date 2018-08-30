@@ -113,7 +113,6 @@ module RunLoop
     # @param [RunLoop::Device] device The device under test.
     # @return [String] The path to the .app bundle if it exists; nil otherwise.
     def app_container(device, bundle_id)
-      return nil if !xcode.version_gte_7?
       cmd = ["simctl", "get_app_container", device.udid, bundle_id]
       hash = shell_out_with_xcrun(cmd, DEFAULTS)
 
@@ -152,8 +151,8 @@ module RunLoop
 
         exit_status = hash[:exit_status]
         if exit_status != 0
-
-          if simulator_state_as_int(device) == SIM_STATES["Shutdown"]
+          if simulator_state_as_int(device) == SIM_STATES["Shutdown"] ||
+            hash[:out][/Unable to shutdown device in current state: Shutdown/]
             RunLoop.log_debug("simctl shutdown called when state is 'Shutdown'; ignoring error")
           else
             raise RuntimeError,
@@ -208,6 +207,49 @@ $ bundle exec run-loop simctl manage-processes
       in_state
     end
 
+    def boot(device)
+      if simulator_state_as_int(device) == SIM_STATES["Booted"]
+        RunLoop.log_debug("Simulator is already Booted")
+        true
+      else
+        cmd = ["simctl", "boot", device.udid]
+        hash = shell_out_with_xcrun(cmd, DEFAULTS)
+
+        exit_status = hash[:exit_status]
+        if exit_status != 0
+          if simulator_state_as_int(device) == SIM_STATES["Booted"]
+            RunLoop.log_debug("simctl boot called when state is 'Booted'; ignoring error")
+          else
+            raise RuntimeError,
+%Q[Could not boot the simulator:
+
+  command: xcrun #{cmd.join(" ")}
+simulator: #{device}
+    state: #{device.state}
+
+#{hash[:out]}
+
+This usually means your CoreSimulator processes need to be restarted.
+
+You can restart the CoreSimulator processes with this command:
+
+$ bundle exec run-loop simctl manage-processes
+
+]
+          end
+        end
+        true
+      end
+    end
+
+    # @!visibility private
+    def reboot(device)
+      shutdown(device)
+      wait_for_shutdown(device, DEFAULTS[:timeout], 1.0)
+      boot(device)
+      device.simulator_wait_for_stable_state
+    end
+
     # @!visibility private
     # Erases the simulator.
     #
@@ -224,6 +266,10 @@ $ bundle exec run-loop simctl manage-processes
       shutdown(device)
       wait_for_shutdown(device, wait_timeout, wait_delay)
 
+      # TODO: when we encounter a "data couldn't be removed because you don't
+      # have permission to access it" error" it is possible we can ignore the
+      # error.
+
       cmd = ["simctl", "erase", device.udid]
       hash = shell_out_with_xcrun(cmd, DEFAULTS)
 
@@ -235,7 +281,7 @@ $ bundle exec run-loop simctl manage-processes
   command: xcrun #{cmd.join(" ")}
 simulator: #{device}
 
-              #{hash[:out]}
+#{hash[:out]}
 
 This usually means your CoreSimulator processes need to be restarted.
 
@@ -332,6 +378,23 @@ $ bundle exec run-loop simctl manage-processes
 
 ]
       end
+
+      app_container = app_container(device, app.bundle_identifier)
+      if app_container
+        RunLoop.log_debug("After uninstall, simctl thinks app container exists")
+        if File.exist?(app_container)
+          RunLoop.log_debug("App container _does_ exist on disk; deleting it")
+          FileUtils.rm_rf(app_container)
+        else
+          RunLoop.log_debug("App container does _not_ exist on disk")
+        end
+        RunLoop.log_debug("Rebooting the device")
+        reboot(device)
+        if app_container(device, app.bundle_identifier)
+          raise "simctl uninstall succeeded, but simctl says app is still installed"
+        end
+      end
+
       true
     end
 
@@ -353,11 +416,32 @@ $ bundle exec run-loop simctl manage-processes
       options = DEFAULTS.dup
       options[:timeout] = timeout
 
-      hash = shell_out_with_xcrun(cmd, options)
+      success = false
+      tries = 5
+      hash = nil
+      tries.times do |try|
+        hash = shell_out_with_xcrun(cmd, options)
+        exit_status = hash[:exit_status]
+        if exit_status == 0
+          RunLoop.log_debug("Successful install on #{try + 1} of #{tries} attempts")
+          success = true
+          break
+        else
+          out = hash[:out]
+          if out[/This app could not be installed at this time/]
+            RunLoop.log_debug("Install failed on attempt #{try + 1} of #{tries}")
+            sleep(1.0)
+          else
+            # Any other error, fail.
+            success = false
+            break
+          end
+        end
+      end
 
-      exit_status = hash[:exit_status]
-      if exit_status != 0
-        raise RuntimeError,
+      return true if success
+
+      raise RuntimeError,
 %Q[Could not install app on simulator:
 
   command: xcrun #{cmd.join(" ")}
@@ -373,28 +457,17 @@ You can restart the CoreSimulator processes with this command:
 $ bundle exec run-loop simctl manage-processes
 
 ]
-      end
-      true
-    end
-
-    # @!visibility private
-    #
-    # SimControl compatibility
-    def ensure_accessibility(device)
-      sim_control.ensure_accessibility(device)
-    end
-
-    # @!visibility private
-    #
-    # TODO Make this private again; exposed for SimControl compatibility.
-    def xcode
-      @xcode ||= RunLoop::Xcode.new
     end
 
     private
 
     # @!visibility private
     attr_reader :ios_devices, :tvos_devices, :watchos_devices, :pbuddy
+
+    # @!visibility private
+    def xcode
+      @xcode ||= RunLoop::Xcode.new
+    end
 
     # @!visibility private
     def pbuddy
@@ -430,14 +503,6 @@ $ bundle exec run-loop simctl manage-processes
     # `@watchos_devices`.  Callers should check for existing devices to avoid
     # the overhead of calling `simctl list devices --json`.
     def fetch_devices!
-      if !xcode.version_gte_7?
-        return {
-          :ios => sim_control.simulators,
-          :tvos => [],
-          :watchos => []
-        }
-      end
-
       @ios_devices = []
       @tvos_devices = []
       @watchos_devices = []
@@ -563,13 +628,6 @@ is not an iOS, tvOS, or watchOS device"
     # @!visibility private
     def xcrun
       @xcrun ||= RunLoop::Xcrun.new
-    end
-
-    # @!visibility private
-    # Support for Xcode < 7 when trying to collect simulators.  Xcode 7 allows
-    # a --json option which is much easier to parse.
-    def sim_control
-      @sim_control ||= RunLoop::SimControl.new
     end
   end
 end

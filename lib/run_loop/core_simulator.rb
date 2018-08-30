@@ -122,7 +122,13 @@ class RunLoop::CoreSimulator
               ["pkd", false],
               ["KeychainSyncingOverIDSProxy", false],
               ["CloudKeychainProxy", false],
-              ["aslmanager", false]
+              ["aslmanager", false],
+
+              # Processes from Xcode 10
+              ["diagnosticd", false],
+              ["syslogd", false],
+              ["mobiletimerd", false],
+              ["carkitd", false]
         ]
 
   # @!visibility private
@@ -424,6 +430,9 @@ class RunLoop::CoreSimulator
             '-CurrentDeviceUDID', device.udid,
             "-ConnectHardwareKeyboard", "0",
             "-DeviceBootTimeout", "120",
+            # Yes, this is the argument even though it is not spelled correctly
+            "-DetatchOnAppQuit", "0",
+            "-DetachOnWindowClose", "0",
             "LAUNCHED_BY_RUN_LOOP"]
 
     RunLoop.log_debug("Launching #{device} with:")
@@ -518,7 +527,12 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
 
   # Is this app installed?
   def app_is_installed?
-    !installed_app_bundle_dir.nil?
+    if installed_app_bundle_dir ||
+      simctl.app_container(device, app.bundle_identifier)
+      true
+    else
+      false
+    end
   end
 
   # Resets the app sandbox.
@@ -600,13 +614,7 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   # @return [String] A String suitable for searching for a pid, quitting, or
   #  launching the current simulator.
   def sim_name
-    @sim_name ||= begin
-      if xcode.version_gte_7?
-        "Simulator"
-      else
-        "iOS Simulator"
-      end
-    end
+    @sim_name ||= "Simulator"
   end
 
   # @!visibility private
