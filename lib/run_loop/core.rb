@@ -325,9 +325,8 @@ Logfile: #{log_file}
       major = xcode_major + 2
       minor = xcode_minor
 
-      # Early major Xcode beta releases do not have new hardware model numbers
-      if xcode.beta? && xcode_major == 10
-        model = xcode_major - 2
+      if xcode_major == 10
+        model = "XS"
       else
         model = xcode_major - 1
       end
