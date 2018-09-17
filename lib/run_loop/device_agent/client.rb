@@ -33,7 +33,7 @@ module RunLoop
       DEFAULTS = {
         :port => 27753,
         :simulator_ip => "127.0.0.1",
-        :http_timeout => (RunLoop::Environment.ci? || RunLoop::Environment.xtc?) ? 120 : 20,
+        :http_timeout => (RunLoop::Environment.ci? || RunLoop::Environment.xtc?) ? 120 : 60,
         :route_version => "1.0",
 
         # Ignored in the XTC.
