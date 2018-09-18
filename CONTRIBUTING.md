@@ -52,19 +52,14 @@ After the release branch is created:
 
 The release pull request ***must*** be made against the _master_ branch.
 
-Be sure to check CI.
-
-* https://travis-ci.org/calabash/run_loop
-* http://ci.endoftheworl.de:8080/ # Briar jobs.
-
 ```
-$ git co -b release/1.5.0
+$ git co -b release/3.0.1
 
 1. Update the CHANGELOG.
 2. Bump the RunLoop::VERSION
-3. Have a look at the README.md to see if it can be updated.
+3. Review the README.md for content that can be updated.
 
-$ git push -u origin release/1.5.0
+$ git push -u origin release/3.0.1
 
 **IMPORTANT**
 1. Make a pull request on GitHub on the master branch.
@@ -77,15 +72,11 @@ $ git pull
 $ gem update --system
 $ rake release
 
-$ git tag -a 1.5.0 -m"release/1.5.0"
-$ git push origin 1.5.0
-
 $ git co develop
-$ git merge --no-ff release/1.5.0
+$ git merge --no-ff release/3.0.1
 $ git push
 
-$ git branch -d release/1.5.0
+$ git branch -d release/3.0.1
 
 Announce the release on the public channels.
 ```
-
