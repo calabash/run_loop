@@ -1,7 +1,7 @@
 # Force Xcode environment
 language: objective-c
 
-osx_image: xcode9
+osx_image: xcode10
 
 before_script:
   - scripts/ci/travis/instruments-auth.sh

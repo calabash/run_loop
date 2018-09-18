@@ -9,10 +9,10 @@
 
 ### Requirements
 
-* Xcode 7.
-* ruby >= 2.0
+* at least Xcode 9.4.1
+* ruby 2.3.*; ruby > 2.3 is not supported.
 
-The most recent versions of Xcode and ruby are strongly recommended.
+The most recent version of Xcode is strong recommended.
 
 ### License
 
@@ -99,20 +99,22 @@ $ be rake integration
 If you have alternative Xcode installs that look like this:
 
 ```
-/Xcode/5.1/Xcode.app
-/Xcode/5.1.1/Xcode.app
-/Xcode/6.1.1/Xcode.app
-/Xcode/6.2/Xcode-Beta.app
-/Xcode/6.3/Xcode-Beta.app
+/Xcode/9.4.1/Xcode.app
+/Xcode/10.0/Xcode.app
+/Xcode/10.1/Xcode.app
+/Xcode/10.2/Xcode-Beta.app
 ```
 
 the rspec tests will do regression testing against each version.
 
 ##### Guard
 
-Requires MacOS Growl - available in the AppStore.
+Guard requires terminal-notifier-guard
+
+https://github.com/Codaisseur/terminal-notifier-guard
 
 ```
+$ brew install terminal-notifier-guard
 $ be guard
 ```
 
