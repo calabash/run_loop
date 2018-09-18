@@ -1,5 +1,25 @@
 ## Change Log
 
+### 3.0.1
+
+* Core: default simulator for Xcode 10 is iPhone 10S #696
+
+#### DeviceAgent 1.3.1
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.3.1
+
+* Add new iPhone 10S, 10S Max, and 10R model numbers #296
+* Server: add speech recognition alert texts #293
+* Server: add new localizations for SB alerts #294
+
+#### iOSDeviceManager 3.2.1
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.2.1
+
+* Upload xctestconfig command requires file paths #320
+* Frameworks: update FBSimControl related frameworks with new ios 12
+  device models #231
+
 ### 3.0.0
 
 Built with Xcode 10 beta 6
