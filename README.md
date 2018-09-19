@@ -81,6 +81,8 @@ Take a break because these test launch and quit the simulator multiple
 times.  You have enough time to take some deep breaths and do some
 stretching.  You'll feel better afterward.
 
+Make sure you have hardware keyboard disabled if testing on the simulator.
+
 For continuous TDD/BDD see the Guard section below.
 
 ```
