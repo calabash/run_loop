@@ -378,7 +378,13 @@ INSTANCE METHODS
         response = client.post(request)
         hash = expect_300_response(response)
         result = hash["result"]
-        result.count != 0
+
+        return false if result.count == 0
+        return false if result[0].count == 0
+
+        element = result[0]
+        hit_point = element["hit_point"]
+        hit_point["x"] != -1 && hit_point["y"] != -1
       end
 
       # @!visibility private
