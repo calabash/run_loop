@@ -446,11 +446,6 @@ class RunLoop::CoreSimulator
     options = { :timeout => 5, :raise_on_timeout => true }
     RunLoop::ProcessWaiter.new(sim_name, options).wait_for_any
 
-    # open -g no longer launches application in the background. We want the
-    # Simulator to open in the background because when it is opened in the
-    # foreground, it steals (key application) focus which is disruptive.
-    send_simulator_to_background
-
     if merged_options[:wait_for_stable]
       device.simulator_wait_for_stable_state
     end
@@ -676,23 +671,6 @@ Command had no output.
     hash[:launched_by_run_loop] = match[/LAUNCHED_BY_RUN_LOOP/]
 
     hash
-  end
-
-  # @!visibility private
-  def send_simulator_to_background
-    script = "tell application \"System Events\" to tell process \"#{sim_name}\" to set visible to false"
-    begin
-      system("osascript",  "-e", script)
-    rescue => _
-      RunLoop.log_debug("Could not put simulator into the background")
-    end
-
-    script = "tell application \"System Events\" to tell process \"#{sim_name}\" to set visible to true"
-    begin
-      system("osascript",  "-e", script)
-    rescue => _
-      RunLoop.log_debug("Could not put simulator into the foreground")
-    end
   end
 
   # @!visibility private
