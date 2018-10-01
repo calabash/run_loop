@@ -170,20 +170,7 @@ in plist:
 
       run_command("Add :#{key}:0 #{type} #{value}", path, opts)
     end
-
-    # Check if value of the plist key is true or false
-    #
-    # @param [String] key The plist key
-    # @param [String] path the plist path
-    # @return [Bool]
-    # @raise RuntimeError if the key value is not of Boolean type
-    def key_is_true?(key, path)
-      key_value = plist_read(key, path)
-      raise "Plist key value: '#{key_value}' is not of Boolean type" unless ['true', 'false'].include? key_value
-
-      key_value == 'true'
-    end
-
+    
     private
 
     # returns the path to the PlistBuddy executable
