@@ -538,12 +538,21 @@ Could not update the Simulator languages.
 
     def simulator_software_keyboard_will_show?
       plist = simulator_preferences_plist_path
-      pbuddy.plist_read("AutomaticMinimizationEnabled", plist).to_i == 0
+
+      hw_keyboard_disabled = pbuddy.plist_read('HardwareKeyboardLastSeen', plist) != 'true'
+
+      minimization_disabled = pbuddy.plist_read('AutomaticMinimizationEnabled', plist) != 'true'
+
+      soft_keyboard_enabled = pbuddy.plist_read('SoftwareKeyboardShownByTouch', plist) != 'false'
+
+      hw_keyboard_disabled && minimization_disabled && soft_keyboard_enabled
     end
 
     def simulator_ensure_software_keyboard_will_show
       plist = simulator_preferences_plist_path
-      pbuddy.plist_set("AutomaticMinimizationEnabled", "integer", 0, plist)
+      pbuddy.plist_set('HardwareKeyboardLastSeen', 'bool', 'NO', plist)
+      pbuddy.plist_set('SoftwareKeyboardShownByTouch', 'bool', 'YES', plist)
+      pbuddy.plist_set('AutomaticMinimizationEnabled', 'bool', 'NO', plist)
     end
 
 =begin

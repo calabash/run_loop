@@ -107,11 +107,6 @@ module RunLoop
     device = Device.detect_device(cloned_options, xcode, simctl, instruments)
     cloned_options[:device] = device
 
-    if device.simulator? && keyboard_hidden?
-      restore_keyboard
-      cloned_options[:relaunch_simulator] = true
-    end
-
     automator = RunLoop.detect_automator(cloned_options, xcode, device)
     if automator == :device_agent
       RunLoop::DeviceAgent::Client.run(cloned_options)
@@ -305,19 +300,5 @@ Don't set the :automator option unless you are gem maintainer.
     else
       RunLoop.default_automator(xcode, device)
     end
-  end
-
-  def self.keyboard_hidden?
-    return false unless File.file?(preferences_plist_path)
-
-    RunLoop::PlistBuddy.new.plist_read('HardwareKeyboardLastSeen', preferences_plist_path) == 'true'
-  end
-
-  def self.restore_keyboard
-    RunLoop::PlistBuddy.new.plist_set('HardwareKeyboardLastSeen', 'bool', 'NO', preferences_plist_path)
-  end
-
-  def self.preferences_plist_path
-    File.join(device.simulator_root_dir, 'data', 'Library', 'Preferences', 'com.apple.Preferences.plist')
   end
 end
