@@ -170,7 +170,7 @@ in plist:
 
       run_command("Add :#{key}:0 #{type} #{value}", path, opts)
     end
-    
+
     private
 
     # returns the path to the PlistBuddy executable
