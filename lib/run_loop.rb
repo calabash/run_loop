@@ -107,11 +107,8 @@ module RunLoop
     device = Device.detect_device(cloned_options, xcode, simctl, instruments)
     cloned_options[:device] = device
 
-    preferences_plist = "#{device.simulator_root_dir}/data/Library/Preferences/com.apple.Preferences.plist"
-    plist_buddy = RunLoop::PlistBuddy.new
-
-    if device.simulator? && File.file?(preferences_plist) && plist_buddy.plist_read('HardwareKeyboardLastSeen', preferences_plist) == 'true'
-      plist_buddy.plist_set('HardwareKeyboardLastSeen', 'bool', 'NO', preferences_plist)
+    if device.simulator? && keyboard_hidden?
+      restore_keyboard
       cloned_options[:relaunch_simulator] = true
     end
 
@@ -128,7 +125,6 @@ control of your application.
 Please quit the Instruments.app and try again.)
 
       end
-
       Core.run_with_options(cloned_options)
     end
   end
@@ -309,5 +305,17 @@ Don't set the :automator option unless you are gem maintainer.
     else
       RunLoop.default_automator(xcode, device)
     end
+  end
+
+  def self.keyboard_hidden?
+    File.file?(preferences_plist_path) && RunLoop::PlistBuddy.new.plist_read('HardwareKeyboardLastSeen', preferences_plist) == 'true'
+  end
+
+  def self.restore_keyboard
+    RunLoop::PlistBuddy.new.plist_set('HardwareKeyboardLastSeen', 'bool', 'NO', preferences_plist_path)
+  end
+
+  def self.preferences_plist_path
+    "#{device.simulator_root_dir}/data/Library/Preferences/com.apple.Preferences.plist"
   end
 end
