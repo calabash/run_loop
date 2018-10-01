@@ -308,7 +308,9 @@ Don't set the :automator option unless you are gem maintainer.
   end
 
   def self.keyboard_hidden?
-    File.file?(preferences_plist_path) && RunLoop::PlistBuddy.new.plist_read('HardwareKeyboardLastSeen', preferences_plist) == 'true'
+    return false unless File.file?(preferences_plist_path)
+
+    RunLoop::PlistBuddy.new.plist_read('HardwareKeyboardLastSeen', preferences_plist_path) == 'true'
   end
 
   def self.restore_keyboard
@@ -316,6 +318,6 @@ Don't set the :automator option unless you are gem maintainer.
   end
 
   def self.preferences_plist_path
-    "#{device.simulator_root_dir}/data/Library/Preferences/com.apple.Preferences.plist"
+    File.join(device.simulator_root_dir, 'data', 'Library', 'Preferences', 'com.apple.Preferences.plist')
   end
 end
