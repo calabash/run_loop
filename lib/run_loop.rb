@@ -107,6 +107,14 @@ module RunLoop
     device = Device.detect_device(cloned_options, xcode, simctl, instruments)
     cloned_options[:device] = device
 
+    preferences_plist = "#{device.simulator_root_dir}/data/Library/Preferences/com.apple.Preferences.plist"
+    plist_buddy = RunLoop::PlistBuddy.new
+
+    if device.simulator? && File.file?(preferences_plist) && plist_buddy.plist_read('HardwareKeyboardLastSeen', preferences_plist) == 'true'
+      plist_buddy.plist_set('HardwareKeyboardLastSeen', 'bool', 'NO', preferences_plist)
+      cloned_options[:relaunch_simulator] = true
+    end
+
     automator = RunLoop.detect_automator(cloned_options, xcode, device)
     if automator == :device_agent
       RunLoop::DeviceAgent::Client.run(cloned_options)
@@ -120,6 +128,7 @@ control of your application.
 Please quit the Instruments.app and try again.)
 
       end
+
       Core.run_with_options(cloned_options)
     end
   end
