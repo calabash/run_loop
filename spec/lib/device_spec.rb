@@ -372,20 +372,6 @@ describe RunLoop::Device do
         end
       end
 
-      context "#simulator_preferences_plist_path" do
-        it "returns nil if physical device" do
-          expect(physical.simulator_preferences_plist_path).to be == nil
-        end
-
-        it "returns path to Preference.plist when device is a simulator" do
-          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
-
-          actual = simulator.simulator_preferences_plist_path
-
-          expect(actual[/com.apple.Preferences.plist/]).to be_truthy
-        end
-      end
-
       context "#simulator_device_plist" do
         it "returns nil physical device" do
           expect(physical.simulator_device_plist).to be == nil

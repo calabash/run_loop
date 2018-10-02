@@ -28,9 +28,6 @@ module RunLoop
       pbuddy.plist_set('AutomaticMinimizationEnabled', 'bool', 'NO', plist)
     end
 
-    private
-
-    # @!visibility private
     def simulator_preferences_plist_path
       return nil if device.physical_device?
 
