@@ -17,50 +17,50 @@ describe RunLoop::SimKeyboardSettings do
 
   context "software keyboard will show" do
 
-    let(:device) { :simulator }
+    let(:device) { simulator }
 
-    context "#simulator_software_keyboard_will_show?" do
+    context "#soft_keyboard_will_show?" do
       it "returns true if Preferences.plist:AutomaticMinimizationEnabled is 0" do
         expect(sim_keyboard).to(
-            receive(:simulator_preferences_plist_path).and_return(keyboard_enabled)
+            receive(:preferences_plist_path).and_return(keyboard_enabled)
         )
 
-        expect(sim_keyboard.simulator_software_keyboard_will_show?).to be == true
+        expect(sim_keyboard.soft_keyboard_will_show?).to be true
       end
 
       it "returns false if Preferences.plist:AutomaticMinimizationEnabled is not 0" do
         expect(sim_keyboard).to(
-            receive(:simulator_preferences_plist_path).and_return(keyboard_not_enabled)
+            receive(:preferences_plist_path).and_return(keyboard_not_enabled)
         )
 
-        expect(sim_keyboard.simulator_software_keyboard_will_show?).to be == false
+        expect(sim_keyboard.soft_keyboard_will_show?).to be false
       end
     end
 
-    it "#simulator_ensure_software_keyboard_will_show" do
+    it "#ensure_soft_keyboard_will_show" do
       plist = File.join(Resources.shared.local_tmp_dir, "Preferences.plist")
       FileUtils.rm_rf(plist)
       FileUtils.cp(keyboard_not_enabled, plist)
 
       expect(sim_keyboard).to(
-          receive(:simulator_preferences_plist_path).at_least(:once).and_return(plist)
+          receive(:preferences_plist_path).at_least(:once).and_return(plist)
       )
 
-      expect(sim_keyboard.simulator_software_keyboard_will_show?).to be == false
+      expect(sim_keyboard.soft_keyboard_will_show?).to be false
 
-      actual = sim_keyboard.simulator_ensure_software_keyboard_will_show
+      actual = sim_keyboard.ensure_soft_keyboard_will_show
       expect(actual).to be_truthy
 
-      expect(sim_keyboard.simulator_software_keyboard_will_show?).to be == true
+      expect(sim_keyboard.soft_keyboard_will_show?).to be true
     end
   end
 
-  context "#simulator_preferences_plist_path" do
+  context "#preferences_plist_path" do
     context "#physical device" do
       let(:device) { physical }
 
       it "returns nil if physical device" do
-        expect(sim_keyboard.simulator_preferences_plist_path).to be == nil
+        expect(sim_keyboard.preferences_plist_path).to be nil
       end
     end
 
@@ -68,7 +68,7 @@ describe RunLoop::SimKeyboardSettings do
       let(:device) { simulator }
 
       it "returns path to Preference.plist when device is a simulator" do
-        actual = sim_keyboard.simulator_preferences_plist_path
+        actual = sim_keyboard.preferences_plist_path
         expect(actual[/com.apple.Preferences.plist/]).to be_truthy
       end
     end

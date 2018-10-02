@@ -432,7 +432,7 @@ class RunLoop::CoreSimulator
 
     RunLoop::CoreSimulator.quit_simulator
     RunLoop::CoreSimulator.ensure_hardware_keyboard_connected(pbuddy)
-    sim_keyboard.simulator_ensure_software_keyboard_will_show
+    sim_keyboard.ensure_soft_keyboard_will_show
 
     args = ['open', '-g', '-a', sim_app_path, '--args',
             '-CurrentDeviceUDID', device.udid,
@@ -810,7 +810,7 @@ Command had no output.
       return true
     end
 
-    if !sim_keyboard.simulator_software_keyboard_will_show?
+    if !sim_keyboard.soft_keyboard_will_show?
       RunLoop.log_debug("Simulator relaunch required:  software keyboard is minimized")
       return true
     end
