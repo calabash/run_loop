@@ -23,21 +23,21 @@ module RunLoop
 
     # Add properties needed for soft keyboard to show into preferences plist
     def ensure_soft_keyboard_will_show
-      pbuddy.plist_set('HardwareKeyboardLastSeen', 'bool', 'NO', plist)
+      pbuddy.plist_set('HardwareKeyboardLastSeen', 'bool', false, plist)
       pbuddy.plist_set('SoftwareKeyboardShownByTouch', 'bool', true, plist)
-      pbuddy.plist_set('AutomaticMinimizationEnabled', 'bool', 'NO', plist)
+      pbuddy.plist_set('AutomaticMinimizationEnabled', 'bool', false, plist)
     end
 
     def enable_autocorrection(condition)
-      pbuddy.plist_set('KeyboardAutocorrection', 'bool', condition, preferences_plist_path)
+      pbuddy.plist_set('KeyboardAutocorrection', 'bool', condition, plist)
     end
 
     def enable_caps_lock(condition)
-      pbuddy.plist_set('KeyboardCapsLock', 'bool', condition, preferences_plist_path)
+      pbuddy.plist_set('KeyboardCapsLock', 'bool', condition, plist)
     end
 
     def enable_autocapitalization(condition)
-      pbuddy.plist_set('KeyboardAutocapitalization', 'bool', condition, preferences_plist_path)
+      pbuddy.plist_set('KeyboardAutocapitalization', 'bool', condition, plist)
     end
 
     # Get plist path or use existing one
