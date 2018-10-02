@@ -28,40 +28,16 @@ module RunLoop
       pbuddy.plist_set('AutomaticMinimizationEnabled', 'bool', 'NO', plist)
     end
 
-    def enable_autocompletion(condition)
-      plist = preferences_plist_path
-
-      condition = if condition
-                    'YES'
-                  else
-                    'NO'
-                  end
-
-      pbuddy.plist_set('KeyboardAutocorrection', 'bool', condition, plist)
+    def enable_autocorrection(condition)
+      pbuddy.plist_set('KeyboardAutocorrection', 'bool', condition, preferences_plist_path)
     end
 
     def enable_caps_lock(condition)
-      plist = preferences_plist_path
-
-      condition = if condition
-                    'YES'
-                  else
-                    'NO'
-                  end
-
-      pbuddy.plist_set('KeyboardCapsLock', 'bool', condition, plist)
+      pbuddy.plist_set('KeyboardCapsLock', 'bool', condition, preferences_plist_path)
     end
 
     def enable_autocapitalization(condition)
-      plist = preferences_plist_path
-
-      condition = if condition
-                    'YES'
-                  else
-                    'NO'
-                  end
-
-      pbuddy.plist_set('KeyboardAutocapitalization', 'bool', condition, plist)
+      pbuddy.plist_set('KeyboardAutocapitalization', 'bool', condition, preferences_plist_path)
     end
 
     def preferences_plist_path

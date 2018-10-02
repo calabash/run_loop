@@ -233,7 +233,9 @@ in plist:
             raise(ArgumentError, "expected '#{value_type}' to be one of '#{allowed_value_types}'")
           end
           value = args_hash[:value]
-          unless value
+          if value_type == 'bool'
+            value = !!value
+          elsif !value
             raise(ArgumentError, ':value is a required key for :add command')
           end
           key = args_hash[:key]
@@ -249,8 +251,10 @@ in plist:
           cmd_part = "Print :#{key}"
         when :set
           value = args_hash[:value]
-          unless value
-            raise(ArgumentError, ':value is a required key for :set command')
+          if args_hash[:type] == 'bool'
+            value = !!value
+          elsif !value
+            raise(ArgumentError, ':value is a required key for :add command')
           end
           key = args_hash[:key]
           unless key
