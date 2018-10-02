@@ -48,6 +48,7 @@ require "run_loop/locale"
 require "run_loop/language"
 require "run_loop/physical_device/life_cycle"
 require "run_loop/physical_device/ios_device_manager"
+require "run_loop/sim_keyboard_settings"
 
 module RunLoop
 
