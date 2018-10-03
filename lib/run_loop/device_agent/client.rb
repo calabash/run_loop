@@ -102,6 +102,8 @@ module RunLoop
                                                                      options,
                                                                      app_details)
 
+        # Enable or disable keyboard autocorrection, capse lock and autocapitalization when running on simulator
+        # disables these value by default unless user don't pass true values for these keys
         sim_keyboard = RunLoop::SimKeyboardSettings.new(device)
         sim_keyboard.enable_autocorrection(options[:autocorrection_enabled])
         sim_keyboard.enable_caps_lock(options[:capslock_enabled])

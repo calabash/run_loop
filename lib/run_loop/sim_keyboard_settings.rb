@@ -36,26 +36,44 @@ module RunLoop
       pbuddy.plist_set(PLIST_KEYS[:minimization_enabled], 'bool', false, plist)
     end
 
+    # Enable/disable keyboard autocorrection
+    #
+    # @param [Boolean] condition, option passed by the user in launch arguments. nil(false) by default
     def enable_autocorrection(condition)
       pbuddy.plist_set(PLIST_KEYS[:keyboard_autocorrection], 'bool', condition, plist)
     end
 
+    # Enable/disable keyboard caps lock
+    #
+    # @param [Boolean] condition, option passed by the user in launch arguments. nil(false) by default
     def enable_caps_lock(condition)
       pbuddy.plist_set(PLIST_KEYS[:keyboard_caps_lock], 'bool', condition, plist)
     end
 
+    # Enable/disable keyboard autocapitalization
+    #
+    # @param [Boolean] condition, option passed by the user in launch arguments. nil(false) by default
     def enable_autocapitalization(condition)
       pbuddy.plist_set(PLIST_KEYS[:keyboard_autocapitalization], 'bool', condition, plist)
     end
 
+    # Checks if plist value that responds for autocorrection is set to true
+    #
+    # @return [Boolean]
     def autocorrection_enabled?
       pbuddy.plist_read(PLIST_KEYS[:keyboard_autocorrection], plist) == 'true'
     end
 
+    # Checks if plist value that responds for caps lock is set to true
+    #
+    # @return [Boolean]
     def caps_lock_enabled?
       pbuddy.plist_read(PLIST_KEYS[:keyboard_caps_lock], plist) == 'true'
     end
 
+    # Checks if plist value that responds for autocapitalization is set to true
+    #
+    # @return [Boolean]
     def autocapitalization_enabled?
       pbuddy.plist_read(PLIST_KEYS[:keyboard_autocapitalization], plist) == 'true'
     end
