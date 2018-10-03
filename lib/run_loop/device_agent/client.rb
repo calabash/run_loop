@@ -104,7 +104,7 @@ module RunLoop
 
         sim_keyboard = RunLoop::SimKeyboardSettings.new(device)
         sim_keyboard.enable_autocorrection(options[:autocorrection_enabled])
-        sim_keyboard.enable_capslock(options[:capslock_enabled])
+        sim_keyboard.enable_caps_lock(options[:capslock_enabled])
         sim_keyboard.enable_autocapitalization(options[:autocapitalization_enabled])
 
         default_options = {
