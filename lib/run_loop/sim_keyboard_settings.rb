@@ -63,8 +63,8 @@ module RunLoop
     def preferences_plist_path
       return nil if device.physical_device?
 
-      directory = File.join(device.simulator_root_dir, "data", "Library", "Preferences")
-      pbuddy.ensure_plist(directory, "com.apple.Preferences.plist")
+      directory = File.join(device.simulator_root_dir, 'data', 'Library', 'Preferences')
+      pbuddy.ensure_plist(directory, 'com.apple.Preferences.plist')
     end
   end
 end
