@@ -1,6 +1,5 @@
 module RunLoop
   class SimKeyboardSettings
-
     PLIST_KEYS = {
       hw_keyboard_seen: 'HardwareKeyboardLastSeen',
       soft_keyboard_shown: 'SoftwareKeyboardShownByTouch',
@@ -8,7 +7,7 @@ module RunLoop
       keyboard_autocorrection: 'KeyboardAutocorrection',
       keyboard_caps_lock: 'KeyboardCapsLock',
       keyboard_autocapitalization: 'KeyboardAutocapitalization'
-    }
+    }.freeze
 
     attr_reader :pbuddy, :device, :plist
 
@@ -47,6 +46,18 @@ module RunLoop
 
     def enable_autocapitalization(condition)
       pbuddy.plist_set(PLIST_KEYS[:keyboard_autocapitalization], 'bool', condition, plist)
+    end
+
+    def autocorrection_enabled?
+      pbuddy.plist_read(PLIST_KEYS[:keyboard_autocorrection], plist) == 'true'
+    end
+
+    def caps_lock_enabled?
+      pbuddy.plist_read(PLIST_KEYS[:keyboard_caps_lock], plist) == 'true'
+    end
+
+    def autocapitalization_enabled?
+      pbuddy.plist_read(PLIST_KEYS[:keyboard_autocapitalization], plist) == 'true'
     end
 
     # Get plist path or use existing one
