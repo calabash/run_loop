@@ -102,13 +102,6 @@ module RunLoop
                                                                      options,
                                                                      app_details)
 
-        # Enable or disable keyboard autocorrection, capse lock and autocapitalization when running on simulator
-        # disables these value by default unless user don't pass true values for these keys
-        sim_keyboard = RunLoop::SimKeyboardSettings.new(device)
-        sim_keyboard.enable_autocorrection(options[:autocorrection_enabled])
-        sim_keyboard.enable_caps_lock(options[:capslock_enabled])
-        sim_keyboard.enable_autocapitalization(options[:autocapitalization_enabled])
-
         default_options = {
             :xcode => xcode
         }
@@ -117,6 +110,13 @@ module RunLoop
 
         if device.simulator? && app
           RunLoop::Core.expect_simulator_compatible_arch(device, app)
+
+          # Enable or disable keyboard autocorrection, capse lock and autocapitalization when running on simulator
+          # disables these value by default unless user don't pass true values for these keys
+          sim_keyboard = RunLoop::SimKeyboardSettings.new(device)
+          sim_keyboard.enable_autocorrection(options[:autocorrection_enabled])
+          sim_keyboard.enable_caps_lock(options[:capslock_enabled])
+          sim_keyboard.enable_autocapitalization(options[:autocapitalization_enabled])
 
           if merged_options[:relaunch_simulator]
             RunLoop.log_debug("Detected :relaunch_simulator option; will force simulator to restart")
