@@ -83,7 +83,7 @@ describe RunLoop::SimKeyboardSettings do
     end
   end
 
-  context '#enable_autocorrection' do
+  describe '#enable_autocorrection' do
     let(:device) { simulator }
 
     it '#enable_autocorrection' do
@@ -122,7 +122,7 @@ describe RunLoop::SimKeyboardSettings do
     end
   end
 
-  context '#enable_caps_lock' do
+  describe '#enable_caps_lock' do
     let(:device) { simulator }
 
     it '#enable caps lock' do
@@ -161,7 +161,7 @@ describe RunLoop::SimKeyboardSettings do
     end
   end
 
-  context '#enable_autocapitalization' do
+  describe '#enable_autocapitalization' do
     let(:device) { simulator }
 
     it '#enable autocapitalization' do
