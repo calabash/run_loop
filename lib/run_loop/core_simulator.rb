@@ -794,23 +794,23 @@ Command had no output.
     running_sim_details = running_simulator_details
 
     # Simulator is not running.
-    unless running_sim_details[:pid]
+    if !running_sim_details[:pid]
       RunLoop.log_debug("Simulator relaunch required: simulator is not running.")
       return true
     end
 
     # Simulator is running, but run-loop did not launch it.
-    unless running_sim_details[:launched_by_run_loop]
+    if !running_sim_details[:launched_by_run_loop]
       RunLoop.log_debug("Simulator relaunch required: simulator was not launched by run_loop")
       return true
     end
 
-    unless RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
+    if !RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
       RunLoop.log_debug("Simulator relaunch required: hardware keyboard not connected.")
       return true
     end
 
-    unless sim_keyboard.soft_keyboard_will_show?
+    if !sim_keyboard.soft_keyboard_will_show?
       RunLoop.log_debug("Simulator relaunch required:  software keyboard is minimized")
       return true
     end
