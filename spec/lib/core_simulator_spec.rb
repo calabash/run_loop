@@ -459,9 +459,6 @@ describe RunLoop::CoreSimulator do
         expect(RunLoop::CoreSimulator).to(
           receive(:hardware_keyboard_connected?).and_return(true)
         )
-        expect(core_sim.device).to(
-          receive(:simulator_software_keyboard_will_show?).and_return(false)
-        )
 
         expect(core_sim.send(:simulator_state_requires_relaunch?)).to be_truthy
       end
@@ -473,9 +470,7 @@ describe RunLoop::CoreSimulator do
         expect(RunLoop::CoreSimulator).to(
           receive(:hardware_keyboard_connected?).and_return(true)
         )
-        expect(core_sim.device).to(
-          receive(:simulator_software_keyboard_will_show?).and_return(true)
-        )
+
         expect(device).to receive(:update_simulator_state).and_return(true)
         expect(device).to receive(:state).and_return("Anything but 'Booted'")
 
@@ -490,9 +485,7 @@ describe RunLoop::CoreSimulator do
         expect(RunLoop::CoreSimulator).to(
           receive(:hardware_keyboard_connected?).and_return(true)
         )
-        expect(core_sim.device).to(
-          receive(:simulator_software_keyboard_will_show?).and_return(true)
-        )
+
         expect(device).to receive(:update_simulator_state).and_return(true)
         expect(device).to receive(:state).and_return("Booted")
 

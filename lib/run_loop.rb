@@ -40,6 +40,7 @@ require 'run_loop/lipo'
 require "run_loop/otool"
 require "run_loop/strings"
 require 'run_loop/cache'
+require "run_loop/sim_keyboard_settings"
 require 'run_loop/patches/awesome_print'
 require 'run_loop/core_simulator'
 require "run_loop/simctl"

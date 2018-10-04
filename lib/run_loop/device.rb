@@ -40,7 +40,6 @@ module RunLoop
     attr_reader :state
     attr_reader :simulator_root_dir
     attr_reader :simulator_accessibility_plist_path
-    attr_reader :simulator_preferences_plist_path
     attr_reader :simulator_log_file_path
 
     # Create a new device.
@@ -326,14 +325,6 @@ version: #{version}
     end
 
     # @!visibility private
-    def simulator_preferences_plist_path
-      return nil if physical_device?
-
-      directory = File.join(simulator_root_dir, "data", "Library", "Preferences")
-      pbuddy.ensure_plist(directory, "com.apple.Preferences.plist")
-    end
-
-    # @!visibility private
     def simulator_log_file_path
       return nil if physical_device?
       @simulator_log_file_path ||= File.join(CORE_SIMULATOR_LOGS_DIR, udid,
@@ -534,16 +525,6 @@ Could not update the Simulator languages.
       end
 
       running_apps
-    end
-
-    def simulator_software_keyboard_will_show?
-      plist = simulator_preferences_plist_path
-      pbuddy.plist_read("AutomaticMinimizationEnabled", plist).to_i == 0
-    end
-
-    def simulator_ensure_software_keyboard_will_show
-      plist = simulator_preferences_plist_path
-      pbuddy.plist_set("AutomaticMinimizationEnabled", "integer", 0, plist)
     end
 
 =begin

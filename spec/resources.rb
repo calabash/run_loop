@@ -363,6 +363,11 @@ class Resources
     end
   end
 
+  def empty_plist
+    base_dir = File.join(resources_dir, 'keyboard', 'CoreSimulator')
+    File.join(base_dir, 'empty.plist')
+  end
+
   def ideviceinstaller_bin_path
     @ideviceinstaller_bin_path ||= `which ideviceinstaller`.chomp!
   end
