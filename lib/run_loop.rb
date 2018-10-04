@@ -40,6 +40,7 @@ require 'run_loop/lipo'
 require "run_loop/otool"
 require "run_loop/strings"
 require 'run_loop/cache'
+require "run_loop/sim_keyboard_settings"
 require 'run_loop/patches/awesome_print'
 require 'run_loop/core_simulator'
 require "run_loop/simctl"
@@ -48,7 +49,6 @@ require "run_loop/locale"
 require "run_loop/language"
 require "run_loop/physical_device/life_cycle"
 require "run_loop/physical_device/ios_device_manager"
-require "run_loop/sim_keyboard_settings"
 
 module RunLoop
 

@@ -19,7 +19,9 @@ describe RunLoop::SimKeyboardSettings do
     let(:device) { simulator }
 
     describe '#soft_keyboard_will_show?' do
-      it 'returns true if Preferences.plist:AutomaticMinimizationEnabled/HardwareKeyboardLastSeen is false and SoftwareKeyboardShownByTouch is true' do
+      it 'returns true if Preferences.plist: ' \
+          'AutomaticMinimizationEnabled/HardwareKeyboardLastSeen are false ' \
+          'and SoftwareKeyboardShownByTouch is true' do
         expect(sim_keyboard).to(
           receive(:preferences_plist_path).and_return(keyboard_enabled)
         )
@@ -27,7 +29,9 @@ describe RunLoop::SimKeyboardSettings do
         expect(sim_keyboard.soft_keyboard_will_show?).to be true
       end
 
-      it 'returns false if Preferences.plist:AutomaticMinimizationEnabled/HardwareKeyboardLastSeen is true and SoftwareKeyboardShownByTouch is false' do
+      it 'returns false if Preferences.plist: ' \
+          'AutomaticMinimizationEnabled/HardwareKeyboardLastSeen is true ' \
+          'and SoftwareKeyboardShownByTouch is false' do
         expect(sim_keyboard).to(
           receive(:preferences_plist_path).and_return(keyboard_not_enabled)
         )
@@ -35,7 +39,9 @@ describe RunLoop::SimKeyboardSettings do
         expect(sim_keyboard.soft_keyboard_will_show?).to be false
       end
 
-      it 'returns true when AutomaticMinimizationEnabled/HardwareKeyboardLastSeen/SoftwareKeyboardShownByTouch are not set' do
+      it 'returns true when ' \
+        'AutomaticMinimizationEnabled/HardwareKeyboardLastSeen and ' \
+         'SoftwareKeyboardShownByTouch are not set' do
         expect(sim_keyboard).to(
           receive(:preferences_plist_path).and_return(empty_plist)
         )

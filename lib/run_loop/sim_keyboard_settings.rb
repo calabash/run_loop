@@ -17,8 +17,9 @@ module RunLoop
     end
 
     # Check if all the properties needed for the soft keyboard to appear are set
-    # Approach to negate 'true' and 'false' was chosen in order to do not reboot sim too often
-    # as this will cover the cases when the properties are not set which means that keyboard will be shown anyways
+    # Approach to negate 'true' and 'false' was chosen in order to do not
+    # reboot sim too often, as this will cover the cases when the properties
+    # are not set which means that keyboard will be shown anyways
     #
     # @return [Bool]
     def soft_keyboard_will_show?
