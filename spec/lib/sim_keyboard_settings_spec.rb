@@ -88,4 +88,121 @@ describe RunLoop::SimKeyboardSettings do
       end
     end
   end
+
+  describe '#enable_autocorrection' do
+    let(:device) { simulator }
+
+    it '#enable_autocorrection' do
+      plist = File.join(Resources.shared.local_tmp_dir, 'Preferences.plist')
+      FileUtils.rm_rf(plist)
+      FileUtils.cp(empty_plist, plist)
+
+      expect(sim_keyboard).to(
+        receive(:preferences_plist_path).at_least(:once).and_return(plist)
+      )
+
+      expect(sim_keyboard.autocorrection_enabled?).to be false
+
+      actual = sim_keyboard.enable_autocorrection(true)
+      expect(actual).to be_truthy
+
+      expect(sim_keyboard.autocorrection_enabled?).to be true
+    end
+
+    it '#disable_autocorrection' do
+      plist = File.join(Resources.shared.local_tmp_dir, 'Preferences.plist')
+      FileUtils.rm_rf(plist)
+      FileUtils.cp(empty_plist, plist)
+
+      expect(sim_keyboard).to(
+        receive(:preferences_plist_path).at_least(:once).and_return(plist)
+      )
+      sim_keyboard.enable_autocorrection(true)
+
+      expect(sim_keyboard.autocorrection_enabled?).to be true
+
+      actual = sim_keyboard.enable_autocorrection(false)
+      expect(actual).to be_truthy
+
+      expect(sim_keyboard.autocorrection_enabled?).to be false
+    end
+  end
+
+  describe '#enable_caps_lock' do
+    let(:device) { simulator }
+
+    it '#enable caps lock' do
+      plist = File.join(Resources.shared.local_tmp_dir, 'Preferences.plist')
+      FileUtils.rm_rf(plist)
+      FileUtils.cp(empty_plist, plist)
+
+      expect(sim_keyboard).to(
+        receive(:preferences_plist_path).at_least(:once).and_return(plist)
+      )
+
+      expect(sim_keyboard.caps_lock_enabled?).to be false
+
+      actual = sim_keyboard.enable_caps_lock(true)
+      expect(actual).to be_truthy
+
+      expect(sim_keyboard.caps_lock_enabled?).to be true
+    end
+
+    it '#disable caps lock' do
+      plist = File.join(Resources.shared.local_tmp_dir, 'Preferences.plist')
+      FileUtils.rm_rf(plist)
+      FileUtils.cp(empty_plist, plist)
+
+      expect(sim_keyboard).to(
+        receive(:preferences_plist_path).at_least(:once).and_return(plist)
+      )
+      sim_keyboard.enable_caps_lock(true)
+
+      expect(sim_keyboard.caps_lock_enabled?).to be true
+
+      actual = sim_keyboard.enable_caps_lock(false)
+      expect(actual).to be_truthy
+
+      expect(sim_keyboard.caps_lock_enabled?).to be false
+    end
+  end
+
+  describe '#enable_autocapitalization' do
+    let(:device) { simulator }
+
+    it '#enable autocapitalization' do
+      plist = File.join(Resources.shared.local_tmp_dir, 'Preferences.plist')
+      FileUtils.rm_rf(plist)
+      FileUtils.cp(empty_plist, plist)
+
+      expect(sim_keyboard).to(
+        receive(:preferences_plist_path).at_least(:once).and_return(plist)
+      )
+
+      expect(sim_keyboard.autocapitalization_enabled?).to be false
+
+      actual = sim_keyboard.enable_autocapitalization(true)
+      expect(actual).to be_truthy
+
+      expect(sim_keyboard.autocapitalization_enabled?).to be true
+    end
+
+    it '#disable autocapitalization' do
+      plist = File.join(Resources.shared.local_tmp_dir, 'Preferences.plist')
+      FileUtils.rm_rf(plist)
+      FileUtils.cp(empty_plist, plist)
+
+      expect(sim_keyboard).to(
+        receive(:preferences_plist_path).at_least(:once).and_return(plist)
+      )
+      sim_keyboard.enable_autocapitalization(true)
+
+      expect(sim_keyboard.autocapitalization_enabled?).to be true
+
+      actual = sim_keyboard.enable_autocapitalization(false)
+      expect(actual).to be_truthy
+
+      expect(sim_keyboard.autocapitalization_enabled?).to be false
+    end
+  end
 end
