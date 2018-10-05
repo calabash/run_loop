@@ -12,12 +12,13 @@ pipeline {
     SLACK_COLOR_GOOD    = '#3EB991'
     PROJECT_NAME = 'run_loop'
   }
+
   options {
     disableConcurrentBuilds()
-    timestamps()
     buildDiscarder(logRotator(numToKeepStr: '10'))
     timeout(time: 60, unit: 'MINUTES')
   }
+
   stages {
     stage('announce') {
       steps {
