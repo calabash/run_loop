@@ -372,20 +372,6 @@ describe RunLoop::Device do
         end
       end
 
-      context "#simulator_preferences_plist_path" do
-        it "returns nil if physical device" do
-          expect(physical.simulator_preferences_plist_path).to be == nil
-        end
-
-        it "returns path to Preference.plist when device is a simulator" do
-          expect(simulator).to receive(:simulator_root_dir).and_return(root_dir)
-
-          actual = simulator.simulator_preferences_plist_path
-
-          expect(actual[/com.apple.Preferences.plist/]).to be_truthy
-        end
-      end
-
       context "#simulator_device_plist" do
         it "returns nil physical device" do
           expect(physical.simulator_device_plist).to be == nil
@@ -615,47 +601,6 @@ describe RunLoop::Device do
           expect(actual.to_s).to be == "0c3115eb0d6c2d05a964415fada251e49f9bebe3cfa76a9c38d56648783c92d6"
         end
       end
-    end
-  end
-
-  context "software keyboard will show" do
-    let(:keyboard_enabled) { Resources.shared.plist_with_software_keyboard(true) }
-    let(:keyboard_not_enabled) { Resources.shared.plist_with_software_keyboard(false) }
-    let(:simulator) { RunLoop::Device.new("denis", "9.0", "udid") }
-
-    context "#simulator_software_keyboard_will_show?" do
-      it "returns true if Preferences.plist:AutomaticMinimizationEnabled is 0" do
-        expect(simulator).to(
-          receive(:simulator_preferences_plist_path).and_return(keyboard_enabled)
-        )
-
-        expect(simulator.simulator_software_keyboard_will_show?).to be == true
-      end
-
-      it "returns false if Preferences.plist:AutomaticMinimizationEnabled is not 0" do
-        expect(simulator).to(
-          receive(:simulator_preferences_plist_path).and_return(keyboard_not_enabled)
-        )
-
-        expect(simulator.simulator_software_keyboard_will_show?).to be == false
-      end
-    end
-
-    it "#simulator_ensure_software_keyboard_will_show" do
-      plist = File.join(Resources.shared.local_tmp_dir, "Preferences.plist")
-      FileUtils.rm_rf(plist)
-      FileUtils.cp(keyboard_not_enabled, plist)
-
-      expect(simulator).to(
-        receive(:simulator_preferences_plist_path).at_least(:once).and_return(plist)
-      )
-
-      expect(simulator.simulator_software_keyboard_will_show?).to be == false
-
-      actual = simulator.simulator_ensure_software_keyboard_will_show
-      expect(actual).to be_truthy
-
-      expect(simulator.simulator_software_keyboard_will_show?).to be == true
     end
   end
 

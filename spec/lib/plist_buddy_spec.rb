@@ -133,15 +133,62 @@ describe RunLoop::PlistBuddy do
         expect(cmd).to be == "Set :foo bar"
       end
 
+      it 'set false for bool type' do
+        cmd =  pbuddy.send(:build_plist_cmd, *[:set,
+                                               {:key => 'foo', :value => false, :type => 'bool'},
+                                               path])
+        expect(cmd).to be == "Set :foo false"
+      end
+
+      it 'set false for bool type when value is nil' do
+        cmd =  pbuddy.send(:build_plist_cmd, *[:set,
+                                               {:key => 'foo', :value => nil, :type => 'bool'},
+                                               path])
+        expect(cmd).to be == "Set :foo false"
+      end
+
+      it 'set true for bool type when value is anything that is not nil or false' do
+        cmd =  pbuddy.send(:build_plist_cmd, *[:set,
+                                               {:key => 'foo', :value => 'smth', :type => 'bool'},
+                                               path])
+        expect(cmd).to be == "Set :foo true"
+      end
+
       it 'add' do
         cmd = pbuddy.send(:build_plist_cmd, *[:add, {
                                                         :key => 'foo',
                                                         :value => 'bar',
-                                                        :type => 'bool'
+                                                        :type => 'string'
                                                   }, path])
-        expect(cmd).to be == "Add :foo bool bar"
+        expect(cmd).to be == "Add :foo string bar"
       end
 
+      it 'add false for bool type' do
+        cmd = pbuddy.send(:build_plist_cmd, *[:add, {
+            :key => 'foo',
+            :value => false,
+            :type => 'bool'
+        }, path])
+        expect(cmd).to be == "Add :foo bool false"
+      end
+
+      it 'add true for bool type when value is anything that is not nil or false' do
+        cmd = pbuddy.send(:build_plist_cmd, *[:add, {
+            :key => 'foo',
+            :value => 'something',
+            :type => 'bool'
+        }, path])
+        expect(cmd).to be == "Add :foo bool true"
+      end
+
+      it 'add false for bool type when value is nil' do
+        cmd = pbuddy.send(:build_plist_cmd, *[:add, {
+            :key => 'foo',
+            :value => nil,
+            :type => 'bool'
+        }, path])
+        expect(cmd).to be == "Add :foo bool false"
+      end
     end
 
     context 'plist read/write' do

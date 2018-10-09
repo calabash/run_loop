@@ -598,6 +598,15 @@ describe RunLoop::Simctl do
           "udid" => "33E644E8-096B-4766-A957-4B34FB18DC48"
         }
       end
+      let(:new_xcode_record) do
+        {
+          "state" => "Shutdown",
+          "isAvailable" => "YES",
+          "name" => "iPhone 8",
+          "udid" => "BF6DFF2F-BF46-4348-AEFF-F676EE61A43E",
+          "availabilityError" => ""
+        }
+      end
       let(:version) { "9.1" }
 
       it "#device_available?" do
@@ -608,6 +617,13 @@ describe RunLoop::Simctl do
 
         record["availability"] =  " (unavailable, Mac OS X 10.11.4 is not supported)"
         expect(simctl.send(:device_available?, record)).to be_falsey
+      end
+
+      it "#new_device_available?" do
+        expect(simctl.send(:device_available?, new_xcode_record)).to be_truthy
+
+        new_xcode_record["isAvailable"] = "NO"
+        expect(simctl.send(:device_available?, new_xcode_record)).to be_falsey
       end
 
       it "#device_from_record" do

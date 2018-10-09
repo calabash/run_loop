@@ -1,5 +1,33 @@
 ## Change Log
 
+### 4.0.0
+
+This release provides preliminary support for Xcode 10.1 beta 2.
+
+This is a major release because it breaks the dependency on json
+1.x and allows json 2.x.
+
+* Fixed simulators availability check for Xcode 10.1 beta 2 #706
+* Disable simulator autocorrection and co #704
+* Do not bind run_loop to any versions of json #703
+* Ensure the keyboard will be shown #702
+* DeviceAgent: #keyboard_visible? returns false for hardware keyboard #700
+* CoreSimulator: remove call to send_simulator_to_background #699
+
+#### DeviceAgent 1.3.2
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.3.2
+
+* Added new Korean alert for location from iOS 12 #303
+* Improve performance of element JSON serialization and simplify
+  visibility heuristic #300
+
+#### iOSDeviceManager 3.2.2
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.2.2
+
+* FB Frameworks: handle missing simulator arches #234
+
 ### 3.0.1
 
 * Core: default simulator for Xcode 10 is iPhone 10S #696
