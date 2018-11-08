@@ -1,5 +1,17 @@
 ## Change Log
 
+### 4.1.0
+
+This update provides support for testing against iPhone XS and the
+new UDID format.
+
+* Update gem dependencies #708
+* Fixed regex for new device ids. #710
+
+#### iOSDeviceManager 3.3.0
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.3.0
+
 ### 4.0.0
 
 This release provides preliminary support for Xcode 10.1 beta 2.
