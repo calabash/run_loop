@@ -558,6 +558,43 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
     true
   end
 
+  # @!visibility private
+  def simulator_state_requires_relaunch?
+    running_sim_details = running_simulator_details
+
+    # Simulator is not running.
+    if !running_sim_details[:pid]
+      RunLoop.log_debug("Simulator relaunch required: simulator is not running.")
+      return true
+    end
+
+    # Simulator is running, but run-loop did not launch it.
+    if !running_sim_details[:launched_by_run_loop]
+      RunLoop.log_debug("Simulator relaunch required: simulator was not launched by run_loop")
+      return true
+    end
+
+    if !RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
+      RunLoop.log_debug("Simulator relaunch required: hardware keyboard not connected.")
+      return true
+    end
+
+    if !sim_keyboard.soft_keyboard_will_show?
+      RunLoop.log_debug("Simulator relaunch required:  software keyboard is minimized")
+      return true
+    end
+
+    # Simulator is running, run_loop launched it, but it is not Booted.
+    device.update_simulator_state
+    if device.state == "Booted"
+      RunLoop.log_debug("Simulator relaunch not required: simulator has state 'Booted'")
+      false
+    else
+      RunLoop.log_debug("Simulator relaunch required: simulator does not have state 'Booted'")
+      true
+    end
+  end
+
 =begin
   PRIVATE METHODS
 =end
@@ -787,43 +824,6 @@ Command had no output.
   # Xcode support is dropped.
   def sdk_gte_8?
     device.version >= RunLoop::Version.new('8.0')
-  end
-
-  # @!visibility private
-  def simulator_state_requires_relaunch?
-    running_sim_details = running_simulator_details
-
-    # Simulator is not running.
-    if !running_sim_details[:pid]
-      RunLoop.log_debug("Simulator relaunch required: simulator is not running.")
-      return true
-    end
-
-    # Simulator is running, but run-loop did not launch it.
-    if !running_sim_details[:launched_by_run_loop]
-      RunLoop.log_debug("Simulator relaunch required: simulator was not launched by run_loop")
-      return true
-    end
-
-    if !RunLoop::CoreSimulator.hardware_keyboard_connected?(pbuddy)
-      RunLoop.log_debug("Simulator relaunch required: hardware keyboard not connected.")
-      return true
-    end
-
-    if !sim_keyboard.soft_keyboard_will_show?
-      RunLoop.log_debug("Simulator relaunch required:  software keyboard is minimized")
-      return true
-    end
-
-    # Simulator is running, run_loop launched it, but it is not Booted.
-    device.update_simulator_state
-    if device.state == "Booted"
-      RunLoop.log_debug("Simulator relaunch not required: simulator has state 'Booted'")
-      false
-    else
-      RunLoop.log_debug("Simulator relaunch required: simulator does not have state 'Booted'")
-      true
-    end
   end
 
   # @!visibility private
