@@ -1463,6 +1463,12 @@ If the body empty, the DeviceAgent has probably crashed.
           RunLoop.log_debug("The DeviceAgent that is running is stale; shutting down")
           shutdown
         end
+        
+        core_simulator = RunLoop::CoreSimulator.new(device, nil)
+        if core_simulator.simulator_state_requires_relaunch?
+          RunLoop.log_debug("Simulator requires relaunch; shutting down")
+          shutdown
+        end
 
         if running?
           RunLoop.log_debug("DeviceAgent is already running")
