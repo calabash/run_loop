@@ -591,12 +591,12 @@ while trying to list devices.
     # @!visibility private
     def device_key_to_version(key)
       version_string = if key.include?(" ")
-        key.split(" ").last
-      else
-        regex = /(?<version>\d+-\d\z)/
-        matches = regex.match key
-        matches[:version].tr("-", ".")
-      end
+                          key.split(" ").last
+                       else
+                          regex = /(?<version>\d+-\d\z)/
+                          matches = regex.match key
+                          matches[:version].tr("-", ".")
+                        end
       RunLoop::Version.new(version_string)
     end
 
