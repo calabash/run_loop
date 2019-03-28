@@ -590,14 +590,16 @@ while trying to list devices.
 
     # @!visibility private
     def device_key_to_version(key)
-      version_string = if key.include?(" ")
-                          key.split(" ").last
-                       else
-                          regex = /(?<version>\d+-\d\z)/
-                          matches = regex.match key
-                          matches[:version].tr("-", ".")
-                        end
-      RunLoop::Version.new(version_string)
+      str = if key.include?(" ")
+              key.split(" ").last
+            else
+              # matches versions like 12-2 and 14-1-1
+              matches = /(?<version>\d+(-\d){1,2}\z)/.match(key)
+              raise RuntimeError, "Cannot fetch the Simulator version from #{key}" if matches.nil?
+              matches[:version].tr("-", ".")
+            end
+
+      RunLoop::Version.new(str)
     end
 
     # @!visibility private
