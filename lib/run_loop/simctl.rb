@@ -595,7 +595,9 @@ while trying to list devices.
             else
               # matches versions like 12-2 and 14-1-1
               matches = /(?<version>\d+(-\d){1,2}\z)/.match(key)
-              raise RuntimeError, "Cannot fetch the Simulator version from #{key}" if matches.nil?
+              if matches.nil?
+                raise RuntimeError, "Cannot fetch the Simulator version from #{key}"
+              end
               matches[:version].tr("-", ".")
             end
 
