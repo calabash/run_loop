@@ -593,7 +593,7 @@ while trying to list devices.
       str = if key.include?(" ")
               key.split(" ").last
             else
-              matches = XCODE_102_SIMULATOR_REGEX.match(key)
+              matches = RunLoop::Regex::XCODE_102_SIMULATOR_REGEX.match(key)
               if matches.nil?
                 raise RuntimeError, "Cannot fetch the Simulator version from #{key}"
               end
