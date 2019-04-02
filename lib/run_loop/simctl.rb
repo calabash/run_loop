@@ -593,8 +593,7 @@ while trying to list devices.
       str = if key.include?(" ")
               key.split(" ").last
             else
-              # matches versions like 12-2 and 14-1-1
-              matches = /(?<version>\d+(-\d){1,2}\z)/.match(key)
+              matches = XCODE_102_SIMULATOR_REGEX.match(key)
               if matches.nil?
                 raise RuntimeError, "Cannot fetch the Simulator version from #{key}"
               end
