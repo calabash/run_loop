@@ -26,6 +26,14 @@ module RunLoop
       to_s
     end
 
+    # Returns a version instance for Xcode 10.2; used to check for the
+    # availability of features and paths to various items on the filesystem
+    #
+    # @return [RunLoop::Version] 10.2
+    def v102
+      fetch_version(:v102)
+    end
+
     # Returns a version instance for Xcode 10.0; used to check for the
     # availability of features and paths to various items on the filesystem
     #
@@ -106,6 +114,13 @@ module RunLoop
       fetch_version(:v80)
     end
 
+    # Is the active Xcode version 10.2 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 10.2
+    def version_gte_102?
+      version >= v102
+    end
+    
     # Is the active Xcode version 10.0 or above?
     #
     # @return [Boolean] `true` if the current Xcode version is >= 10.0

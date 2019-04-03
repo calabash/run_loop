@@ -559,7 +559,7 @@ describe RunLoop::Simctl do
       end
     end
 
-    describe "categorizing and parsing device keys" do
+    describe "categorizing and parsing device keys (Xcode < 10.2)" do
       let(:ios) { "iOS 9.1" }
       let(:tvos) { "tvOS 9.0" }
       let(:watchos) { "watchOS 2.1" }
@@ -586,6 +586,38 @@ describe RunLoop::Simctl do
         expect(simctl.send(:device_key_to_version, ios)).to be == RunLoop::Version.new("9.1")
         expect(simctl.send(:device_key_to_version, tvos)).to be == RunLoop::Version.new("9.0")
         expect(simctl.send(:device_key_to_version, watchos)).to be == RunLoop::Version.new("2.1")
+      end
+    end
+
+    describe "categorizing and parsing device keys (Xcode > 10.1)" do
+      let(:ios) { "com.apple.CoreSimulator.SimRuntime.iOS-12-2" }
+      let(:tvos) { "com.apple.CoreSimulator.SimRuntime.tvOS-12-0" }
+      let(:watchos) { "com.apple.CoreSimulator.SimRuntime.watchOS-5-2-2" }
+
+      it "#device_key_is_ios?" do
+        expect(simctl.send(:device_key_is_ios?, ios)).to be_truthy
+        expect(simctl.send(:device_key_is_ios?, tvos)).to be_falsey
+        expect(simctl.send(:device_key_is_ios?, watchos)).to be_falsey
+      end
+
+      it "#device_key_is_tvos?" do
+        expect(simctl.send(:device_key_is_tvos?, ios)).to be_falsey
+        expect(simctl.send(:device_key_is_tvos?, tvos)).to be_truthy
+        expect(simctl.send(:device_key_is_tvos?, watchos)).to be_falsey
+      end
+
+      it "#device_key_is_watchos?" do
+        expect(simctl.send(:device_key_is_watchos?, ios)).to be_falsey
+        expect(simctl.send(:device_key_is_watchos?, tvos)).to be_falsey
+        expect(simctl.send(:device_key_is_watchos?, watchos)).to be_truthy
+      end
+
+      it "#device_key_to_version" do
+        expect(simctl.send(:device_key_to_version, ios)).to be == RunLoop::Version.new("12.2")
+        expect(simctl.send(:device_key_to_version, tvos)).to be == RunLoop::Version.new("12.0")
+        expect(simctl.send(:device_key_to_version, watchos)).to be == RunLoop::Version.new("5.2.2")
+
+        expect { simctl.send(:device_key_to_version, 'invalidVersion12.5') }.to raise_error(RuntimeError)
       end
     end
 

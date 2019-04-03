@@ -56,7 +56,7 @@ tools like instruments and simctl.}
 
   s.add_development_dependency("rspec_junit_formatter", "~> 0.3")
   s.add_development_dependency("luffa", "~> 2.0")
-  s.add_development_dependency('bundler', '~> 1.6')
+  s.add_development_dependency('bundler')
   s.add_development_dependency('rspec', '~> 3.0')
   s.add_development_dependency('rake', '~> 10.3')
   s.add_development_dependency("guard-rspec", "~> 4.0")
