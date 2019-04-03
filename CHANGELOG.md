@@ -10,7 +10,7 @@ This version removes version expectations for bundler.  This is another
 step on the path toward allowing the Calabash stack to work with the
 newest versions of ruby.
 
-Thanks @JoeSSS.
+Thanks @q231950 @JoeSSS.
 
 ### 4.1.0
 
