@@ -11,7 +11,10 @@ script:
   - scripts/ci/travis/rspec-ci.rb
 
 rvm:
-  - 2.3.1
+  - 2.6.2
+  - 2.5.5
+  - 2.4.5
+  - 2.3.8
 
 notifications:
   email:
