@@ -1,5 +1,17 @@
 ## Change Log
 
+### 4.2.0
+
+Adds support for Xcode 10.2.
+
+DeviceAgent and iOSDeviceManager remain the same.
+
+This version removes version expectations for bundler.  This is another
+step on the path toward allowing the Calabash stack to work with the
+newest versions of ruby.
+
+Thanks @JoeSSS.
+
 ### 4.1.0
 
 This update provides support for testing against iPhone XS and the
