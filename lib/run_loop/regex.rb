@@ -15,5 +15,8 @@ module RunLoop
     # @!visibility private
     VERSION_REGEX = /(\d+\.\d+(\.\d+)?)/.freeze
 
+    # @!visibility private
+    XCODE_102_SIMULATOR_REGEX = /(?<version>\d+(-\d){1,2}\z)/.freeze
+
   end
 end

@@ -590,7 +590,16 @@ while trying to list devices.
 
     # @!visibility private
     def device_key_to_version(key)
-      str = key.split(" ").last
+      str = if key.include?(" ")
+              key.split(" ").last
+            else
+              matches = RunLoop::Regex::XCODE_102_SIMULATOR_REGEX.match(key)
+              if matches.nil?
+                raise RuntimeError, "Cannot fetch the Simulator version from #{key}"
+              end
+              matches[:version].tr("-", ".")
+            end
+
       RunLoop::Version.new(str)
     end
 
