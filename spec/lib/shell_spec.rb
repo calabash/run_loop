@@ -41,7 +41,7 @@ describe RunLoop::Shell do
       expect do
         object.run_shell_command(["sleep", 5])
       end.to raise_error ArgumentError,
-      /Expected arg '5' to be a String, but found 'Fixnum'/
+      /Expected arg '5' to be a String, but found/
     end
 
     it "re-raises error if UTF8 encoding fails" do

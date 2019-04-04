@@ -397,7 +397,7 @@ describe RunLoop::CoreSimulator do
 97656 /bin/ps x -o pid,command
 7656 /MacOS/SillySim
 }
-          expect(core_sim).to receive(:sim_name).and_return("SillySim")
+          expect(core_sim).to receive(:sim_app_path).and_return("/MacOS/SillySim")
           expect(core_sim).to receive(:run_shell_command).and_return(hash)
 
           details = core_sim.send(:running_simulator_details)
@@ -414,7 +414,7 @@ describe RunLoop::CoreSimulator do
 97656 /bin/ps x -o pid,command
 7656 /MacOS/SillySim -CurrentDeviceUDID 258C3EC3-EA59-49CB-A9FB-16186B039601 LAUNCHED_BY_RUN_LOOP
 }
-          expect(core_sim).to receive(:sim_name).and_return("SillySim")
+          expect(core_sim).to receive(:sim_app_path).and_return("/MacOS/SillySim")
           expect(core_sim).to receive(:run_shell_command).and_return(hash)
 
           details = core_sim.send(:running_simulator_details)
