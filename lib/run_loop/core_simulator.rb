@@ -635,7 +635,7 @@ Could not launch #{app.bundle_identifier} on #{device} after trying #{tries} tim
   #
   # @return [Hash] details about the running simulator.
   def running_simulator_details
-    process_name = "MacOS/#{sim_name}"
+    process_name = sim_app_path
 
     args = ["ps", "x", "-o", "pid=,command="]
     hash = run_shell_command(args)
