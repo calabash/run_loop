@@ -33,7 +33,7 @@ describe RunLoop::Xcrun do
       expect do
         xcrun.run_command_in_context(['sleep', 5])
       end.to raise_error ArgumentError,
-      /Expected arg '5' to be a String, but found 'Fixnum'/
+      /Expected arg '5' to be a String, but found/
     end
 
     it "re-raises error if UTF8 encoding fails" do
