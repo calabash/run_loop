@@ -1,5 +1,14 @@
 ## Change Log
 
+### 4.2.1
+
+#### iOSDeviceManager 3.3.1
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.3.1
+
+* Adapt iOSDeviceManager to Xcode 10.2 #241
+* Xcode 10.2 update code signing test fixtures #240
+
 ### 4.2.0
 
 Adds support for Xcode 10.2.
