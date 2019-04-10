@@ -131,7 +131,17 @@ class RunLoop::CoreSimulator
               ["diagnosticd", false],
               ["syslogd", false],
               ["mobiletimerd", false],
-              ["carkitd", false]
+              ["carkitd", false],
+              ["revisiond", false],
+              ["containermanagerd", false],
+              ["profiled", false],
+              ["locationd", false],
+              ["assistantd", false],
+              ["com.apple.MobileInstallationHelperService", false],
+              ["MobileGestaltHelper", false],
+              ["installcoordinationd", false],
+              ["installd", false]
+
         ]
 
   # @!visibility private
