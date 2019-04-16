@@ -10,9 +10,9 @@
 ### Requirements
 
 * at least Xcode 9.4.1
-* ruby 2.3.*; ruby > 2.3 is not supported.
+* ruby >= 2.3
 
-The most recent version of Xcode is strong recommended.
+The most recent version of Xcode is strongly recommended.
 
 ### License
 

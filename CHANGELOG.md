@@ -1,5 +1,18 @@
 ## Change Log
 
+### 4.2.2
+
+Updates DeviceAgent to 1.3.3
+
+#### DeviceAgent 1.3.3
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.3.3
+
+* Add new Spring 2019 iPad models #312
+* Update private headers for Xcode 10.2 #311
+* SafariWebController test fails for iPhone XR and XS Max. #308
+* Update private headers for Xcode 10.2 #306
+
 ### 4.2.1
 
 #### iOSDeviceManager 3.3.1
