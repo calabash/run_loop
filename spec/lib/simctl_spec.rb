@@ -636,6 +636,13 @@ describe RunLoop::Simctl do
         expect(simctl.send(:device_available?, new_xcode_record)).to be_falsey
       end
 
+      it "#newer_device_available?" do
+        expect(simctl.send(:device_available?, newer_xcode_record)).to be_truthy
+
+        newer_xcode_record["isAvailable"] = false
+        expect(simctl.send(:device_available?, newer_xcode_record)).to be_falsey
+      end
+
       it "#device_from_record" do
         actual = simctl.send(:device_from_record, record, version)
         expect(actual).to be_a_kind_of(RunLoop::Device)
