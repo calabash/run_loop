@@ -596,7 +596,7 @@ while trying to list devices.
 
     # @!visibility private
     def device_available?(record)
-      record["isAvailable"] == "YES" || record["availability"] == "(available)"
+      record["isAvailable"] == true || record["isAvailable"] == "YES" || record["availability"] == "(available)"
     end
 
     # @!visibility private
