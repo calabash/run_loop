@@ -39,11 +39,11 @@ steps:
 - script: bundle exec run-loop simctl manage-processes
   displayName: "manage CoreSimulator processes"
 
-#- script: bundle exec rspec spec/lib
-#  displayName: "unit tests"
-#
-#- script: scripts/ci/jenkins/test/cli.sh
-#  displayName: "cli tests"
+- script: bundle exec rspec spec/lib
+  displayName: "unit tests"
+
+- script: scripts/ci/jenkins/test/cli.sh
+  displayName: "cli tests"
 
 - script: scripts/ci/jenkins/test/integration.sh
   displayName: "integration tests"

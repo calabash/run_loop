@@ -238,10 +238,12 @@ Build version 8W132p
   end
 
   describe '#developer_dir' do
+
     it 'respects the DEVELOPER_DIR env var' do
       expected = '/developer/dir'
       expect(File).to receive(:directory?).with(expected).and_return(true)
       stub_env({'DEVELOPER_DIR' => expected})
+      allow_any_instance_of(Pathname).to receive(:realpath).and_return(expected)
 
       expect(xcode.developer_dir).to be == expected
 
@@ -255,6 +257,7 @@ Build version 8W132p
       expect(File).to receive(:directory?).with(expected).and_return(true)
       expect(xcode).to receive(:xcode_select_path).and_return(expected)
       stub_env({'DEVELOPER_DIR' => nil})
+      allow_any_instance_of(Pathname).to receive(:realpath).and_return(expected)
 
       expect(xcode.developer_dir).to be == '/xcode-select/path'
 
@@ -268,6 +271,7 @@ Build version 8W132p
       expected = '/developer/dir'
       expect(File).to receive(:directory?).with(expected).and_return(false)
       stub_env({'DEVELOPER_DIR' => expected})
+      allow_any_instance_of(Pathname).to receive(:realpath).and_return(expected)
 
       expect do
         xcode.developer_dir

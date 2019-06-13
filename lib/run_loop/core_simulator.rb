@@ -675,9 +675,6 @@ Command had no output.
 
     lines = hash[:out].split($-0)
 
-    puts lines
-    puts process_name
-
     match = lines.detect do |line|
       line[/#{process_name}/]
     end
