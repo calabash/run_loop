@@ -607,6 +607,16 @@ describe RunLoop::Simctl do
           "availabilityError" => ""
         }
       end
+      let(:newer_xcode_record) do
+        {
+          "state" => "Shutdown",
+          "isAvailable" => true,
+          "name" => "iPhone 8",
+          "udid" => "BF6DFF2F-BF46-4348-AEFF-F676EE61A43E",
+          "availabilityError" => ""
+        }
+      end
+
       let(:version) { "9.1" }
 
       it "#device_available?" do
