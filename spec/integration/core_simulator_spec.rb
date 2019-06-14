@@ -38,9 +38,11 @@ describe RunLoop::CoreSimulator do
     it 'can launch the simulator' do
       expect(core_sim.launch_simulator).to be_truthy
 
-      pid = core_sim.send(:running_simulator_details)[:pid]
+      hash = core_sim.send(:running_simulator_details)
+      puts "running simulator details: #{hash}"
+      #pid = core_sim.send(:running_simulator_details)[:pid]
 
-      expect(pid).to be_truthy
+      expect(hash[:pid]).to be_truthy
     end
 
     it 'does not relaunch if the simulator is already running' do

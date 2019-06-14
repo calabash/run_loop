@@ -1,6 +1,10 @@
+#!/usr/bin/env bash
+
+set -e
+
 # Integration tests
-$RBENV_EXEC bundle exec run-loop simctl manage-processes
-$RBENV_EXEC bundle exec rspec \
+bundle exec run-loop simctl manage-processes
+bundle exec rspec \
   spec/integration/core_simulator_spec.rb \
   spec/integration/xcode_spec.rb \
   spec/integration/otool_spec.rb \
