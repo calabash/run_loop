@@ -1,5 +1,10 @@
 ## Change Log
 
+### 4.2.3
+
+* Fix check for available simulators #719 @akoslowski
+* Set up CI with Azure Pipelines #718
+
 ### 4.2.2
 
 Updates DeviceAgent to 1.3.3
