@@ -639,6 +639,16 @@ describe RunLoop::Simctl do
           "availabilityError" => ""
         }
       end
+      let(:newer_xcode_record) do
+        {
+          "state" => "Shutdown",
+          "isAvailable" => true,
+          "name" => "iPhone 8",
+          "udid" => "BF6DFF2F-BF46-4348-AEFF-F676EE61A43E",
+          "availabilityError" => ""
+        }
+      end
+
       let(:version) { "9.1" }
 
       it "#device_available?" do
@@ -656,6 +666,13 @@ describe RunLoop::Simctl do
 
         new_xcode_record["isAvailable"] = "NO"
         expect(simctl.send(:device_available?, new_xcode_record)).to be_falsey
+      end
+
+      it "#newer_device_available?" do
+        expect(simctl.send(:device_available?, newer_xcode_record)).to be_truthy
+
+        newer_xcode_record["isAvailable"] = false
+        expect(simctl.send(:device_available?, newer_xcode_record)).to be_falsey
       end
 
       it "#device_from_record" do
