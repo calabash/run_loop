@@ -24,15 +24,17 @@ jobs:
 
   steps:
   - script: |
-    sudo xcode-select --switch /Applications/Xcode_$(XCODE_VERSION).app/Contents/Developer
+      sudo xcode-select --switch "/Applications/Xcode_$(XCODE_VERSION).app/Contents/Developer"
     displayName: "$(IMAGE_POOL) - Xcode $(XCODE_VERSION)"
 
   - script: ruby -v
     displayName: "ruby version"
 
   - script: xcrun -f xcodebuild
+    displayName: "location of xcodebuild"
+
   - script: xcrun xcodebuild -version
-  - script: ls -al /Applications
+    displayName: "version of xcodebuild"
 
   - script: |
       echo "install: --no-document --env-shebang" > ~/.gemrc
