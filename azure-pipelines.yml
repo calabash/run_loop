@@ -4,25 +4,29 @@
 # Triggers are configured in the UI
 
 jobs:
-- job: Tests
+- job:
   strategy:
     matrix:
-      HighSierra_Xcode-10.1:
+      HighSierra-Xcode-10.1:
         IMAGE_POOL: 'macOS-10.13'
         XCODE_VERSION: '10.1'
       Mojave-Xcode-10.0:
         IMAGE_POOL: 'macOS-10.14'
-        XCODE_VERSION: '10.0'
-      Mojave_Xcode_10.1:
+        XCODE_VERSION: '10'
+      Mojave-Xcode-10.1:
         IMAGE_POOL: 'macOS-10.14'
         XCODE_VERSION: '10.1'
-      Mojave_Xcode_10.2.1:
+      Mojave-Xcode-10.2.1:
         IMAGE_POOL: 'macOS-10.14'
         XCODE_VERSION: '10.2.1'
   pool:
     vmImage: $(IMAGE_POOL)
 
   steps:
+
+  - script: ls -al /Applications/
+    displayName: "Contents of /Applications"
+
   - script: |
       sudo xcode-select --switch "/Applications/Xcode_$(XCODE_VERSION).app/Contents/Developer"
     displayName: "$(IMAGE_POOL) - Xcode $(XCODE_VERSION)"
