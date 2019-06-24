@@ -2,10 +2,30 @@
 # https://msmobilecenter.visualstudio.com/Mobile-Center/_build/results?buildId=662289
 #
 # Triggers are configured in the UI
+
+jobs:
+- job: Tests
+  strategy:
+    matrix:
+      HighSierra_Xcode-10.1:
+        IMAGE_POOL: 'macOS-10.13'
+        XCODE_VERSION: '10.1'
+      Mojave-Xcode-10.0:
+        IMAGE_POOL: 'macOS-10.14'
+        XCODE_VERSION: '10.0'
+      Mojave_Xcode_10.1:
+        IMAGE_POOL: 'macOS-10.14'
+        XCODE_VERSION: '10.1'
+      Mojave_Xcode_10.2.1:
+        IMAGE_POOL: 'macOS-10.14'
+        XCODE_VERSION: '10.2.1'
 pool:
-  vmImage: 'macOS-10.14'
+  vmImage: $(IMAGE_POOL)
 
 steps:
+- script: |
+  sudo xcode-select --switch /Applications/Xcode_$(XCODE_VERSION).app/Contents/Developer
+  displayName: '$(IMAGE_POOL): Xcode version: $(XCODE_VERSION)'
 
 - script: ruby -v
   displayName: "ruby version"
