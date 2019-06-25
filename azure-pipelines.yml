@@ -2,49 +2,75 @@
 # https://msmobilecenter.visualstudio.com/Mobile-Center/_build/results?buildId=662289
 #
 # Triggers are configured in the UI
-pool:
-  vmImage: 'macOS-10.14'
 
-steps:
+jobs:
+- job:
+  strategy:
+    matrix:
+      HighSierra-Xcode-10.1:
+        IMAGE_POOL: 'macOS-10.13'
+        XCODE_VERSION: '10.1'
+      Mojave-Xcode-10.0:
+        IMAGE_POOL: 'macOS-10.14'
+        XCODE_VERSION: '10'
+      Mojave-Xcode-10.1:
+        IMAGE_POOL: 'macOS-10.14'
+        XCODE_VERSION: '10.1'
+      Mojave-Xcode-10.2.1:
+        IMAGE_POOL: 'macOS-10.14'
+        XCODE_VERSION: '10.2.1'
+  pool:
+    vmImage: $(IMAGE_POOL)
 
-- script: ruby -v
-  displayName: "ruby version"
+  steps:
 
-- script: xcrun -f xcodebuild
-- script: xcrun xcodebuild -version
-- script: ls -al /Applications
+  - script: ls -al /Applications/
+    displayName: "Contents of /Applications"
 
-- script: |
-    echo "install: --no-document --env-shebang" > ~/.gemrc
-    echo "update:  --no-document --env-shebang" >> ~/.gemrc
-  displayName: "install .gemrc"
+  - script: |
+      sudo xcode-select --switch "/Applications/Xcode_$(XCODE_VERSION).app/Contents/Developer"
+    displayName: "$(IMAGE_POOL) - Xcode $(XCODE_VERSION)"
 
-- script: scripts/ci/jenkins/simctl.sh
-  displayName: "ensure CoreSimulator ready"
+  - script: ruby -v
+    displayName: "ruby version"
 
-- script: gem update --system
-  displayName: "update ruby gems executable - aka 'gem'"
+  - script: xcrun -f xcodebuild
+    displayName: "location of xcodebuild"
 
-- script: gem uninstall -Vax --force --no-abort-on-dependent run_loop
-  displayName: "uninstall run_loop gem"
+  - script: xcrun xcodebuild -version
+    displayName: "version of xcodebuild"
 
-- script: |
-    gem install bundler
-    bundle install --retry=3 --jobs=4
-  displayName: "install bundler and gems"
+  - script: |
+      echo "install: --no-document --env-shebang" > ~/.gemrc
+      echo "update:  --no-document --env-shebang" >> ~/.gemrc
+    displayName: "install .gemrc"
 
-- script: rake install
-  displayName: "install run_loop"
+  - script: scripts/ci/jenkins/simctl.sh
+    displayName: "ensure CoreSimulator ready"
 
-- script: bundle exec run-loop simctl manage-processes
-  displayName: "manage CoreSimulator processes"
+  - script: gem update --system
+    displayName: "update ruby gems executable - aka 'gem'"
 
-- script: bundle exec rspec spec/lib
-  displayName: "unit tests"
+  - script: gem uninstall -Vax --force --no-abort-on-dependent run_loop
+    displayName: "uninstall run_loop gem"
 
-- script: scripts/ci/jenkins/test/cli.sh
-  displayName: "cli tests"
+  - script: |
+      gem install bundler
+      bundle install --retry=3 --jobs=4
+    displayName: "install bundler and gems"
 
-- script: scripts/ci/jenkins/test/integration.sh
-  displayName: "integration tests"
+  - script: rake install
+    displayName: "install run_loop"
+
+  - script: bundle exec run-loop simctl manage-processes
+    displayName: "manage CoreSimulator processes"
+
+  - script: bundle exec rspec spec/lib
+    displayName: "unit tests"
+
+  - script: scripts/ci/jenkins/test/cli.sh
+    displayName: "cli tests"
+
+  - script: scripts/ci/jenkins/test/integration.sh
+    displayName: "integration tests"
 
