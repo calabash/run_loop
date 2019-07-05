@@ -75,12 +75,12 @@ describe RunLoop::L10N do
 
     context 'specially named localization' do
       let(:localization) { 'nl' }
-      it { is_expected.to be == 'Dutch.lproj' }
+      it { expect(["Dutch.lproj", "nl.lproj"]).to include(subject) }
     end
 
     context 'non-existing sub localization with specially named super-localization' do
       let(:localization) { 'en-XX' }
-      it { is_expected.to be == 'English.lproj' }
+      it { expect(["English.lproj", "en.lproj"]).to include(subject) }
     end
 
     context 'non-existing sub localization with iso super-localization' do
