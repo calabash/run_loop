@@ -1164,7 +1164,12 @@ Command had no output.
   def self.system_applications_dir(xcode=RunLoop::Xcode.new)
     base_dir = xcode.developer_dir
 
-    if xcode.version_gte_90?
+    if xcode.version_gte_110?
+      apps_dir = File.join("Platforms", "iPhoneOS.platform", "Library",
+                           "Developer", "CoreSimulator", "Profiles", "Runtimes",
+                           "iOS.simruntime", "Contents", "Resources",
+                           "RuntimeRoot", "Applications")
+    elsif xcode.version_gte_90?
       apps_dir = File.join("Platforms", "iPhoneOS.platform", "Developer",
                            "Library", "CoreSimulator", "Profiles", "Runtimes",
                            "iOS.simruntime", "Contents", "Resources",

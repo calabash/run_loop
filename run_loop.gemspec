@@ -68,4 +68,5 @@ tools like instruments and simctl.}
   s.add_development_dependency('stub_env', '>= 1.0.1', '< 2.0')
   s.add_development_dependency('pry')
   s.add_development_dependency('pry-nav')
+  s.add_development_dependency('irb')
 end
