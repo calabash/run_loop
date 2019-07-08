@@ -325,7 +325,9 @@ Logfile: #{log_file}
       major = xcode_major + 2
       minor = xcode_minor
 
-      if xcode_major == 10
+      if xcode_major == 11
+        model = "Xs"
+      elsif xcode_major == 10
         if minor >= 2
           model = "Xs"
         else

@@ -7,10 +7,23 @@ describe RunLoop::L10N do
     allow(l10n).to receive(:xcode).and_return(xcode)
   end
   describe '#uikit_bundle_l10n_path' do
-    it "returns a valid path for Xcode >= 9" do
+    it "returns a valid path for Xcode >= 11" do
       expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
       stub_env("DEVELOPER_DIR", "/some/xcode/path")
 
+      expect(xcode).to receive(:version_gte_110?).and_return(true)
+
+      axbundle_path = RunLoop::L10N.const_get("UIKIT_AXBUNDLE_PATH_CORE_SIM_XCODE_11")
+      expected = File.join("/some/xcode/path", axbundle_path)
+
+      expect(l10n.send(:uikit_bundle_l10n_path)).to be == expected
+    end
+
+    it "returns a valid path for 9 <= Xcode < 11 " do
+      expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
+      stub_env("DEVELOPER_DIR", "/some/xcode/path")
+
+      expect(xcode).to receive(:version_gte_110?).and_return(false)
       expect(xcode).to receive(:version_gte_90?).and_return(true)
 
       axbundle_path = RunLoop::L10N.const_get("UIKIT_AXBUNDLE_PATH_CORE_SIM_XCODE_9")
@@ -23,6 +36,7 @@ describe RunLoop::L10N do
       expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
       stub_env("DEVELOPER_DIR", "/some/xcode/path")
 
+      expect(xcode).to receive(:version_gte_110?).and_return(false)
       expect(xcode).to receive(:version_gte_90?).and_return(false)
 
       axbundle_path = RunLoop::L10N.const_get("UIKIT_AXBUNDLE_PATH_CORE_SIM")
@@ -61,12 +75,12 @@ describe RunLoop::L10N do
 
     context 'specially named localization' do
       let(:localization) { 'nl' }
-      it { is_expected.to be == 'Dutch.lproj' }
+      it { expect(["Dutch.lproj", "nl.lproj"]).to include(subject) }
     end
 
     context 'non-existing sub localization with specially named super-localization' do
       let(:localization) { 'en-XX' }
-      it { is_expected.to be == 'English.lproj' }
+      it { expect(["English.lproj", "en.lproj"]).to include(subject) }
     end
 
     context 'non-existing sub localization with iso super-localization' do
