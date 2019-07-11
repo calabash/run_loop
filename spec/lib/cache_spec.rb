@@ -21,7 +21,7 @@ describe RunLoop::Cache do
     end
 
     it 'when directory does not exist' do
-      new_dir = File.join(directory, '.calabash')
+      new_dir = File.join(directory, '.test-cloud-dev')
       cache = RunLoop::Cache.new(new_dir)
       expect(cache.path).to be == File.join(new_dir, cache_filename)
       expect(Dir.exist?(new_dir))

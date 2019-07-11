@@ -238,7 +238,7 @@ target = #{target}
 
     if !File.exist?(path)
       path = File.join(RunLoop::Environment.user_home_directory,
-                       ".calabash", "calabash-codesign")
+                       ".test-cloud-dev", "test-cloud-dev-ios-keychain")
     end
 
     if File.exist?(path)
@@ -253,11 +253,11 @@ Failed to create the codesigning keychain:
 
 ]
         else
-          log_info("Created the Calabash.keychain")
+          log_info("Created the TestCloudDev.keychain")
         end
       end
     else
-     log_info("Cannot create the Calabash.keychain")
+     log_info("Cannot create the TestCloudDev.keychain")
     end
   end
 
