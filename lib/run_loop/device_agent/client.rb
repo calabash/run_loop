@@ -1680,7 +1680,7 @@ Valid values are: :down, :up, :right, :left, :bottom, :top
         if cbx_launcher.name == :ios_device_manager
           # The location of the iOSDeviceManager logs has changed
           File.join(RunLoop::Environment.user_home_directory,
-                    ".test-cloud-dev", "iOSDeviceManager", "logs", "current.log")
+                    ".calabash", "iOSDeviceManager", "logs", "current.log")
         else
           cbx_launcher.class.log_file
         end

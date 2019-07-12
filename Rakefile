@@ -238,7 +238,7 @@ target = #{target}
 
     if !File.exist?(path)
       path = File.join(RunLoop::Environment.user_home_directory,
-                       ".test-cloud-dev", "test-cloud-dev-ios-keychain")
+                       ".calabash", "calabash-codesign")
     end
 
     if File.exist?(path)

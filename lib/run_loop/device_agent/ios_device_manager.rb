@@ -75,7 +75,7 @@ but binary does not exist at that path.
       #
       # Now iOSDeviceManager logs almost everything to a fixed location.
       #
-      # ~/.test-cloud-dev/iOSDeviceManager/logs/current.log
+      # ~/.calabash/iOSDeviceManager/logs/current.log
       #
       # Starting in run-loop 2.4.0, iOSDeviceManager start_test was replaced
       # by xcodebuild test-without-building.   This change causes a name
