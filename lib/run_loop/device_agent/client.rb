@@ -1,3 +1,5 @@
+require 'pry'
+
 module RunLoop
 
   # @!visibility private
@@ -860,6 +862,17 @@ Could not dismiss SpringBoard alert by touching button with title '#{button_titl
 
       # @!visibility private
       def wait_for_keyboard(timeout=WAIT_DEFAULTS[:timeout])
+        # iOS 13 shows QuickPath notification on first keyboard launch.
+        # We should hide it in order to make keyboard visible.
+        begin
+          # // todo: Too long wait (15 sec)
+          continue_button = query({text: "Continue"})
+          if not continue_button.nil?
+            touch({text: "Continue"})
+          end
+        rescue
+        end
+
         options = WAIT_DEFAULTS.dup
         options[:timeout] = timeout
         message = %Q[
