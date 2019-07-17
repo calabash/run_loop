@@ -380,7 +380,7 @@ INSTANCE METHODS
       end
 
       # @!visibility private
-      def keyboard_visible?
+      def get_keyboard
         options = http_options
         parameters = { :type => "Keyboard" }
         request = request("query", parameters)
@@ -388,13 +388,19 @@ INSTANCE METHODS
         response = client.post(request)
         hash = expect_300_response(response)
         result = hash["result"]
+        return nil if result.count == 0
+        return nil if result[0].count == 0
+        result[0]
+      end
 
-        return false if result.count == 0
-        return false if result[0].count == 0
-
-        element = result[0]
-        hit_point = element["hit_point"]
-        hit_point["x"] != -1 && hit_point["y"] != -1
+      # @!visibility private
+      def keyboard_visible?
+        element = get_keyboard
+        if not element.nil?
+          hit_point = element["hit_point"]
+          return hit_point["x"] != -1 && hit_point["y"] != -1
+        end
+        false
       end
 
       # @!visibility private
@@ -862,17 +868,6 @@ Could not dismiss SpringBoard alert by touching button with title '#{button_titl
 
       # @!visibility private
       def wait_for_keyboard(timeout=WAIT_DEFAULTS[:timeout])
-        # iOS 13 shows QuickPath notification on first keyboard launch.
-        # We should hide it in order to make keyboard visible.
-        begin
-          # // todo: Too long wait (15 sec)
-          continue_button = query({text: "Continue"})
-          if not continue_button.nil?
-            touch({text: "Continue"})
-          end
-        rescue
-        end
-
         options = WAIT_DEFAULTS.dup
         options[:timeout] = timeout
         message = %Q[
@@ -881,7 +876,15 @@ Timed out after #{timeout} seconds waiting for the keyboard to appear.
 
 ]
         wait_for(message, options) do
-          keyboard_visible?
+          keyboard = get_keyboard
+          return false if keyboard.nil?
+          # iOS 13 shows QuickPath notification on first keyboard launch.
+          # We should hide it in order to make keyboard visible.
+          if !keyboard["hitable"]
+            touch({text: "Continue"})
+            return false
+          end
+          true
         end
       end
 
