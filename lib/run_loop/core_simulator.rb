@@ -443,6 +443,7 @@ class RunLoop::CoreSimulator
     RunLoop::CoreSimulator.quit_simulator
     RunLoop::CoreSimulator.ensure_hardware_keyboard_connected(pbuddy)
     sim_keyboard.ensure_soft_keyboard_will_show
+    sim_keyboard.ensure_keyboard_tutorial_disabled
 
     args = ['open', '-g', '-a', sim_app_path, '--args',
             '-CurrentDeviceUDID', device.udid,
