@@ -28,6 +28,10 @@ module RunLoop
       pbuddy.plist_set('AutomaticMinimizationEnabled', 'bool', false, plist)
     end
 
+    def ensure_keyboard_tutorial_disabled
+      pbuddy.plist_set('DidShowContinuousPathIntroduction', 'bool', true, plist)
+    end
+
     # Enable/disable keyboard autocorrection
     #
     # @param [Boolean] condition, option passed by the user in launch arguments
