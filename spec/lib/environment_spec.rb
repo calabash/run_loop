@@ -582,6 +582,28 @@ describe RunLoop::Environment do
     end
   end
 
+  describe ".azurepipelines?" do
+    it "returns true if AGENT_VERSION is defined" do
+      stub_env({"AGENT_VERSION" => true})
+
+      expect(RunLoop::Environment.azurepipelines?).to be == true
+    end
+
+    describe "returns false if AGENT_VERSION undefined or empty" do
+      it "is nil" do
+        stub_env({"AGENT_VERSION" => nil})
+
+        expect(RunLoop::Environment.azurepipelines?).to be == false
+      end
+
+      it "is empty string" do
+        stub_env({"AGENT_VERSION" => ""})
+
+        expect(RunLoop::Environment.azurepipelines?).to be == false
+      end
+    end
+  end
+
   describe ".ci?" do
     describe "truthy" do
       it "CI" do
@@ -649,6 +671,18 @@ describe RunLoop::Environment do
 
         expect(RunLoop::Environment.ci?).to be == true
       end
+
+      it "Azure Pipelines" do
+        expect(RunLoop::Environment).to receive(:jenkins?).and_return false
+        expect(RunLoop::Environment).to receive(:travis?).and_return false
+        expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
+        expect(RunLoop::Environment).to receive(:teamcity?).and_return false
+        expect(RunLoop::Environment).to receive(:gitlab?).and_return false
+        expect(RunLoop::Environment).to receive(:azurepipelines?).and_return true
+        expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
+
+        expect(RunLoop::Environment.ci?).to be == true
+      end
     end
 
     it "falsey" do
@@ -657,6 +691,7 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment).to receive(:circle_ci?).and_return false
       expect(RunLoop::Environment).to receive(:teamcity?).and_return false
       expect(RunLoop::Environment).to receive(:gitlab?).and_return false
+      expect(RunLoop::Environment).to receive(:azurepipelines?).and_return false
       expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
 
       expect(RunLoop::Environment.ci?).to be == false
