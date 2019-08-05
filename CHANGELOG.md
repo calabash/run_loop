@@ -1,5 +1,9 @@
 ## Change Log
 
+### 4.3.0
+
+* Support Xcode 11 #724 #725 #726 #729
+
 ### 4.2.3
 
 * Fix check for available simulators #719 @akoslowski
