@@ -98,7 +98,9 @@ Build version 8W132p
     expect(xcode.send(:fetch_version, key)).to be == version
   end
 
-  it '#v10' do expect(xcode.v100).to be == RunLoop::Version.new('10.0') end
+  it '#v110' do expect(xcode.v110).to be == RunLoop::Version.new('11.0') end
+  it '#v102' do expect(xcode.v102).to be == RunLoop::Version.new('10.2') end
+  it '#v100' do expect(xcode.v100).to be == RunLoop::Version.new('10.0') end
   it '#v94' do expect(xcode.v94).to be == RunLoop::Version.new('9.4') end
   it '#v93' do expect(xcode.v93).to be == RunLoop::Version.new('9.3') end
   it '#v92' do expect(xcode.v92).to be == RunLoop::Version.new('9.2') end
@@ -108,6 +110,34 @@ Build version 8W132p
   it '#v82' do expect(xcode.v82).to be == RunLoop::Version.new('8.2') end
   it '#v81' do expect(xcode.v81).to be == RunLoop::Version.new('8.1') end
   it '#v80' do expect(xcode.v80).to be == RunLoop::Version.new('8.0') end
+
+  describe "#version_gte_110?" do
+    it "true" do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("11.0"))
+
+      expect(xcode.version_gte_110?).to be_truthy
+    end
+
+    it "false" do
+      expect(xcode).to receive(:version).and_return xcode.v94
+
+      expect(xcode.version_gte_110?).to be_falsey
+    end
+  end
+
+  describe "#version_gte_102?" do
+    it "true" do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.2"))
+
+      expect(xcode.version_gte_102?).to be_truthy
+    end
+
+    it "false" do
+      expect(xcode).to receive(:version).and_return xcode.v94
+
+      expect(xcode.version_gte_102?).to be_falsey
+    end
+  end
 
   describe "#version_gte_100?" do
     it "true" do

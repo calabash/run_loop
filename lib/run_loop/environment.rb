@@ -288,6 +288,11 @@ module RunLoop
       !!value && value != ''
     end
 
+    def self.azurepipelines?
+      value = ENV["AGENT_VERSION"]
+      !!value && value != ''
+    end
+
     # Returns true if running in a CI environment
     def self.ci?
       [
@@ -296,7 +301,8 @@ module RunLoop
         self.jenkins?,
         self.circle_ci?,
         self.teamcity?,
-        self.gitlab?
+        self.gitlab?,
+        self.azurepipelines?
       ].any?
     end
 

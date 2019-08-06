@@ -26,6 +26,14 @@ module RunLoop
       to_s
     end
 
+    # Returns a version instance for Xcode 11.0; used to check for the
+    # availability of features and paths to various items on the filesystem
+    #
+    # @return [RunLoop::Version] 11.0
+    def v110
+      fetch_version(:v110)
+    end
+
     # Returns a version instance for Xcode 10.2; used to check for the
     # availability of features and paths to various items on the filesystem
     #
@@ -112,6 +120,13 @@ module RunLoop
     # @return [RunLoop::Version] 8.0
     def v80
       fetch_version(:v80)
+    end
+
+    # Is the active Xcode version 11.0 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 11.0
+    def version_gte_110?
+      version >= v110
     end
 
     # Is the active Xcode version 10.2 or above?
@@ -300,7 +315,7 @@ $ man xcode-select
 
       string = key.to_s
       string[0] = ''
-      version_string = string.split(/^(10)*|(?!^)/).reject(&:empty?).join('.')
+      version_string = string.split(/^(10|11)*|(?!^)/).reject(&:empty?).join('.')
       version = RunLoop::Version.new(version_string)
       xcode_versions[key] = version
       version
@@ -313,7 +328,7 @@ $ man xcode-select
         raise "Expected version key to start with 'v'"
       end
 
-      if string.start_with?("v10")
+      if string.start_with?("v10") || string.start_with?("v11")
         expected_length = 4
         regex = /v\d{3}/
       else

@@ -1,5 +1,27 @@
 ## Change Log
 
+### 4.3.0
+
+Provides experimental support for Xcode 11 beta 4.
+
+* disable "keyboard tutorial" on iOS 13 simulators #729
+* run against Xcode 11 in Azure Dev Ops pipeline #726
+* Update run-loop for Xcode 11 and ruby 2.6.x #725
+* rspec tests respond to Xcode installs in /Users/Shared/Xcode directory #724
+* ADO: create an Xcode / macOS test matrix #723
+
+#### DeviceAgent 1.4.0
+
+Compiled with Xcode 10.2.1
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/1.4.0
+
+#### iOSDeviceManager 3.4.0
+
+Compiled with Xcode 10.2.1
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.4.0
+
 ### 4.2.3
 
 * Fix check for available simulators #719 @akoslowski
