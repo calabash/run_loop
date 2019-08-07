@@ -319,25 +319,10 @@ Logfile: #{log_file}
     # @param [RunLoop::Xcode] xcode Used to detect the current xcode
     #  version.
     def self.default_simulator(xcode=RunLoop::Xcode.new)
-      version = xcode.version
-      xcode_major = version.major
-      xcode_minor = version.minor
-      major = xcode_major + 2
-      minor = xcode_minor
+      ios_version = xcode.ios_version
+      device = xcode.default_device
 
-      if xcode_major == 11
-        model = "Xs"
-      elsif xcode_major == 10
-        if minor >= 2
-          model = "Xs"
-        else
-          model = "XS"
-        end
-      else
-        model = xcode_major - 1
-      end
-
-      "iPhone #{model} (#{major}.#{minor})"
+      "#{device} (#{ios_version.major}.#{ios_version.minor})"
     end
 
     def self.create_uia_pipe(repl_path)
