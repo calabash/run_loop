@@ -137,9 +137,9 @@ module RunLoop
       version >= v110
     end
 
-    # Is the active Xcode version 10.2 or above?
+    # Is the active Xcode version 10.3 or above?
     #
-    # @return [Boolean] `true` if the current Xcode version is >= 10.2
+    # @return [Boolean] `true` if the current Xcode version is >= 10.3
     def version_gte_103?
       version >= v103
     end
