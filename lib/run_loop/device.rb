@@ -259,6 +259,10 @@ version: #{version}
       end
 
       if ios_version.major == (xcode_version.major + 2)
+        if xcode_version.major == 10 && xcode_version.minor == 3
+          return ios_version.minor == 4
+        end
+
         return ios_version.minor <= xcode_version.minor
       end
 

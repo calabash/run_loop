@@ -34,6 +34,14 @@ module RunLoop
       fetch_version(:v110)
     end
 
+  # Returns a version instance for Xcode 10.3; used to check for the
+    # availability of features and paths to various items on the filesystem
+    #
+    # @return [RunLoop::Version] 10.3
+    def v103
+      fetch_version(:v103)
+    end
+
     # Returns a version instance for Xcode 10.2; used to check for the
     # availability of features and paths to various items on the filesystem
     #
@@ -127,6 +135,13 @@ module RunLoop
     # @return [Boolean] `true` if the current Xcode version is >= 11.0
     def version_gte_110?
       version >= v110
+    end
+
+    # Is the active Xcode version 10.3 or above?
+    #
+    # @return [Boolean] `true` if the current Xcode version is >= 10.3
+    def version_gte_103?
+      version >= v103
     end
 
     # Is the active Xcode version 10.2 or above?
@@ -297,6 +312,35 @@ $ man xcode-select
         end
         path
       end
+    end
+
+    def ios_version
+      xcode_version = version
+      sim_major = xcode_version.major + 2
+      sim_minor = xcode_version.minor
+      if xcode_version == v103
+        sim_minor = 4
+      end
+
+      return RunLoop::Version.new("#{sim_major}.#{sim_minor}")
+    end
+
+    def default_device
+      xcode_version = version
+      if xcode_version.major == 11
+        return "iPhone Xs"
+      end
+
+      if xcode_version.major == 10
+        if xcode_version.minor >= 2
+          return "iPhone Xs"
+        else
+          return "iPhone XS"
+        end
+      end
+
+      # Xcode < 10
+      return "iPhone #{xcode_version.major - 1}"
     end
 
     private
