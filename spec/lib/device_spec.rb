@@ -213,7 +213,6 @@ describe RunLoop::Device do
 
       xcode_version = RunLoop::Version.new("12.0")
       expect(device.compatible_with_xcode_version?(xcode_version)).to be_truthy
-
     end
 
     it "returns false if simulator iOS version is too low for Xcode version" do
@@ -246,6 +245,14 @@ describe RunLoop::Device do
       expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
 
       xcode_version = RunLoop::Version.new("9.1")
+      expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
+    end
+
+    it "returns false if iOS beta version is too high for the Xcode version" do
+      device_version = RunLoop::Version.new("13.0")
+      expect(device).to receive(:version).at_least(:once).and_return(device_version)
+
+      xcode_version = RunLoop::Version.new("10.3")
       expect(device.compatible_with_xcode_version?(xcode_version)).to be_falsey
     end
 
