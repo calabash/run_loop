@@ -1,5 +1,10 @@
 ## Change Log
 
+### 2.3.2
+
+This is a maintenance release. The CFPropertyList verison has been
+updated.
+
 ### 2.3.1
 
 This release does not contain a new DeviceAgent stack.

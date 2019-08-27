@@ -47,7 +47,7 @@ tools like instruments and simctl.}
 
   s.add_dependency('json', '~> 1.8')
   s.add_dependency('awesome_print', '~> 1.2')
-  s.add_dependency('CFPropertyList','~> 2.2')
+  s.add_dependency("CFPropertyList","~> 3.0", ">= 3.0.1")
   s.add_dependency('thor', '>= 0.18.1', '< 1.0')
   s.add_dependency('command_runner_ng', '>= 0.0.2')
   s.add_dependency("httpclient", ">= 2.7.1", "< 3.0")
