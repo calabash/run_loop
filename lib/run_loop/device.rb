@@ -780,15 +780,12 @@ https://github.com/calabash/calabash-ios/wiki/Testing-on-Physical-Devices
 
     # @!visibility private
     def simulator_running_system_app_pids
-      base_dir = xcode.developer_dir
-      if xcode.version_gte_110?
-        sim_apps_dir = "Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/Applications"
-      elsif xcode.version_gte_90?
-        sim_apps_dir = "Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/Applications"
+      if xcode.version_gte_90?
+        sim_apps_dir = File.join(xcode.core_simulator_dir, "Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/Applications")
       else
-        sim_apps_dir = "Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications"
+        sim_apps_dir = File.join(xcode.developer_dir, "Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/Applications")
       end
-      path = File.expand_path(File.join(base_dir, sim_apps_dir))
+      path = File.expand_path(sim_apps_dir)
       RunLoop::ProcessWaiter.pgrep_f(path)
     end
   end

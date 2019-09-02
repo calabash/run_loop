@@ -314,6 +314,19 @@ $ man xcode-select
       end
     end
 
+    def core_simulator_dir
+      if version_gte_110?
+        core_simulator_dir = File.join(developer_dir,
+                                      'Platforms', 'iPhoneOS.platform', 'Library',
+                                      'Developer', 'CoreSimulator')
+      else
+        core_simulator_dir = File.join(developer_dir,
+                                      'Platforms', 'iPhoneOS.platform', 'Developer',
+                                      'Library', 'CoreSimulator')
+      end
+      File.expand_path(core_simulator_dir)
+    end
+
     def ios_version
       xcode_version = version
       sim_major = xcode_version.major + 2
