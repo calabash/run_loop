@@ -413,4 +413,27 @@ Build version 8W132p
       expect(xcode.default_device).to be == "iPhone Xs"
     end
   end
+
+  describe '#core_simulator_dir' do
+    it 'expect correct path for Xcode 9.4.1' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new('9.4.1'))
+      expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+      expected = '/Xcode/Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator'
+      expect(xcode.core_simulator_dir).to be == expected
+    end
+
+    it 'expect correct path for Xcode 10.3' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new('10.3'))
+      expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+      expected = '/Xcode/Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator'
+      expect(xcode.core_simulator_dir).to be == expected
+    end
+
+    it 'expect correct path for Xcode 11.0' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new('11.0'))
+      expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+      expected = '/Xcode/Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator'
+      expect(xcode.core_simulator_dir).to be == expected
+    end
+  end
 end

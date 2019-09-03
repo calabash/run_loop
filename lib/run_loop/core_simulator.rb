@@ -1163,23 +1163,18 @@ Command had no output.
 
   # @!visibility private
   def self.system_applications_dir(xcode=RunLoop::Xcode.new)
-    base_dir = xcode.developer_dir
-
-    if xcode.version_gte_110?
-      apps_dir = File.join("Platforms", "iPhoneOS.platform", "Library",
-                           "Developer", "CoreSimulator", "Profiles", "Runtimes",
-                           "iOS.simruntime", "Contents", "Resources",
-                           "RuntimeRoot", "Applications")
-    elsif xcode.version_gte_90?
-      apps_dir = File.join("Platforms", "iPhoneOS.platform", "Developer",
-                           "Library", "CoreSimulator", "Profiles", "Runtimes",
-                           "iOS.simruntime", "Contents", "Resources",
-                           "RuntimeRoot", "Applications")
+    if xcode.version_gte_90?
+      apps_dir = File.join(xcode.core_simulator_dir,
+                          "Profiles", "Runtimes", "iOS.simruntime",
+                          "Contents", "Resources", "RuntimeRoot",
+                          "Applications")
     else
-      apps_dir = File.join("Platforms", "iPhoneSimulator.platform", "Developer",
-                           "SDKs", "iPhoneSimulator.sdk", "Applications")
+      apps_dir = File.join(xcode.developer_dir,
+                          "Platforms", "iPhoneSimulator.platform",
+                          "Developer", "SDKs", "iPhoneSimulator.sdk",
+                          "Applications")
     end
-    File.expand_path(File.join(base_dir, apps_dir))
+    File.expand_path(apps_dir)
   end
 
   # @!visibility private
