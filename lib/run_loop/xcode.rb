@@ -341,7 +341,7 @@ $ man xcode-select
     def default_device
       xcode_version = version
       if xcode_version.major == 11
-        return "iPhone Xs"
+        return "iPhone 11"
       end
 
       if xcode_version.major == 10
