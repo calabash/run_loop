@@ -408,9 +408,9 @@ Build version 8W132p
       expect(xcode.default_device).to be == "iPhone Xs"
     end
 
-    it 'expect iPhone Xs for Xcode 11.0' do
+    it 'expect iPhone 11 for Xcode 11.0' do
       expect(xcode).to receive(:version).and_return(RunLoop::Version.new("11.0"))
-      expect(xcode.default_device).to be == "iPhone Xs"
+      expect(xcode.default_device).to be == "iPhone 11"
     end
   end
 
