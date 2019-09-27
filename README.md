@@ -1,6 +1,6 @@
-| master  | develop | [versioning](VERSIONING.md) | [license](LICENSE) | [contributing](CONTRIBUTING.md)| dependencies|
-|---------|---------|-----------------------------|--------------------|--------------------------------|----------------------|
-|[![Build Status](https://travis-ci.org/calabash/run_loop.svg?branch=master)](https://travis-ci.org/calabash/run_loop)| [![Build Status](https://travis-ci.org/calabash/run_loop.svg?branch=develop)](https://travis-ci.org/calabash/crun_loop)| [![GitHub version](https://badge.fury.io/gh/calabash%2Frun_loop.svg)](http://badge.fury.io/gh/calabash%2Frun_loop) |[![License](https://img.shields.io/badge/licence-MIT-blue.svg)](http://opensource.org/licenses/MIT) | [![Contributing](https://img.shields.io/badge/contrib-gitflow-orange.svg)](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow/)|[![Dependency Status](https://gemnasium.com/calabash/run_loop.svg)](https://gemnasium.com/calabash/run_loop)|
+| develop | master | [versioning](VERSIONING.md) | [license](LICENSE) | [contributing](CONTRIBUTING.md)|     dependencies     |
+|---------|--------|-----------------------------|--------------------|--------------------------------|----------------------|
+| [![Build Status](https://msmobilecenter.visualstudio.com/Mobile-Center/_apis/build/status/test-cloud/xamarin-uitest/calabash.run_loop?branchName=develop)](https://msmobilecenter.visualstudio.com/Mobile-Center/_build/latest?definitionId=3447&branchName=develop) | [![Build Status](https://msmobilecenter.visualstudio.com/Mobile-Center/_apis/build/status/test-cloud/xamarin-uitest/calabash.run_loop?branchName=master)](https://msmobilecenter.visualstudio.com/Mobile-Center/_build/latest?definitionId=3447&branchName=master) | [![GitHub version](https://badge.fury.io/gh/calabash%2Frun_loop.svg)](http://badge.fury.io/gh/calabash%2Frun_loop) |[![License](https://img.shields.io/badge/licence-MIT-blue.svg)](http://opensource.org/licenses/MIT) | [![Contributing](https://img.shields.io/badge/contrib-gitflow-orange.svg)](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow/)|[![Dependency Status](https://gemnasium.com/calabash/run_loop.svg)](https://gemnasium.com/calabash/run_loop)|
 
 ## Run Loop
 
@@ -9,7 +9,7 @@
 
 ### Requirements
 
-* at least Xcode 9.4.1
+* at least Xcode 10.3
 * ruby >= 2.3
 
 The most recent version of Xcode is strongly recommended.
