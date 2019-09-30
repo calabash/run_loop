@@ -1,24 +1,27 @@
 
 # https://msmobilecenter.visualstudio.com/Mobile-Center/_build/results?buildId=662289
-#
-# Triggers are configured in the UI
+
+trigger:
+  tags:
+    include:
+    - '*'
+  branches:
+    include:
+    - master
+    - develop
+pr:
+  branches:
+    include:
+    - master
+    - develop
 
 jobs:
 - job:
   strategy:
     matrix:
-      HighSierra-Xcode-10.1:
-        IMAGE_POOL: 'macOS-10.13'
-        XCODE_VERSION: '10.1'
-      Mojave-Xcode-10.0:
+      Mojave-Xcode-10.3:
         IMAGE_POOL: 'macOS-10.14'
-        XCODE_VERSION: '10'
-      Mojave-Xcode-10.1:
-        IMAGE_POOL: 'macOS-10.14'
-        XCODE_VERSION: '10.1'
-      Mojave-Xcode-10.2.1:
-        IMAGE_POOL: 'macOS-10.14'
-        XCODE_VERSION: '10.2.1'
+        XCODE_VERSION: '10.3'
       Mojave-Xcode-11.0:
         IMAGE_POOL: 'macOS-10.14'
         XCODE_VERSION: '11'

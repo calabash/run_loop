@@ -99,6 +99,7 @@ Build version 8W132p
   end
 
   it '#v110' do expect(xcode.v110).to be == RunLoop::Version.new('11.0') end
+  it '#v103' do expect(xcode.v103).to be == RunLoop::Version.new('10.3') end
   it '#v102' do expect(xcode.v102).to be == RunLoop::Version.new('10.2') end
   it '#v100' do expect(xcode.v100).to be == RunLoop::Version.new('10.0') end
   it '#v94' do expect(xcode.v94).to be == RunLoop::Version.new('9.4') end
@@ -122,6 +123,20 @@ Build version 8W132p
       expect(xcode).to receive(:version).and_return xcode.v94
 
       expect(xcode.version_gte_110?).to be_falsey
+    end
+  end
+
+  describe "#version_gte_103?" do
+    it "true" do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.3"))
+
+      expect(xcode.version_gte_103?).to be_truthy
+    end
+
+    it "false" do
+      expect(xcode).to receive(:version).and_return xcode.v94
+
+      expect(xcode.version_gte_103?).to be_falsey
     end
   end
 
@@ -327,6 +342,98 @@ Build version 8W132p
       expect(xcode).to receive(:developer_dir).and_return app
 
       expect(xcode.beta?).to be_falsey
+    end
+  end
+
+  describe '#ios_version' do
+    it 'expect 11.4 for Xcode 9.4.1' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("9.4.1"))
+      expect(xcode.ios_version).to be == RunLoop::Version.new('11.4')
+    end
+
+    it 'expect 12.0 for Xcode 10.0' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.0"))
+      expect(xcode.ios_version).to be == RunLoop::Version.new('12.0')
+    end
+
+    it 'expect 12.1 for Xcode 10.1' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.1"))
+      expect(xcode.ios_version).to be == RunLoop::Version.new('12.1')
+    end
+
+    it 'expect 12.2 for Xcode 10.2.1' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.2.1"))
+      expect(xcode.ios_version).to be == RunLoop::Version.new('12.2')
+    end
+
+    it 'expect 12.4 for Xcode 10.3' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.3"))
+      expect(xcode.ios_version).to be == RunLoop::Version.new('12.4')
+    end
+
+    it 'expect 13.0 for Xcode 11.0' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("11.0"))
+      expect(xcode.ios_version).to be == RunLoop::Version.new('13.0')
+    end
+  end
+
+  describe '#default_device' do
+    it 'expect iPhone 7 for Xcode 8.3.3' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("8.3.3"))
+      expect(xcode.default_device).to be == "iPhone 7"
+    end
+
+    it 'expect iPhone 8 for Xcode 9.4.1' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("9.4.1"))
+      expect(xcode.default_device).to be == "iPhone 8"
+    end
+
+    it 'expect iPhone XS for Xcode 10.0' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.0"))
+      expect(xcode.default_device).to be == "iPhone XS"
+    end
+
+    it 'expect iPhone XS for Xcode 10.1' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.1"))
+      expect(xcode.default_device).to be == "iPhone XS"
+    end
+
+    it 'expect iPhone Xs for Xcode 10.2.1' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.2.1"))
+      expect(xcode.default_device).to be == "iPhone Xs"
+    end
+
+    it 'expect iPhone Xs for Xcode 10.3' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("10.3"))
+      expect(xcode.default_device).to be == "iPhone Xs"
+    end
+
+    it 'expect iPhone 11 for Xcode 11.0' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new("11.0"))
+      expect(xcode.default_device).to be == "iPhone 11"
+    end
+  end
+
+  describe '#core_simulator_dir' do
+    it 'expect correct path for Xcode 9.4.1' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new('9.4.1'))
+      expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+      expected = '/Xcode/Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator'
+      expect(xcode.core_simulator_dir).to be == expected
+    end
+
+    it 'expect correct path for Xcode 10.3' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new('10.3'))
+      expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+      expected = '/Xcode/Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator'
+      expect(xcode.core_simulator_dir).to be == expected
+    end
+
+    it 'expect correct path for Xcode 11.0' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new('11.0'))
+      expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+      expected = '/Xcode/Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator'
+      expect(xcode.core_simulator_dir).to be == expected
     end
   end
 end

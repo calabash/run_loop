@@ -7,40 +7,29 @@ describe RunLoop::L10N do
     allow(l10n).to receive(:xcode).and_return(xcode)
   end
   describe '#uikit_bundle_l10n_path' do
-    it "returns a valid path for Xcode >= 11" do
-      expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
-      stub_env("DEVELOPER_DIR", "/some/xcode/path")
+    it 'returns a valid path for Xcode >= 11' do
+      expect(xcode).to receive(:version).twice.and_return(RunLoop::Version.new('11.0'))
+      expect(xcode).to receive(:developer_dir).and_return('/Xcode')
 
-      expect(xcode).to receive(:version_gte_110?).and_return(true)
-
-      axbundle_path = RunLoop::L10N.const_get("UIKIT_AXBUNDLE_PATH_CORE_SIM_XCODE_11")
-      expected = File.join("/some/xcode/path", axbundle_path)
+      expected = '/Xcode/Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/UIKit.axbundle'
 
       expect(l10n.send(:uikit_bundle_l10n_path)).to be == expected
     end
 
-    it "returns a valid path for 9 <= Xcode < 11 " do
-      expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
-      stub_env("DEVELOPER_DIR", "/some/xcode/path")
+    it 'returns a valid path for 9 <= Xcode < 11' do
+      expect(xcode).to receive(:version).twice.and_return(RunLoop::Version.new('10.2.1'))
+      expect(xcode).to receive(:developer_dir).and_return('/Xcode')
 
-      expect(xcode).to receive(:version_gte_110?).and_return(false)
-      expect(xcode).to receive(:version_gte_90?).and_return(true)
-
-      axbundle_path = RunLoop::L10N.const_get("UIKIT_AXBUNDLE_PATH_CORE_SIM_XCODE_9")
-      expected = File.join("/some/xcode/path", axbundle_path)
+      expected = '/Xcode/Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/UIKit.axbundle'
 
       expect(l10n.send(:uikit_bundle_l10n_path)).to be == expected
     end
 
-    it "returns a valid path for Xcode < 9" do
-      expect(xcode).to receive(:developer_dir).and_return("/some/xcode/path")
-      stub_env("DEVELOPER_DIR", "/some/xcode/path")
+    it 'returns a valid path for Xcode < 9' do
+      expect(xcode).to receive(:version).and_return(RunLoop::Version.new('8.3.3'))
+      expect(xcode).to receive(:developer_dir).and_return('/Xcode')
 
-      expect(xcode).to receive(:version_gte_110?).and_return(false)
-      expect(xcode).to receive(:version_gte_90?).and_return(false)
-
-      axbundle_path = RunLoop::L10N.const_get("UIKIT_AXBUNDLE_PATH_CORE_SIM")
-      expected = File.join("/some/xcode/path", axbundle_path)
+      expected = '/Xcode/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/AccessibilityBundles/UIKit.axbundle'
 
       expect(l10n.send(:uikit_bundle_l10n_path)).to be == expected
     end

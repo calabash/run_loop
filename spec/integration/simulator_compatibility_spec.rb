@@ -20,7 +20,7 @@ describe "Simulator/Binary Compatibility Check" do
   end
 
   it "can launch i386 app on x86_64 simulator"  do
-    ios_version = (Resources.shared.xcode.version.major + 2) * 1.0
+    ios_version = Resources.shared.xcode.ios_version
     air = simctl.simulators.find do |device|
       (device.name.include? "iPad Air") &&
         device.version >= RunLoop::Version.new(ios_version.to_s)

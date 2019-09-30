@@ -1,5 +1,27 @@
 ## Change Log
 
+### 4.4.1
+
+Provides support for Xcode 10.3 and 11 and experimental support for Xcode 11.1.
+
+* Add support for Xcode 10.3 #734
+* patch Device#compatible_with_xcode_version? #736
+* add Xcode#core_simulator_dir to help sort locate the base CoreSimulator
+  directory #737
+* Change default device for Xcode 11.0 #738
+
+#### DeviceAgent 2.0.0
+
+Compiled with Xcode 11.1 on Mojave
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/2.0.0
+
+#### iOSDeviceManager 3.5.0
+
+Compiled with Xcode 11.1 on Mojave
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.5.0
+
 ### 4.3.0
 
 Provides experimental support for Xcode 11 beta 4.
