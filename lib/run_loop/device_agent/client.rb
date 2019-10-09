@@ -57,7 +57,11 @@ module RunLoop
         # using XCUIElement#typeText.  It corresponds to the DeviceAgent
         # constant CBX_DEFAULT_SEND_STRING_FREQUENCY which is 60.  _Decrease_
         # this value if you are timing out typing strings.
-        :characters_per_second => 12
+        :characters_per_second => 12,
+        
+        # This value is number attempts for relaunch DeviceAgent
+        # when health check is failed
+        :device_agent_launch_retries => 2
       }
 
       AUT_LAUNCHED_BY_RUN_LOOP_ARG = "LAUNCHED_BY_RUN_LOOP"
@@ -1471,10 +1475,11 @@ If the body empty, the DeviceAgent has probably crashed.
 
         start = Time.now
         RunLoop.log_debug("Waiting for DeviceAgent to launch...")
-        @launcher_pid = cbx_launcher.launch(options)
-
+        
         begin
-          timeout = options[:device_agent_install_timeout] * 1.5
+          retries ||= 0
+          @launcher_pid = cbx_launcher.launch(options)
+          timeout = options[:device_agent_install_timeout] * 0.3
           health_options = {
             :timeout => timeout,
             :interval => 0.1,
@@ -1482,6 +1487,8 @@ If the body empty, the DeviceAgent has probably crashed.
           }
           health(health_options)
         rescue RunLoop::HTTP::Error => _
+          puts "Could not connect to DeviceAgent service, relaunch and try again (this #{retries + 2} attempt)"
+          retry if (retries += 1) <= options[:device_agent_launch_retries]
           raise %Q[
 
 Could not connect to the DeviceAgent service.
