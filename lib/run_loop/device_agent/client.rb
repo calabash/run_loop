@@ -1479,7 +1479,7 @@ If the body empty, the DeviceAgent has probably crashed.
         begin
           retries ||= 0
           @launcher_pid = cbx_launcher.launch(options)
-          timeout = options[:device_agent_install_timeout] * 0.3
+          timeout = options[:device_agent_install_timeout] * 0.5
           health_options = {
             :timeout => timeout,
             :interval => 0.1,
