@@ -1490,7 +1490,7 @@ If the body empty, the DeviceAgent has probably crashed.
           retries += 1
           puts "Could not connect to DeviceAgent service, relaunch and try again (this #{retries + 1} attempt)"
           shutdown
-          retry if (retries) <= options[:device_agent_launch_retries]
+          retry if (retries) <= 2
           raise %Q[
 
 Could not connect to the DeviceAgent service.
