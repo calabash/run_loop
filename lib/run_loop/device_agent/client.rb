@@ -164,6 +164,8 @@ module RunLoop
                                                             DEFAULTS[:shutdown_device_agent_before_launch])
         terminate_aut_before_test = options.fetch(:terminate_aut_before_test,
                                                    DEFAULTS[:terminate_aut_before_test])
+        device_agent_launch_retries = options.fetch(:device_agent_launch_retries,
+                                                   DEFAULTS[:device_agent_launch_retries])
 
         aut_args = options.fetch(:args, [])
         aut_env = options.fetch(:env, {})
