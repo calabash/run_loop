@@ -61,7 +61,7 @@ module RunLoop
         
         # The number of attempts for relaunch DeviceAgent
         # when health check is failed
-        :device_agent_launch_retries => 2
+        :device_agent_launch_retries => 3
       }
 
       AUT_LAUNCHED_BY_RUN_LOOP_ARG = "LAUNCHED_BY_RUN_LOOP"
@@ -1489,7 +1489,8 @@ If the body empty, the DeviceAgent has probably crashed.
           health(health_options)
         rescue RunLoop::HTTP::Error => _
           retries += 1
-          puts "Could not connect to DeviceAgent service, relaunch and try again (this #{retries + 1} attempt)"
+          sleep(2.0)
+          RunLoop.log_debug("Could not connect to DeviceAgent service on try #{retries + 1}; will retry")
           shutdown
           retry if (retries) <= options[:device_agent_launch_retries]
           raise %Q[
