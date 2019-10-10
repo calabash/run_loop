@@ -180,7 +180,8 @@ module RunLoop
             terminate_aut_before_test: terminate_aut_before_test,
             dylib_injection_details: dylib_injection_details,
             aut_args: aut_args,
-            aut_env: aut_env
+            aut_env: aut_env,
+            device_agent_launch_retries: device_agent_launch_retries
         }
 
         xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device,
@@ -1490,7 +1491,7 @@ If the body empty, the DeviceAgent has probably crashed.
           retries += 1
           puts "Could not connect to DeviceAgent service, relaunch and try again (this #{retries + 1} attempt)"
           shutdown
-          retry if (retries) <= 2
+          retry if (retries) <= options[:device_agent_launch_retries]
           raise %Q[
 
 Could not connect to the DeviceAgent service.
