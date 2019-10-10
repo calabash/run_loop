@@ -57,7 +57,11 @@ module RunLoop
         # using XCUIElement#typeText.  It corresponds to the DeviceAgent
         # constant CBX_DEFAULT_SEND_STRING_FREQUENCY which is 60.  _Decrease_
         # this value if you are timing out typing strings.
-        :characters_per_second => 12
+        :characters_per_second => 12,
+        
+        # The number of attempts for relaunch DeviceAgent
+        # when health check is failed
+        :device_agent_launch_retries => 3
       }
 
       AUT_LAUNCHED_BY_RUN_LOOP_ARG = "LAUNCHED_BY_RUN_LOOP"
@@ -160,6 +164,8 @@ module RunLoop
                                                             DEFAULTS[:shutdown_device_agent_before_launch])
         terminate_aut_before_test = options.fetch(:terminate_aut_before_test,
                                                    DEFAULTS[:terminate_aut_before_test])
+        device_agent_launch_retries = options.fetch(:device_agent_launch_retries,
+                                                   DEFAULTS[:device_agent_launch_retries])
 
         aut_args = options.fetch(:args, [])
         aut_env = options.fetch(:env, {})
@@ -176,7 +182,8 @@ module RunLoop
             terminate_aut_before_test: terminate_aut_before_test,
             dylib_injection_details: dylib_injection_details,
             aut_args: aut_args,
-            aut_env: aut_env
+            aut_env: aut_env,
+            device_agent_launch_retries: device_agent_launch_retries
         }
 
         xcuitest = RunLoop::DeviceAgent::Client.new(bundle_id, device,
@@ -1471,10 +1478,11 @@ If the body empty, the DeviceAgent has probably crashed.
 
         start = Time.now
         RunLoop.log_debug("Waiting for DeviceAgent to launch...")
-        @launcher_pid = cbx_launcher.launch(options)
-
+        
         begin
-          timeout = options[:device_agent_install_timeout] * 1.5
+          retries ||= 0
+          @launcher_pid = cbx_launcher.launch(options)
+          timeout = options[:device_agent_install_timeout] * 0.5
           health_options = {
             :timeout => timeout,
             :interval => 0.1,
@@ -1482,6 +1490,11 @@ If the body empty, the DeviceAgent has probably crashed.
           }
           health(health_options)
         rescue RunLoop::HTTP::Error => _
+          retries += 1
+          sleep(2.0)
+          RunLoop.log_debug("Could not connect to DeviceAgent service on try #{retries + 1}; will retry")
+          shutdown
+          retry if (retries) <= options[:device_agent_launch_retries]
           raise %Q[
 
 Could not connect to the DeviceAgent service.
