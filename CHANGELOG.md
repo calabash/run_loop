@@ -1,5 +1,34 @@
 ## Change Log
 
+### 4.4.2
+
+Fixes problems dismissing SpringBoard alerts for non-English locales.
+
+Provides experimental support for Xcode 11.2 beta.
+
+DeviceAgent is built with Xcode 10.3 to work around an Apple bug:
+
+* REGRESSION: Xcode 11 (xcodebuild) fails to perform gestures during UI Tests on
+iPhones/iPads with iOS versions 11.0.x - 11.3.x - "unable to fetch parameterized
+attribute" FB7315854
+
+This bug is fixed in Xcode 11.2 beta.
+
+* Add relaunch DeviceAgent, when error "Could not connect to the
+  DeviceAgent" has occured. #741
+
+#### DeviceAgent 2.0.0
+
+Compiled with Xcode 10.3 on Mojave
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/2.0.2
+
+#### iOSDeviceManager 3.5.0
+
+Compiled with Xcode 11.1 on Mojave
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.5.0
+
 ### 4.4.1
 
 Provides support for Xcode 10.3 and 11 and experimental support for Xcode 11.1.
