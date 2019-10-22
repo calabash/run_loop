@@ -314,7 +314,7 @@ namespace :device_agent do
   end
 end
 
-namespace :iOSDeviceManager do
+namespace :idm do
 
   def ios_device_manager
     @ios_device_manager_path ||= lambda do
