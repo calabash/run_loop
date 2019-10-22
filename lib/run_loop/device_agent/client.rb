@@ -298,6 +298,11 @@ INSTANCE METHODS
           default = DEFAULTS[:device_agent_install_timeout]
           @launcher_options[:device_agent_install_timeout] = default
         end
+
+        if !@launcher_options[:device_agent_launch_retries]
+          default = DEFAULTS[:device_agent_launch_retries]
+          @launcher_options[:device_agent_launch_retries] = default
+        end
       end
 
       # @!visibility private
