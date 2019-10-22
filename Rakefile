@@ -1,5 +1,4 @@
 require 'bundler'
-require 'pry'
 Bundler::GemHelper.install_tasks
 
 begin
@@ -50,60 +49,6 @@ def banner(msg)
   puts ""
 end
 
-def device_agent_dir
-  @device_agent_dir ||= begin
-    dir = File.join(".", "lib", "run_loop", "device_agent")
-    File.expand_path(dir)
-  end
-end
-
-def frameworks_dir
-  @frameworks_dir ||= File.join(device_agent_dir, "Frameworks")
-end
-
-def frameworks_zip
-  @frameworks_zip ||= "#{frameworks_dir}.zip"
-end
-
-def app_dir
-  @app_dir ||= File.join(device_agent_dir, "app", "DeviceAgent-Runner.app")
-end
-
-def app_zip
-  @app_zip ||= "#{app_dir}.zip"
-end
-
-def ipa_dir
-  @ipa_dir ||= File.join(device_agent_dir, "ipa", "DeviceAgent-Runner.app")
-end
-
-def ipa_zip
-  @ipa_zip ||= "#{ipa_dir}.zip"
-end
-
-def bin
-  @bin ||= File.join(device_agent_dir, "bin", "iOSDeviceManager")
-end
-
-def license
-  @license ||= File.join(device_agent_dir, "bin", "iOSDeviceManager.LICENSE")
-end
-
-def cli_json
-  @cli_json ||= File.join(device_agent_dir, "bin", "CLI.json")
-end
-
-def cbx_paths
-  @cbx_paths ||= begin
-    [
-      File.expand_path(File.join(app_dir, "..", "CBX-Runner.app")),
-      File.expand_path(File.join(app_dir, "..", "CBX-Runner.app.zip")),
-      File.expand_path(File.join(ipa_dir, "..", "CBX-Runner.app")),
-      File.expand_path(File.join(ipa_dir, "..", "CBX-Runner.app.zip")),
-    ]
-  end
-end
-
 def rm_path(path)
   log_info("Deleting #{path}")
   FileUtils.rm_rf(path)
@@ -127,22 +72,6 @@ To specify a non-standard location for these repositories, use:
 *   DEVICEAGENT_PATH=path/to/DeviceAgent.iOS
 * IOS_DEVICE_MANAGER=path/to/iOSDeviceManager
 ]
-end
-
-def device_agent
-  @device_agent_path ||= lambda do
-    path = ENV["DEVICE_AGENT"] || expect_path_to_repo("DeviceAgent.iOS")
-    log_info "Using DEVICEAGENT_PATH=#{path}"
-    path
-  end.call
-end
-
-def ios_device_manager
-  @ios_device_manager_path ||= lambda do
-    path = ENV["IOS_DEVICE_MANAGER"] || expect_path_to_repo("iOSDeviceManager")
-    log_info "Using iOSDeviceManager=#{path}"
-    @ios_device_manager_path = path
-  end.call
 end
 
 def ditto(source, target)
@@ -263,6 +192,48 @@ end
 
 namespace :device_agent do
 
+  def device_agent
+    @device_agent_path ||= lambda do
+      path = ENV["DEVICE_AGENT"] || expect_path_to_repo("DeviceAgent.iOS")
+      log_info "Using DEVICEAGENT_PATH=#{path}"
+      path
+    end.call
+  end
+
+  def app_dir
+    @app_dir ||= File.join(device_agent_dir, "app", "DeviceAgent-Runner.app")
+  end
+  
+  def app_zip
+    @app_zip ||= "#{app_dir}.zip"
+  end
+  
+  def ipa_dir
+    @ipa_dir ||= File.join(device_agent_dir, "ipa", "DeviceAgent-Runner.app")
+  end
+  
+  def ipa_zip
+    @ipa_zip ||= "#{ipa_dir}.zip"
+  end
+
+  def device_agent_dir
+    @device_agent_dir ||= begin
+      dir = File.join(".", "lib", "run_loop", "device_agent")
+      File.expand_path(dir)
+    end
+  end
+  
+  def cbx_paths
+    @cbx_paths ||= begin
+      [
+        File.expand_path(File.join(app_dir, "..", "CBX-Runner.app")),
+        File.expand_path(File.join(app_dir, "..", "CBX-Runner.app.zip")),
+        File.expand_path(File.join(ipa_dir, "..", "CBX-Runner.app")),
+        File.expand_path(File.join(ipa_dir, "..", "CBX-Runner.app.zip")),
+      ]
+    end
+  end
+
   desc "Install DeviceAgent binaries"
   task :install => [:clean, :build, :expand]
 
@@ -344,6 +315,35 @@ namespace :device_agent do
 end
 
 namespace :iOSDeviceManager do
+
+  def ios_device_manager
+    @ios_device_manager_path ||= lambda do
+      path = ENV["IOS_DEVICE_MANAGER"] || expect_path_to_repo("iOSDeviceManager")
+      log_info "Using iOSDeviceManager=#{path}"
+      @ios_device_manager_path = path
+    end.call
+  end
+
+  def frameworks_dir
+    @frameworks_dir ||= File.join(device_agent_dir, "Frameworks")
+  end
+  
+  def frameworks_zip
+    @frameworks_zip ||= "#{frameworks_dir}.zip"
+  end
+
+  def bin
+    @bin ||= File.join(device_agent_dir, "bin", "iOSDeviceManager")
+  end
+  
+  def license
+    @license ||= File.join(device_agent_dir, "bin", "iOSDeviceManager.LICENSE")
+  end
+  
+  def cli_json
+    @cli_json ||= File.join(device_agent_dir, "bin", "CLI.json")
+  end
+
   desc "Install iOSDeviceManager binaries"
   task :install => [:clean, :build, :expand]
 
