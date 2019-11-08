@@ -1178,10 +1178,27 @@ Command had no output.
   end
 
   # @!visibility private
+  def self.system_services_dir(xcode=RunLoop::Xcode.new)
+    if xcode.version_gte_90?
+      apps_dir = File.join(xcode.core_simulator_dir,
+                           "Profiles", "Runtimes", "iOS.simruntime",
+                           "Contents", "Resources", "RuntimeRoot",
+                           "System", "Library", "CoreServices")
+    else
+      apps_dir = File.join(xcode.developer_dir,
+                          "Platforms", "iPhoneSimulator.platform",
+                          "Developer", "SDKs", "iPhoneSimulator.sdk",
+                          "System", "Library", "CoreServices")
+    end
+    File.expand_path(apps_dir)
+  end
+
+  # @!visibility private
   def self.system_app_installed?(bundle_identifier, xcode)
     apps_dir = self.send(:system_applications_dir, xcode)
+    serv_dir = self.send(:system_services_dir, xcode)
 
-    return false if !File.exist?(apps_dir)
+    return false if !File.exist?(apps_dir) || !File.exist?(serv_dir)
 
     if xcode.version_gte_90?
       black_list = [
@@ -1197,7 +1214,7 @@ Command had no output.
       black_list = ["Fitness.app", "Photo Booth.app", "ScreenSharingViewService.app"]
     end
 
-    Dir.glob("#{apps_dir}/*.app").detect do |app_dir|
+    [Dir.glob("#{apps_dir}/*.app"), Dir.glob("#{serv_dir}/*.app")].flatten.detect do |app_dir|
       basename = File.basename(app_dir)
       if black_list.include?(basename)
         false
