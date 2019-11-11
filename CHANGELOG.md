@@ -1,5 +1,19 @@
 ## Change Log
 
+### 4.5.0
+
+#### DeviceAgent 2.1.0
+
+Compiled with Xcode 11.2.1 on Mojave 10.14.6
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/2.1.0
+
+#### iOSDeviceManager 3.7.0
+
+Compiled with Xcode 11.2.1 on Mojave 10.14.6
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.7.0
+
 ### 4.4.2
 
 Fixes problems dismissing SpringBoard alerts for non-English locales.
