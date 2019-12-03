@@ -1,5 +1,17 @@
 ## Change Log
 
+### 4.5.1
+
+Includes a new iOSDeviceManager that allows app resigning with the new
+Apple Developer (combined) certificates.
+
+#### iOSDeviceManager 3.7.1
+
+Compiled with Xcode 11.2.1 on Mojave 10.14.6
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.7.1
+
+
 ### 4.5.0
 
 #### DeviceAgent 2.1.0
