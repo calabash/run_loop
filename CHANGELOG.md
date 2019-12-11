@@ -1,5 +1,18 @@
 ## Change Log
 
+### 4.5.2
+
+Our macOS certificates were revoked because of an expired credit card.
+
+We need to release a new iOSDeviceManager that is signed with our new certificate.
+
+#### iOSDeviceManager 3.7.3
+
+Compiled with Xcode 11.2.1 on Mojave 10.14.6
+
+https://github.com/calabash/iOSDeviceManager/releases/tag/3.7.3
+
+
 ### 4.5.1
 
 Includes a new iOSDeviceManager that allows app resigning with the new
