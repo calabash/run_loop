@@ -1319,5 +1319,43 @@ describe RunLoop::CoreSimulator do
         expect(actual).to be == expected
       end
     end
+    
+    describe '#system_services_dir' do
+      it 'expect correct path for Xcode 8.3.3' do
+        xcode = RunLoop::Xcode.new
+        expect(xcode).to receive(:version).and_return(RunLoop::Version.new('8.3.3'))
+        expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+        expected = '/Xcode/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/CoreServices'
+        actual = RunLoop::CoreSimulator.system_services_dir(xcode)
+        expect(actual).to be == expected
+      end
+
+      it 'expect correct path for Xcode 9.4.1' do
+        xcode = RunLoop::Xcode.new
+        expect(xcode).to receive(:version).twice.and_return(RunLoop::Version.new('9.4.1'))
+        expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+        expected = '/Xcode/Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/System/Library/CoreServices'
+        actual = RunLoop::CoreSimulator.system_services_dir(xcode)
+        expect(actual).to be == expected
+      end
+
+      it 'expect correct path for Xcode 10.2.1' do
+        xcode = RunLoop::Xcode.new
+        expect(xcode).to receive(:version).twice.and_return(RunLoop::Version.new('10.2.1'))
+        expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+        expected = '/Xcode/Platforms/iPhoneOS.platform/Developer/Library/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/System/Library/CoreServices'
+        actual = RunLoop::CoreSimulator.system_services_dir(xcode)
+        expect(actual).to be == expected
+      end
+
+      it 'expect correct path for Xcode 11.0' do
+        xcode = RunLoop::Xcode.new
+        expect(xcode).to receive(:version).twice.and_return(RunLoop::Version.new('11.0'))
+        expect(xcode).to receive(:developer_dir).and_return('/Xcode')
+        expected = '/Xcode/Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS.simruntime/Contents/Resources/RuntimeRoot/System/Library/CoreServices'
+        actual = RunLoop::CoreSimulator.system_services_dir(xcode)
+        expect(actual).to be == expected
+      end
+    end
   end
 end
