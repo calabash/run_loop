@@ -101,6 +101,10 @@ module RunLoop
         app = app_details[:app]
         bundle_id = app_details[:bundle_id]
 
+        # Here, we should respond to LPSERVER_DYLIB=/path/to/calabashdylib
+        # if that is a path to a dylib, then we expect to override the already
+        # embeded calabsh server.
+
         # process name and dylib path
         dylib_injection_details = Client.details_for_dylib_injection(device,
                                                                      options,

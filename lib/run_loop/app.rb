@@ -163,6 +163,28 @@ Bundle must:
       app_executable = File.join(self.path, name)
       strings(app_executable).server_id
     end
+   
+    # If no lpserver embedded, then we can just DYLD_INSERT_LIBRARIES env var
+    #   after adding the dylib to the bundle and resigning
+    #
+    # We can expect that app is delivered to run_loop that already has the 
+    # libCalabashFAT.dylib in it.
+    #
+    # 1. Ask if .app has lpserver attached - what is the LP_SERVER_ID
+    # 2. ^ used this to set app_env: key/value pair:
+    #      XTC_SKIP_LPSERVER_TOKEN=app.calabash_server_id
+    # 3. copy the new calabash.dylib into the .app bundle
+    # 4. resign
+    #    for simulators we do an ad hoc signing?  Necessary?
+    #    for devices we use iOSDeviceManager to a resign (possibly use
+    #      idm resign w/ resource API
+    # 5. set app_env: "DYLD_INSERT_LIBRARIES" => "@executable_path/libCalabashFAT.dylib"
+    #
+    # > start_test_server_in_background({app_env: {
+                                          "XTC_SKIP_LPSERVER_TOKEN" => "???",
+                                          "DYLD_INSER_LIBRARIES" => "@executable_path/libCalabashFAT.dylib"}})
+
+                                          
 
     # @!visibility private
     def codesign_info
