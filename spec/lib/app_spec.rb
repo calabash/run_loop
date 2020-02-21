@@ -90,17 +90,17 @@ describe RunLoop::App do
     subject { RunLoop::App.valid?(path) }
 
     context "path does not exist" do
-      let (:path) { "/path/does/not/exist" }
+      let(:path) { "/path/does/not/exist" }
       it { is_expected.to be_falsey }
     end
 
     context "path is not a directory" do
-      let (:path) { FileUtils.touch(File.join(Dir.mktmpdir, "foo.app")).first }
+      let(:path) { FileUtils.touch(File.join(Dir.mktmpdir, "foo.app")).first }
       it { is_expected.to be_falsey }
     end
 
     context "path does not end in .app" do
-      let (:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, "foo.bar")).first }
+      let(:path) { FileUtils.mkdir_p(File.join(Dir.mktmpdir, "foo.bar")).first }
       it { is_expected.to be_falsey }
     end
 
@@ -243,7 +243,7 @@ describe RunLoop::App do
     it { should be_kind_of(RunLoop::Version) }
 
     context 'should be nil when' do
-      let (:path) { Resources.shared.app_bundle_path }
+      let (:path){ Resources.shared.app_bundle_path }
       it 'calabash server not included in app' do
         app = RunLoop::App.new(path)
         expect(app.calabash_server_version).to be_nil
@@ -262,6 +262,88 @@ describe RunLoop::App do
       app = RunLoop::App.new(Resources.shared.app_bundle_path)
       expect(app.calabash_server_id).to be == nil
     end
+  end
+
+  context ".is_calabash_dylib?" do
+    it "returns true if executable name matches calabash dylib pattern" do
+      actual = described_class.is_calabash_dylib?("path/to/libCalabashFAT.dylib")
+      expect(actual).to be == true
+
+      actual = described_class.is_calabash_dylib?("path/to/libCalabashSim.dylib")
+      expect(actual).to be == true
+
+      actual = described_class.is_calabash_dylib?("path/to/libCalabashARM.dylib")
+      expect(actual).to be == true
+
+      actual = described_class.is_calabash_dylib?("path/to/libCalabash.dylib")
+      expect(actual).to be == true
+    end
+
+    it "returns false if executable name does not match calabash dylib pattern" do
+      actual = described_class.is_calabash_dylib?("path/to/libCalabashFAT.a")
+      expect(actual).to be == false
+
+      actual = described_class.is_calabash_dylib?("path/to/another.dylib")
+      expect(actual).to be == false
+
+      actual = described_class.is_calabash_dylib?("path/to/calabash.framework")
+      expect(actual).to be == false
+    end
+  end
+
+  context "#embedded_calabash_dylib" do
+    let(:executables) do
+      [
+        "My.app/PlugIns/My.appex/My",
+        "My.app/Embedded.framework/Versions/Current/Embedded",
+        "My.app/Frameworks/libSwiftCore.dylib"
+      ]
+    end
+
+    it "returns correct @executable_path when dylib is in .app/ directory" do
+      executables << "My.app/libCalabashFAT.dylib"
+      expect(app).to receive(:executables).and_return(executables)
+
+      expect(app.embedded_calabash_dylib).to be == "@executable_path/libCalabashFAT.dylib"
+
+      # value is memoized - #executables is not called again
+      expect(app.embedded_calabash_dylib).to be == "@executable_path/libCalabashFAT.dylib"
+    end
+
+    it "returns correct @executable_path when dylib is .app/ subdirectory" do
+      executables << "My.app/Frameworks/libCalabashARM.dylib"
+      expect(app).to receive(:executables).and_return(executables)
+
+      expect(app.embedded_calabash_dylib).to be == "@executable_path/Frameworks/libCalabashARM.dylib"
+
+      # value is memoized - #executables is not called again
+      expect(app.embedded_calabash_dylib).to be == "@executable_path/Frameworks/libCalabashARM.dylib"
+    end
+
+    it "returns nil if the .app does not contain an embedded calabash dylib" do
+      expect(app).to receive(:executables).and_return(executables)
+      expect(app.embedded_calabash_dylib).to be == nil
+    end
+
+    it "raises an error if the .app contains more than 1 calabash dylib" do
+      executables << "My.app/libCalabashFAT.dylib"
+      executables << "My.app/Frameworks/libCalabashARM.dylib"
+      expect(app).to receive(:executables).and_return(executables)
+
+      expect do
+        app.embedded_calabash_dylib
+      end.to raise_error(RuntimeError, /App contains more than one Calabash dylib/)
+    end
+  end
+
+  context "#calabash_dylib_relative_path" do
+    it "raises an error if more than on calabash dylib exists"
+    it "raises an error if no calabash dylib exists"
+    it "returns value for appending to DYLD_INSERT_LIBRARIES value"
+  end
+
+  context "#configure_app_and_env_for_calabash_dylib_injection!" do
+
   end
 
   describe "#marketing_version" do
