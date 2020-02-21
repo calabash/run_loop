@@ -257,6 +257,16 @@ module RunLoop
       end
     end
 
+    # Returns the value of INJECT_CALABASH_DYLIB
+    def self.inject_calabash_dylib
+      value = ENV["INJECT_CALABASH_DYLIB"]
+      if value.nil? || value == ""
+        nil
+      else
+        value
+      end
+    end
+
     # Returns true if running in Jenkins CI
     #
     # Checks the value of JENKINS_HOME

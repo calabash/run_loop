@@ -263,13 +263,13 @@ describe RunLoop::Environment do
   describe ".xcodeproj" do
     describe "returns nil if XCODEPROJ variable is" do
       it "the empty string" do
-         stub_env({"XCODEPROJ" => ""})
-         expect(RunLoop::Environment.xcodeproj).to be_falsey
+        stub_env({"XCODEPROJ" => ""})
+        expect(RunLoop::Environment.xcodeproj).to be_falsey
       end
 
       it "is undefined" do
-         stub_env({"XCODEPROJ" => nil})
-         expect(RunLoop::Environment.xcodeproj).to be_falsey
+        stub_env({"XCODEPROJ" => nil})
+        expect(RunLoop::Environment.xcodeproj).to be_falsey
       end
     end
 
@@ -286,13 +286,13 @@ describe RunLoop::Environment do
   describe ".derived_data" do
     describe "returns nil if DERIVED_DATA variable is" do
       it "the empty string" do
-         stub_env({"DERIVED_DATA" => ""})
-         expect(RunLoop::Environment.derived_data).to be_falsey
+        stub_env({"DERIVED_DATA" => ""})
+        expect(RunLoop::Environment.derived_data).to be_falsey
       end
 
       it "is undefined" do
-         stub_env({"DERIVED_DATA" => nil})
-         expect(RunLoop::Environment.derived_data).to be_falsey
+        stub_env({"DERIVED_DATA" => nil})
+        expect(RunLoop::Environment.derived_data).to be_falsey
       end
     end
 
@@ -309,13 +309,13 @@ describe RunLoop::Environment do
   describe ".solution" do
     describe "returns nil if SOLUTION variable is" do
       it "the empty string" do
-         stub_env({"SOLUTION" => ""})
-         expect(RunLoop::Environment.solution).to be_falsey
+        stub_env({"SOLUTION" => ""})
+        expect(RunLoop::Environment.solution).to be_falsey
       end
 
       it "is undefined" do
-         stub_env({"SOLUTION" => nil})
-         expect(RunLoop::Environment.solution).to be_falsey
+        stub_env({"SOLUTION" => nil})
+        expect(RunLoop::Environment.solution).to be_falsey
       end
     end
 
@@ -695,6 +695,30 @@ describe RunLoop::Environment do
       expect(RunLoop::Environment).to receive(:ci_var_defined?).and_return false
 
       expect(RunLoop::Environment.ci?).to be == false
+    end
+  end
+
+  describe ".inject_calabash_dylib" do
+    let(:path) { "/path/to/libCalabashFAT.dylib" }
+
+    it "returns path if INJECT_CALABASH_DYLIB is defined" do
+      stub_env({"INJECT_CALABASH_DYLIB" => path})
+
+      expect(RunLoop::Environment.inject_calabash_dylib).to be == path
+    end
+  end
+
+  describe "returns nil if INJECT_CALABASH_DYLIB undefined or empty" do
+    it "is nil" do
+      stub_env({"INJECT_CALABASH_DYLIB" => nil})
+
+      expect(RunLoop::Environment.inject_calabash_dylib).to be == nil
+    end
+
+    it "is empty string" do
+      stub_env({"INJECT_CALABASH_DYLIB" => ""})
+
+      expect(RunLoop::Environment.inject_calabash_dylib).to be == nil
     end
   end
 
