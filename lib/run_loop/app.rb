@@ -1,6 +1,9 @@
+
 module RunLoop
   # A class for interacting with .app bundles.
   class App
+
+    require "fileutils"
 
     # @!attribute [r] path
     # @return [String] The path to the app bundle .app
@@ -203,7 +206,136 @@ Bundle must:
     # mutates app_env argument
     # mutates app
     def configure_app_and_app_env_for_calabash_dylib_injection!(app_env)
+      RunLoop.log_debug("Determining how and if to dynamically insert Calabash")
+      if calabash_server_version
+        RunLoop.log_debug("App contains an embedded (statically linked or dylib) Calabash server")
+        if calabash_server_id
+          RunLoop.log_debug("calabash.framework was linked at compile time")
+          _configure_app_and_app_env_for_calabash_dylib_injection_when_cal_linked!(app_env)
+        else
+          RunLoop.log_debug(".app bundle contains Calabash dylib")
+          _configure_app_and_app_env_by_replacing_existing_cal_dylib!(app_env)
+        end
+      else
+        RunLoop.log_debug("Calabash is not embedded (statically linked or as a dylib) in the app")
+        _configure_app_and_app_env_by_adding_calabash_server_as_a_dylib!(app_env)
+      end
+    end
 
+    # @!visibility private
+    def _configure_app_and_app_env_for_calabash_dylib_injection_when_cal_linked!(app_env)
+      dylib_path_from_env = RunLoop::App._user_asked_for_this_dylib_to_be_injected
+
+      if dylib_path_from_env.nil?
+        RunLoop.log_debug("INJECT_CALABASH_DYLIB not set, will not inject dylib")
+        return
+      end
+
+      # server id will be truthy because there is no dylib in the .app bundle
+      # which means the embedding was done at compile time.
+      _set_lpserver_skip_token!(app_env)
+
+      if simulator?
+        relative_path = copy_dylib_to_app_bundle(dylib_path_from_env)
+        _append_dyld_insert_libraries!(app_env, relative_path)
+        RunLoop.log_debug("App is for the simulator, so resigning is not necessary")
+        return
+      end
+
+      # physical device
+      raise "WIP: need to inject and resign with iOSDeviceManager"
+    end
+
+    # @!visibility private
+    def _configure_app_and_app_env_by_replacing_existing_cal_dylib!(app_env)
+      dylib_path_from_env = RunLoop::App._user_asked_for_this_dylib_to_be_injected
+
+      if dylib_path_from_env.nil?
+        # The .app contains a dylib already.
+        #
+        # Only the DYLD_INSERT_LIBRARIES env var needs to be updated.
+        RunLoop.log_debug("INJECT_CALABASH_DYLIB not set, will not inject dylib")
+
+        if physical_device?
+          RunLoop.log_debug("Assuming that the dylib and .app bundle have been resigned")
+        end
+        _append_dyld_insert_libraries!(app_env, embedded_calabash_dylib)
+        return
+      end
+
+      if simulator?
+        relative_path = copy_dylib_to_app_bundle(dylib_path_from_env)
+        _append_dyld_insert_libraries!(app_env, relative_path)
+        RunLoop.log_debug("App is for the simulator, so resigning is not necessary")
+        return
+      end
+
+      # physical device
+      raise "WIP: need to inject and resign with iOSDeviceManager"
+    end
+
+    # @!visibility private
+    def _configure_app_and_app_env_by_adding_calabash_server_as_a_dylib!(app_env)
+      dylib_path_from_env = RunLoop::App._user_asked_for_this_dylib_to_be_injected
+
+      if dylib_path_from_env.nil?
+        RunLoop.log_debug("INJECT_CALABASH_DYLIB not set: will not inject dylib")
+        RunLoop.log_debug("App contains no embedded Calabash server")
+        return
+      end
+
+      if simulator?
+        relative_path = copy_dylib_to_app_bundle(dylib_path_from_env)
+        _append_dyld_insert_libraries!(app_env, relative_path)
+        RunLoop.log_debug("App is for the simulator, so resigning is not necessary")
+        return
+      end
+      # physical device
+      raise "WIP: need to inject and resign with iOSDeviceManager"
+    end
+
+    # @!visibility private
+    def _append_dyld_insert_libraries!(app_env, path)
+      key = "DYLD_INSERT_LIBRARIES"
+      value = app_env[key]
+      if value
+        app_env[key] = "#{value}:#{path}"
+      else
+        app_env[key] = path
+      end
+      RunLoop.log_debug("Updated app_env: #{key} => #{app_env[key]}")
+    end
+
+    # @!visibility private
+    def _set_lpserver_skip_token!(app_env)
+      key = "XTC_SKIP_LPSERVER_TOKEN"
+      app_env[key] = calabash_server_id
+      RunLoop.log_debug("Update app_env: #{key} => #{app_env[key]}")
+    end
+
+    def copy_dylib_to_app_bundle(dylib_path)
+      FileUtils.cp(dylib_path, path)
+      "@executable_path/#{File.basename(dylib_path)}"
+    end
+
+    def self._user_asked_for_this_dylib_to_be_injected
+      path = RunLoop::Environment.inject_calabash_dylib
+      if path
+        self._expect_calabash_dylib_to_exist!(path)
+      end
+      path
+    end
+
+    # @!visibility private
+    def self._expect_calabash_dylib_to_exist!(path)
+      if !File.exist?(path)
+        message = <<~EOS
+        INJECT_CALABASH_DYLIB is set, but file does not exist
+ 
+        #{path}
+        EOS
+        raise(message)
+      end
     end
 
     # App#configure_app_for_calabash_dylib_injection!(app_env)

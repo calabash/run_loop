@@ -346,6 +346,23 @@ describe RunLoop::App do
 
   end
 
+  describe "._expect_calabash_dylib_to_exist!" do
+    let(:path) { "/path/to/libCalabashARM.dylib" }
+    it "raises an error if the INJECT_CALABASH_DYLIB path does not exist" do
+      expect(File).to receive(:exist?).and_return(false)
+
+      expect do
+        described_class._expect_calabash_dylib_to_exist!(path)
+      end.to raise_error(RuntimeError, /INJECT_CALABASH_DYLIB is set, but file does not exist/)
+    end
+
+    it "does not raise an error if the INJECT_CALABASH_DYLIB exists" do
+      expect(File).to receive(:exist?).and_return(true)
+
+      described_class._expect_calabash_dylib_to_exist!(path)
+    end
+  end
+
   describe "#marketing_version" do
     let(:pbuddy) { RunLoop::PlistBuddy.new }
     let(:args) { ["CFBundleShortVersionString", app.info_plist_path] }

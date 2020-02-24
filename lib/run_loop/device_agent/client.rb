@@ -58,7 +58,7 @@ module RunLoop
         # constant CBX_DEFAULT_SEND_STRING_FREQUENCY which is 60.  _Decrease_
         # this value if you are timing out typing strings.
         :characters_per_second => 12,
-        
+
         # The number of attempts for relaunch DeviceAgent
         # when health check is failed
         :device_agent_launch_retries => 3
@@ -101,14 +101,25 @@ module RunLoop
         app = app_details[:app]
         bundle_id = app_details[:bundle_id]
 
-        # Here, we should respond to LPSERVER_DYLIB=/path/to/calabashdylib
-        # if that is a path to a dylib, then we expect to override the already
-        # embeded calabsh server.
+        aut_args = options.fetch(:args, [])
+        aut_env = options.fetch(:env, {})
 
-        # process name and dylib path
-        dylib_injection_details = Client.details_for_dylib_injection(device,
-                                                                     options,
-                                                                     app_details)
+        if !aut_args.include?(AUT_LAUNCHED_BY_RUN_LOOP_ARG)
+          aut_args << AUT_LAUNCHED_BY_RUN_LOOP_ARG
+        end
+
+        if !RunLoop::Environment.xtc?
+          app.configure_app_and_app_env_for_calabash_dylib_injection!(aut_env)
+        end
+
+        if aut_env["DYLD_INSERT_LIBRARIES"]
+          RunLoop.log_debug("Detected inject via DYLD_INSERT_LIBRARIES: skipping lldb dylib injection")
+          dylib_injection_details = nil
+        else
+          dylib_injection_details = Client.details_for_dylib_injection(device,
+                                                                       options,
+                                                                       app_details)
+        end
 
         default_options = {
             :xcode => xcode
@@ -170,13 +181,6 @@ module RunLoop
                                                    DEFAULTS[:terminate_aut_before_test])
         device_agent_launch_retries = options.fetch(:device_agent_launch_retries,
                                                    DEFAULTS[:device_agent_launch_retries])
-
-        aut_args = options.fetch(:args, [])
-        aut_env = options.fetch(:env, {})
-
-        if !aut_args.include?(AUT_LAUNCHED_BY_RUN_LOOP_ARG)
-          aut_args << AUT_LAUNCHED_BY_RUN_LOOP_ARG
-        end
 
         launcher_options = {
             code_sign_identity: code_sign_identity,
@@ -1496,7 +1500,7 @@ If the body empty, the DeviceAgent has probably crashed.
 
         start = Time.now
         RunLoop.log_debug("Waiting for DeviceAgent to launch...")
-        
+
         begin
           retries ||= 0
           @launcher_pid = cbx_launcher.launch(options)
