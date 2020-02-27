@@ -13,39 +13,6 @@ describe RunLoop::HTTP::RetriableClient do
     allow(RunLoop::Environment).to receive(:debug?).and_return(true)
   end
 
-   context "self.dylib_path_from_options" do
-    context "raises errors" do
-      it "when options argument is not a Hash" do
-        expect { RunLoop::DylibInjector.dylib_path_from_options([]) }.to raise_error TypeError
-        expect { RunLoop::DylibInjector.dylib_path_from_options(nil) }.to raise_error NoMethodError
-      end
-
-      it "when :inject_dylib is not a String" do
-        options = { :inject_dylib => true }
-        expect do
-          RunLoop::DylibInjector.dylib_path_from_options(options)
-        end.to raise_error ArgumentError, /to be a path to a dylib/
-      end
-
-      it "when dylib does not exist" do
-        options = { :inject_dylib => 'foo/bar.dylib' }
-        expect do
-          RunLoop::DylibInjector.dylib_path_from_options(options)
-        end.to raise_error RuntimeError, /Cannot load dylib/
-      end
-    end
-
-    it "returns nil if options does not contain :inject_dylib key" do
-      expect(RunLoop::DylibInjector.dylib_path_from_options({})).to be == nil
-    end
-
-    it "value of :inject_dylib key if the path exists" do
-      path = Resources.shared.sim_dylib_path
-      options = { :inject_dylib => path }
-      expect(RunLoop::DylibInjector.dylib_path_from_options(options)).to be == path
-    end
-  end
-
   context ".new" do
     let(:client) { ::HTTPClient.new }
 

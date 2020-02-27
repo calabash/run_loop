@@ -31,18 +31,18 @@ describe RunLoop::DeviceAgent::Client do
     let(:path) { Resources.shared.sim_dylib_path }
 
     it "returns nil if the options do not include :inject_dylib" do
-      expect(RunLoop::DylibInjector).to receive(:dylib_path_from_options).and_return(nil)
+      expect(RunLoop::LldbDylibInjector).to receive(:dylib_path_from_options).and_return(nil)
 
-      actual = RunLoop::DeviceAgent::Client.details_for_dylib_injection(device,
-                                                                        options,
-                                                                        app_details)
+      actual = RunLoop::DeviceAgent::Client.details_for_lldb_dylib_injection(device,
+                                                                             options,
+                                                                             app_details)
       expect(actual).to be == nil
     end
 
     context "dylib injection" do
 
       before do
-        expect(RunLoop::DylibInjector).to(
+        expect(RunLoop::LldbDylibInjector).to(
           receive(:dylib_path_from_options).with(options).and_return(path)
         )
       end
@@ -51,9 +51,9 @@ describe RunLoop::DeviceAgent::Client do
         allow(device).to receive(:physical_device?).and_return(true)
 
         expect do
-          RunLoop::DeviceAgent::Client.details_for_dylib_injection(device,
-                                                                   options,
-                                                                   app_details)
+          RunLoop::DeviceAgent::Client.details_for_lldb_dylib_injection(device,
+                                                                        options,
+                                                                        app_details)
         end.to raise_error ArgumentError,
                            /Detected :inject_dylib option when targeting a physical device:/
       end
@@ -68,27 +68,27 @@ describe RunLoop::DeviceAgent::Client do
         it "returns process details for Settings.app" do
           app_details[:bundle_id] = "com.apple.Preferences"
 
-          actual = RunLoop::DeviceAgent::Client.details_for_dylib_injection(device,
-                                                                            options,
-                                                                            app_details)
+          actual = RunLoop::DeviceAgent::Client.details_for_lldb_dylib_injection(device,
+                                                                                 options,
+                                                                                 app_details)
           expect(actual[:process_name]).to be == "Preferences"
           expect(actual[:dylib_path]).to be == path
         end
 
         it "raises an error for all other bundle identifiers" do
           expect do
-            RunLoop::DeviceAgent::Client.details_for_dylib_injection(device,
-                                                                     options,
-                                                                     app_details)
+            RunLoop::DeviceAgent::Client.details_for_lldb_dylib_injection(device,
+                                                                          options,
+                                                                          app_details)
           end.to raise_error ArgumentError,
                              /target application is a bundle identifier/
         end
       end
 
       it "returns a hash with the app executable name and dylib path" do
-        actual = RunLoop::DeviceAgent::Client.details_for_dylib_injection(device,
-                                                                          options,
-                                                                          app_details)
+        actual = RunLoop::DeviceAgent::Client.details_for_lldb_dylib_injection(device,
+                                                                               options,
+                                                                               app_details)
         expect(actual[:process_name]).to be == "CalSmoke"
         expect(actual[:dylib_path]).to be == path
       end

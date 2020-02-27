@@ -13,7 +13,7 @@ module RunLoop
       include RunLoop::Encoding
 
       require "run_loop/cache"
-      require "run_loop/dylib_injector"
+      require "run_loop/lldb_dylib_injector"
 
       class HTTPError < RuntimeError; end
 
@@ -116,9 +116,9 @@ module RunLoop
           RunLoop.log_debug("Detected inject via DYLD_INSERT_LIBRARIES: skipping lldb dylib injection")
           dylib_injection_details = nil
         else
-          dylib_injection_details = Client.details_for_dylib_injection(device,
-                                                                       options,
-                                                                       app_details)
+          dylib_injection_details = Client.details_for_lldb_dylib_injection(device,
+                                                                            options,
+                                                                            app_details)
         end
 
         default_options = {
@@ -240,8 +240,8 @@ module RunLoop
         end
       end
 
-      def self.details_for_dylib_injection(device, options, app_details)
-        dylib_path = RunLoop::DylibInjector.dylib_path_from_options(options)
+      def self.details_for_lldb_dylib_injection(device, options, app_details)
+        dylib_path = RunLoop::LldbDylibInjector.dylib_path_from_options(options)
 
         return nil if !dylib_path
 
@@ -1597,7 +1597,7 @@ Please install it.
           if dylib_injection_details
             process_name = dylib_injection_details[:process_name]
             dylib_path = dylib_injection_details[:dylib_path]
-            injector = RunLoop::DylibInjector.new(process_name, dylib_path)
+            injector = RunLoop::LldbDylibInjector.new(process_name, dylib_path)
             injector.retriable_inject_dylib
           end
         rescue => e

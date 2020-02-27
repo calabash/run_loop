@@ -5,7 +5,7 @@ module RunLoop
   # This is experimental.
   #
   # Injects dylibs into running executables using lldb.
-  class DylibInjector
+  class LldbDylibInjector
 
     # Options for controlling how often to retry dylib injection.
     #

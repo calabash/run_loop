@@ -1,9 +1,9 @@
-describe RunLoop::DylibInjector do
+describe RunLoop::LldbDylibInjector do
 
   let(:executable) { "app name" }
   let(:dylib) { "/some/path with spaces/lib.dylib" }
   let(:escaped) { Shellwords.shellescape(dylib) }
-  let(:lldb) { RunLoop::DylibInjector.new(executable, dylib) }
+  let(:lldb) { RunLoop::LldbDylibInjector.new(executable, dylib) }
 
   it '.new' do
     expect(lldb.process_name).to be == executable
@@ -81,13 +81,44 @@ describe RunLoop::DylibInjector do
       end
 
       it "when xcrun exits non-zero" do
-        hash[:exit_status] = 1
-        hash[:out] = "Line 0\nLine 1\nLine 2"
-
+        hash = {exit_status: 1, out:  "Line 0\nLine 1\nLine 2"}
         expect(xcrun).to receive(:run_command_in_context).and_return(hash)
 
         expect(lldb.inject_dylib(timeout)).to be_falsey
       end
+    end
+  end
+
+  context ".dylib_path_from_options" do
+    context "raises errors" do
+      it "when options argument is not a Hash" do
+        expect { described_class.dylib_path_from_options([]) }.to raise_error TypeError
+        expect { described_class.dylib_path_from_options(nil) }.to raise_error NoMethodError
+      end
+
+      it "when :inject_dylib is not a String" do
+        options = { :inject_dylib => true }
+        expect do
+          described_class.dylib_path_from_options(options)
+        end.to raise_error ArgumentError, /to be a path to a dylib/
+      end
+
+      it "when dylib does not exist" do
+        options = { :inject_dylib => 'foo/bar.dylib' }
+        expect do
+          described_class.dylib_path_from_options(options)
+        end.to raise_error RuntimeError, /Cannot load dylib/
+      end
+    end
+
+    it "returns nil if options does not contain :inject_dylib key" do
+      expect(described_class.dylib_path_from_options({})).to be == nil
+    end
+
+    it "value of :inject_dylib key if the path exists" do
+      path = Resources.shared.sim_dylib_path
+      options = { :inject_dylib => path }
+      expect(described_class.dylib_path_from_options(options)).to be == path
     end
   end
 
@@ -111,9 +142,8 @@ describe RunLoop::DylibInjector do
       end
 
       it "has default options" do
-        tries = RunLoop::DylibInjector::RETRY_OPTIONS[:tries]
-        interval = RunLoop::DylibInjector::RETRY_OPTIONS[:interval]
-        timeout = RunLoop::DylibInjector::RETRY_OPTIONS[:timeout]
+        tries = RunLoop::LldbDylibInjector::RETRY_OPTIONS[:tries]
+        timeout = RunLoop::LldbDylibInjector::RETRY_OPTIONS[:timeout]
 
         expect(lldb).to receive(:inject_dylib).with(timeout).exactly(tries).times.and_return false
         # First sleep is the arbitrary delay.
@@ -131,4 +161,3 @@ describe RunLoop::DylibInjector do
     end
   end
 end
-

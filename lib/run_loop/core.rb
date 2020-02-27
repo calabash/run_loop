@@ -279,7 +279,7 @@ Logfile: #{log_file}
 
       RunLoop::Logging.log_debug(logger, "Launching took #{Time.now-before_instruments_launch} seconds")
 
-      dylib_path = RunLoop::DylibInjector.dylib_path_from_options(merged_options)
+      dylib_path = RunLoop::LldbDylibInjector.dylib_path_from_options(merged_options)
 
       if dylib_path
         if device.physical_device?
@@ -287,7 +287,7 @@ Logfile: #{log_file}
         end
 
         app = app_details[:app]
-        lldb = RunLoop::DylibInjector.new(app.executable_name, dylib_path)
+        lldb = RunLoop::LldbDylibInjector.new(app.executable_name, dylib_path)
         lldb.retriable_inject_dylib
       end
 
