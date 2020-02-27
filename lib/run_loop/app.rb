@@ -281,7 +281,7 @@ Bundle must:
       if dylib_path_from_env.nil?
         RunLoop.log_debug("INJECT_CALABASH_DYLIB not set: will not inject dylib")
         RunLoop.log_debug("App contains no embedded Calabash server")
-        return
+        raise "WIP: pull from Azure Blob Storage"
       end
 
       if simulator?
