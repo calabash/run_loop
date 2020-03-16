@@ -113,7 +113,7 @@ module RunLoop
         end
 
         if aut_env["DYLD_INSERT_LIBRARIES"]
-          RunLoop.log_debug("Detected inject via DYLD_INSERT_LIBRARIES: skipping lldb dylib injection")
+          RunLoop.log_debug("Detected dylib injection via DYLD_INSERT_LIBRARIES: skipping lldb dylib injection")
           dylib_injection_details = nil
         else
           dylib_injection_details = Client.details_for_lldb_dylib_injection(device,
