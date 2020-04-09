@@ -1,5 +1,11 @@
 ## Change Log
 
+### 4.5.3
+
+#### DeviceAgent 2.2.0
+
+Compiled with Xcode 11.4 on Catalina
+
 ### 4.5.2
 
 Our macOS certificates were revoked because of an expired credit card.
