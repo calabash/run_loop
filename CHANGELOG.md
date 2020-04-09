@@ -6,6 +6,8 @@
 
 Compiled with Xcode 11.4 on Catalina
 
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/2.2.0
+
 ### 4.5.2
 
 Our macOS certificates were revoked because of an expired credit card.
