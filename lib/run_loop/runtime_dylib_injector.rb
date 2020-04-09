@@ -95,7 +95,7 @@ module RunLoop
       # which means the embedding was done at compile time.
       set_skip_lpserver_token!
 
-      if simulator?
+      if app.simulator?
         import_dylib_into_app!(dylib_path_from_env)
         RunLoop.log_debug("App is for the simulator, so resigning is not necessary")
         return
@@ -115,14 +115,14 @@ module RunLoop
         # Only the DYLD_INSERT_LIBRARIES env var needs to be updated.
         RunLoop.log_debug("INJECT_CALABASH_DYLIB not set, will not inject dylib")
 
-        if physical_device?
+        if app.physical_device?
           RunLoop.log_debug("Assuming that the dylib and .app bundle have been resigned")
         end
         append_dyld_insert_libraries!(embedded_dylib_exec_path)
         return
       end
 
-      if simulator?
+      if app.simulator?
         import_dylib_into_app!(dylib_path_from_env)
         RunLoop.log_debug("App is for the simulator, so resigning is not necessary")
         return
@@ -142,7 +142,7 @@ module RunLoop
         raise "WIP: pull from Azure Blob Storage"
       end
 
-      if simulator?
+      if app.simulator?
         import_dylib_into_app!(dylib_path_from_env)
         RunLoop.log_debug("App is for the simulator, so resigning is not necessary")
         return

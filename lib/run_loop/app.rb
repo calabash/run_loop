@@ -139,12 +139,15 @@ Bundle must:
 
     # True if the app has been built for the simulator
     def simulator?
-      arches.include?("i386") || arches.include?("x86_64")
+      return @simulator if !@simulator.nil?
+      @simulator = arches.include?("i386") || arches.include?("x86_64")
     end
 
     # True if the app has been built for physical devices
     def physical_device?
-      arches.any? do |arch|
+      return @physical_device if !@physical_device.nil?
+
+      @physical_device = arches.any? do |arch|
         arch[/arm/, 0]
       end
     end

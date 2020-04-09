@@ -109,7 +109,7 @@ module RunLoop
         end
 
         if !RunLoop::Environment.xtc?
-          app.configure_app_and_app_env_for_calabash_dylib_injection!(aut_env)
+          RunLoop::RuntimeDylibInjector.new(app, aut_env).maybe_perform_injection!
         end
 
         if aut_env["DYLD_INSERT_LIBRARIES"]
