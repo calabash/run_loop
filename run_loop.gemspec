@@ -59,6 +59,7 @@ tools like instruments and simctl.}
   s.add_development_dependency('bundler')
   s.add_development_dependency('rspec', '~> 3.0')
   s.add_development_dependency('rake')
+  s.add_development_dependency("xcpretty")
   s.add_development_dependency("guard-rspec", "~> 4.0")
   s.add_development_dependency("terminal-notifier", "~> 2.0")
   s.add_development_dependency("terminal-notifier-guard", "~> 1.0")
