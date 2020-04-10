@@ -10,7 +10,7 @@ Thanks @JoeSSS for the release and the patch to DeviceAgent for Xcode 11.4
 
 #### DeviceAgent 2.2.0
 
-Compiled with Xcode 11.4 on Catalina
+Compiled with Xcode 11.3 on Catalina.
 
 https://github.com/calabash/DeviceAgent.iOS/releases/tag/2.2.0
 
