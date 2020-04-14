@@ -1,5 +1,19 @@
 ## Change Log
 
+### 4.5.3
+
+* Added looking into system services dir for the apps to run #747
+
+Thanks @sergey-plevako-badoo
+
+Thanks @JoeSSS for the release and the patch to DeviceAgent for Xcode 11.4
+
+#### DeviceAgent 2.2.0
+
+Compiled with Xcode 11.3 on Catalina.
+
+https://github.com/calabash/DeviceAgent.iOS/releases/tag/2.2.0
+
 ### 4.5.2
 
 Our macOS certificates were revoked because of an expired credit card.
