@@ -459,6 +459,14 @@ INSTANCE METHODS
         expect_300_response(response)
       end
 
+      ALLOWED_KEYS = [:all,
+                      :id,
+                      :index,
+                      :marked,
+                      :text,
+                      :type,
+                      :descendant_element].freeze
+
       # @!visibility private
       #
       # @example
@@ -473,6 +481,9 @@ INSTANCE METHODS
       #  query({text: "Log in"})
       #
       #  query({id: "hidden button", :all => true})
+      #
+      #  query({descendant_element: { parent_type: 'Keyboard',
+      #                               descendant_type: 'Button' }})
       #
       #  # Escaping single quote is not necessary, but supported.
       #  query({text: "Karl's problem"})
@@ -553,16 +564,15 @@ INSTANCE METHODS
           all: false
         }.merge(uiquery)
 
-        allowed_keys = [:all, :id, :index, :marked, :text, :type]
-        unknown_keys = uiquery.keys - allowed_keys
+        unknown_keys = uiquery.keys - ALLOWED_KEYS
+        formatted_keys = ALLOWED_KEYS.map { |key| ":#{key}" }.join(", ")
         if !unknown_keys.empty?
-          keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
           raise ArgumentError, %Q[
 Unsupported key or keys found: '#{unknown_keys}'.
 
 Allowed keys for a query are:
 
-#{keys}
+#{formatted_keys}
 
 ]
         end
@@ -572,11 +582,10 @@ Allowed keys for a query are:
         else
           parameters = merged_options.dup.tap { |hs| hs.delete(:all) }
           if parameters.empty?
-            keys = allowed_keys.map { |key| ":#{key}" }.join(", ")
             raise ArgumentError, %Q[
 Query must contain at least one of these keys:
 
-#{keys}
+#{formatted_keys}
 
 ]
           end
