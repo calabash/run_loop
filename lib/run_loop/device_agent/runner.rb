@@ -114,6 +114,16 @@ but runner does not exist at that path.
         end
       end
 
+      def port
+        @port ||= begin
+          if device.physical_device?
+            27753
+          else
+            RunLoop::Environment.port
+          end
+        end
+      end  
+
       # @!visibility private
       def tester
         @tester ||= File.join(runner, "PlugIns", "DeviceAgent.xctest")
