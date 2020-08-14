@@ -57,6 +57,15 @@ module RunLoop
       end
     end
 
+    def self.port
+      value = ENV["CBX_SERVER_PORT"]
+      if value.nil? || value == ""
+        27753
+      else
+        value
+      end
+    end
+
     # Should the app data be reset between Scenarios?
     def self.reset_between_scenarios?
       ENV["RESET_BETWEEN_SCENARIOS"] == "1"
