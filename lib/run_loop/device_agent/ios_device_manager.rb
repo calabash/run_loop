@@ -237,7 +237,7 @@ Could not find an xctestrun file at path:
           path = File.join(IOSDeviceManager.dot_dir, "DeviceAgent-simulator.xctestrun")
           contents = File.read(template).force_encoding("UTF-8")
           substituted = contents.gsub("TEST_HOST_PATH", runner.runner)
-          substituted = substituted.gsub("CBX_SERVER_PORT", runner.port)
+          substituted = substituted.gsub("CBX_SERVER_PORT", "#{runner.port}")
           File.open(path, "w:UTF-8") do |file|
             file.write(substituted)
           end
