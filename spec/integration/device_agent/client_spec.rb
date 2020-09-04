@@ -5,10 +5,13 @@ describe RunLoop::DeviceAgent::Client do
     output = ""
     start = Time.now
     loop do
-      output = `curl --silent http://127.0.0.1:37265/version`
-      break if output[/server_identifier/]
+      output = RunLoop::Shell.run_shell_command(
+        [
+          'curl', '--silent', 'http://127.0.0.1:37265/version'
+        ])[:out]
+      break if output != ""
       if (Time.now - start) > 20
-        output = nil
+        output = ""
         break
       end
       sleep(1.0)
@@ -17,8 +20,7 @@ describe RunLoop::DeviceAgent::Client do
   end
 
   def server_id_from_version_route(response_body:)
-    pair = response_body[/server_identifier":"[a-z0-9]+-(dirty)?/].gsub("\"", "")
-    expect(pair.split(":")[1]).to be != original_server_id
+    response_body[/server_identifier":"[a-z0-9]+-(dirty)?/].gsub("\"", "")
   end
 
   before do
@@ -28,15 +30,15 @@ describe RunLoop::DeviceAgent::Client do
   describe "Simulators" do
 
     let(:device) { Resources.shared.default_simulator }
-    let(:workspace) { File.join(Resources.shared.resources_dir, "dylib-injection") }
+    let(:tmp_dir) { File.join(Resources.shared.local_tmp_dir, "dylib-injection") }
     let(:dylibs_dir) { File.join(Resources.shared.resources_dir, "dylibs") }
     let(:fat_dylib) { File.join(dylibs_dir, "libCalabashFAT.dylib")}
 
     before do
       RunLoop::CoreSimulator.quit_simulator
       RunLoop::Simctl.new.wait_for_shutdown(device, 30, 0.1)
-      FileUtils.rm_rf(workspace)
-      FileUtils.mkdir_p(workspace)
+      FileUtils.rm_rf(tmp_dir)
+      FileUtils.mkdir_p(tmp_dir)
     end
 
     describe "launch app with runtime dylib injection on simulators" do
@@ -51,7 +53,7 @@ describe RunLoop::DeviceAgent::Client do
 
       describe "app not statically linked with calabash.framework" do
         let(:app) do
-          path = File.join(workspace, "CalSmoke.app")
+          path = File.join(tmp_dir, "CalSmoke.app")
           FileUtils.cp_r(Resources.shared.app_bundle_path, path)
           RunLoop::App.new(path)
         end
@@ -64,15 +66,15 @@ describe RunLoop::DeviceAgent::Client do
           options = { :raise_on_timeout => true, :timeout => 10 }
           RunLoop::ProcessWaiter.new("CalSmoke", options).wait_for_any
 
-          output = `curl --silent http://127.0.0.1:37265/version`
-          puts output
-          expect(output[/server_identifier/]).to be_truthy
+          response_body = wait_for_server_response
+          expect(response_body).to be_truthy
+          expect(response_body[/server_identifier/]).to be_truthy
         end
       end
 
       describe "app statically linked with calabash.framework" do
         let(:app) do
-          path = File.join(workspace, "CalSmoke-cal.app")
+          path = File.join(tmp_dir, "CalSmoke-cal.app")
           FileUtils.cp_r(Resources.shared.cal_app_bundle_path, path)
           RunLoop::App.new(path)
         end
@@ -90,8 +92,11 @@ describe RunLoop::DeviceAgent::Client do
           response_body = wait_for_server_response
           expect(response_body).to be_truthy
 
-          injected_server_version = server_id_from_version_route(response_body)
-          expect(injected_server_version).to be != original_server_id
+          injected_server_version = server_id_from_version_route(
+            response_body: response_body
+          )
+
+          expect(injected_server_version).not_to be == original_server_id
         end
       end
     end
@@ -99,7 +104,7 @@ describe RunLoop::DeviceAgent::Client do
     describe "#launch" do
       let(:bundle_identifier) { "com.apple.Preferences" }
 
-      it "xcodebuild" do
+      it "using 'xcodebuild test'" do
         workspace = File.expand_path(File.join("..", "DeviceAgent.iOS", "DeviceAgent.xcworkspace"))
         if File.exist?(workspace)
           cbx_launcher = RunLoop::DeviceAgent::Xcodebuild.new(device)
