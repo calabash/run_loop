@@ -70,6 +70,18 @@ describe RunLoop::DeviceAgent::Client do
           expect(response_body).to be_truthy
           expect(response_body[/server_identifier/]).to be_truthy
         end
+
+        it "successfully injects dylib if INJECT_CALABASH_DYLIB is _not_ set" do
+          options[:app] = app
+          RunLoop::DeviceAgent::Client.run(options)
+
+          options = { :raise_on_timeout => true, :timeout => 10 }
+          RunLoop::ProcessWaiter.new("CalSmoke", options).wait_for_any
+
+          response_body = wait_for_server_response
+          expect(response_body).to be_truthy
+          expect(response_body[/server_identifier/]).to be_truthy
+        end
       end
 
       describe "app statically linked with calabash.framework" do

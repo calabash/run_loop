@@ -2,15 +2,13 @@
 module RunLoop
   class RuntimeDylibInjector
 
+    require "open-uri"
+
     # TODO
     #
     # Dylib injection modifies the .app bundle; should we cache the original?
     #
     # Can we optimize injection by caching an app?
-    #
-    # We need a place in the .dot directory for the latest dylibs from
-    # blob storage.
-    #
 
     require "fileutils"
     require "run_loop/app"
@@ -137,13 +135,14 @@ module RunLoop
       dylib_path_from_env = RuntimeDylibInjector.dylib_from_env
 
       if dylib_path_from_env.nil?
-        RunLoop.log_debug("INJECT_CALABASH_DYLIB not set: will not inject dylib")
-        RunLoop.log_debug("App contains no embedded Calabash server")
-        raise "WIP: pull from Azure Blob Storage"
+        RunLoop.log_debug("INJECT_CALABASH_DYLIB not set, but app contains no embedded Calabash server")
+        dylib_path = fetch_dylib_from_azure
+      else
+        dylib_path = dylib_path_from_env
       end
 
       if app.simulator?
-        import_dylib_into_app!(dylib_path_from_env)
+        import_dylib_into_app!(dylib_path)
         RunLoop.log_debug("App is for the simulator, so resigning is not necessary")
         return
       end
@@ -215,6 +214,43 @@ module RunLoop
       @embedded_dylib_exec_path = exec_path
       append_dyld_insert_libraries!(exec_path)
       exec_path
+    end
+
+    def download_to_file(url, path)
+      case io = open(url)
+      when StringIO then File.open(path, "w:UTF-8") { |f| f.write(io.string) }
+      when Tempfile then io.close; FileUtils.mv(io.path, path)
+      else raise "Expected a StringIO or Tempfile class, but found: #{io.class}"
+      end
+    end
+
+    def fetch_dylib_release_details_from_azure
+      path = File.join(RuntimeDylibInjector.dot_dir, "release.json")
+      FileUtils.rm_rf(path)
+      url = "https://xtcruntimeartifacts.blob.core.windows.net/ios-test-cloud-agent/release.json"
+      download_to_file(url, path)
+      JSON.parse(File.read(path))
+    end
+
+    def fetch_dylib_from_azure
+      details = fetch_dylib_release_details_from_azure
+      filename = details.fetch("dylibFAT")
+      dylib_path = File.join(RuntimeDylibInjector.dot_dir, filename)
+
+      if !File.exist?(dylib_path)
+        url = "https://xtcruntimeartifacts.blob.core.windows.net/ios-test-cloud-agent/#{filename}"
+        download_to_file(url, dylib_path)
+      end
+
+      dylib_path
+    end
+
+    def self.dot_dir
+      path = File.join(RunLoop::DotDir.directory, "calabash-ios-server")
+      if !File.exist?(path)
+        FileUtils.mkdir_p(path)
+      end
+      path
     end
   end
 end

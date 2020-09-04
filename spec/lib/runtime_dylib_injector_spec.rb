@@ -1,11 +1,11 @@
 
 describe RunLoop::RuntimeDylibInjector do
 
-  let(:workspace) { File.join(Resources.shared.resources_dir, "dylib-injection") }
+  let(:tmp_dir) { File.join(Resources.shared.local_tmp_dir, "dylib-injection") }
 
   before do
-    FileUtils.rm_rf(workspace)
-    FileUtils.mkdir_p(workspace)
+    FileUtils.rm_rf(tmp_dir)
+    FileUtils.mkdir_p(tmp_dir)
   end
 
   context ".is_calabash_dylib?" do
@@ -63,7 +63,7 @@ describe RunLoop::RuntimeDylibInjector do
 
   context "Apps for Simulators" do
     let(:app) do
-      path = File.join(workspace, "CalSmoke.app")
+      path = File.join(tmp_dir, "CalSmoke.app")
       FileUtils.cp_r(Resources.shared.app_bundle_path, path)
       RunLoop::App.new(path)
     end
@@ -85,7 +85,7 @@ describe RunLoop::RuntimeDylibInjector do
 
   context "Shared Behaviors" do
     let(:app) do
-      path = File.join(workspace, "CalSmoke.app")
+      path = File.join(tmp_dir, "CalSmoke.app")
       FileUtils.cp_r(Resources.shared.app_bundle_path, path)
       RunLoop::App.new(path)
     end
@@ -172,6 +172,16 @@ describe RunLoop::RuntimeDylibInjector do
         expect(actual).to be == expected
         expect(injector.send(:embedded_dylib_exec_path)).to be == expected
         expect(injector.send(:aut_env)["DYLD_INSERT_LIBRARIES"]).to be == expected
+      end
+    end
+
+    context "#fetch_dylib_release_details_from_azure" do
+      it "fetches the dylib release details and saves to ~/.run-loop/calabash-ios-server" do
+        dir = File.join(Resources.shared.local_tmp_dir, ".run-loop")
+        expect(RunLoop::DotDir).to receive(:directory).and_return(dir)
+        actual = injector.fetch_dylib_release_details_from_azure
+        expect(actual["dylibFAT"]).to be_truthy
+        expect(actual["dylibFAT_shasum256"]).to be_truthy
       end
     end
   end

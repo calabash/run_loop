@@ -108,6 +108,20 @@ module RunLoop
           aut_args << AUT_LAUNCHED_BY_RUN_LOOP_ARG
         end
 
+        # If INJECT_CALABASH_DYLIB points to a dylib and your app is linked with
+        # calabash, then the dylib will be copied into your app and the app's
+        # launch environment will be configured to load the dylib at runtime.
+        #
+        # The same is true if your app has an embedded Calabash dylib that is
+        # loaded at runtime (a rare case).
+        #
+        # In either case, the linked or the embedded LPServer will _not be
+        # loaded_.  Instead the new dylib will be loaded.
+        #
+        # If your application is _not_ linked with Calabash, then the latest
+        # LPServer dylib will be downloaded, copied into your app, and the
+        # app's launch environment will be configured to load the dylib at
+        # runtime.
         if !RunLoop::Environment.xtc?
           RunLoop::RuntimeDylibInjector.new(app, aut_env).maybe_perform_injection!
         end
