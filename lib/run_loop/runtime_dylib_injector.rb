@@ -236,7 +236,11 @@ module RunLoop
       details = fetch_dylib_release_details_from_azure
       filename = details.fetch("dylibFAT")
       dylib_path = File.join(RuntimeDylibInjector.dot_dir, filename)
-
+      message = <<~EOS
+      Injecting this dylib into the application:
+      #{JSON.pretty_generate(details)}
+      EOS
+      RunLoop.log_debug(message)
       if !File.exist?(dylib_path)
         url = "https://xtcruntimeartifacts.blob.core.windows.net/ios-test-cloud-agent/#{filename}"
         download_to_file(url, dylib_path)
