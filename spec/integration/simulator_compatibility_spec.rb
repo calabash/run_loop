@@ -7,9 +7,9 @@ describe "Simulator/Binary Compatibility Check" do
     RunLoop::CoreSimulator.quit_simulator
   end
 
-  def isMacOSGTE11
-    osVersion = `sw_vers -productVersion`
-    RunLoop::Version.new(osVersion) >= RunLoop::Version.new("11.0")
+  def isXcodeGTE12
+    xcodeVersion = `xcrun xcodebuild -version | grep "Xcode" | cut -d " " -f 2`
+    RunLoop::Version.new(xcodeVersion) >= RunLoop::Version.new("12.0")
   end
 
   it "can launch if app has i386 and x86_64 slices" do
@@ -25,8 +25,8 @@ describe "Simulator/Binary Compatibility Check" do
   end
 
   it "can launch i386 app on x86_64 simulator"  do
-    if isMacOSGTE11
-      skip("i386 simulators are not supported since macOS Big Sur")
+    if isXcodeGTE12
+      skip("i386 simulators are not supported since Xcode 12")
     end
     ios_version = Resources.shared.xcode.ios_version
     air = simctl.simulators.find do |device|
@@ -63,8 +63,8 @@ describe "Simulator/Binary Compatibility Check" do
   end
 
   it "raises an error if app contains only x86_64 slices but simulator is i386" do
-    if isMacOSGTE11
-      skip("i386 simulators are not supported since macOS Big Sur")
+    if isXcodeGTE12
+      skip("i386 simulators are not supported since Xcode 12")
     end
     i368sim = simctl.simulators.find do |device|
       device.instruction_set == 'i386' && device.version >= RunLoop::Version.new('9.0')
