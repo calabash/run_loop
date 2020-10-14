@@ -8,8 +8,7 @@ describe "Simulator/Binary Compatibility Check" do
   end
 
   def isXcodeGTE12
-    xcodeVersion = `xcrun xcodebuild -version | grep "Xcode" | cut -d " " -f 2`
-    RunLoop::Version.new(xcodeVersion) >= RunLoop::Version.new("12.0")
+    RunLoop::Xcode.new.version >= RunLoop::Version.new("12.0")
   end
 
   it "can launch if app has i386 and x86_64 slices" do
