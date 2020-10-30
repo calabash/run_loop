@@ -7,6 +7,10 @@ describe "Simulator/Binary Compatibility Check" do
     RunLoop::CoreSimulator.quit_simulator
   end
 
+  def isXcodeGTE12
+    RunLoop::Xcode.new.version >= RunLoop::Version.new("12.0")
+  end
+
   it "can launch if app has i386 and x86_64 slices" do
     options =
       {
@@ -20,6 +24,9 @@ describe "Simulator/Binary Compatibility Check" do
   end
 
   it "can launch i386 app on x86_64 simulator"  do
+    if isXcodeGTE12
+      skip("i386 simulators are not supported since Xcode 12")
+    end
     ios_version = Resources.shared.xcode.ios_version
     air = simctl.simulators.find do |device|
       (device.name.include? "iPad Air") &&
@@ -55,6 +62,9 @@ describe "Simulator/Binary Compatibility Check" do
   end
 
   it "raises an error if app contains only x86_64 slices but simulator is i386" do
+    if isXcodeGTE12
+      skip("i386 simulators are not supported since Xcode 12")
+    end
     i368sim = simctl.simulators.find do |device|
       device.instruction_set == 'i386' && device.version >= RunLoop::Version.new('9.0')
     end
