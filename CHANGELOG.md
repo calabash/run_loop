@@ -1,5 +1,13 @@
 ## Change Log
 
+### 4.5.4
+
+* Added support for iOS 14 #757
+
+#### DeviceAgent 2.2.2
+
+Compiled with Xcode 12
+
 ### 4.5.3
 
 * Added looking into system services dir for the apps to run #747
