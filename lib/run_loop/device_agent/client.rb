@@ -38,7 +38,7 @@ module RunLoop
 
         # Ignored in the XTC.
         # This key is subject to removal or changes
-        :device_agent_install_timeout => RunLoop::Environment.ci? ? 240 : 120,
+        :device_agent_install_timeout => RunLoop::Environment.ci? ? 240 : 20,
 
         # This value must always be false on the XTC.
         # This is should only be used by gem maintainers or very advanced users.
