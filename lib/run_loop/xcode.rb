@@ -400,7 +400,7 @@ $ man xcode-select
         raise "Expected version key to start with 'v'"
       end
 
-      if string.start_with?("v10") || string.start_with?("v11")
+      if string.start_with?("v10") || string.start_with?("v11") || string.start_with?("v12")
         expected_length = 4
         regex = /v\d{3}/
       else
