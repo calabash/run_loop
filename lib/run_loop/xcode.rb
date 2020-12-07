@@ -138,9 +138,9 @@ module RunLoop
       fetch_version(:v80)
     end
 
-    # Is the active Xcode version 11.0 or above?
+    # Is the active Xcode version 12.0 or above?
     #
-    # @return [Boolean] `true` if the current Xcode version is >= 11.0
+    # @return [Boolean] `true` if the current Xcode version is >= 12.0
     def version_gte_120?
       version >= v120
     end
