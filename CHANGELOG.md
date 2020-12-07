@@ -1,5 +1,8 @@
 ## Change Log
 
+### 4.5.5
+* Fix bootstrap for Xcode 12 #763
+
 ### 4.5.4
 
 * Added support for iOS 14 #757
