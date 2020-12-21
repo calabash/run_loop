@@ -66,7 +66,7 @@ found '#{handle_errors_by}'
         if !self.skip_file?(path, "SHA256", debug)
           begin
             file_sha = OpenSSL::Digest::SHA256.new
-            contents = File.read(path, {mode: "rb"})
+            contents = File.read(path, **{mode: "rb"})
             file_sha << contents
             cumulative << contents
             file_shas << [file_sha.hexdigest]
