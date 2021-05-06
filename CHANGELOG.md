@@ -1,5 +1,8 @@
 ## Change Log
 
+### 4.5.6
+Fixed warnings and dependencies
+
 ### 4.5.5
 * Fix bootstrap for Xcode 12 #763
 * Build with Xcode 12.2 #762

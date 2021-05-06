@@ -52,7 +52,7 @@ tools like instruments and simctl.}
   s.add_dependency('thor', '>= 0.20.0', '< 1.0')
   s.add_dependency('command_runner_ng', '>= 0.1.4', '< 1.0')
   s.add_dependency("httpclient", ">= 2.7.1", "< 3.0")
-  s.add_dependency("i18n", ">= 0.7.0", "< 1.0")
+  s.add_dependency("i18n", ">= 0.7.0", "< 1.9")
 
   s.add_development_dependency("rspec_junit_formatter", "~> 0.3")
   s.add_development_dependency("luffa", "~> 2.0")
