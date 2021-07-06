@@ -272,8 +272,8 @@ describe RunLoop::Instruments do
     end
   end
 
-  describe 'xctrace list devices' do
-    let(:args) { ['xctrace', 'list', 'devices'] }
+  describe 'instruments -s devices' do
+    let(:args) { ['instruments', '-s', 'devices'] }
 
     let(:options) { {:log_cmd => true } }
 

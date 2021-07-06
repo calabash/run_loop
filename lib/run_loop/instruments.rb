@@ -195,7 +195,7 @@ module RunLoop
     # @return [Array<String>] Instruments.app templates.
     def templates
       @instruments_templates ||= lambda do
-        args = ['xctrace', 'list', 'devices']
+        args = ['instruments', '-s', 'templates']
 
         hash = xcrun.run_command_in_context(args, log_cmd: true)
         hash[:out].chomp.split("\n").map do |elm|
@@ -276,7 +276,7 @@ module RunLoop
     # @!visibility private
     def fetch_devices
       @device_hash ||= lambda do
-        args = ['xctrace', 'list', 'devices']
+        args = ['instruments', '-s', 'devices']
         xcrun.run_command_in_context(args, log_cmd: true)
       end.call
     end
