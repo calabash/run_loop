@@ -68,7 +68,7 @@ module RunLoop
     # Returns a device given a udid or name.  In the case of a physical device,
     # the udid is the device identifier.  In the case of a simulator the name
     # is the _instruments identifier_ as reported by
-    # `$ xcrun instruments -s devices` - this is the identifier that can be
+    # `$ xcrun xctrace list devices` - this is the identifier that can be
     # passed to instruments.
     #
     # @example
@@ -757,7 +757,7 @@ Could not update the Simulator languages.
 #{message}
 
 1. Is your device connected?
-2. Does your device appear in the output of `xcrun instruments -s devices`?
+2. Does your device appear in the output of `xcrun xctrace list devices`?
 3. Does your device appear in Xcode > Windows > Devices without a warning message?
 
 Please see the documentation about testing on physical devices.
