@@ -246,7 +246,7 @@ describe RunLoop::Instruments do
   describe '#templates' do
     let(:xcrun) { RunLoop::Xcrun.new }
 
-    let(:args) { ['instruments', '-s', 'templates'] }
+    let(:args) { ['xctrace', 'list', 'templates'] }
 
     let(:options) { {:log_cmd => true } }
 

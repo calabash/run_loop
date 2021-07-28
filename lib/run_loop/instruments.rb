@@ -195,7 +195,7 @@ module RunLoop
     # @return [Array<String>] Instruments.app templates.
     def templates
       @instruments_templates ||= lambda do
-        args = ['xctrace', 'list', 'devices']
+        args = ['xctrace', 'list', 'templates']
 
         hash = xcrun.run_command_in_context(args, log_cmd: true)
         hash[:out].chomp.split("\n").map do |elm|
