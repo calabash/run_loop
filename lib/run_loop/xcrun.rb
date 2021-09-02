@@ -16,7 +16,7 @@ module RunLoop
     #
     # RunLoop::Xcrun::DEFAULT_OPTIONS[:timeout] = 60
     DEFAULT_OPTIONS = {
-      :timeout => 30,
+      :timeout => 180,
       :log_cmd => false
     }
 
