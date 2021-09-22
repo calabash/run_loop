@@ -8,7 +8,7 @@ module RunLoop
 
     # @!visibility private
     DEFAULTS = {
-      :timeout => 180, #RunLoop::Environment.ci? ? 90 : 30,
+      :timeout => RunLoop::Environment.ci? ? 120 : 180,
       :log_cmd => true
     }
 

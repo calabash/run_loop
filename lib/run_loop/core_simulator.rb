@@ -16,13 +16,13 @@ class RunLoop::CoreSimulator
   #
   # RunLoop::CoreSimulator::DEFAULT_OPTIONS[:install_app_timeout] = 60
   DEFAULT_OPTIONS = {
-    # In most cases 30 seconds is a reasonable amount of time to wait for an
+    # In most cases 180 seconds is a reasonable amount of time to wait for an
     # install.  When testing larger apps, on slow machines, or in CI, this
     # value may need to be higher.  120 is the default for CI.
-    :install_app_timeout => 180, #RunLoop::Environment.ci? ? 120 : 30,
-    :uninstall_app_timeout => 180, #RunLoop::Environment.ci? ? 120 : 30,
-    :launch_app_timeout => 180, #RunLoop::Environment.ci? ? 120 : 30,
-    :wait_for_state_timeout => 180, #RunLoop::Environment.ci? ? 120 : 30,
+    :install_app_timeout => RunLoop::Environment.ci? ? 120 : 180,
+    :uninstall_app_timeout => RunLoop::Environment.ci? ? 120 : 180,
+    :launch_app_timeout => RunLoop::Environment.ci? ? 120 : 180,
+    :wait_for_state_timeout => RunLoop::Environment.ci? ? 120 : 180,
     :app_launch_retries => RunLoop::Environment.ci? ? 5 : 3
   }
 
