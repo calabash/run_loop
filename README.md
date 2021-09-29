@@ -9,7 +9,7 @@
 
 ### Requirements
 
-* at least Xcode 10.3
+* at least Xcode 12.0
 * ruby >= 2.3
 
 The most recent version of Xcode is strongly recommended.

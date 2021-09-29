@@ -508,7 +508,7 @@ class Resources
     xcode_version = instruments.xcode.version
 
     # Xcode 6 + iOS 8 - devices on the same network, whether development or not,
-    # appear when calling $ xcrun instruments -s devices. For the purposes of
+    # appear when calling $ xcrun xctrace list devices. For the purposes of
     # testing, we will only try to connect to devices that are connected via
     # udid.
     devices = instruments.physical_devices
