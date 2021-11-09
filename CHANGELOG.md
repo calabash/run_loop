@@ -1,5 +1,8 @@
 ## Change Log
 
+### 4.6.1
+* Binaries for DeviceAgent and DeviceManager #776
+
 ### 4.6.0
 * Added support for iOS 15 #773 #772 #770 #769
 
