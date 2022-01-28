@@ -667,6 +667,7 @@ Could not dismiss SpringBoard alert by touching button with title '#{button_titl
         end
 
         parameters = { :dismiss_automatically => true_or_false }
+        @springboard_alert_enabled = true_or_false
         request = request("set-dismiss-springboard-alerts-automatically", parameters)
         client = http_client(http_options)
         response = client.post(request)
@@ -1743,6 +1744,8 @@ Valid values are: :down, :up, :right, :left, :bottom, :top
       # @!visibility private
       # Private method.  Do not call.
       def _dismiss_springboard_alerts
+        return if @springboard_alert_enabled == false
+
         request = request("dismiss-springboard-alerts")
         client = http_client(http_options)
         response = client.post(request)
