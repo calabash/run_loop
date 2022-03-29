@@ -15,6 +15,10 @@ pr:
     - master
     - develop
 
+variables:
+  - name: EOCompliance-Mac
+    value: true
+
 jobs:
 - job:
   strategy:
