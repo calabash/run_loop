@@ -1,5 +1,7 @@
 ## Change Log
 
+### 4.7.1
+* Updated json gem
 ### 4.6.1
 * Binaries for DeviceAgent and DeviceManager #776
 
