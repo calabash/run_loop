@@ -1,6 +1,5 @@
 ## Change Log
-### 4.7.2
-* Update json version
+
 ### 4.6.1
 * Binaries for DeviceAgent and DeviceManager #776
 
