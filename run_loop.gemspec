@@ -47,7 +47,7 @@ tools like instruments and simctl.}
 
   s.required_ruby_version = '>= 2.0'
 
-  s.add_dependency('json', "~> 2.0.0")
+  s.add_dependency('json')
   s.add_dependency('awesome_print')
   s.add_dependency('thor')
   s.add_dependency('command_runner_ng')
