@@ -347,7 +347,7 @@ $ man xcode-select
       sim_major = xcode_version.major + 2
       sim_minor = xcode_version.minor
       if xcode_version.major == 13
-        sim_minor = 0
+        sim_minor = 4
       end
       if xcode_version == v103
         sim_minor = 4
