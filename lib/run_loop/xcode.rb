@@ -343,50 +343,14 @@ $ man xcode-select
     end
 
     def ios_version
-      xcode_version = version
-      sim_major = xcode_version.major + 2
-      sim_minor = xcode_version.minor
-      if xcode_version.major == 13
-        sim_minor = 4
-      end
-      if xcode_version == v103
-        sim_minor = 4
-      end
+      sim_major = 12
+      sim_minor = 4
 
       return RunLoop::Version.new("#{sim_major}.#{sim_minor}")
     end
 
     def default_device
-      xcode_version = version
-
-      # Xcode 13.
-      if xcode_version.major == 13
-        return "iPhone 13"
-      end
-
-      # Xcode 12.
-      if xcode_version.major == 12 && xcode_version.minor >= 2
-        return "iPhone 12"
-      elsif xcode_version.major == 12 && xcode_version.minor < 2
-        return "iPhone 11"
-      end
-
-      # Xcode 11.
-      if xcode_version.major == 11
-        return "iPhone 11"
-      end
-
-      # Xcode 10.
-      if xcode_version.major == 10
-        if xcode_version.minor >= 2
-          return "iPhone Xs"
-        else
-          return "iPhone XS"
-        end
-      end
-
-      # Xcode < 10.
-      return "iPhone #{xcode_version.major - 1}"
+      return "iPhone 5s"
     end
 
     private
