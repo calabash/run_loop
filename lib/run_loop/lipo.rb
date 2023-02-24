@@ -73,8 +73,8 @@ module RunLoop
         raise 'Ensuring compatible arches for physical devices is NYI'
       else
         arches = self.info
-        # An i386 binary will run on any simulator.
-        return true if arches.include?('i386')
+        # An i386 and arm64 binary will run on any simulator.
+        return true if arches.include?('i386') || arches.include?('arm64')
 
         instruction_set = device.instruction_set
         unless arches.include?(instruction_set)
