@@ -75,6 +75,7 @@ module RunLoop
       @ios_devices = []
       @tvos_devices = []
       @watchos_devices = []
+      @xros_devices = []
       Simctl.ensure_valid_core_simulator_service
     end
 
@@ -462,7 +463,7 @@ $ bundle exec run-loop simctl manage-processes
     private
 
     # @!visibility private
-    attr_reader :ios_devices, :tvos_devices, :watchos_devices, :pbuddy
+    attr_reader :ios_devices, :tvos_devices, :watchos_devices, :xros_devices, :pbuddy
 
     # @!visibility private
     def xcode
@@ -499,8 +500,8 @@ $ bundle exec run-loop simctl manage-processes
     # processing of `simctl list devices`. tvOS and watchOS devices are not
     # available on Xcode < 7.
     #
-    # This is a destructive operation on `@ios_devices`, `@tvos_devices`, and
-    # `@watchos_devices`.  Callers should check for existing devices to avoid
+    # This is a destructive operation on device list variables.
+    # Callers should check for existing devices to avoid
     # the overhead of calling `simctl list devices --json`.
     def fetch_devices!
       @ios_devices = []
@@ -589,6 +590,11 @@ while trying to list devices.
     end
 
     # @!visibility private
+    def device_key_is_xros?(key)
+      key[/xrOS/, 0]
+    end
+
+    # @!visibility private
     def device_key_to_version(key)
       str = if key.include?(" ")
               key.split(" ").last
@@ -624,6 +630,8 @@ while trying to list devices.
         bin = @tvos_devices
       elsif device_key_is_watchos?(key)
         bin = @watchos_devices
+      elsif device_key_is_xros?(key)
+        bin = @xros_devices
       else
         raise RuntimeError, "Unexpected key while processing simctl output:
 
