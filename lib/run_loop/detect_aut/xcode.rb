@@ -1,8 +1,10 @@
+
 module RunLoop
   # @!visibility private
   module DetectAUT
     # @!visibility private
     module Xcode
+      require "etc"
 
       # @!visibility private
       def xcode_project?
@@ -36,6 +38,19 @@ module RunLoop
           xcode_projects << path
         end
         xcode_projects
+      end
+
+      # @!visibility private
+      def self.find_user_state_file
+        username = RunLoop::Environment.username
+        xcworkspace = RunLoop::Environment.xcodeproj
+        unless xcworkspace.nil?
+          xcworkspace = xcworkspace.gsub("xcodeproj", "xcworkspace")
+          file = Dir.glob("#{xcworkspace}/xcuserdata/#{username}.xcuserdatad/UserInterfaceState.xcuserstate")
+          if !file.nil? && file.is_a?(Array)
+            return file[0]
+          end
+        end
       end
 
       # @!visibility private
@@ -150,6 +165,40 @@ module RunLoop
       # @!visibility private
       def pbuddy
         @pbuddy ||= RunLoop::PlistBuddy.new
+      end
+
+      # @!visibility private
+      # @param [String] file the plist to read
+      # @return [String] the UDID of device
+      def self.plist_find_device(file)
+        #TODO unfortunately i can use ony this solution
+        file_content = `/usr/libexec/PlistBuddy -c Print "#{file}"`
+            .encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+        if !file_content.nil? && !file_content.empty?
+          lines = file_content.split("\n")
+          lines.detect do |line|
+            line[/dvtdevice.*:/, 0]
+          end
+        end
+      end
+
+      # @!visibility private
+      def self.detect_selected_device
+        file_name = find_user_state_file
+        selected_device = plist_find_device(file_name)
+        if selected_device != '' && !selected_device.nil?
+          udid = selected_device.split(':')[1]
+          selected_device = RunLoop::Device.device_with_identifier(udid)
+          #TODO now only returning detected device if simulator detected
+          if selected_device.simulator?
+            RunLoop.log_info2("Detected simulator selected in Xcode is: #{selected_device}")
+            RunLoop.log_info2("If this is not desired simulator, set the DEVICE_TARGET variable")
+            selected_device
+
+          else
+            nil
+          end
+        end
       end
     end
   end

@@ -315,6 +315,11 @@ module RunLoop
       ].any?
     end
 
+    # Returns current username
+    def self.username
+      Etc.getpwuid.name
+    end
+
     # !@visibility private
     def self.with_debugging(debug, &block)
       if debug
