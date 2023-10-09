@@ -2,9 +2,15 @@ module RunLoop
 
   # @!visibility private
   module DetectAUT
+    @@xcodeproj = nil
+
+    def self.xcodeproj
+      @@xcodeproj
+    end
 
     # @!visibility private
     def self.detect_app_under_test(options)
+      @@xcodeproj = xcodeproj_from_options(options)
       app = self.detect_app(options)
       if app.is_a?(RunLoop::App) || app.is_a?(RunLoop::Ipa)
         {
@@ -123,6 +129,16 @@ module RunLoop
     end
 
     private
+
+    # @!visibility private
+    def self.xcodeproj_from_options(options)
+      value = options[:xcodeproj]
+      if value.nil? || value == ""
+        nil
+      else
+        File.expand_path(value)
+      end
+    end
 
     # @!visibility private
     def self.app_from_options(options)

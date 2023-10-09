@@ -10,8 +10,8 @@ module RunLoop
       end
 
       # @!visibility private
-      def xcodeproj
-        xcodeproj = RunLoop::Environment.xcodeproj
+      def xcodeproj(options = {})
+        xcodeproj = RunLoop::Environment.xcodeproj || RunLoop::DetectAUT.xcodeproj
 
         if xcodeproj && !File.directory?(xcodeproj)
           raise_xcodeproj_missing(xcodeproj)
